@@ -19,6 +19,18 @@ function Home_main_page() {
             >
               Register to Institute
             </Link>
+            <Link
+              className="nav-link text-blue-600 font-semibold hover:text-blue-800 transition-all"
+              to="/employee/register"
+            >
+              Register Employee
+            </Link>
+            <Link
+              className="nav-link text-blue-600 font-semibold hover:text-blue-800 transition-all"
+              to="/medicine/request"
+            >
+              Request Medicine
+            </Link>
           </li>
         </ul>
       </nav>
