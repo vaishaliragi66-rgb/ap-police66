@@ -5,6 +5,8 @@ import Home_manu from "./components/manufacturer/Home_manu";
 import Home_main_page from "./components/Home_main_page";
 import Register_manu from "./components/manufacturer/Register";
 import Institutes_list from "./components/manufacturer/Institutes_list";
+import Add_medicine from "./components/manufacturer/Add_medicine";
+import Medicines_table from "./components/manufacturer/Medicines_table";
 
 function App() {
   const router = createBrowserRouter([
@@ -25,8 +27,12 @@ function App() {
       element: <Home_manu />,
       children:[
         {
-          path: "institutes-list",
-          element: <Institutes_list />,
+          path: "add-medicine",
+          element: <Add_medicine />,
+        },
+        {
+          path:"manufacturer_medicine_table",
+          element:<Medicines_table />
         }
       ]
     },
