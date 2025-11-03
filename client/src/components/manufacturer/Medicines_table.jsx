@@ -66,6 +66,8 @@ function Medicines_table() {
     setSelectedMed(med);
     setFormData({
       Medicine_Name: med.Medicine_Name,
+      Type: med.Type,
+      Category: med.Category,
       Quantity: med.Quantity,
       Threshold_Qty: med.Threshold_Qty,
     });
@@ -97,6 +99,8 @@ function Medicines_table() {
           body: JSON.stringify({
             Manufacturer_ID: manufacturerId,
             Medicine_Name: formData.Medicine_Name.trim(),
+            Type: formData.Type.trim(),
+            Category: formData.Category.trim(),
             Quantity: parseInt(formData.Quantity),
             Threshold_Qty: parseInt(formData.Threshold_Qty),
           }),
@@ -204,6 +208,28 @@ function Medicines_table() {
                     name="Medicine_Name"
                     className="form-control"
                     value={formData.Medicine_Name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Type</label>
+                  <input
+                    type="text"
+                    name="Type"
+                    className="form-control"
+                    value={formData.Type}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Category</label>
+                  <input
+                    type="text"
+                    name="Category"
+                    className="form-control"
+                    value={formData.Category}
                     onChange={handleChange}
                     required
                   />

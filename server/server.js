@@ -10,13 +10,15 @@ app.use(express.json());
 // Import routes
 const manufacturerApp = require("./apis/manufacture_api");
 app.use("/manufacturer-api", manufacturerApp);
+const medicineApp = require("./apis/medicines_api");
+app.use("/medicine-api", medicineApp);
 
 // Base route
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 
 // MongoDB Connection
 mongoose
-  .connect(process.env.MONGO_URI, {
+  .connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })

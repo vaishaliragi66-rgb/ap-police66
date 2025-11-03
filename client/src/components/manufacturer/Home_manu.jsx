@@ -21,6 +21,15 @@ function Home_manu() {
               View all your manufactured Medicines
             </Link>
           </li>
+          <li className="nav-item">
+            <Link
+              className="nav-link text-blue-600 font-semibold hover:text-blue-800 transition-all"
+              to="profile_manufacturer"
+            >
+              Profile
+            </Link>
+          </li>
+
         </ul>
       </nav>
 
