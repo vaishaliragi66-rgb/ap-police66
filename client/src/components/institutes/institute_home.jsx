@@ -24,19 +24,19 @@ const Institute_home = () => {
     <div className="d-flex min-vh-100">
       {/* Sidebar */}
       <div
-        className="bg-primary text-white p-3"
+        className="bg-secondary text-white p-3"
         style={{ width: "250px", minHeight: "100vh" }}
       >
         <h4 className="text-center mb-4">Institute Panel</h4>
         <ul className="list-unstyled">
           <li
-            className="mb-3 p-2 rounded hover:bg-light cursor-pointer"
-            onClick={() => alert("Show manufacturer orders")}
+            className="mb-3 p-2 rounded hover:bg-secondary cursor-pointer"
+            onClick={() => navigate("/institutes/manufacturer-orders")}
           >
-            📦 Orders from Manufacturers
+            📦 Orders Medicines
           </li>
           <li
-            className="mb-3 p-2 rounded hover:bg-light cursor-pointer"
+            className="mb-3 p-2 rounded hover:bg-secondary cursor-pointer"
             onClick={() => alert("Show employee orders")}
           >
             👩‍⚕️ Orders from Employees
@@ -48,12 +48,12 @@ const Institute_home = () => {
       <div className="flex-grow-1 p-4 position-relative">
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3 className="fw-bold text-primary">Institute Dashboard</h3>
+          <h3 className="fw-bold text-secondary">Institute Dashboard</h3>
 
           <div className="position-relative">
             <FaUserCircle
               size={36}
-              className="text-primary cursor-pointer"
+              className="text-secondary cursor-pointer"
               onClick={() => setShowDropdown(!showDropdown)}
             />
             {showDropdown && (
@@ -62,7 +62,7 @@ const Institute_home = () => {
                 style={{ right: 0, top: "40px", zIndex: 100 }}
               >
                 <p
-                  className="mb-2 cursor-pointer text-primary"
+                  className="mb-2 cursor-pointer text-secondary"
                   onClick={handleProfileClick}
                 >
                   Profile
@@ -106,7 +106,7 @@ const Institute_home = () => {
         <div className="text-center mt-4">
           <button
             className="btn btn-primary px-4 py-2 rounded-3"
-            onClick={()=>navigate("/institutes/placeorder")}
+            onClick={handleOrderClick}
           >
             ➕ Place New Order
           </button>
