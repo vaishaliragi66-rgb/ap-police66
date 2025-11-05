@@ -25,6 +25,7 @@ const InstituteLogin = () => {
     setLoading(true);
 
     try {
+      console.log(formData)
       const res = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}/institute-api/institute/login`,
         formData
@@ -32,6 +33,7 @@ const InstituteLogin = () => {
 
       setMessage("✅ " + res.data.message);
       localStorage.setItem("institute", JSON.stringify(res.data.payload));
+      localStorage.setItem("instituteId", res.data.payload._id); 
 
       // Redirect to homepage
       setTimeout(() => {

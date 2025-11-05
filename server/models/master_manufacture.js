@@ -35,12 +35,10 @@ const ManufacturerSchema = new mongoose.Schema({
     type: [
       {
         Institute_ID: {
-          type: Schema.Types.ObjectId, ref: 'Institute', required: true ,
-          default: "N/A"
+          type: Schema.Types.ObjectId, ref: 'Institute', required: true 
         },
         Medicine_ID: {
-          type: Schema.Types.ObjectId, ref: 'Medicine', required: true,
-          default: "Unknown"
+          type: Schema.Types.ObjectId, ref: 'Medicine', required: true
         },
         Quantity: {
           type: Number,

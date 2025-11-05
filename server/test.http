@@ -1,3 +1,9 @@
+### get all institutes
+GET http://localhost:6100/institute-api/institutions
+
+
+
+
 ###get all manufacturers
 GET http://localhost:6100/manufacturer-api/manufacturers
 

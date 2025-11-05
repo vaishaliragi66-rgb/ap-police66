@@ -4,15 +4,18 @@ import axios from "axios";
 function Institutes_placeorder() {
   const [formData, setFormData] = useState({
     Manufacturer_Name: "",
+    Manufacturer_ID: "",
     Medicine_Name: "",
     Quantity_Requested: "",
   });
+
   const [manufacturers, setManufacturers] = useState([]);
   const [medicines, setMedicines] = useState([]);
   const [message, setMessage] = useState("");
+
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 5000;
 
-  // 🔹 Fetch all manufacturers on mount
+  // 🔹 Fetch manufacturers on mount
   useEffect(() => {
     const fetchManufacturers = async () => {
       try {
@@ -20,22 +23,20 @@ function Institutes_placeorder() {
           `http://localhost:${BACKEND_PORT_NO}/manufacturer-api/manufacturers`
         );
         setManufacturers(res.data);
-        console.log("Fetched Manufacturers:", res);
       } catch (err) {
-        console.log("eiehnkdj")
         console.error("Error fetching manufacturers:", err);
       }
     };
     fetchManufacturers();
   }, []);
 
-  // 🔹 Fetch medicines when manufacturer changes
+  // 🔹 Fetch medicines for selected manufacturer
   useEffect(() => {
     const fetchMedicines = async () => {
-      if (!formData.Manufacturer_Name) return;
+      if (!formData.Manufacturer_ID) return;
       try {
         const res = await axios.get(
-          `http://localhost:${BACKEND_PORT_NO}/api/manufacturers/${formData.Manufacturer_Name}/medicines`
+          `http://localhost:${BACKEND_PORT_NO}/medicine-api/medicines/${formData.Manufacturer_ID}`
         );
         setMedicines(res.data);
       } catch (err) {
@@ -44,12 +45,28 @@ function Institutes_placeorder() {
       }
     };
     fetchMedicines();
-  }, [formData.Manufacturer_Name]);
+  }, [formData.Manufacturer_ID]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Handle manufacturer select
+  const handleManufacturerChange = (e) => {
+    const selectedId = e.target.value;
+    const selectedManufacturer = manufacturers.find((m) => m._id === selectedId);
+    setFormData({
+      ...formData,
+      Manufacturer_ID: selectedId,
+      Manufacturer_Name: selectedManufacturer
+        ? selectedManufacturer.Manufacturer_Name
+        : "",
+      Medicine_Name: "",
+      Quantity_Requested: "",
+    });
+    setMedicines([]);
   };
 
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  // ✅ Handle form submit — call /institute-api
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -61,13 +78,14 @@ function Institutes_placeorder() {
       }
 
       const res = await axios.post(
-       ` http://localhost:${BACKEND_PORT_NO}/api/institute/${instituteId}/placeorder`,
+        `http://localhost:${BACKEND_PORT_NO}/institute-api/place_order/${instituteId}`,
         formData
       );
 
       setMessage(res.data.message || "Order placed successfully!");
       setFormData({
         Manufacturer_Name: "",
+        Manufacturer_ID: "",
         Medicine_Name: "",
         Quantity_Requested: "",
       });
@@ -97,31 +115,39 @@ function Institutes_placeorder() {
           maxWidth: "90%",
         }}
       >
-        <h3 className="text-center text-primary mb-4 fw-bold">
-          Place New Order
-        </h3>
+        <h3 className="text-center text-primary mb-4 fw-bold">Place New Order</h3>
 
         <form onSubmit={handleSubmit}>
-          {/* Manufacturer Name Dropdown */}
+          {/* Manufacturer dropdown */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Select Manufacturer</label>
             <select
-              name="Manufacturer_Name"
-              value={formData.Manufacturer_Name}
-              onChange={handleChange}
+              name="Manufacturer_ID"
+              value={formData.Manufacturer_ID}
+              onChange={(e) => {
+                const selectedManufacturer = manufacturers.find(
+                  (m) => m._id === e.target.value
+                );
+                setFormData({
+                  ...formData,
+                  Manufacturer_ID: selectedManufacturer?._id || "",
+                  Manufacturer_Name: selectedManufacturer?.Manufacturer_Name || "",
+                });
+              }}
               className="form-select"
               required
             >
               <option value="">-- Select Manufacturer --</option>
               {manufacturers.map((m) => (
-                <option key={m._id} value={m.Manufacturer_Name}>
+                <option key={m._id} value={m._id}>
                   {m.Manufacturer_Name}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Medicine Name Dropdown */}
+
+          {/* Medicine dropdown */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Select Medicine</label>
             <select
@@ -130,7 +156,7 @@ function Institutes_placeorder() {
               onChange={handleChange}
               className="form-select"
               required
-              disabled={!formData.Manufacturer_Name}
+              disabled={!formData.Manufacturer_ID}
             >
               <option value="">-- Select Medicine --</option>
               {medicines.map((med) => (

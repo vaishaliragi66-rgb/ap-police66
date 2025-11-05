@@ -10,8 +10,10 @@ app.use(express.json());
 // import your router here (adjust the path as needed)
 const manufacturerApp = require('./apis/manufacture_api'); 
 const instituteApp = require('./apis/institute_api');
-
-
+const medicineApp = require("./apis/medicines_api");
+app.use("/medicine-api", medicineApp);
+app.use("/institute-api", instituteApp);
+app.use("/manufacturer-api", manufacturerApp);
 // Base route
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 

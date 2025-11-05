@@ -1,8 +1,21 @@
 const express = require('express');
 const expressAsyncHandler = require('express-async-handler');
-const Institute = require('../models/master_institute');
-const Medicine = require('../models/master_medicine');
+const mongoose = require('mongoose')
+const axios = require('axios');
 const instituteApp = express.Router();
+const Institute = require('../models/master_institute');
+const Manufacturer = require("../models/master_manufacture");
+const Medicine = require("../models/master_medicine");  
+
+instituteApp.get("/institutions", async (req, res) => {
+  try {
+    const institutions = await Institute.find();
+    res.json(institutions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // POST - Register new institute
 instituteApp.post(
@@ -133,6 +146,7 @@ instituteApp.post(
     });
   })
 );
+
 instituteApp.get('/profile/:id', async (req, res) => {
   try {
     const institute = await Institute.findById(req.params.id)
@@ -253,160 +267,60 @@ instituteApp.get('/profile/:id', async (req, res) => {
   }
 });
 
-// orders placed to manufacturers
-instituteApp.get('/orders/:id', async (req, res) => {
+// ---------------------------------------------------------------------------
+// 📦 API: Place new order from Institute to Manufacturer
+// ---------------------------------------------------------------------------
+// ✅ Place order route (final version)
+// POST /institute-api/place_order/:instituteId
+instituteApp.post("/place_order/:id", async (req, res) => {
   try {
-    const institute = await Institute.findById(req.params.id)
-      .populate('Orders.Medicine_ID', 'Medicine_Name')
-      .populate('Orders.Manufacturer_ID', 'Manufacturer_Name');
-    console.log("Fetched Institute Orders:", institute ? institute.Orders : "No institute found");
+    console.log("📦 Received new order request");
+    console.log("Institute ID:", req.params.id);
+    console.log("Request body:", req.body);
+
+    const { Manufacturer_ID, Medicine_Name, Quantity_Requested } = req.body;
+
+    const institute = await Institute.findById(req.params.id);
     if (!institute) {
-      return res.status(200).json([]); // Return empty list if institute not found
+      console.log("❌ Institute not found");
+      return res.status(404).json({ error: "Institute not found" });
     }
 
-    res.json(institute.Orders || []);
-  } catch (error) {
-    console.error("Error fetching orders:", error); // full error object
-    res.status(500).json({ message: "Server Error", error: error.message });
-  }
-});
-
-// POST - Place New Order
-instituteApp.post(
-  "/institute/placeorder/:id",
-  expressAsyncHandler(async (req, res) => {
-    const instituteId = req.params.id;
-    const { Manufacturer_ID, Medicine_ID, Quantity_Requested } = req.body;
-
-    console.log("Received order request:", req.body);
-
-    // ✅ Validate required fields
-    if (!Manufacturer_ID || !Medicine_ID || !Quantity_Requested) {
-      return res.status(400).send({ message: "All fields are required" });
+    const medicine = await Medicine.findOne({ Medicine_Name });
+    if (!medicine) {
+      console.log("❌ Medicine not found");
+      return res.status(404).json({ error: "Medicine not found" });
     }
 
-    // ✅ Find the institute by ID
-    const institute = await Institute.findById(instituteId);
-    if (!institute) {
-      return res.status(404).send({ message: "Institute not found" });
-    }
-
-    // ✅ Create a new order object
-    const newOrder = {
+    // Add order to Institute
+    institute.Orders.push({
       Manufacturer_ID,
-      Medicine_ID,
+      Medicine_ID: medicine._id,
       Quantity_Requested,
       Status: "PENDING",
       Order_Date: new Date(),
-    };
+    });
 
-    // ✅ Push the new order to the institute's Orders array
-    institute.Orders.push(newOrder);
-
-    // ✅ Save updated document
     await institute.save();
+    console.log("✅ Order saved in Institute DB");
 
-    console.log("Order placed successfully for Institute:", institute.Institute_Name);
+    // Send order to manufacturer API
+    console.log("🌐 Sending order to manufacturer API...");
+    const manufacturerRes = await axios.post(
+      "http://localhost:6100/manufacturer-api/neworder",
+      {
+        Institute_ID: institute._id,
+        Manufacturer_ID,
+        Medicine_ID: medicine._id,
+        Quantity: Quantity_Requested,
+      }
+    );
 
-    res.status(201).send({
-      message: "Order placed successfully",
-      payload: newOrder,
-    });
-  })
-);
-
-instituteApp.get('/profile/:id', async (req, res) => {
-  try {
-    const institute = await Institute.findById(req.params.id)
-      .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty')
-      .populate('Orders.Medicine_ID', 'Medicine_Name Threshold_Qty')
-      .populate('Orders.Manufacturer_ID', 'Manufacturer_Name');
-
-    if (!institute) return res.status(404).json({ message: 'Institute not found' });
-
-    // compute inventory summary using populated Medicine_Inventory
-    const totalDistinct = institute.Medicine_Inventory.length;
-    const totalQuantity = institute.Medicine_Inventory.reduce((sum, item) => sum + (item.Quantity || 0), 0);
-
-    const lowStock = institute.Medicine_Inventory
-      .filter(item => item.Medicine_ID && typeof item.Medicine_ID.Threshold_Qty === 'number')
-      .filter(item => item.Quantity < item.Medicine_ID.Threshold_Qty)
-      .map(item => ({
-        medicineId: item.Medicine_ID._id,
-        medicineName: item.Medicine_ID.Medicine_Name,
-        quantity: item.Quantity,
-        threshold: item.Medicine_ID.Threshold_Qty
-      }));
-
-    // recent orders (sorted descending by Order_Date), limit to 10
-    const recentOrders = (institute.Orders || [])
-      .slice()
-      .sort((a, b) => new Date(b.Order_Date) - new Date(a.Order_Date))
-      .slice(0, 10);
-
-    return res.json({
-      profile: institute,
-      inventorySummary: {
-        totalDistinct,
-        totalQuantity,
-        lowStockCount: lowStock.length,
-        lowStock
-      },
-      recentOrders
-    });
-  } catch (err) {
-    console.error('Error in GET /profile/:id', err);
-    return res.status(500).json({ message: 'Server error', error: err.message });
-  }
-});
-
-// PUT /institute-api/profile/:id
-// update some top-level profile fields (only fields from existing schema)
-// Allowed updates: Institute_Name, Address, Email_ID, password, Contact_No
-instituteApp.put('/profile/:id', async (req, res) => {
-  try {
-    const allowed = ['Institute_Name', 'Address', 'Email_ID', 'password', 'Contact_No'];
-    const update = {};
-    allowed.forEach(field => {
-      if (req.body[field] !== undefined) update[field] = req.body[field];
-    });
-
-    if (Object.keys(update).length === 0) {
-      return res.status(400).json({ message: 'No valid fields to update' });
-    }
-
-    const institute = await Institute.findByIdAndUpdate(req.params.id, update, { new: true })
-      .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty')
-      .populate('Orders.Medicine_ID', 'Medicine_Name Threshold_Qty')
-      .populate('Orders.Manufacturer_ID', 'Manufacturer_Name');
-
-    if (!institute) return res.status(404).json({ message: 'Institute not found' });
-
-    return res.json({ message: 'Updated', profile: institute });
-  } catch (err) {
-    console.error('Error in PUT /profile/:id', err);
-    return res.status(500).json({ message: 'Server error', error: err.message });
-  }
-});
-
-// GET /institute-api/profile/:id/inventory (only inventory list)
-instituteApp.get('/profile/:id/inventory', async (req, res) => {
-  try {
-    const institute = await Institute.findById(req.params.id)
-      .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty');
-
-    if (!institute) return res.status(404).json({ message: 'Institute not found' });
-
-    const inventory = institute.Medicine_Inventory.map(i => ({
-      medicineId: i.Medicine_ID?._id || null,
-      medicineName: i.Medicine_ID?.Medicine_Name || 'Unknown',
-      quantity: i.Quantity
-    }));
-
-    return res.json({ inventory });
-  } catch (err) {
-    console.error('Error in GET /profile/:id/inventory', err);
-    return res.status(500).json({ message: 'Server error', error: err.message });
+    console.log("✅ Manufacturer response:", manufacturerRes.data);
+    res.status(200).json({ message: "Order placed successfully" });
+  } catch (error) {
+    console.error("🔥 Error while placing order:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
 

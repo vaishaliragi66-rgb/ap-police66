@@ -7,7 +7,7 @@ const Institute_home = () => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleProfileClick = () => {
-    navigate("/institute/profile");
+    navigate("/institutes/profile");
   };
 
   const handleSignout = () => {
@@ -17,7 +17,7 @@ const Institute_home = () => {
 
   const handleOrderClick = () => {
     // ✅ Corrected route to match nested route definition
-    navigate("/institutes/home/placeorder");
+    navigate("/institutes/placeorder");
   };
 
   return (
