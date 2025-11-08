@@ -41,6 +41,12 @@ const Institute_home = () => {
           >
             👩‍⚕️ Orders from Employees
           </li>
+          <li
+            className="mb-3 p-2 rounded hover:bg-secondary cursor-pointer"
+            onClick={() => navigate("/institutes/inventory")}
+          >
+            👩‍⚕️ Inventory
+          </li>
         </ul>
       </div>
 

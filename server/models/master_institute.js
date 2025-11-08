@@ -29,20 +29,7 @@ const InstituteSchema = new Schema({
   ],
 
   // Orders placed by the institute to manufacturers
-  Orders: [
-    {
-      Manufacturer_ID: { type: Schema.Types.ObjectId, ref: 'Manufacturer', required: true },
-      Medicine_ID: { type: Schema.Types.ObjectId, ref: 'Medicine', required: true },
-      Quantity_Requested: { type: Number, required: true },
-      Status: {
-        type: String,
-        enum: ['PENDING', 'APPROVED', 'REJECTED', 'DELIVERED'],
-        default: 'PENDING'
-      },
-      Order_Date: { type: Date, default: Date.now },
-      Delivery_Date: { type: Date }
-    }
-  ]
+  Orders: [{ type: Schema.Types.ObjectId, ref: "Order" }]
 });
 InstituteSchema.plugin(AutoIncrement, { inc_field: "Institute_ID" });
 module.exports = mongoose.model('Institute', InstituteSchema);

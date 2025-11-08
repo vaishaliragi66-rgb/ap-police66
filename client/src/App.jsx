@@ -15,7 +15,7 @@ import FamilyMemberRegistration from "./components/employee/FamilyMemberRegistra
 import InstituteProfile from "./components/institutes/institute_profile";
 import Institutes_placeorder from "./components/institutes/institute_placeorder";
 import Institute_manufacture from "./components/institutes/institute_manufacture";
-
+import InstituteInventory from "./components/institutes/institute_inventory";
 function App() {
   const router = createBrowserRouter([
     {
@@ -66,6 +66,10 @@ function App() {
     {
       path:"/institutes/manufacturer-orders",
       element:<Institute_manufacture/>
+    },
+    {
+      path:"/institutes/inventory",
+      element:<InstituteInventory/>
     },
     {
         path:"/employee-register",

@@ -6,6 +6,7 @@ function Institutes_placeorder() {
     Manufacturer_Name: "",
     Manufacturer_ID: "",
     Medicine_Name: "",
+    Medicine_ID: "",
     Quantity_Requested: "",
   });
 
@@ -15,7 +16,7 @@ function Institutes_placeorder() {
 
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 5000;
 
-  // 🔹 Fetch manufacturers on mount
+  // Fetch manufacturers on mount
   useEffect(() => {
     const fetchManufacturers = async () => {
       try {
@@ -30,7 +31,7 @@ function Institutes_placeorder() {
     fetchManufacturers();
   }, []);
 
-  // 🔹 Fetch medicines for selected manufacturer
+  // Fetch medicines for selected manufacturer
   useEffect(() => {
     const fetchMedicines = async () => {
       if (!formData.Manufacturer_ID) return;
@@ -47,26 +48,38 @@ function Institutes_placeorder() {
     fetchMedicines();
   }, [formData.Manufacturer_ID]);
 
-  // Handle manufacturer select
+  // Handle manufacturer selection
   const handleManufacturerChange = (e) => {
     const selectedId = e.target.value;
     const selectedManufacturer = manufacturers.find((m) => m._id === selectedId);
+
     setFormData({
       ...formData,
       Manufacturer_ID: selectedId,
-      Manufacturer_Name: selectedManufacturer
-        ? selectedManufacturer.Manufacturer_Name
-        : "",
+      Manufacturer_Name: selectedManufacturer?.Manufacturer_Name || "",
       Medicine_Name: "",
+      Medicine_ID: "",
       Quantity_Requested: "",
     });
     setMedicines([]);
   };
 
+  // Handle medicine selection
+  const handleMedicineChange = (e) => {
+    const selectedId = e.target.value;
+    const selectedMedicine = medicines.find((m) => m._id === selectedId);
+
+    setFormData({
+      ...formData,
+      Medicine_ID: selectedId,
+      Medicine_Name: selectedMedicine?.Medicine_Name || "",
+    });
+  };
+
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // ✅ Handle form submit — call /institute-api
+  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -77,9 +90,15 @@ function Institutes_placeorder() {
         return;
       }
 
+      const payload = {
+        Manufacturer_ID: formData.Manufacturer_ID,
+        Medicine_ID: formData.Medicine_ID,
+        Quantity_Requested: formData.Quantity_Requested,
+      };
+
       const res = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}/institute-api/place_order/${instituteId}`,
-        formData
+        payload
       );
 
       setMessage(res.data.message || "Order placed successfully!");
@@ -87,33 +106,24 @@ function Institutes_placeorder() {
         Manufacturer_Name: "",
         Manufacturer_ID: "",
         Medicine_Name: "",
+        Medicine_ID: "",
         Quantity_Requested: "",
       });
       setMedicines([]);
     } catch (err) {
       console.error(err);
-      setMessage(err.response?.data?.error || "Error placing order");
+      setMessage(err.response?.data?.message || "Error placing order");
     }
   };
 
   return (
     <div
       className="d-flex justify-content-center align-items-center"
-      style={{
-        minHeight: "90vh",
-        backgroundColor: "#f0f2f5",
-        padding: "20px",
-      }}
+      style={{ minHeight: "90vh", backgroundColor: "#f0f2f5", padding: "20px" }}
     >
       <div
         className="card shadow"
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "30px",
-          width: "400px",
-          maxWidth: "90%",
-        }}
+        style={{ backgroundColor: "white", borderRadius: "12px", padding: "30px", width: "400px", maxWidth: "90%" }}
       >
         <h3 className="text-center text-primary mb-4 fw-bold">Place New Order</h3>
 
@@ -122,18 +132,8 @@ function Institutes_placeorder() {
           <div className="mb-3">
             <label className="form-label fw-semibold">Select Manufacturer</label>
             <select
-              name="Manufacturer_ID"
               value={formData.Manufacturer_ID}
-              onChange={(e) => {
-                const selectedManufacturer = manufacturers.find(
-                  (m) => m._id === e.target.value
-                );
-                setFormData({
-                  ...formData,
-                  Manufacturer_ID: selectedManufacturer?._id || "",
-                  Manufacturer_Name: selectedManufacturer?.Manufacturer_Name || "",
-                });
-              }}
+              onChange={handleManufacturerChange}
               className="form-select"
               required
             >
@@ -146,21 +146,19 @@ function Institutes_placeorder() {
             </select>
           </div>
 
-
           {/* Medicine dropdown */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Select Medicine</label>
             <select
-              name="Medicine_Name"
-              value={formData.Medicine_Name}
-              onChange={handleChange}
+              value={formData.Medicine_ID}
+              onChange={handleMedicineChange}
               className="form-select"
               required
               disabled={!formData.Manufacturer_ID}
             >
               <option value="">-- Select Medicine --</option>
               {medicines.map((med) => (
-                <option key={med._id} value={med.Medicine_Name}>
+                <option key={med._id} value={med._id}>
                   {med.Medicine_Name}
                 </option>
               ))}
@@ -182,23 +180,14 @@ function Institutes_placeorder() {
           </div>
 
           <div className="text-center">
-            <button
-              type="submit"
-              className="btn btn-primary px-4 py-2 fw-semibold rounded-3"
-            >
+            <button type="submit" className="btn btn-primary px-4 py-2 fw-semibold rounded-3">
               Place Order
             </button>
           </div>
         </form>
 
         {message && (
-          <p
-            className={`text-center mt-3 ${
-              message.toLowerCase().includes("error")
-                ? "text-danger"
-                : "text-success"
-            } fw-semibold`}
-          >
+          <p className={`text-center mt-3 ${message.toLowerCase().includes("error") ? "text-danger" : "text-success"} fw-semibold`}>
             {message}
           </p>
         )}
