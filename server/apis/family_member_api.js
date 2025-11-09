@@ -1,31 +1,53 @@
-const express = require('express');
-const FamilyMember = require('../models/family_member');
-const router = express.Router();
+const express = require("express");
+const expressAsyncHandler = require("express-async-handler");
+const FamilyMember = require("../models/family_member");
+const Employee = require("../models/employee");
 
-// Add family members for an employee
-router.post('/:employeeId/add-family-members', async (req, res) => {
-  try {
-    const { employeeId } = req.params;
-    const { familyMembers } = req.body;
+const familyApp = express.Router();
 
-    // Validate input
-    if (!familyMembers || !Array.isArray(familyMembers)) {
-      return res.status(400).json({ error: 'Invalid family members data.' });
+familyApp.post(
+  "/register",
+  expressAsyncHandler(async (req, res) => {
+    const { Name, Relationship, DOB, Medical_History, EmployeeId } = req.body;
+
+    if (!Name || !Relationship || !EmployeeId) {
+      return res
+        .status(400)
+        .json({ message: "Name, Relationship, and EmployeeId required" });
+    }
+    const employee = await Employee.findById(EmployeeId);
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Add employeeId to each family member
-    const familyMembersWithEmployeeId = familyMembers.map((member) => ({
-      ...member,
-      EmployeeId: employeeId,
-    }));
+    // SAFE AUTO-INCREMENT
+    const lastMember = await FamilyMember.findOne().sort({ Family_ID: -1 });
 
-    // Save family members to the database
-    const savedFamilyMembers = await FamilyMember.insertMany(familyMembersWithEmployeeId);
-    res.status(201).json({ message: 'Family members added successfully.', familyMembers: savedFamilyMembers });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while adding family members.' });
-  }
-});
+    const lastID = lastMember?.Family_ID;
+    const newID =
+      typeof lastID === "number" && !isNaN(lastID) ? lastID + 1 : 1;
 
-module.exports = router;
+    console.log("Generated Family_ID:", newID);
+
+    const member = new FamilyMember({
+      Family_ID: newID,
+      Employee: EmployeeId,
+      Name,
+      Relationship,
+      DOB,
+      Medical_History
+    });
+
+    const saved = await member.save();
+
+    employee.FamilyMembers.push(saved._id);
+    await employee.save();
+
+    res.status(201).json({
+      message: "Family member registered",
+      payload: saved
+    });
+  })
+);
+
+module.exports = familyApp;

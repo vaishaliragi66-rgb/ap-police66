@@ -1,62 +1,152 @@
-const express = require('express');
-const Employee = require('../models/employee');
-const router = express.Router();
+const express = require("express");
+const expressAsyncHandler = require("express-async-handler");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-// Employee registration endpoint
-router.post('/register', async (req, res) => {
-  try {
-    const { ABS_NO, Name, Designation, DOB, Address, Blood_Group, Medical_History } = req.body;
+const employeeApp = express.Router();
+const Employee = require("../models/employee"); // adjust path if needed
 
-    // Validate required fields
-    if (!ABS_NO || !Name) {
-      return res.status(400).json({ error: 'ABS_NO and Name are required fields.' });
+// ==========================================
+//  GET all employees
+// ==========================================
+employeeApp.get(
+  "/employees",
+  expressAsyncHandler(async (req, res) => {
+    const employees = await Employee.find();
+    res.status(200).json(employees);
+  })
+);
+
+// ==========================================
+//  POST - Register New Employee
+// ==========================================
+employeeApp.post(
+  "/register",
+  expressAsyncHandler(async (req, res) => {
+    const empData = req.body;
+    console.log("Received Employee Registration Data:", empData);
+
+    // ✅ Validate required fields
+    if (!empData.ABS_NO || !empData.Name || !empData.Email || !empData.Password) {
+      return res.status(400).json({ message: "ABS_NO, Name, Email, and Password are required" });
     }
 
-    // Create a new employee
+    // ✅ Check if email already exists
+    const existing = await Employee.findOne({ Email: empData.Email.trim() });
+    if (existing) {
+      return res.status(409).json({ message: "Employee already registered with this email" });
+    }
+
+    // ✅ Hash password
+    const hashedPassword = await bcrypt.hash(empData.Password, 10);
+
+    // ✅ Create and save employee
     const newEmployee = new Employee({
-      ABS_NO,
-      Name,
-      Designation,
-      DOB,
-      Address,
-      Blood_Group,
-      Medical_History
+      ABS_NO: empData.ABS_NO,
+      Name: empData.Name,
+      Email: empData.Email,
+      Password: hashedPassword,
+      Designation: empData.Designation || "",
+      Address: empData.Address || {},
+      Blood_Group: empData.Blood_Group || "",
+      Medical_History: empData.Medical_History || {},
     });
 
-    // Save to database
-    await newEmployee.save();
-    res.status(201).json({ message: 'Employee registered successfully', employee: newEmployee });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while registering the employee.' });
-  }
-});
+    const savedEmp = await newEmployee.save();
+    res.status(201).json({ message: "Employee Registered Successfully", payload: savedEmp });
+  })
+);
 
-// Add family members for an employee
-router.post('/:employeeId/add-family-members', async (req, res) => {
-  try {
-    const { employeeId } = req.params;
-    const { familyMembers } = req.body;
+// ==========================================
+//  POST - Employee Login
+// ==========================================
+employeeApp.post(
+  "/login",
+  expressAsyncHandler(async (req, res) => {
+    const { Email, Password } = req.body;
 
-    // Validate input
-    if (!familyMembers || !Array.isArray(familyMembers)) {
-      return res.status(400).json({ error: 'Invalid family members data.' });
-    }
+    if (!Email || !Password)
+      return res.status(400).json({ message: "Email and Password required" });
 
-    // Add employeeId to each family member
-    const familyMembersWithEmployeeId = familyMembers.map((member) => ({
-      ...member,
-      Employee_ABS_NO: employeeId,
-    }));
+    const employee = await Employee.findOne({ Email: Email.trim() });
+    if (!employee)
+      return res.status(401).json({ message: "Invalid email or password" });
 
-    // Save family members to the database
-    const FamilyMember = require('../models/family_member');
-    const savedFamilyMembers = await FamilyMember.insertMany(familyMembersWithEmployeeId);
-    res.status(201).json({ message: 'Family members added successfully.', familyMembers: savedFamilyMembers });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while adding family members.' });
-  }
-});
+    const isMatch = await bcrypt.compare(Password, employee.Password);
+    if (!isMatch)
+      return res.status(401).json({ message: "Invalid email or password" });
 
-module.exports = router;
+    const token = jwt.sign({ id: employee._id }, "empsecret123", { expiresIn: "1h" });
+
+    res.status(200).json({
+      message: "Login successful",
+      payload: {
+        token,
+        id: employee._id,
+        Name: employee.Name,
+        Designation: employee.Designation,
+      },
+    });
+  })
+);
+
+// ==========================================
+//  GET - Employee Profile
+// ==========================================
+employeeApp.get(
+  "/profile/:id",
+  expressAsyncHandler(async (req, res) => {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(400).json({ message: "Invalid Employee ID" });
+
+    const emp = await Employee.findById(id);
+    if (!emp) return res.status(404).json({ message: "Employee not found" });
+
+    res.status(200).json(emp);
+  })
+);
+
+// ==========================================
+//  PUT - Update Employee Profile
+// ==========================================
+employeeApp.put(
+  "/profile/:id",
+  expressAsyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const allowed = ["Name", "Designation", "Email", "Address", "Blood_Group", "Medical_History"];
+    const update = {};
+
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined) update[field] = req.body[field];
+    });
+
+    if (Object.keys(update).length === 0)
+      return res.status(400).json({ message: "No valid fields to update" });
+
+    const emp = await Employee.findByIdAndUpdate(id, update, { new: true });
+    if (!emp) return res.status(404).json({ message: "Employee not found" });
+
+    res.status(200).json({ message: "Profile updated successfully", profile: emp });
+  })
+);
+
+// ==========================================
+//  DELETE - Remove Employee
+// ==========================================
+employeeApp.delete(
+  "/delete/:id",
+  expressAsyncHandler(async (req, res) => {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(400).json({ message: "Invalid Employee ID" });
+
+    const emp = await Employee.findByIdAndDelete(id);
+    if (!emp) return res.status(404).json({ message: "Employee not found" });
+
+    res.status(200).json({ message: "Employee deleted successfully" });
+  })
+);
+
+module.exports = employeeApp;

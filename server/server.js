@@ -11,9 +11,13 @@ app.use(express.json());
 const manufacturerApp = require('./apis/manufacture_api'); 
 const instituteApp = require('./apis/institute_api');
 const medicineApp = require("./apis/medicines_api");
+const employeeApp=require('./apis/employee_api')
+const familyApp=require('./apis/family_member_api')
 app.use("/medicine-api", medicineApp);
 app.use("/institute-api", instituteApp);
 app.use("/manufacturer-api", manufacturerApp);
+app.use("/employee-api",employeeApp);
+app.use("/family-api",familyApp);
 // Base route
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 
