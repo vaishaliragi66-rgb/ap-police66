@@ -11,11 +11,13 @@ import Add_medicine from "./components/manufacturer/Add_medicine";
 import Medicines_table from "./components/manufacturer/Medicines_table";
 import Profile_manu from "./components/manufacturer/Profile_manu";
 import EmployeeRegistration from "./components/employee/EmployeeRegistration";
-import FamilyMemberRegistration from "./components/employee/FamilyMemberRegistration";
+import FamilyMemberRegistration from "./components/employee/FamilyRegistration";
 import InstituteProfile from "./components/institutes/institute_profile";
 import Institutes_placeorder from "./components/institutes/institute_placeorder";
 import Institute_manufacture from "./components/institutes/institute_manufacture";
 import InstituteInventory from "./components/institutes/institute_inventory";
+import EmployeeLogin from "./components/employee/Employeelogin";
+import EmployeeHome from "./components/employee/EmployeeHome";
 function App() {
   const router = createBrowserRouter([
     {
@@ -72,14 +74,17 @@ function App() {
       element:<InstituteInventory/>
     },
     {
-        path:"/employee-register",
-        element:<EmployeeRegistration/>,
-        children:[
-          {
-          path: "family-member-register",
-          element: <FamilyMemberRegistration />,
-        }
-        ]
+      path:"/employee/register",
+      element:<EmployeeRegistration/>
+    },{
+      path:"/employee/login",
+      element:<EmployeeLogin/>
+    },{
+      path:"/employee/home",
+      element:<EmployeeHome/>
+    },{
+      path:"/employee/family_register",
+      element:<FamilyMemberRegistration/>
     }
   ]);
 
