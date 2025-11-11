@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FaTruck } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function Institute_manufacture() {
@@ -25,10 +26,8 @@ function Institute_manufacture() {
         const ordersWithDisplay = res.data.map((order) => ({
           ...order,
           Display_Status: order.institute_Status || "PENDING",
-          Manufacturer_Name:
-            order.Manufacturer_ID?.Manufacturer_Name || "N/A",
-          Medicine_Name:
-            order.Medicine_ID?.Medicine_Name || "N/A",
+          Manufacturer_Name: order.Manufacturer_ID?.Manufacturer_Name || "N/A",
+          Medicine_Name: order.Medicine_ID?.Medicine_Name || "N/A",
         }));
 
         setOrders(ordersWithDisplay);
@@ -46,17 +45,16 @@ function Institute_manufacture() {
         typeof manufacturerId === "object" && manufacturerId._id
           ? manufacturerId._id
           : manufacturerId;
-      const ordId = orderId;
 
       const res = await axios.put(
         `http://localhost:${BACKEND_PORT_NO}/institute-api/orders/${encodeURIComponent(
           manId
-        )}/${encodeURIComponent(ordId)}/delivered`
+        )}/${encodeURIComponent(orderId)}/delivered`
       );
 
       setOrders((prev) =>
         prev.map((o) =>
-          o._id === ordId
+          o._id === orderId
             ? {
                 ...o,
                 Display_Status: res.data.instituteDelivered
@@ -74,38 +72,110 @@ function Institute_manufacture() {
     } catch (err) {
       console.error("Error marking as delivered:", err);
       const serverMsg =
-        err.response?.data?.message || err.message || "Failed to mark as delivered";
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to mark as delivered";
       alert(serverMsg);
     }
   };
 
   return (
-    <div className="container my-5">
-      <h2 className="text-center mb-4 text-primary">
-        Orders Placed to Manufacturers
-      </h2>
+    <div
+      className="container-fluid pb-5"
+      style={{
+        fontFamily: "Inter, sans-serif",
+        backgroundColor: "#fafafa",
+        minHeight: "100vh",
+      }}
+    >
+      {/* Sticky Header */}
+      <div
+        className="text-center py-4 position-sticky top-0 z-3"
+        style={{
+          backgroundColor: "#fff",
+          boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+        }}
+      >
+       
+        <h2
+          className="fw-bold text-dark mb-2"
+          style={{
+            fontSize: "2.3rem",
+            letterSpacing: "0.6px",
+          }}
+        >
+          Orders Placed to Manufacturers
+        </h2>
+        <div
+          style={{
+            width: "80px",
+            height: "3px",
+            backgroundColor: "#000",
+            borderRadius: "3px",
+            margin: "0 auto 10px auto",
+          }}
+        ></div>
+        <p className="text-muted" style={{ fontSize: "0.95rem" }}>
+          Review, track, and confirm deliveries for your medicine orders
+        </p>
+      </div>
+
+      {/* Table Section */}
       {orders.length === 0 ? (
-        <p className="text-center text-muted">No orders found.</p>
+        <p className="text-center text-muted mt-5">No orders found.</p>
       ) : (
-        <div className="table-responsive shadow">
-          <table className="table table-bordered table-striped text-center align-middle">
-            <thead className="table-primary">
+        <div
+          className="table-responsive shadow-sm rounded-4 mx-auto mt-4"
+          style={{
+            backgroundColor: "#fff",
+            border: "1px solid #eee",
+            maxWidth: "90%",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+          }}
+        >
+          <table
+            className="table align-middle text-center mb-0"
+            style={{ borderRadius: "15px" }}
+          >
+            <thead
+              style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                fontSize: "0.95rem",
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
+              }}
+            >
               <tr>
-                <th>S.No</th>
-                <th>Medicine Name</th>
+                <th>#</th>
+                <th>Medicine</th>
                 <th>Manufacturer</th>
-                <th>Quantity Requested</th>
+                <th>Quantity</th>
                 <th>Order Date</th>
                 <th>Delivery Date</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
             </thead>
+
             <tbody>
               {orders.map((order, idx) => (
-                <tr key={order._id}>
-                  <td>{idx + 1}</td>
-                  <td>{order.Medicine_Name}</td>
+                <tr
+                  key={order._id}
+                  style={{
+                    borderBottom: "1px solid #f1f1f1",
+                    transition: "all 0.25s ease",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#f7f7f7")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                >
+                  <td className="fw-semibold text-secondary">{idx + 1}</td>
+                  <td className="fw-medium">{order.Medicine_Name}</td>
                   <td>{order.Manufacturer_Name}</td>
                   <td>{order.Quantity_Requested}</td>
                   <td>{new Date(order.Order_Date).toLocaleDateString()}</td>
@@ -116,11 +186,11 @@ function Institute_manufacture() {
                   </td>
                   <td>
                     <span
-                      className={`badge ${
+                      className={`badge px-3 py-2 rounded-pill ${
                         order.Display_Status === "DELIVERED"
                           ? "bg-success"
                           : order.Display_Status === "APPROVED"
-                          ? "bg-info text-dark"
+                          ? "bg-dark"
                           : order.Display_Status === "PENDING"
                           ? "bg-secondary"
                           : "bg-warning text-dark"
@@ -130,14 +200,32 @@ function Institute_manufacture() {
                     </span>
                   </td>
                   <td>
-                    {order.institute_Status === "APPROVED" &&(
-                        <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => markAsDelivered(order.Manufacturer_ID, order._id)}
-                        >
-                          Mark Delivered
-                        </button>
-                      )}
+                    {order.institute_Status === "APPROVED" && (
+                      <button
+                        className="btn btn-sm fw-semibold d-flex align-items-center justify-content-center gap-2 mx-auto"
+                        style={{
+                          backgroundColor: "#000",
+                          color: "#fff",
+                          borderRadius: "50px",
+                          padding: "8px 22px",
+                          transition: "all 0.3s ease",
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.boxShadow =
+                            "0 6px 12px rgba(0,0,0,0.3)";
+                          e.target.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.boxShadow = "none";
+                          e.target.style.transform = "translateY(0)";
+                        }}
+                        onClick={() =>
+                          markAsDelivered(order.Manufacturer_ID, order._id)
+                        }
+                      >
+                        <FaTruck size={13} /> Delivered
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

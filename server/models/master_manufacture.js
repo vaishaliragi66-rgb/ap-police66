@@ -18,8 +18,7 @@ const ManufacturerSchema = new mongoose.Schema({
     Pincode: { type: String, required: true }
   },
   // ✅ UPDATED to match Institute schema
-  Orders: [{ type: Schema.Types.ObjectId, ref: "Order" }]
-  
+ Orders: [{ type: Schema.Types.ObjectId, ref: "Order" }]
 });
 
 // Auto increment Manufacturer_ID

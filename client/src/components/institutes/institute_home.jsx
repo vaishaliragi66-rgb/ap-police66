@@ -1,80 +1,159 @@
 import React, { useState } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
+import { IoClose, IoMenu } from "react-icons/io5";
 
 const Institute_home = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const handleProfileClick = () => {
-    navigate("/institutes/profile");
-  };
-
+  const handleProfileClick = () => navigate("/institutes/profile");
   const handleSignout = () => {
     localStorage.removeItem("institute");
-    navigate("/institutes/login");
+    navigate("/");
   };
-
-  const handleOrderClick = () => {
-    // ✅ Corrected route to match nested route definition
-    navigate("/institutes/placeorder");
-  };
+  const handleOrderClick = () => navigate("/institutes/placeorder");
 
   return (
-    <div className="d-flex min-vh-100">
+    <div
+      className="d-flex min-vh-100"
+      style={{
+        fontFamily: "Inter, sans-serif",
+        backgroundColor: "#f5f6f7",
+        overflowX: "hidden",
+      }}
+    >
       {/* Sidebar */}
       <div
-        className="bg-secondary text-white p-3"
-        style={{ width: "250px", minHeight: "100vh" }}
+        className={`bg-white text-dark p-4 border-end shadow-sm position-fixed h-100 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-100"
+        }`}
+        style={{
+          width: "260px",
+          minHeight: "100vh",
+          transition: "all 0.4s ease",
+          zIndex: 1050,
+        }}
       >
-        <h4 className="text-center mb-4">Institute Panel</h4>
-        <ul className="list-unstyled">
+        {/* Close Button */}
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h5
+            className="fw-bold mb-0"
+            style={{ fontSize: "1.25rem", letterSpacing: "0.3px" }}
+          >
+            Institute Panel
+          </h5>
+          <IoClose
+            size={28}
+            className="text-dark cursor-pointer"
+            onClick={() => setSidebarOpen(false)}
+            style={{ cursor: "pointer" }}
+          />
+        </div>
+
+        {/* Sidebar Items */}
+        <ul className="list-unstyled mt-4">
           <li
-            className="mb-3 p-2 rounded hover:bg-secondary cursor-pointer"
+            className="mb-3 p-2 rounded hover-item"
+            style={{ fontSize: "1.05rem" }}
             onClick={() => navigate("/institutes/manufacturer-orders")}
           >
             📦 Orders Medicines
           </li>
           <li
-            className="mb-3 p-2 rounded hover:bg-secondary cursor-pointer"
+            className="mb-3 p-2 rounded hover-item"
+            style={{ fontSize: "1.05rem" }}
             onClick={() => alert("Show employee orders")}
           >
             👩‍⚕️ Orders from Employees
           </li>
           <li
-            className="mb-3 p-2 rounded hover:bg-secondary cursor-pointer"
+            className="mb-3 p-2 rounded hover-item"
+            style={{ fontSize: "1.05rem" }}
             onClick={() => navigate("/institutes/inventory")}
           >
-            👩‍⚕️ Inventory
+            🧾 Inventory
           </li>
         </ul>
+
+        <p
+          className="text-center small mt-auto"
+          style={{
+            color: "#777",
+            marginTop: "100px",
+            fontSize: "0.85rem",
+            letterSpacing: "0.3px",
+          }}
+        >
+          © 2025 AP Police Health
+        </p>
       </div>
 
       {/* Main Content */}
-      <div className="flex-grow-1 p-4 position-relative">
+      <div
+        className="flex-grow-1"
+        style={{
+          marginLeft: sidebarOpen ? "260px" : "0px",
+          transition: "all 0.4s ease",
+          width: "100%",
+        }}
+      >
         {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3 className="fw-bold text-secondary">Institute Dashboard</h3>
+        <div
+          className="d-flex justify-content-between align-items-center p-3 bg-white shadow-sm"
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+          }}
+        >
+          <div className="d-flex align-items-center gap-3">
+            {!sidebarOpen && (
+              <IoMenu
+                size={30}
+                className="text-dark cursor-pointer"
+                onClick={() => setSidebarOpen(true)}
+                style={{ cursor: "pointer" }}
+              />
+            )}
+            <h3
+              className="fw-bold mb-0"
+              style={{ color: "#111", fontSize: "1.7rem" }}
+            >
+              Institute Dashboard
+            </h3>
+          </div>
 
+          {/* Profile Icon */}
           <div className="position-relative">
             <FaUserCircle
-              size={36}
-              className="text-secondary cursor-pointer"
+              size={38}
+              className="text-dark cursor-pointer"
               onClick={() => setShowDropdown(!showDropdown)}
+              style={{ cursor: "pointer" }}
             />
             {showDropdown && (
               <div
                 className="position-absolute bg-white border rounded shadow p-2"
-                style={{ right: 0, top: "40px", zIndex: 100 }}
+                style={{
+                  right: 0,
+                  top: "45px",
+                  width: "160px",
+                  zIndex: 100,
+                }}
               >
                 <p
-                  className="mb-2 cursor-pointer text-secondary"
+                  className="mb-2 fw-semibold text-black small"
+                  style={{ cursor: "pointer" }}
                   onClick={handleProfileClick}
                 >
                   Profile
                 </p>
+                <hr className="my-1" />
                 <p
-                  className="mb-0 cursor-pointer text-danger"
+                  className="mb-0 fw-semibold text-black small"
+                  style={{ cursor: "pointer" }}
                   onClick={handleSignout}
                 >
                   Sign Out
@@ -84,45 +163,87 @@ const Institute_home = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="row g-4 mb-4">
-          <div className="col-md-4">
-            <div className="card shadow text-center p-3 border-0">
-              <h5 className="text-secondary">Total Employees</h5>
-              <h3 className="fw-bold">25</h3>
+        {/* Dashboard Stats */}
+        <div className="container py-4">
+          <div className="row g-4">
+            <div className="col-md-4">
+              <div className="card text-center p-3 border-0 shadow-sm rounded-4">
+                <h6 className="text-muted mb-1">Total Employees</h6>
+                <h3 className="fw-bold text-dark">25</h3>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="card text-center p-3 border-0 shadow-sm rounded-4">
+                <h6 className="text-muted mb-1">Total Orders Placed</h6>
+                <h3 className="fw-bold text-dark">40</h3>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="card text-center p-3 border-0 shadow-sm rounded-4">
+                <h6 className="text-muted mb-1">Registered Employees</h6>
+                <h3 className="fw-bold text-dark">18</h3>
+              </div>
             </div>
           </div>
 
-          <div className="col-md-4">
-            <div className="card shadow text-center p-3 border-0">
-              <h5 className="text-secondary">Total Orders Placed</h5>
-              <h3 className="fw-bold">40</h3>
-            </div>
+          {/* Place Order Button */}
+          <div className="text-center mt-5">
+            <button
+              className="btn px-5 py-2 fw-semibold"
+              onClick={handleOrderClick}
+              style={{
+                background: "linear-gradient(180deg, #1c1c1c, #000)",
+                color: "#fff",
+                borderRadius: "10px",
+                letterSpacing: "0.3px",
+                transition: "0.3s ease",
+                fontSize: "1rem",
+              }}
+              onMouseOver={(e) =>
+                (e.target.style.background =
+                  "linear-gradient(180deg, #000, #1c1c1c)")
+              }
+              onMouseOut={(e) =>
+                (e.target.style.background =
+                  "linear-gradient(180deg, #1c1c1c, #000)")
+              }
+            >
+              ➕ Place New Order
+            </button>
           </div>
 
-          <div className="col-md-4">
-            <div className="card shadow text-center p-3 border-0">
-              <h5 className="text-secondary">Registered Employees</h5>
-              <h3 className="fw-bold">18</h3>
-            </div>
+          {/* Nested Outlet */}
+          <div className="mt-5">
+            <Outlet />
           </div>
-        </div>
-
-        {/* Place Order Button */}
-        <div className="text-center mt-4">
-          <button
-            className="btn btn-primary px-4 py-2 rounded-3"
-            onClick={handleOrderClick}
-          >
-            ➕ Place New Order
-          </button>
-        </div>
-
-        {/* ✅ Outlet for nested routes */}
-        <div className="mt-5">
-          <Outlet />
         </div>
       </div>
+
+      {/* Hover effect for sidebar links */}
+      <style>
+        {`
+          .hover-item {
+            color: #333;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+          }
+
+          .hover-item:hover {
+            background-color: #f0f0f0;
+            color: #000;
+            transform: translateX(2px);
+          }
+
+          .translate-x-0 {
+            transform: translateX(0);
+          }
+
+          .-translate-x-100 {
+            transform: translateX(-100%);
+          }
+        `}
+      </style>
     </div>
   );
 };

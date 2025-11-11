@@ -15,9 +15,11 @@ import FamilyMemberRegistration from "./components/employee/FamilyRegistration";
 import InstituteProfile from "./components/institutes/institute_profile";
 import Institutes_placeorder from "./components/institutes/institute_placeorder";
 import Institute_manufacture from "./components/institutes/institute_manufacture";
-import InstituteInventory from "./components/institutes/institute_inventory";
-import EmployeeLogin from "./components/employee/Employeelogin";
+import OrdersInstitutes from './components/manufacturer/OrdersInstitutes'
+import ManufacturerLayout from "./components/manufacturer/ManufacturerLayout";
+import EmployeeLogin from "./components/employee/EmployeeLogin";
 import EmployeeHome from "./components/employee/EmployeeHome";
+import InstituteInventory from "./components/institutes/institute_inventory";
 function App() {
   const router = createBrowserRouter([
     {
@@ -33,9 +35,13 @@ function App() {
       element: <Register_manu />,
     },
     {
-      path: "/manufacturer-home/:Manufacturer_Name",
-      element: <Home_manu />,
+      path: "/manufacturer-layout/:Manufacturer_Name",
+      element: <ManufacturerLayout />,
       children:[
+        {
+          path: "home_manu",
+          element: <Home_manu />,
+        },
         {
           path: "add_medicine",
           element: <Add_medicine />,
@@ -47,6 +53,10 @@ function App() {
         {
           path:"profile_manufacturer",
           element:<Profile_manu />
+        },
+        {
+          path:"orders_institutes",
+          element:<OrdersInstitutes />
         }
       ]
     },{
@@ -74,17 +84,21 @@ function App() {
       element:<InstituteInventory/>
     },
     {
-      path:"/employee/register",
-      element:<EmployeeRegistration/>
-    },{
-      path:"/employee/login",
-      element:<EmployeeLogin/>
-    },{
-      path:"/employee/home",
+      path:"/employee-register",
+      element:<EmployeeRegistration/>,
+    },
+    {
+      path:"/employee-login",
+      element:<EmployeeLogin/>,
+      
+    },
+    {
+      path: "employee/family_register",
+      element: <FamilyMemberRegistration />,
+    },
+    {
+      path:"employee/home",
       element:<EmployeeHome/>
-    },{
-      path:"/employee/family_register",
-      element:<FamilyMemberRegistration/>
     }
   ]);
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { FaPills } from "react-icons/fa"; // 💊 Medicine icon
 
 const Add_medicine = () => {
   const [manufacturer, setManufacturer] = useState(null);
@@ -14,27 +15,23 @@ const Add_medicine = () => {
 
   useEffect(() => {
     const storedData = localStorage.getItem("manufacturer");
-  
+
     if (!storedData || storedData === "undefined") {
-      console.warn("⚠️ No manufacturer data found in localStorage");
       alert("⚠️ Manufacturer not logged in!");
       window.location.href = "/manufacturer-login";
       return;
     }
-  
+
     try {
       const parsed = JSON.parse(storedData);
       const manu = parsed.manufacturer ? parsed.manufacturer : parsed;
       setManufacturer(manu);
     } catch (error) {
-      console.error("Error parsing manufacturer data:", error);
       localStorage.removeItem("manufacturer");
       alert("⚠️ Invalid session. Please log in again.");
       window.location.href = "/manufacturer-login";
     }
   }, []);
-  
-  
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -49,18 +46,12 @@ const Add_medicine = () => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:6100/medicine-api/medicine_add",
-        {
-          ...formData,
-          Manufacturer_ID: manufacturer._id, // ✅ use _id from localStorage
-        }
-      );
+      await axios.post("http://localhost:6100/medicine-api/medicine_add", {
+        ...formData,
+        Manufacturer_ID: manufacturer._id,
+      });
 
       alert("✅ Medicine added successfully!");
-      console.log(response.data);
-
-      // Reset form
       setFormData({
         Medicine_Code: "",
         Medicine_Name: "",
@@ -70,8 +61,8 @@ const Add_medicine = () => {
         Threshold_Qty: "",
       });
     } catch (error) {
-      console.error("Error adding medicine:", error);
       alert("❌ Failed to add medicine");
+      console.error("Error adding medicine:", error);
     }
   };
 
@@ -84,98 +75,149 @@ const Add_medicine = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mt-6">
-      <h2 className="text-2xl font-semibold mb-4 text-center">Add Medicine</h2>
+    <div
+      className="min-h-screen flex flex-col items-center justify-start bg-[#f7f7f7] px-4 pt-16"
+    >
+      {/* Page Header */}
+      <div className="text-center mb-5">
+        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
+          Add Medicine
+        </h2>
+        <p className="text-gray-500 mt-1 text-sm">
+          Register a new medicine under your manufacturer account
+        </p>
+      </div>
 
-      <p className="text-center text-gray-600 mb-4">
-        Logged in as <strong>{manufacturer.Manufacturer_Name}</strong> (ID:{" "}
-        <span className="font-mono">{manufacturer._id}</span>)
-      </p>
-
-      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Medicine Code</label>
-          <input
-            type="text"
-            name="Medicine_Code"
-            value={formData.Medicine_Code}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200"
-          />
+      {/* Card */}
+      <div
+        className="bg-white shadow-lg border border-gray-200 rounded-xl p-6 w-full max-w-lg text-center"
+        style={{
+          boxShadow:
+            "0 8px 25px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.06)",
+        }}
+      >
+        {/* Icon */}
+        <div
+          className="flex justify-center items-center mb-4 mx-auto"
+          style={{
+            backgroundColor: "#f1f3f2",
+            width: "70px",
+            height: "70px",
+            borderRadius: "50%",
+            boxShadow: "inset 0 0 6px rgba(0,0,0,0.08)",
+          }}
+        >
+          <FaPills size={35} color="#333" />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Medicine Name</label>
-          <input
-            type="text"
-            name="Medicine_Name"
-            value={formData.Medicine_Name}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200"
-          />
-        </div>
+        {/* Manufacturer Info */}
+        <p className="text-gray-600 mb-5 text-sm">
+          Logged in as <strong>{manufacturer.Manufacturer_Name}</strong> (ID:{" "}
+          <span className="font-mono text-gray-700">{manufacturer._id}</span>)
+        </p>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Type</label>
-          <input
-            type="text"
-            name="Type"
-            value={formData.Type}
-            onChange={handleChange}
-            className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200"
-            placeholder="e.g., Tablet, Syrup"
-          />
-        </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 text-left">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Medicine Code
+            </label>
+            <input
+              type="text"
+              name="Medicine_Code"
+              value={formData.Medicine_Code}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 focus:ring-0 focus:border-black bg-gray-50 text-sm"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Category</label>
-          <input
-            type="text"
-            name="Category"
-            value={formData.Category}
-            onChange={handleChange}
-            className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200"
-            placeholder="e.g., Antibiotic"
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Medicine Name
+            </label>
+            <input
+              type="text"
+              name="Medicine_Name"
+              value={formData.Medicine_Name}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 focus:ring-0 focus:border-black bg-gray-50 text-sm"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Quantity</label>
-          <input
-            type="number"
-            name="Quantity"
-            value={formData.Quantity}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200"
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Type
+            </label>
+            <input
+              type="text"
+              name="Type"
+              value={formData.Type}
+              onChange={handleChange}
+              placeholder="e.g., Tablet, Syrup"
+              className="w-full border border-gray-300 rounded-md p-2 focus:ring-0 focus:border-black bg-gray-50 text-sm"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Threshold Quantity
-          </label>
-          <input
-            type="number"
-            name="Threshold_Qty"
-            value={formData.Threshold_Qty}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200"
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Category
+            </label>
+            <input
+              type="text"
+              name="Category"
+              value={formData.Category}
+              onChange={handleChange}
+              placeholder="e.g., Antibiotic"
+              className="w-full border border-gray-300 rounded-md p-2 focus:ring-0 focus:border-black bg-gray-50 text-sm"
+            />
+          </div>
 
-        <div className="col-span-2 text-center">
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-all"
-          >
-            Add Medicine
-          </button>
-        </div>
-      </form>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Quantity
+            </label>
+            <input
+              type="number"
+              name="Quantity"
+              value={formData.Quantity}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 focus:ring-0 focus:border-black bg-gray-50 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Threshold Quantity
+            </label>
+            <input
+              type="number"
+              name="Threshold_Qty"
+              value={formData.Threshold_Qty}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 focus:ring-0 focus:border-black bg-gray-50 text-sm"
+            />
+          </div>
+
+          {/* Button */}
+          <div className="col-span-2 text-center mt-3">
+            <button
+              type="submit"
+              className="bg-black text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-[#1a1a1a] transition-all"
+            >
+              Add Medicine
+            </button>
+          </div>
+        </form>
+
+        {/* Footer */}
+        <p className="text-center text-gray-400 mt-4 text-xs">
+          © 2025 AP Police Health Division
+        </p>
+      </div>
     </div>
   );
 };
