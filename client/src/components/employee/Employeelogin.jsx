@@ -4,18 +4,20 @@ import { Link, useNavigate } from "react-router-dom";
 import { FaUserLock } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const EmployeeLogin = () => {
-  const [email, setEmail] = useState("");
+const Employeelogin = () => {
+  const [absNo, setAbsNo] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  const employeeName = localStorage.getItem("employeeName")
+  
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const res = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}/employee-api/login`,
-        { Email: email, Password: password }
+        { ABS_NO: absNo, Password: password }
       );
 
       alert("✅ Login successful!");
@@ -25,8 +27,9 @@ const EmployeeLogin = () => {
       localStorage.setItem("employeeId", res.data.payload.id);
       localStorage.setItem("employeeName", res.data.payload.Name);
       localStorage.setItem("employeeDesignation", res.data.payload.Designation);
+      localStorage.setItem("employeeABS", res.data.payload.ABS_NO);
 
-      navigate("employee/home");
+      navigate("/employee/home");
     } catch (error) {
       alert(error.response?.data?.message || "❌ Invalid credentials");
     }
@@ -69,17 +72,17 @@ const EmployeeLogin = () => {
         }}
       >
         <form onSubmit={handleLogin}>
-          {/* Email */}
+          {/* ABS Number */}
           <div className="mb-3">
             <label className="form-label text-muted small fw-semibold">
-              Email
+              ABS Number
             </label>
             <input
-              type="email"
+              type="text"
               className="form-control border-0 shadow-sm"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your ABS Number"
+              value={absNo}
+              onChange={(e) => setAbsNo(e.target.value)}
               required
               style={{
                 backgroundColor: "#f8f8f8",
@@ -150,4 +153,4 @@ const EmployeeLogin = () => {
   );
 };
 
-export default EmployeeLogin;
+export default Employeelogin;

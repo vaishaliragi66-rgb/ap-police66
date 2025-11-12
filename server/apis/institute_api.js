@@ -423,35 +423,46 @@ instituteApp.put(
 instituteApp.get("/inventory/:instituteId", async (req, res) => {
   try {
     const { instituteId } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+    if (!mongoose.Types.ObjectId.isValid(instituteId))
       return res.status(400).json({ error: "Invalid Institute ID" });
-    }
 
     const institute = await Institute.findById(instituteId).populate({
       path: "Medicine_Inventory.Medicine_ID",
       model: "Medicine",
       populate: {
         path: "Manufacturer_ID",
-        model: "Manufacturer"
-      }
+        model: "Manufacturer",
+      },
     });
 
     if (!institute) return res.status(404).json({ error: "Institute not found" });
 
-    const inventory = institute.Medicine_Inventory.map(item => ({
-      medicineName: item.Medicine_ID.Medicine_Name,
-      manufacturerName: item.Medicine_ID.Manufacturer_ID.Manufacturer_Name,
+    const inventory = institute.Medicine_Inventory.map((item) => ({
+      medicineId: item.Medicine_ID?._id,
+      medicineName: item.Medicine_ID?.Medicine_Name,
+      manufacturerName: item.Medicine_ID?.Manufacturer_ID?.Manufacturer_Name,
       quantity: item.Quantity,
-      threshold: item.Medicine_ID.Threshold_Qty
+      threshold: item.Medicine_ID?.Threshold_Qty || 0,
     }));
 
-    return res.status(200).json(inventory);
-
+    res.status(200).json(inventory);
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Failed to fetch inventory" });
+    console.error("Inventory fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch inventory" });
   }
 });
+
+// GET single institute by ID
+instituteApp.get("/institution/:id", async (req, res) => {
+  try {
+    console.log(req.params.id)
+    const institute = await Institute.findById(req.params.id);
+    if (!institute) return res.status(404).json({ message: "Institute not found" });
+    res.json(institute);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 module.exports = instituteApp;

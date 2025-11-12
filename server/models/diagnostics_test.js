@@ -1,7 +1,11 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const { Schema } = mongoose;
-const DiagnosticsTestSchema = new Schema({
-  Test_ID: { type: Number, unique: true },
-  Test_Name: { type: String, required: true },
-});
-module.exports = mongoose.model('DiagnosticsTest', DiagnosticsTestSchema);
+
+const DiagnosisTestSchema = new Schema({
+  Test_Name: { type: String, required: true, unique: true },
+  Group: { type: String },
+  Reference_Range: { type: String },
+  Units: { type: String }
+}, { timestamps: true });
+
+module.exports = mongoose.model("DiagnosisTest", DiagnosisTestSchema);

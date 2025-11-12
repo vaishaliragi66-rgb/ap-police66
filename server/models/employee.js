@@ -15,8 +15,21 @@ const EmployeeSchema = new Schema({
     Pincode: String
   },
   Blood_Group: String,
-  Medical_History: Object,
-  FamilyMembers: [{ type: Schema.Types.ObjectId, ref: "FamilyMember" }]
+  FamilyMembers: [{ type: Schema.Types.ObjectId, ref: "FamilyMember" }],
+  Medical_History: [
+  {
+    Date: { type: Date, default: Date.now },
+    Diagnosis: String,
+    Medicines: [
+      {
+        Medicine_Name: String,
+        Quantity: Number
+      }
+    ],
+    Notes: String
+  }
+]
+  
 });
 
 module.exports = mongoose.model("Employee", EmployeeSchema);

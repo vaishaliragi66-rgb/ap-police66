@@ -13,12 +13,16 @@ const manufacturerApp = require('./apis/manufacture_api');
 const instituteApp = require('./apis/institute_api');
 const medicineApp = require("./apis/medicines_api");
 const employeeApp=require('./apis/employee_api')
-const familyApp=require('./apis/family_member_api')
+const FamilyApp=require('./apis/family_member_api')
+const prescriptionApp = require("./apis/prescription-api");
+const diagnosisApp=require("./apis/diagnosis_api")
 app.use("/medicine-api", medicineApp);
 app.use("/institute-api", instituteApp);
 app.use("/manufacturer-api", manufacturerApp);
 app.use("/employee-api",employeeApp);
-app.use("/family-api",familyApp);
+app.use("/family-api",FamilyApp);
+app.use("/prescription-api", prescriptionApp);
+app.use("/diagnosis-api",diagnosisApp);
 // Base route
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 

@@ -1,38 +1,28 @@
+// server/apis/family_member_api.js
 const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
 const FamilyMember = require("../models/family_member");
 const Employee = require("../models/employee");
 
-const familyApp = express.Router();
+const FamilyApp = express.Router();
 
-familyApp.post(
+// ✅ Register a new family member
+FamilyApp.post(
   "/register",
   expressAsyncHandler(async (req, res) => {
-    const { Name, Relationship, DOB, Medical_History, EmployeeId } = req.body;
+    const { Name, Gender, Relationship, DOB, Medical_History, EmployeeId } = req.body;
 
-    if (!Name || !Relationship || !EmployeeId) {
-      return res
-        .status(400)
-        .json({ message: "Name, Relationship, and EmployeeId required" });
+    if (!Name || !Gender || !Relationship || !EmployeeId) {
+      return res.status(400).json({ message: "Name, Gender, Relationship, and EmployeeId required" });
     }
+
     const employee = await Employee.findById(EmployeeId);
-    if (!employee) {
-      return res.status(404).json({ message: "Employee not found" });
-    }
-
-    // SAFE AUTO-INCREMENT
-    const lastMember = await FamilyMember.findOne().sort({ Family_ID: -1 });
-
-    const lastID = lastMember?.Family_ID;
-    const newID =
-      typeof lastID === "number" && !isNaN(lastID) ? lastID + 1 : 1;
-
-    console.log("Generated Family_ID:", newID);
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
 
     const member = new FamilyMember({
-      Family_ID: newID,
       Employee: EmployeeId,
       Name,
+      Gender,
       Relationship,
       DOB,
       Medical_History
@@ -43,11 +33,20 @@ familyApp.post(
     employee.FamilyMembers.push(saved._id);
     await employee.save();
 
-    res.status(201).json({
-      message: "Family member registered",
-      payload: saved
-    });
+    res.status(201).json({ message: "Family member registered", payload: saved });
   })
 );
 
-module.exports = familyApp;
+// ✅ Fetch all family members for a given employee
+FamilyApp.get("/family/:employeeId", async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.params.employeeId).populate("FamilyMembers");
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
+    res.json(employee.FamilyMembers || []);
+  } catch (err) {
+    console.error("Error fetching family members:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+module.exports = FamilyApp;

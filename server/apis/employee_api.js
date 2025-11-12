@@ -10,13 +10,12 @@ const Employee = require("../models/employee"); // adjust path if needed
 // ==========================================
 //  GET all employees
 // ==========================================
-employeeApp.get(
-  "/employees",
-  expressAsyncHandler(async (req, res) => {
-    const employees = await Employee.find();
-    res.status(200).json(employees);
-  })
-);
+// employeeApp (routes)
+employeeApp.get("/employees", expressAsyncHandler(async (req, res) => {
+  // return only necessary fields
+  const employees = await Employee.find({}, "_id ABS_NO Name");
+  res.status(200).json(employees);
+}));
 
 // ==========================================
 //  POST - Register New Employee
@@ -61,21 +60,24 @@ employeeApp.post(
 // ==========================================
 //  POST - Employee Login
 // ==========================================
+// ==========================================
+//  POST - Employee Login (by ABS_NO instead of Email)
+// ==========================================
 employeeApp.post(
   "/login",
   expressAsyncHandler(async (req, res) => {
-    const { Email, Password } = req.body;
+    const { ABS_NO, Password } = req.body;
 
-    if (!Email || !Password)
-      return res.status(400).json({ message: "Email and Password required" });
+    if (!ABS_NO || !Password)
+      return res.status(400).json({ message: "ABS Number and Password required" });
 
-    const employee = await Employee.findOne({ Email: Email.trim() });
+    const employee = await Employee.findOne({ ABS_NO: ABS_NO.trim() });
     if (!employee)
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid ABS Number or password" });
 
     const isMatch = await bcrypt.compare(Password, employee.Password);
     if (!isMatch)
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid ABS Number or password" });
 
     const token = jwt.sign({ id: employee._id }, "empsecret123", { expiresIn: "1h" });
 
@@ -86,10 +88,12 @@ employeeApp.post(
         id: employee._id,
         Name: employee.Name,
         Designation: employee.Designation,
+        ABS_NO: employee.ABS_NO,
       },
     });
   })
 );
+
 
 // ==========================================
 //  GET - Employee Profile
@@ -148,5 +152,7 @@ employeeApp.delete(
     res.status(200).json({ message: "Employee deleted successfully" });
   })
 );
+
+
 
 module.exports = employeeApp;

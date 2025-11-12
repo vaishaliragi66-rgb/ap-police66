@@ -59,21 +59,39 @@ const Institute_home = () => {
             style={{ fontSize: "1.05rem" }}
             onClick={() => navigate("/institutes/manufacturer-orders")}
           >
-            📦 Orders Medicines
+             Orders Medicines
           </li>
+
           <li
             className="mb-3 p-2 rounded hover-item"
             style={{ fontSize: "1.05rem" }}
             onClick={() => alert("Show employee orders")}
           >
-            👩‍⚕️ Orders from Employees
+            Orders from Employees
           </li>
+
           <li
             className="mb-3 p-2 rounded hover-item"
             style={{ fontSize: "1.05rem" }}
             onClick={() => navigate("/institutes/inventory")}
           >
-            🧾 Inventory
+             Inventory
+          </li>
+
+          {/* NEW: Prescriptions Link */}
+          <li
+            className="mb-3 p-2 rounded hover-item"
+            style={{ fontSize: "1.05rem" }}
+            onClick={() => navigate("/institutions/prescriptions")}
+          >
+             Prescriptions
+          </li>
+          <li
+            className="mb-3 p-2 rounded hover-item"
+            style={{ fontSize: "1.05rem" }}
+            onClick={() => navigate("/institutions/diagnosis-entry")}
+          >
+             Diagnosis
           </li>
         </ul>
 
@@ -86,7 +104,7 @@ const Institute_home = () => {
             letterSpacing: "0.3px",
           }}
         >
-          © 2025 AP Police Health
+          ©️ 2025 AP Police Health
         </p>
       </div>
 

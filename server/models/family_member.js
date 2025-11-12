@@ -2,12 +2,12 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const FamilyMemberSchema = new Schema({
-  Family_ID: { type: Number, unique: true },
-  Employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
+  Employee: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
   Name: { type: String, required: true },
-  Relationship: { type: String, required: true },
+  Relationship: { type: String, required: true, enum: ["Father", "Mother", "Wife", "Child"] },
   DOB: { type: Date },
-  Medical_History: { type: String }
+  Gender: { type: String, required: true, enum: ["Male", "Female"] },
+  Medical_History: Object
 });
 
 module.exports = mongoose.model("FamilyMember", FamilyMemberSchema);

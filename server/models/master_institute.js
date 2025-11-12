@@ -28,6 +28,9 @@ const InstituteSchema = new Schema({
     }
   ],
 
+  Employees: [{ type: Schema.Types.ObjectId, ref: "Employee" }],
+  Family_member: [{ type: Schema.Types.ObjectId, ref: "FamilyMember" }],
+
   // Orders placed by the institute to manufacturers
   Orders: [{ type: Schema.Types.ObjectId, ref: "Order" }]
 });

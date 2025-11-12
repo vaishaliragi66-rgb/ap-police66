@@ -61,3 +61,7 @@ GET http://localhost:6100/medicine-api/medicine/name/PainAway
 
 ###delete a medicine by id
 DELETE http://localhost:6100/medicine-api/medicine_delete/1
+
+
+###
+GET http://localhost:6100/family-api/family/673369fa1f1c7e63f4c5be21

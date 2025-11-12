@@ -20,6 +20,10 @@ import ManufacturerLayout from "./components/manufacturer/ManufacturerLayout";
 import EmployeeLogin from "./components/employee/EmployeeLogin";
 import EmployeeHome from "./components/employee/EmployeeHome";
 import InstituteInventory from "./components/institutes/institute_inventory";
+import PharmacyPrescriptionForm from "./components/institutes/PharmacyPrescriptionForm";
+import DiagnosisEntryForm from "./components/institutes/DiagnosisEntryForm";
+import PrescriptionReport from "./components/employee/PrescriptionReport";
+import DiagnosisReport from './components/employee/DiagnosisReport'
 function App() {
   const router = createBrowserRouter([
     {
@@ -97,8 +101,24 @@ function App() {
       element: <FamilyMemberRegistration />,
     },
     {
+      path:"institutions/diagnosis-entry",
+      element:<DiagnosisEntryForm/>
+    },
+    {
+      path: "employee/prescription-report",
+      element: <PrescriptionReport />,
+    },
+    {
+      path: "employee/diagnosis-report",
+      element: <DiagnosisReport />,
+    },
+    
+    {
       path:"employee/home",
       element:<EmployeeHome/>
+    },{
+      path:"institutions/prescriptions",
+      element:<PharmacyPrescriptionForm/>
     }
   ]);
 
