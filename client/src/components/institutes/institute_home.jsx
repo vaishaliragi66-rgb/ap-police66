@@ -81,10 +81,21 @@ const Institute_home = () => {
           {/* NEW: Prescriptions Link */}
           <li
             className="mb-3 p-2 rounded hover-item"
-            style={{ fontSize: "1.05rem" }}
+            onClick={() => navigate("/institutions/diseases")}
+          >
+            🧬 Diseases
+          </li>
+          <li
+            className="mb-3 p-2 rounded hover-item"
             onClick={() => navigate("/institutions/prescriptions")}
           >
-             Prescriptions
+            💊 Prescriptions
+          </li>
+          <li
+            className="mb-3 p-2 rounded hover-item"
+            onClick={() => navigate("/institutions/reports")}
+          >
+            📋 View Employee Reports
           </li>
           <li
             className="mb-3 p-2 rounded hover-item"
