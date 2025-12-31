@@ -78,5 +78,18 @@ FamilyApp.get("/family/:employeeId", async (req, res) => {
       .json({ message: "Server error", error: err.message });
   }
 });
+FamilyApp.get(
+  "/family-report/:id",
+  expressAsyncHandler(async (req, res) => {
+    const fam = await FamilyMember.findById(req.params.id).populate({
+      path: "Medical_History.Disease",
+      select: "Disease_Name Category Severity_Level",
+    });
 
+    if (!fam)
+      return res.status(404).json({ message: "Family member not found" });
+
+    res.json(fam);
+  })
+);
 module.exports = FamilyApp;

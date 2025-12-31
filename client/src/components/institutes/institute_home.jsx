@@ -85,7 +85,7 @@ const Institute_home = () => {
     { icon: <FaBox />, label: "Inventory", path: "/institutes/inventory" },
     { icon: <FaVials />, label: "Diseases", path: "/institutions/diseases" },
     { icon: <FaPills />, label: "Prescriptions", path: "/institutions/prescriptions" },
-    { icon: <FaFileMedical />, label: "View Employee Reports", path: "/institutions/reports" },
+    { icon: <FaFileMedical />, label: "View Employee Reports", path: "/institutions/analytics" },
     { icon: <FaClipboardList />, label: "Diagnosis", path: "/institutions/diagnosis-entry" },
     { icon: <FaClipboardList />, label: "Ledger", path: "/institutes/ledger" },
   ];
@@ -318,7 +318,7 @@ const Institute_home = () => {
                         <div className="col-md-4">
                           <button 
                             className="btn btn-info w-100 py-3 d-flex align-items-center justify-content-center gap-2"
-                            onClick={() => navigate("/institutions/reports")}
+                            onClick={() => navigate("/institutions/analytics")}
                           >
                             <FaFileMedical /> View Reports
                           </button>

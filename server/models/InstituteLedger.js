@@ -18,6 +18,7 @@ const InstituteLedgerSchema = new Schema(
 
     Reference_ID: {
       type: Schema.Types.ObjectId,
+      // ref: "Prescription",
       required: true
       // Order _id OR Prescription _id
     },

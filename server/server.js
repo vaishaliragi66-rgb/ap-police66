@@ -18,6 +18,9 @@ const prescriptionApp = require("./apis/prescription-api");
 const diagnosisApp=require("./apis/diagnosis_api")
 const diseaseApp=require("./apis/institute_enter_disease");
 const ledgerApp = require("./apis/instituteLedgerApi");
+const analyticsApi = require("./apis/analytics-api");
+app.use("/analytics-api", analyticsApi);
+
 app.use("/medicine-api", medicineApp);
 app.use("/institute-api", instituteApp);
 app.use("/manufacturer-api", manufacturerApp);

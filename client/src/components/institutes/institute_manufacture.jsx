@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaTruck } from "react-icons/fa";
+import { FaTruck, FaFilePdf } from "react-icons/fa";
+import jsPDF from "jspdf";
+
+import autoTable from "jspdf-autotable";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function Institute_manufacture() {
@@ -39,6 +42,7 @@ function Institute_manufacture() {
     fetchOrders();
   }, [BACKEND_PORT_NO]);
 
+  // 🔹 Mark order as delivered
   const markAsDelivered = async (manufacturerId, orderId) => {
     try {
       const manId =
@@ -68,14 +72,88 @@ function Institute_manufacture() {
         )
       );
 
-      alert(res.data.message || "Order updated");
+      alert(res.data.message || "Order updated successfully!");
     } catch (err) {
       console.error("Error marking as delivered:", err);
-      const serverMsg =
+      alert(
         err.response?.data?.message ||
-        err.message ||
-        "Failed to mark as delivered";
-      alert(serverMsg);
+          "Error updating delivery status. Please try again."
+      );
+    }
+  };
+
+  // 🔹 Generate Pharmacy Receipt PDF (simplified)
+  const generateReceipt = (order) => {
+    if (order.Display_Status !== "DELIVERED") {
+      alert("Receipt is available only for delivered orders!");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const now = new Date();
+      const billDate = now.toLocaleString();
+
+      // Header
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("OUT-PATIENT PHARMACY", 70, 20);
+      doc.setFontSize(14);
+      doc.text("PHARMACY SALE RECEIPT", 75, 27);
+
+      doc.setLineWidth(0.5);
+      doc.line(10, 30, 200, 30);
+
+      // Basic Details
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Receipt No: ${order._id.slice(-6).toUpperCase()}`, 12, 38);
+      doc.text(`Bill Date: ${billDate}`, 150, 38);
+      doc.text(`Manufacturer: ${order.Manufacturer_Name}`, 12, 46);
+      doc.text(`Medicine: ${order.Medicine_Name}`, 12, 53);
+      doc.text(`Quantity: ${order.Quantity_Requested}`, 150, 46);
+      doc.text(`Status: ${order.Display_Status}`, 150, 53);
+
+      doc.line(10, 58, 200, 58);
+
+      // Table (simplified)
+      autoTable(doc, {
+        startY: 65,
+        head: [["Batch No", "Expiry", "Qty"]],
+        body: [
+          [
+            "LOT" + Math.floor(Math.random() * 90 + 10),
+            "31/12/2026",
+            order.Quantity_Requested,
+          ],
+        ],
+        theme: "grid",
+        styles: { halign: "center", fontSize: 11 },
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+      });
+
+      const finalY = doc.lastAutoTable.finalY + 10;
+
+      // Delivery Stamp
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("DELIVERED", 90, finalY + 20);
+      doc.setFont("helvetica", "normal");
+      doc.text(now.toDateString(), 85, finalY + 27);
+
+      // Footer Info
+      doc.setFontSize(9);
+      doc.text(
+        "AP Police Health Institute\nSystem Generated Receipt\nwww.appolicehealth.in",
+        14,
+        finalY + 40
+      );
+
+      // Save
+      doc.save(`Pharmacy_Receipt_${order._id.slice(-6)}.pdf`);
+    } catch (err) {
+      console.error("Error generating receipt:", err);
+      alert("Failed to generate PDF receipt.");
     }
   };
 
@@ -88,7 +166,7 @@ function Institute_manufacture() {
         minHeight: "100vh",
       }}
     >
-      {/* Sticky Header */}
+      {/* Header */}
       <div
         className="text-center py-4 position-sticky top-0 z-3"
         style={{
@@ -96,7 +174,6 @@ function Institute_manufacture() {
           boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
         }}
       >
-       
         <h2
           className="fw-bold text-dark mb-2"
           style={{
@@ -120,7 +197,7 @@ function Institute_manufacture() {
         </p>
       </div>
 
-      {/* Table Section */}
+      {/* Orders Table */}
       {orders.length === 0 ? (
         <p className="text-center text-muted mt-5">No orders found.</p>
       ) : (
@@ -133,10 +210,7 @@ function Institute_manufacture() {
             boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
           }}
         >
-          <table
-            className="table align-middle text-center mb-0"
-            style={{ borderRadius: "15px" }}
-          >
+          <table className="table align-middle text-center mb-0">
             <thead
               style={{
                 backgroundColor: "#000",
@@ -200,32 +274,34 @@ function Institute_manufacture() {
                     </span>
                   </td>
                   <td>
-                    {order.institute_Status === "APPROVED" && (
-                      <button
-                        className="btn btn-sm fw-semibold d-flex align-items-center justify-content-center gap-2 mx-auto"
-                        style={{
-                          backgroundColor: "#000",
-                          color: "#fff",
-                          borderRadius: "50px",
-                          padding: "8px 22px",
-                          transition: "all 0.3s ease",
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.boxShadow =
-                            "0 6px 12px rgba(0,0,0,0.3)";
-                          e.target.style.transform = "translateY(-2px)";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.boxShadow = "none";
-                          e.target.style.transform = "translateY(0)";
-                        }}
-                        onClick={() =>
-                          markAsDelivered(order.Manufacturer_ID, order._id)
-                        }
-                      >
-                        <FaTruck size={13} /> Delivered
-                      </button>
-                    )}
+                    <div className="d-flex justify-content-center gap-2">
+                      {order.institute_Status === "APPROVED" && (
+                        <button
+                          className="btn btn-sm fw-semibold d-flex align-items-center gap-2"
+                          style={{
+                            backgroundColor: "#000",
+                            color: "#fff",
+                            borderRadius: "50px",
+                            padding: "8px 18px",
+                          }}
+                          onClick={() =>
+                            markAsDelivered(order.Manufacturer_ID, order._id)
+                          }
+                        >
+                          <FaTruck size={13} /> Delivered
+                        </button>
+                      )}
+
+                      {/* Show Receipt button only for delivered orders */}
+                      {order.Display_Status === "DELIVERED" && (
+                        <button
+                          className="btn btn-sm btn-outline-dark d-flex align-items-center gap-2"
+                          onClick={() => generateReceipt(order)}
+                        >
+                          <FaFilePdf size={14} /> Receipt
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

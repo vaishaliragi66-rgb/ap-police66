@@ -50,15 +50,7 @@ const PharmacyPrescriptionForm = () => {
     const res = await axios.get(
       `http://localhost:${BACKEND_PORT}/institute-api/inventory/${id}`
     );
-
-    const normalized = res.data.map((item) => ({
-      Medicine_ID: item.Medicine_ID._id,
-      Medicine_Name: item.Medicine_ID.Medicine_Name,
-      Quantity: item.Quantity,
-      Threshold: item.Medicine_ID.Threshold_Qty
-    }));
-
-    setInventory(normalized);
+    setInventory(res.data || []);
   };
 
   /* ================= EMPLOYEE SEARCH ================= */
@@ -98,32 +90,41 @@ const PharmacyPrescriptionForm = () => {
       .then((res) => setFamilyMembers(res.data || []));
   }, [formData.Employee_ID]);
 
-  /* ================= MEDICINES ================= */
-  const handleMedicineChange = (i, field, value) => {
+   // 🟢 Medicine Handlers
+  const handleMedicineChange = (index, field, value) => {
     setFormData((prev) => {
-      const meds = [...prev.Medicines];
-      meds[i][field] = value;
-      return { ...prev, Medicines: meds };
+      const updated = [...prev.Medicines];
+      if (field === "medicineId") {
+  const selected = inventory.find(m => m.medicineId === value);
+
+  updated[index] = {
+    medicineId: selected?.medicineId || "",
+    medicineName: selected?.medicineName || "",
+    quantity: 0
+  };
+}
+ else if (field === "quantity") {
+        updated[index].quantity = value;
+      }
+      console.log("Updated Medicines:", updated);
+      return { ...prev, Medicines: updated };
     });
   };
 
-  const addMedicine = () => {
-    setFormData((f) => ({
-      ...f,
+  const addMedicine = () =>
+    setFormData((prev) => ({
+      ...prev,
       Medicines: [
-        ...f.Medicines,
-        { Medicine_ID: "", Medicine_Name: "", Quantity: "" }
-      ]
+        ...prev.Medicines,
+        { medicineId: "", medicineName: "", quantity: 0 },
+      ],
     }));
-  };
 
-  const removeMedicine = (i) => {
-    setFormData((f) => ({
-      ...f,
-      Medicines: f.Medicines.filter((_, idx) => idx !== i)
+  const removeMedicine = (index) =>
+    setFormData((prev) => ({
+      ...prev,
+      Medicines: prev.Medicines.filter((_, i) => i !== index),
     }));
-  };
-
   /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -138,20 +139,23 @@ const PharmacyPrescriptionForm = () => {
       return;
     }
 
-    const payload = {
-      Institute_ID: formData.Institute_ID,
-      Employee_ID: formData.Employee_ID,
-      IsFamilyMember: formData.IsFamilyMember,
-      FamilyMember_ID: formData.IsFamilyMember
-        ? formData.FamilyMember_ID
-        : null,
-      Medicines: formData.Medicines.map((m) => ({
-        Medicine_ID: m.Medicine_ID,
-        Medicine_Name: m.Medicine_Name,
-        Quantity: Number(m.Quantity)
-      })),
-      Notes: formData.Notes
-    };
+   const payload = {
+  Institute_ID: formData.Institute_ID,
+  Employee_ID: formData.Employee_ID,
+  IsFamilyMember: formData.IsFamilyMember,
+  FamilyMember_ID: formData.IsFamilyMember
+    ? formData.FamilyMember_ID
+    : null,
+
+  Medicines: formData.Medicines.map(m => ({
+    Medicine_ID: m.medicineId,
+    Medicine_Name: m.medicineName,
+    Quantity: Number(m.quantity)
+  })),
+
+  Notes: formData.Notes
+};
+
 
     try {
       await axios.post(
@@ -262,65 +266,70 @@ const PharmacyPrescriptionForm = () => {
             )}
 
             {/* Medicines */}
-            <h6 className="mt-4">Medicines</h6>
-            {formData.Medicines.map((m, i) => (
-              <div className="row g-2 mb-2" key={i}>
-                <div className="col-md-6">
-                  <select
-                    className="form-select"
-                    value={m.Medicine_ID}
-                    onChange={(e) => {
-                      const med = inventory.find(
-                        (x) => x.Medicine_ID === e.target.value
-                      );
-                      handleMedicineChange(i, "Medicine_ID", e.target.value);
-                      handleMedicineChange(
-                        i,
-                        "Medicine_Name",
-                        med?.Medicine_Name || ""
-                      );
-                    }}
-                  >
-                    <option value="">Select Medicine</option>
-                    {inventory.map((med) => (
-                      <option key={med.Medicine_ID} value={med.Medicine_ID}>
-                        {med.Medicine_Name} (Stock: {med.Quantity})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+           <h4 style={{ marginTop: 20 }}>Medicines</h4>
+        {formData.Medicines.map((med, i) => (
+          <div key={i} style={{ marginBottom: 12 }}>
+            <select
+              value={med.medicineId}
+              onChange={(e) =>
+                handleMedicineChange(i, "medicineId", e.target.value)
+              }
+              required
+              style={{
+                width: "70%",
+                padding: 8,
+                borderRadius: 6,
+                marginRight: 8,
+              }}
+            >
+              <option value="">Select Medicine</option>
+              {inventory.map((m) => (
+                <option key={m.medicineId} value={m.medicineId}>
+                  {m.medicineName} ({m.manufacturerName}) — Available:{" "}
+                  {m.quantity}
+                </option>
+              ))}
+            </select>
 
-                <div className="col-md-3">
-                  <input
-                    type="number"
-                    className="form-control"
-                    placeholder="Qty"
-                    value={m.Quantity}
-                    onChange={(e) =>
-                      handleMedicineChange(i, "Quantity", e.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="col-md-3">
-                  <button
-                    type="button"
-                    className="btn btn-danger w-100"
-                    onClick={() => removeMedicine(i)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-
+            <input
+              type="number"
+              value={med.quantity}
+              placeholder="Qty"
+              onChange={(e) =>
+                handleMedicineChange(i, "quantity", e.target.value)
+              }
+              required
+              style={{ width: "20%", padding: 8, borderRadius: 6 }}
+            />
             <button
               type="button"
-              className="btn btn-outline-primary mt-2"
-              onClick={addMedicine}
+              onClick={() => removeMedicine(i)}
+              style={{
+                marginLeft: 5,
+                background: "red",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "6px 10px",
+              }}
             >
-              + Add Medicine
+              X
             </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={addMedicine}
+          style={{
+            background: "#007bff",
+            color: "#fff",
+            border: "none",
+            padding: 8,
+            borderRadius: 6,
+          }}
+        >
+          + Add Medicine
+        </button>
 
             {/* Notes */}
             <div className="mt-3">
