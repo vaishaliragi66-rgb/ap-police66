@@ -8,7 +8,7 @@ const InstituteSchema = new Schema({
 
   Profile_Pic: {
     type: String,
-    default: null   // optional
+    default: null
   },
 
   Address: {
@@ -18,30 +18,19 @@ const InstituteSchema = new Schema({
     Pincode: { type: String, required: true }
   },
 
-  Email_ID: {
-    type: String,
-    required: true
-  },
-
-  password: {
-    type: String,
-    required: true
-  },
-
+  Email_ID: { type: String, required: true },
+  password: { type: String, required: true },
   Contact_No: { type: String },
 
-  // Medicines currently available in the institute
   Medicine_Inventory: [
     {
       Medicine_ID: { type: Schema.Types.ObjectId, ref: "Medicine", required: true },
-      Quantity: { type: Number, required: true, default: 0 }
+      Quantity: { type: Number, default: 0 }
     }
   ],
 
   Employees: [{ type: Schema.Types.ObjectId, ref: "Employee" }],
   Family_member: [{ type: Schema.Types.ObjectId, ref: "FamilyMember" }],
-
-  // Orders placed by the institute to manufacturers
   Orders: [{ type: Schema.Types.ObjectId, ref: "Order" }]
 });
 

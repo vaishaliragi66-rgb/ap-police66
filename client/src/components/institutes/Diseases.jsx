@@ -79,9 +79,19 @@ const Diseases = () => {
       const res = await axios.get(
         `http://localhost:${BACKEND_PORT_NO}/employee-api/employees`
       );
+      // Use employee-api/all instead of /employees if needed
       setEmployees(res.data || []);
     } catch (err) {
       console.error("Error fetching employees:", err);
+      // Try alternative endpoint
+      try {
+        const altRes = await axios.get(
+          `http://localhost:${BACKEND_PORT_NO}/employee-api/all`
+        );
+        setEmployees(altRes.data?.employees || []);
+      } catch (altErr) {
+        console.error("Alternative endpoint also failed:", altErr);
+      }
     }
   };
 
@@ -99,23 +109,64 @@ const Diseases = () => {
     }
   }, [searchTerm, employees]);
 
-  // Fetch family members when employee changes
+  // Fetch family members when employee changes - FIXED
   useEffect(() => {
     const fetchFamilyMembers = async () => {
-      if (!formData.Employee_ID) return setFamilyMembers([]);
+      if (!formData.Employee_ID) {
+        setFamilyMembers([]);
+        return;
+      }
+      
       try {
+        console.log("Fetching family for employee ID:", formData.Employee_ID);
+        
+        // Try with employee's _id
         const res = await axios.get(
           `http://localhost:${BACKEND_PORT_NO}/family-api/family/${formData.Employee_ID}`
         );
+        
+        console.log("Family API response:", res.data);
         setFamilyMembers(res.data || []);
+        
+        // If no response, try alternative approach
+        if (!res.data || res.data.length === 0) {
+          console.log("No family members found via direct API, trying alternative...");
+          // Check if employee data includes family members
+          const employeeRes = await axios.get(
+            `http://localhost:${BACKEND_PORT_NO}/employee-api/profile/${formData.Employee_ID}`
+          );
+          
+          if (employeeRes.data?.FamilyMembers) {
+            // If employee has FamilyMembers field, fetch details for each
+            const familyPromises = employeeRes.data.FamilyMembers.map(async (familyId) => {
+              try {
+                const familyRes = await axios.get(
+                  `http://localhost:${BACKEND_PORT_NO}/family-api/member/${familyId}`
+                );
+                return familyRes.data;
+              } catch (err) {
+                console.error(`Error fetching family member ${familyId}:`, err);
+                return null;
+              }
+            });
+            
+            const familyDetails = await Promise.all(familyPromises);
+            setFamilyMembers(familyDetails.filter(f => f !== null));
+          }
+        }
       } catch (err) {
         console.error("Error fetching family members:", err);
+        setFamilyMembers([]);
       }
     };
-    fetchFamilyMembers();
+    
+    if (formData.Employee_ID) {
+      fetchFamilyMembers();
+    }
   }, [formData.Employee_ID]);
 
   const handleEmployeeSelect = (emp) => {
+    console.log("Selected employee:", emp);
     setFormData((prev) => ({ ...prev, Employee_ID: emp._id }));
     setSearchTerm(emp.ABS_NO || "");
     setFilteredEmployees([]);
@@ -123,6 +174,16 @@ const Diseases = () => {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleCheckboxChange = (e) => {
+    const { name, checked } = e.target;
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: checked,
+      // Reset family member ID when checkbox is unchecked
+      ...(name === "IsFamilyMember" && !checked ? { FamilyMember_ID: "" } : {})
+    }));
   };
 
   // Handle category change
@@ -164,23 +225,26 @@ const Diseases = () => {
       Disease_Name: formData.Disease_Name,
       Category: formData.Category,
       Description: formData.Description,
-      Symptoms: formData.Symptoms.split(",").map((s) => s.trim()),
-      Common_Medicines: formData.Common_Medicines.split(",").map((m) =>
-        m.trim()
-      ),
+      Symptoms: formData.Symptoms.split(",").map((s) => s.trim()).filter(s => s),
+      Common_Medicines: formData.Common_Medicines.split(",").map((m) => m.trim()).filter(m => m),
       Severity_Level: formData.Severity_Level,
       Notes: formData.Notes,
     };
 
+    console.log("Submitting payload:", payload);
+
     try {
-      await axios.post(
+      const response = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}/disease-api/diseases`,
         payload
       );
+      
       alert("✅ Disease record saved successfully!");
+      console.log("Response:", response.data);
 
+      // Reset form
       setFormData({
-        ...formData,
+        Institute_ID: formData.Institute_ID, // Keep institute ID
         Employee_ID: "",
         IsFamilyMember: false,
         FamilyMember_ID: "",
@@ -195,9 +259,10 @@ const Diseases = () => {
       setSearchTerm("");
       setFamilyMembers([]);
       setShowOtherDiseaseInput(false);
+      setFilteredEmployees([]);
     } catch (err) {
-      console.error("Error saving disease:", err);
-      alert("❌ Error saving disease record");
+      console.error("Error saving disease:", err.response?.data || err.message);
+      alert(`❌ Error saving disease record: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -215,251 +280,308 @@ const Diseases = () => {
         padding: 24,
         background: "#fff",
         borderRadius: 8,
+        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
       }}
     >
-      <h2 style={{ textAlign: "center" }}>🧬 Disease Entry Form</h2>
+      <h2 style={{ textAlign: "center", marginBottom: 24 }}>🧬 Disease Entry Form</h2>
 
       <form onSubmit={handleSubmit} autoComplete="off">
         {/* Institute */}
-        <label>Institute</label>
-        <input
-          type="text"
-          value={instituteName || "Loading..."}
-          readOnly
-          style={{
-            width: "100%",
-            padding: 8,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            marginBottom: 10,
-          }}
-        />
-
-        {/* Employee */}
-        <label>Employee ABS_NO</label>
-        <input
-          type="text"
-          placeholder="Type ABS_NO..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 8,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-          }}
-        />
-        {searchTerm && filteredEmployees.length > 0 && (
-          <div
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Institute</label>
+          <input
+            type="text"
+            value={instituteName || "Loading..."}
+            readOnly
             style={{
+              width: "100%",
+              padding: "8px 12px",
+              borderRadius: 6,
               border: "1px solid #ccc",
-              maxHeight: 150,
-              overflowY: "auto",
-              marginTop: 6,
+              backgroundColor: "#f5f5f5",
             }}
-          >
-            {filteredEmployees.map((emp) => (
-              <div
-                key={emp._id}
-                onClick={() => handleEmployeeSelect(emp)}
-                style={{
-                  padding: "8px 10px",
-                  cursor: "pointer",
-                  borderBottom: "1px solid #eee",
-                }}
-              >
-                {emp.ABS_NO} — {emp.Name}
-              </div>
-            ))}
-          </div>
-        )}
+          />
+        </div>
+
+        {/* Employee Search */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Employee ABS_NO</label>
+          <input
+            type="text"
+            placeholder="Type ABS_NO to search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              borderRadius: 6,
+              border: "1px solid #ccc",
+            }}
+          />
+          {searchTerm && filteredEmployees.length > 0 && (
+            <div
+              style={{
+                border: "1px solid #ddd",
+                borderTop: "none",
+                maxHeight: 150,
+                overflowY: "auto",
+                backgroundColor: "white",
+                borderRadius: "0 0 6px 6px",
+              }}
+            >
+              {filteredEmployees.map((emp) => (
+                <div
+                  key={emp._id}
+                  onClick={() => handleEmployeeSelect(emp)}
+                  style={{
+                    padding: "8px 12px",
+                    cursor: "pointer",
+                    borderBottom: "1px solid #eee",
+                    transition: "background-color 0.2s",
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = "#f5f5f5"}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                >
+                  <strong>{emp.ABS_NO}</strong> — {emp.Name} {emp.Email ? `(${emp.Email})` : ""}
+                </div>
+              ))}
+            </div>
+          )}
+          {searchTerm && filteredEmployees.length === 0 && (
+            <div style={{ padding: "8px 12px", color: "#666", fontStyle: "italic" }}>
+              No employees found
+            </div>
+          )}
+        </div>
 
         {/* Family Member Checkbox */}
-        <label style={{ marginTop: 12 }}>
-          <input
-            type="checkbox"
-            checked={formData.IsFamilyMember}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                IsFamilyMember: e.target.checked,
-              }))
-            }
-          />{" "}
-          Disease for Family Member?
-        </label>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              name="IsFamilyMember"
+              checked={formData.IsFamilyMember}
+              onChange={handleCheckboxChange}
+              style={{ marginRight: 8 }}
+            />
+            <span style={{ fontWeight: "bold" }}>Disease for Family Member?</span>
+          </label>
+        </div>
 
         {/* Family Member Select */}
         {formData.IsFamilyMember && (
-          <>
-            <label style={{ marginTop: 10 }}>Select Family Member</label>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Select Family Member</label>
             <select
               name="FamilyMember_ID"
               value={formData.FamilyMember_ID}
               onChange={handleChange}
+              required={formData.IsFamilyMember}
               style={{
                 width: "100%",
-                padding: 8,
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid #ccc",
+                backgroundColor: familyMembers.length === 0 ? "#f9f9f9" : "white",
+              }}
+            >
+              <option value="">Select Family Member</option>
+              {familyMembers.length === 0 ? (
+                <option value="" disabled>No family members found</option>
+              ) : (
+                familyMembers.map((f) => (
+                  <option key={f._id} value={f._id}>
+                    {f.Name} ({f.Relationship || "Unknown"})
+                  </option>
+                ))
+              )}
+            </select>
+            {familyMembers.length === 0 && formData.Employee_ID && (
+              <div style={{ fontSize: "12px", color: "#666", marginTop: 4 }}>
+                This employee has no registered family members.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Disease Details */}
+        <div style={{ marginTop: 24, marginBottom: 16 }}>
+          <h4 style={{ marginBottom: 16 }}>Disease Details</h4>
+          
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Category</label>
+            <select
+              name="Category"
+              value={formData.Category}
+              onChange={handleCategoryChange}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
                 borderRadius: 6,
                 border: "1px solid #ccc",
               }}
             >
-              <option value="">Select Family Member</option>
-              {familyMembers.map((f) => (
-                <option key={f._id} value={f._id}>
-                  {f.Name} ({f.Relationship})
+              <option value="Communicable">Communicable</option>
+              <option value="Non-Communicable">Non-Communicable</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Disease Name</label>
+            <select
+              name="Disease_Name"
+              value={formData.Disease_Name}
+              onChange={handleDiseaseNameChange}
+              required
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid #ccc",
+              }}
+            >
+              <option value="">Select Disease</option>
+              {currentDiseaseList.map((disease, idx) => (
+                <option key={idx} value={disease}>
+                  {disease}
                 </option>
               ))}
+              <option value="Other">Other (specify below)</option>
             </select>
-          </>
-        )}
+          </div>
 
-        {/* Disease Details */}
-        <h4 style={{ marginTop: 20 }}>Disease Details</h4>
+          {showOtherDiseaseInput && (
+            <div style={{ marginBottom: 16 }}>
+              <input
+                type="text"
+                placeholder="Enter custom disease name"
+                value={formData.Disease_Name}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    Disease_Name: e.target.value,
+                  }))
+                }
+                required
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #ccc",
+                }}
+              />
+            </div>
+          )}
 
-        <label>Category</label>
-        <select
-          name="Category"
-          value={formData.Category}
-          onChange={handleCategoryChange}
-          style={{
-            width: "100%",
-            padding: 8,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            marginBottom: 10,
-          }}
-        >
-          <option>Communicable</option>
-          <option>Non-Communicable</option>
-        </select>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Description</label>
+            <textarea
+              name="Description"
+              value={formData.Description}
+              onChange={handleChange}
+              placeholder="Brief description of the disease"
+              rows={3}
+              required
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid #ccc",
+                resize: "vertical",
+              }}
+            />
+          </div>
 
-        <label>Disease Name</label>
-        <select
-          name="Disease_Name"
-          value={formData.Disease_Name}
-          onChange={handleDiseaseNameChange}
-          required
-          style={{
-            width: "100%",
-            padding: 8,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            marginBottom: 10,
-          }}
-        >
-          <option value="">Select Disease</option>
-          {currentDiseaseList.map((disease, idx) => (
-            <option key={idx} value={disease}>
-              {disease}
-            </option>
-          ))}
-          <option value="Other">Other</option>
-        </select>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Symptoms (comma-separated)</label>
+            <input
+              type="text"
+              name="Symptoms"
+              value={formData.Symptoms}
+              onChange={handleChange}
+              placeholder="e.g., Fever, Cough, Fatigue"
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid #ccc",
+              }}
+            />
+          </div>
 
-        {showOtherDiseaseInput && (
-          <input
-            type="text"
-            placeholder="Enter custom disease name"
-            value={formData.Disease_Name}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                Disease_Name: e.target.value,
-              }))
-            }
-            style={{
-              width: "100%",
-              padding: 8,
-              borderRadius: 6,
-              border: "1px solid #ccc",
-              marginBottom: 10,
-            }}
-          />
-        )}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Common Medicines (comma-separated)</label>
+            <input
+              type="text"
+              name="Common_Medicines"
+              value={formData.Common_Medicines}
+              onChange={handleChange}
+              placeholder="e.g., Paracetamol, Ibuprofen, Antibiotics"
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid #ccc",
+              }}
+            />
+          </div>
 
-        <label>Description</label>
-        <textarea
-          name="Description"
-          value={formData.Description}
-          onChange={handleChange}
-          placeholder="Brief description of the disease"
-          rows={3}
-          style={{
-            width: "100%",
-            padding: 8,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            marginBottom: 10,
-          }}
-        />
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Severity Level</label>
+            <select
+              name="Severity_Level"
+              value={formData.Severity_Level}
+              onChange={handleChange}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid #ccc",
+              }}
+            >
+              <option value="Mild">Mild</option>
+              <option value="Moderate">Moderate</option>
+              <option value="Severe">Severe</option>
+              <option value="Chronic">Chronic</option>
+            </select>
+          </div>
 
-        <label>Symptoms (comma-separated)</label>
-        <input
-          type="text"
-          name="Symptoms"
-          value={formData.Symptoms}
-          onChange={handleChange}
-          placeholder="e.g., Fever, Cough, Fatigue"
-          style={{
-            width: "100%",
-            padding: 8,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            marginBottom: 10,
-          }}
-        />
-
-        
-
-        <label>Severity Level</label>
-        <select
-          name="Severity_Level"
-          value={formData.Severity_Level}
-          onChange={handleChange}
-          style={{
-            width: "100%",
-            padding: 8,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            marginBottom: 15,
-          }}
-        >
-          <option>Mild</option>
-          <option>Moderate</option>
-          <option>Severe</option>
-          <option>Chronic</option>
-        </select>
-
-        <label>Notes</label>
-        <textarea
-          name="Notes"
-          value={formData.Notes}
-          onChange={handleChange}
-          placeholder="Additional notes (optional)"
-          rows={3}
-          style={{
-            width: "100%",
-            padding: 8,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            marginBottom: 15,
-          }}
-        />
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Notes</label>
+            <textarea
+              name="Notes"
+              value={formData.Notes}
+              onChange={handleChange}
+              placeholder="Additional notes (optional)"
+              rows={3}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid #ccc",
+                resize: "vertical",
+              }}
+            />
+          </div>
+        </div>
 
         {/* Submit Button */}
         <button
           type="submit"
           style={{
-            marginTop: 20,
             width: "100%",
-            padding: 10,
-            background: "black",
+            padding: "12px",
+            background: "#000",
             color: "white",
             border: "none",
             borderRadius: 8,
             fontWeight: "bold",
+            fontSize: "16px",
+            cursor: "pointer",
+            transition: "background-color 0.2s",
           }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = "#333"}
+          onMouseLeave={(e) => e.target.style.backgroundColor = "#000"}
         >
           ➕ Submit Disease Record
         </button>

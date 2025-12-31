@@ -23,54 +23,58 @@ instituteApp.post(
   "/register/institute",
   expressAsyncHandler(async (req, res) => {
     const instituteData = req.body;
-    console.log("Received data:", instituteData);
 
-    // Check if institute already exists by name
-    const existingInstitute = await Institute.findOne({
-      Institute_Name: instituteData.Institute_Name,
-    });
+    const {
+      Institute_Name,
+      Email_ID,
+      password,
+      confirm_password,
+      Address,
+      Contact_No
+    } = instituteData;
+
+    // 🔒 Required field check
+    if (
+  !Institute_Name ||
+  !Email_ID ||
+  !password ||
+  !Address ||
+  !Address.Street ||
+  !Address.District ||
+  !Address.State ||
+  !Address.Pincode
+) {
+  return res.status(400).send({ message: "All required fields must be provided" });
+}
+
+
+
+
+    // 🔍 Duplicate check
+    const existingInstitute = await Institute.findOne({ Institute_Name });
     if (existingInstitute) {
       return res.status(409).send({ message: "Institute already exists" });
     }
 
-    // Validate required fields
-    if (
-      !instituteData.Institute_Name ||
-      !instituteData.Email_ID ||
-      !instituteData.password ||
-      !instituteData.Address ||
-      !instituteData.Address.Street ||
-      !instituteData.Address.District ||
-      !instituteData.Address.State ||
-      !instituteData.Address.Pincode
-    ) {
-      return res.status(400).send({ message: "All required fields must be provided" });
-    }
-
-    // Create and save new institute
     const newInstitute = new Institute({
-      Institute_Name: instituteData.Institute_Name,
-      Address: {
-        Street: instituteData.Address.Street,
-        District: instituteData.Address.District,
-        State: instituteData.Address.State,
-        Pincode: instituteData.Address.Pincode,
-      },
-      Email_ID: instituteData.Email_ID,
-      password: instituteData.password,
-      Contact_No: instituteData.Contact_No,
-      Medicine_Inventory: [], // empty initially
-      Orders: [], // empty initially
+      Institute_Name,
+      Email_ID,
+      password, // store only password
+      Contact_No,
+      Address,
+      Medicine_Inventory: [],
+      Orders: []
     });
 
     const savedInstitute = await newInstitute.save();
 
     res.status(201).send({
       message: "Institute registered successfully",
-      payload: savedInstitute,
+      payload: savedInstitute
     });
   })
 );
+
 
 // POST - Login Institute
 instituteApp.post(

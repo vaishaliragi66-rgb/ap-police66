@@ -8,6 +8,7 @@ const DiagnosisEntryForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [instituteName, setInstituteName] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     Institute_ID: "",
@@ -43,10 +44,19 @@ const DiagnosisEntryForm = () => {
 
   const fetchEmployees = async () => {
     try {
-      const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/employees`);
-      setEmployees(res.data || []);
+      const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/all`);
+      const employeesData = res.data?.employees || res.data || [];
+      setEmployees(employeesData);
+      console.log("Employees fetched:", employeesData.length);
     } catch (err) {
       console.error("Error fetching employees:", err);
+      // Try alternative endpoint
+      try {
+        const altRes = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/employees`);
+        setEmployees(altRes.data || []);
+      } catch (altErr) {
+        console.error("Alternative endpoint also failed:", altErr);
+      }
     }
   };
 
@@ -54,41 +64,115 @@ const DiagnosisEntryForm = () => {
     try {
       const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/diagnosis-api/tests`);
       setTestsMaster(res.data || []);
+      console.log("Tests fetched:", res.data?.length);
     } catch (err) {
       console.error("Error fetching tests:", err);
     }
   };
 
+  // Filter employees
   useEffect(() => {
     if (!searchTerm.trim()) return setFilteredEmployees([]);
     const q = searchTerm.toLowerCase();
-    setFilteredEmployees(employees.filter(e => String(e.ABS_NO || "").toLowerCase().startsWith(q)));
+    setFilteredEmployees(
+      employees.filter(e => 
+        String(e.ABS_NO || "").toLowerCase().startsWith(q) ||
+        String(e.Name || "").toLowerCase().includes(q)
+      )
+    );
   }, [searchTerm, employees]);
 
+  // Fetch family members - FIXED VERSION
   useEffect(() => {
     const fetchFamily = async () => {
-      if (!formData.Employee_ID) return setFamilyMembers([]);
+      if (!formData.Employee_ID) {
+        setFamilyMembers([]);
+        return;
+      }
+      
+      setLoading(true);
       try {
+        console.log("Fetching family for employee ID:", formData.Employee_ID);
+        
+        // Method 1: Direct family API
         const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/family-api/family/${formData.Employee_ID}`);
-        setFamilyMembers(res.data || []);
+        
+        console.log("Family API response:", res.data);
+        
+        if (res.data && res.data.length > 0) {
+          setFamilyMembers(res.data);
+        } else {
+          // Method 2: Try through employee endpoint
+          console.log("No direct family found, checking employee profile...");
+          const employeeRes = await axios.get(
+            `http://localhost:${BACKEND_PORT_NO}/employee-api/profile/${formData.Employee_ID}`
+          );
+          
+          if (employeeRes.data?.FamilyMembers && employeeRes.data.FamilyMembers.length > 0) {
+            // Fetch details for each family member
+            const familyDetails = await Promise.all(
+              employeeRes.data.FamilyMembers.map(async (memberId) => {
+                try {
+                  const memberRes = await axios.get(
+                    `http://localhost:${BACKEND_PORT_NO}/family-api/member/${memberId}`
+                  );
+                  return memberRes.data;
+                } catch (err) {
+                  console.error(`Error fetching family member ${memberId}:`, err);
+                  return null;
+                }
+              })
+            );
+            
+            const validMembers = familyDetails.filter(m => m !== null);
+            setFamilyMembers(validMembers);
+          } else {
+            setFamilyMembers([]);
+          }
+        }
       } catch (err) {
-        console.error("Error fetching family:", err);
+        console.error("Error fetching family members:", err);
+        setFamilyMembers([]);
+        
+        // Try debug endpoint
+        try {
+          const debugRes = await axios.get(`http://localhost:${BACKEND_PORT_NO}/debug/family-data`);
+          console.log("Debug family data:", debugRes.data);
+        } catch (debugErr) {
+          console.error("Debug endpoint failed:", debugErr);
+        }
+      } finally {
+        setLoading(false);
       }
     };
-    fetchFamily();
+    
+    if (formData.Employee_ID) {
+      fetchFamily();
+    } else {
+      setFamilyMembers([]);
+    }
   }, [formData.Employee_ID]);
 
   const handleEmployeeSelect = (emp) => {
+    console.log("Selected employee:", emp);
     setFormData(prev => ({ ...prev, Employee_ID: emp._id }));
     setSearchTerm(emp.ABS_NO || "");
     setFilteredEmployees([]);
+  };
+
+  const handleCheckboxChange = (e) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: checked,
+      ...(name === "IsFamilyMember" && !checked ? { FamilyMember_ID: "" } : {})
+    }));
   };
 
   const handleTestChange = (index, field, value) => {
     setFormData(prev => {
       const updated = [...prev.Tests];
       if (field === "Test_ID") {
-        // if selected from master list, fill Test_Name, Reference_Range, Units
         const sel = testsMaster.find(t => t._id === value);
         if (sel) {
           updated[index] = {
@@ -100,7 +184,11 @@ const DiagnosisEntryForm = () => {
             Remarks: ""
           };
         } else {
-          updated[index] = { ...updated[index], Test_ID: "", Test_Name: "" };
+          updated[index] = { 
+            ...updated[index], 
+            Test_ID: value || "", 
+            Test_Name: value ? updated[index].Test_Name : "" 
+          };
         }
       } else {
         updated[index] = { ...updated[index], [field]: value };
@@ -109,11 +197,54 @@ const DiagnosisEntryForm = () => {
     });
   };
 
-  const addTest = () => setFormData(prev => ({ ...prev, Tests: [...prev.Tests, { Test_ID: "", Test_Name: "", Result_Value: "", Reference_Range: "", Units: "" }] }));
-  const removeTest = (i) => setFormData(prev => ({ ...prev, Tests: prev.Tests.filter((_, idx) => idx !== i) }));
+  const addTest = () => setFormData(prev => ({ 
+    ...prev, 
+    Tests: [...prev.Tests, { 
+      Test_ID: "", 
+      Test_Name: "", 
+      Result_Value: "", 
+      Reference_Range: "", 
+      Units: "" 
+    }] 
+  }));
+  
+  const removeTest = (i) => setFormData(prev => ({ 
+    ...prev, 
+    Tests: prev.Tests.filter((_, idx) => idx !== i) 
+  }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.Institute_ID) {
+      alert("Institute ID is missing");
+      return;
+    }
+    
+    if (!formData.Employee_ID) {
+      alert("Please select an employee");
+      return;
+    }
+    
+    if (formData.Tests.length === 0) {
+      alert("Please add at least one test");
+      return;
+    }
+    
+    // Validate each test
+    for (let i = 0; i < formData.Tests.length; i++) {
+      const test = formData.Tests[i];
+      if (!test.Test_Name || test.Test_Name.trim() === "") {
+        alert(`Test name is required for test #${i + 1}`);
+        return;
+      }
+      if (!test.Result_Value || test.Result_Value.trim() === "") {
+        alert(`Result value is required for test #${i + 1}`);
+        return;
+      }
+    }
+
     const payload = {
       Institute_ID: formData.Institute_ID,
       Employee_ID: formData.Employee_ID,
@@ -123,94 +254,385 @@ const DiagnosisEntryForm = () => {
         Test_ID: t.Test_ID || null,
         Test_Name: t.Test_Name,
         Result_Value: t.Result_Value,
-        Reference_Range: t.Reference_Range,
-        Units: t.Units,
+        Reference_Range: t.Reference_Range || "",
+        Units: t.Units || "",
         Remarks: t.Remarks || ""
       })),
       Diagnosis_Notes: formData.Diagnosis_Notes || ""
     };
 
-    // basic front validation
-    if (!payload.Institute_ID || !payload.Employee_ID || payload.Tests.length === 0) {
-      alert("Institute, employee and at least one test are required");
-      return;
-    }
-    for (let i = 0; i < payload.Tests.length; i++) {
-      if (!payload.Tests[i].Test_Name || !payload.Tests[i].Result_Value) {
-        alert(`Test name and result required for test index ${i + 1}`);
-        return;
-      }
-    }
+    console.log("Submitting payload:", payload);
 
     try {
       const res = await axios.post(`http://localhost:${BACKEND_PORT_NO}/diagnosis-api/add`, payload);
-      alert("✅ Diagnosis record saved");
-      // reset tests (keeping institute)
-      setFormData(prev => ({ ...prev, Employee_ID: "", IsFamilyMember: false, FamilyMember_ID: "", Tests: [{ Test_ID: "", Test_Name: "", Result_Value: "", Reference_Range: "", Units: "" }], Diagnosis_Notes: "" }));
+      alert("✅ Diagnosis record saved successfully!");
+      
+      // Reset form (keep institute ID)
+      setFormData(prev => ({ 
+        ...prev, 
+        Employee_ID: "", 
+        IsFamilyMember: false, 
+        FamilyMember_ID: "", 
+        Tests: [{ 
+          Test_ID: "", 
+          Test_Name: "", 
+          Result_Value: "", 
+          Reference_Range: "", 
+          Units: "" 
+        }], 
+        Diagnosis_Notes: "" 
+      }));
       setSearchTerm("");
       setFamilyMembers([]);
     } catch (err) {
       console.error("Error saving diagnosis:", err?.response?.data || err);
-      alert("❌ Error saving diagnosis: " + (err?.response?.data?.message || err?.message || "server error"));
+      alert("❌ Error saving diagnosis: " + (err?.response?.data?.message || err?.message || "Server error"));
     }
   };
 
   return (
-    <div style={{ maxWidth: 720, margin: "30px auto", padding: 20, background: "#fff", borderRadius: 8 }}>
-      <h2>Diagnosis / Lab Entry</h2>
+    <div style={{ 
+      maxWidth: 800, 
+      margin: "40px auto", 
+      padding: 30, 
+      background: "#fff", 
+      borderRadius: 12, 
+      boxShadow: "0 4px 12px rgba(0,0,0,0.1)" 
+    }}>
+      <h2 style={{ textAlign: "center", marginBottom: 30, color: "#333" }}>🏥 Diagnosis / Lab Test Entry</h2>
+      
       <form onSubmit={handleSubmit} autoComplete="off">
-        <label>Institute</label>
-        <input type="text" value={instituteName} readOnly style={{ width: "100%", padding: 8, marginBottom: 10 }} />
+        {/* Institute */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#555" }}>Institute</label>
+          <input 
+            type="text" 
+            value={instituteName || "Loading..."} 
+            readOnly 
+            style={{ 
+              width: "100%", 
+              padding: "10px 12px", 
+              borderRadius: 8, 
+              border: "1px solid #ddd",
+              backgroundColor: "#f9f9f9" 
+            }} 
+          />
+        </div>
 
-        <label>Employee ABS_NO</label>
-        <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Type ABS_NO..." style={{ width: "100%", padding: 8 }} />
-        {searchTerm && filteredEmployees.length > 0 && (
-          <div style={{ border: "1px solid #ccc", maxHeight: 160, overflowY: "auto" }}>
-            {filteredEmployees.map(emp => (
-              <div key={emp._id} onClick={() => handleEmployeeSelect(emp)} style={{ padding: 8, cursor: "pointer", borderBottom: "1px solid #eee" }}>
-                {emp.ABS_NO} — {emp.Name}
-              </div>
-            ))}
+        {/* Employee Search */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#555" }}>Employee Search</label>
+          <input 
+            type="text" 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)} 
+            placeholder="Type ABS_NO or Name..." 
+            style={{ 
+              width: "100%", 
+              padding: "10px 12px", 
+              borderRadius: 8, 
+              border: "1px solid #ddd" 
+            }} 
+          />
+          
+          {searchTerm && filteredEmployees.length > 0 && (
+            <div style={{ 
+              border: "1px solid #ddd", 
+              borderTop: "none",
+              maxHeight: 200, 
+              overflowY: "auto",
+              backgroundColor: "white",
+              borderRadius: "0 0 8px 8px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+            }}>
+              {filteredEmployees.map(emp => (
+                <div 
+                  key={emp._id} 
+                  onClick={() => handleEmployeeSelect(emp)}
+                  style={{ 
+                    padding: "10px 12px", 
+                    cursor: "pointer", 
+                    borderBottom: "1px solid #f0f0f0",
+                    transition: "background-color 0.2s"
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = "#f5f5f5"}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = "white"}
+                >
+                  <div style={{ fontWeight: "bold" }}>{emp.ABS_NO}</div>
+                  <div style={{ color: "#666", fontSize: "13px" }}>{emp.Name}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {searchTerm && filteredEmployees.length === 0 && (
+            <div style={{ 
+              padding: "10px", 
+              color: "#888", 
+              fontStyle: "italic", 
+              fontSize: "13px",
+              backgroundColor: "#f9f9f9",
+              borderRadius: "0 0 8px 8px"
+            }}>
+              No employees found
+            </div>
+          )}
+        </div>
+
+        {/* Selected Employee Info */}
+        {formData.Employee_ID && (
+          <div style={{ 
+            marginBottom: 20, 
+            padding: "12px", 
+            backgroundColor: "#e8f5e9", 
+            borderRadius: "8px",
+            border: "1px solid #c8e6c9"
+          }}>
+            <div style={{ fontSize: "13px", color: "#2e7d32" }}>
+              <strong>Selected Employee:</strong> {
+                employees.find(e => e._id === formData.Employee_ID)?.Name || "Unknown"
+              } (ABS_NO: {
+                employees.find(e => e._id === formData.Employee_ID)?.ABS_NO || "N/A"
+              })
+            </div>
           </div>
         )}
 
-        <div style={{ marginTop: 10 }}>
-          <label>
-            <input type="checkbox" checked={formData.IsFamilyMember} onChange={e => setFormData(prev => ({ ...prev, IsFamilyMember: e.target.checked }))} /> Prescription for Family Member?
+        {/* Family Member Checkbox */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+            <input 
+              type="checkbox" 
+              name="IsFamilyMember"
+              checked={formData.IsFamilyMember} 
+              onChange={handleCheckboxChange} 
+              style={{ marginRight: 10, transform: "scale(1.2)" }} 
+            /> 
+            <span style={{ fontWeight: "bold", color: "#555" }}>Diagnosis for Family Member?</span>
           </label>
         </div>
 
+        {/* Family Member Select */}
         {formData.IsFamilyMember && (
-          <>
-            <label>Select Family Member</label>
-            <select value={formData.FamilyMember_ID} onChange={e => setFormData(prev => ({ ...prev, FamilyMember_ID: e.target.value }))} style={{ width: "100%", padding: 8 }}>
-              <option value="">Select Family Member</option>
-              {familyMembers.map(f => <option key={f._id} value={f._id}>{f.Name} ({f.Relationship})</option>)}
+          <div style={{ marginBottom: 25 }}>
+            <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#555" }}>Select Family Member</label>
+            <select 
+              value={formData.FamilyMember_ID} 
+              onChange={e => setFormData(prev => ({ ...prev, FamilyMember_ID: e.target.value }))} 
+              required={formData.IsFamilyMember}
+              disabled={loading}
+              style={{ 
+                width: "100%", 
+                padding: "10px 12px", 
+                borderRadius: 8, 
+                border: "1px solid #ddd",
+                backgroundColor: loading ? "#f5f5f5" : "white"
+              }}
+            >
+              <option value="">{loading ? "Loading family members..." : "Select Family Member"}</option>
+              {familyMembers.length === 0 && !loading && (
+                <option value="" disabled>No family members registered</option>
+              )}
+              {familyMembers.map(f => (
+                <option key={f._id} value={f._id}>
+                  {f.Name} ({f.Relationship || "Family"}) {f.DOB ? ` - DOB: ${new Date(f.DOB).toLocaleDateString()}` : ""}
+                </option>
+              ))}
             </select>
-          </>
+            
+            {familyMembers.length === 0 && formData.Employee_ID && !loading && (
+              <div style={{ fontSize: "12px", color: "#666", marginTop: 6 }}>
+                This employee has no registered family members. Register family members first.
+              </div>
+            )}
+          </div>
         )}
 
-        <h4 style={{ marginTop: 16 }}>Tests</h4>
-        {formData.Tests.map((t, i) => (
-          <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-            <select value={t.Test_ID || ""} onChange={e => handleTestChange(i, "Test_ID", e.target.value)} style={{ flex: "0 0 45%", padding: 8 }}>
-              <option value="">Select Test (or leave blank to type)</option>
-              {testsMaster.map(tm => <option key={tm._id} value={tm._id}>{tm.Test_Name} — {tm.Group || ""}</option>)}
-            </select>
+        {/* Tests Section */}
+        <div style={{ marginBottom: 30 }}>
+          <h4 style={{ 
+            marginBottom: 20, 
+            color: "#333", 
+            borderBottom: "2px solid #eee", 
+            paddingBottom: 10 
+          }}>
+            Tests
+          </h4>
+          
+          {testsMaster.length === 0 ? (
+            <div style={{ 
+              padding: "15px", 
+              backgroundColor: "#fff8e1", 
+              borderRadius: "8px", 
+              border: "1px solid #ffecb3", 
+              marginBottom: 20 
+            }}>
+              <div style={{ color: "#ff6f00", fontWeight: "bold" }}>⚠️ No tests available</div>
+              <div style={{ fontSize: "13px", color: "#666", marginTop: 5 }}>
+                Add tests to the master list first.
+              </div>
+            </div>
+          ) : (
+            <>
+              {formData.Tests.map((t, i) => (
+                <div key={i} style={{ 
+                  marginBottom: 20, 
+                  padding: "15px", 
+                  backgroundColor: "#f8f9fa", 
+                  borderRadius: "8px",
+                  border: "1px solid #e9ecef"
+                }}>
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "1fr 1fr 1fr auto", 
+                    gap: "10px", 
+                    alignItems: "center" 
+                  }}>
+                    <div>
+                      <div style={{ fontSize: "12px", color: "#666", marginBottom: 4 }}>Test Selection</div>
+                      <select 
+                        value={t.Test_ID || ""} 
+                        onChange={e => handleTestChange(i, "Test_ID", e.target.value)} 
+                        style={{ 
+                          width: "100%", 
+                          padding: "8px 10px", 
+                          borderRadius: "6px", 
+                          border: "1px solid #ddd" 
+                        }}
+                      >
+                        <option value="">Select Test (or type below)</option>
+                        {testsMaster.map(tm => (
+                          <option key={tm._id} value={tm._id}>
+                            {tm.Test_Name} {tm.Group ? `(${tm.Group})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <div style={{ fontSize: "12px", color: "#666", marginBottom: 4 }}>Test Name</div>
+                      <input 
+                        type="text" 
+                        placeholder="Test Name" 
+                        value={t.Test_Name} 
+                        onChange={e => handleTestChange(i, "Test_Name", e.target.value)} 
+                        style={{ 
+                          width: "100%", 
+                          padding: "8px 10px", 
+                          borderRadius: "6px", 
+                          border: "1px solid #ddd" 
+                        }} 
+                      />
+                    </div>
+                    
+                    <div>
+                      <div style={{ fontSize: "12px", color: "#666", marginBottom: 4 }}>Result</div>
+                      <input 
+                        type="text" 
+                        placeholder="Result (e.g., 14.2)" 
+                        value={t.Result_Value} 
+                        onChange={e => handleTestChange(i, "Result_Value", e.target.value)} 
+                        style={{ 
+                          width: "100%", 
+                          padding: "8px 10px", 
+                          borderRadius: "6px", 
+                          border: "1px solid #ddd" 
+                        }} 
+                      />
+                    </div>
+                    
+                    {formData.Tests.length > 1 && (
+                      <div style={{ alignSelf: "flex-end" }}>
+                        <button 
+                          type="button" 
+                          onClick={() => removeTest(i)}
+                          style={{ 
+                            background: "#dc3545", 
+                            color: "#fff", 
+                            border: "none", 
+                            borderRadius: "6px", 
+                            padding: "8px 12px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {(t.Reference_Range || t.Units) && (
+                    <div style={{ 
+                      marginTop: 10, 
+                      padding: "8px", 
+                      backgroundColor: "#e7f3ff", 
+                      borderRadius: "4px",
+                      fontSize: "12px"
+                    }}>
+                      {t.Reference_Range && <span><strong>Ref Range:</strong> {t.Reference_Range} </span>}
+                      {t.Units && <span><strong>Units:</strong> {t.Units}</span>}
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              <button 
+                type="button" 
+                onClick={addTest} 
+                style={{ 
+                  padding: "10px 16px", 
+                  background: "#007bff", 
+                  color: "#fff", 
+                  border: "none", 
+                  borderRadius: "6px",
+                  cursor: "pointer"
+                }}
+              >
+                + Add Another Test
+              </button>
+            </>
+          )}
+        </div>
 
-            <input type="text" placeholder="Test Name" value={t.Test_Name} onChange={e => handleTestChange(i, "Test_Name", e.target.value)} style={{ flex: "0 0 25%", padding: 8 }} />
+        {/* Diagnosis Notes */}
+        <div style={{ marginBottom: 30 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#555" }}>Diagnosis Notes</label>
+          <textarea 
+            value={formData.Diagnosis_Notes} 
+            onChange={e => setFormData(prev => ({ ...prev, Diagnosis_Notes: e.target.value }))} 
+            placeholder="Enter diagnosis notes, observations, or comments..."
+            rows={4} 
+            style={{ 
+              width: "100%", 
+              padding: "12px", 
+              borderRadius: "8px", 
+              border: "1px solid #ddd",
+              resize: "vertical" 
+            }} 
+          />
+        </div>
 
-            <input type="text" placeholder="Result (e.g. 14.2 g/dL)" value={t.Result_Value} onChange={e => handleTestChange(i, "Result_Value", e.target.value)} style={{ flex: "0 0 20%", padding: 8 }} />
-
-            <button type="button" onClick={() => removeTest(i)} style={{ background: "#dc3545", color: "#fff", border: "none", padding: "6px 8px" }}>X</button>
-          </div>
-        ))}
-        <button type="button" onClick={addTest} style={{ padding: 8, background: "#007bff", color: "#fff", border: "none", borderRadius: 6 }}>+ Add Test</button>
-
-        <label style={{ display: "block", marginTop: 12 }}>Notes</label>
-        <textarea value={formData.Diagnosis_Notes} onChange={e => setFormData(prev => ({ ...prev, Diagnosis_Notes: e.target.value }))} rows={3} style={{ width: "100%", padding: 8 }} />
-
-        <button type="submit" style={{ marginTop: 12, width: "100%", padding: 10, background: "black", color: "white", border: "none", borderRadius: 6 }}>Save Diagnosis</button>
+        {/* Submit Button */}
+        <button 
+          type="submit" 
+          style={{ 
+            marginTop: 10, 
+            width: "100%", 
+            padding: "14px", 
+            background: "#28a745", 
+            color: "white", 
+            border: "none", 
+            borderRadius: "8px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            transition: "background-color 0.2s"
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = "#218838"}
+          onMouseLeave={(e) => e.target.style.backgroundColor = "#28a745"}
+        >
+          💾 Save Diagnosis Record
+        </button>
       </form>
     </div>
   );

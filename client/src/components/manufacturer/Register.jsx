@@ -9,12 +9,25 @@ import {
   FaPhone,
   FaLock,
 } from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function Register_manu() {
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm();
+
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // password visibility states
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+
+  const password = watch("password");
 
   async function handleRegister(data) {
     setIsSubmitting(true);
@@ -43,7 +56,9 @@ function Register_manu() {
     } catch (error) {
       console.error("Registration error:", error);
       alert(
-        `Registration failed: ${error.response?.data?.message || error.message}`
+        `Registration failed: ${
+          error.response?.data?.message || error.message
+        }`
       );
     } finally {
       setIsSubmitting(false);
@@ -59,35 +74,15 @@ function Register_manu() {
         paddingTop: "20px",
       }}
     >
-      {/* Header */}
-      <div
-        className="text-center mb-5"
-        style={{
-          marginBottom: "2.8rem",
-        }}
-      >
-        <h2
-          className="fw-bold text-dark"
-          style={{
-            fontSize: "3rem",
-            letterSpacing: "0.4px",
-            marginBottom: "0.8rem",
-          }}
-        >
+      <div className="text-center mb-5">
+        <h2 className="fw-bold text-dark" style={{ fontSize: "3rem" }}>
           Manufacturer Registration
         </h2>
-        <p
-          className="text-muted"
-          style={{
-            fontSize: "0.9rem",
-            marginBottom: "0",
-          }}
-        >
+        <p className="text-muted" style={{ fontSize: "0.9rem" }}>
           Register your manufacturing unit with AP Police Medical Division
         </p>
       </div>
 
-      {/* Registration Card */}
       <div
         className="card border-0 rounded-4 p-4 p-md-5"
         style={{
@@ -95,10 +90,8 @@ function Register_manu() {
           backgroundColor: "#fff",
           boxShadow:
             "0 8px 25px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06)",
-          transition: "all 0.3s ease",
         }}
       >
-        {/* Center Icon */}
         <div
           className="d-flex justify-content-center align-items-center mb-4"
           style={{
@@ -107,7 +100,6 @@ function Register_manu() {
             height: "90px",
             borderRadius: "50%",
             margin: "0 auto",
-            boxShadow: "inset 0 0 8px rgba(0,0,0,0.08)",
           }}
         >
           <FaIndustry size={46} color="#333" />
@@ -116,7 +108,7 @@ function Register_manu() {
         <form onSubmit={handleSubmit(handleRegister)}>
           {/* Manufacturer Name */}
           <div className="mb-3">
-            <label className="form-label d-flex align-items-center gap-2 small text-muted fw-bold">
+            <label className="form-label small text-muted fw-bold">
               <FaIndustry /> Manufacturer Name
             </label>
             <input
@@ -128,10 +120,6 @@ function Register_manu() {
                 errors.Manufacturer_Name ? "is-invalid" : ""
               }`}
               placeholder="Company name"
-              style={{
-                borderRadius: "8px",
-                backgroundColor: "#f9f9f9",
-              }}
             />
             {errors.Manufacturer_Name && (
               <div className="invalid-feedback">
@@ -140,29 +128,29 @@ function Register_manu() {
             )}
           </div>
 
-          {/* Address Fields */}
+          {/* Address */}
           <div className="row">
             <div className="col-md-6 mb-3">
-              <label className="form-label d-flex align-items-center gap-2 small text-muted fw-bold">
+              <label className="form-label small text-muted fw-bold">
                 <FaMapMarkerAlt /> Street
               </label>
               <input
                 type="text"
                 {...register("Street", { required: "Street is required" })}
-                className={`form-control ${errors.Street ? "is-invalid" : ""}`}
+                className={`form-control ${
+                  errors.Street ? "is-invalid" : ""
+                }`}
                 placeholder="Street / Area"
-                style={{
-                  borderRadius: "8px",
-                  backgroundColor: "#f9f9f9",
-                }}
               />
               {errors.Street && (
-                <div className="invalid-feedback">{errors.Street.message}</div>
+                <div className="invalid-feedback">
+                  {errors.Street.message}
+                </div>
               )}
             </div>
 
             <div className="col-md-6 mb-3">
-              <label className="form-label d-flex align-items-center gap-2 small text-muted fw-bold">
+              <label className="form-label small text-muted fw-bold">
                 <FaMapMarkerAlt /> District
               </label>
               <input
@@ -172,39 +160,37 @@ function Register_manu() {
                   errors.District ? "is-invalid" : ""
                 }`}
                 placeholder="District"
-                style={{
-                  borderRadius: "8px",
-                  backgroundColor: "#f9f9f9",
-                }}
               />
               {errors.District && (
-                <div className="invalid-feedback">{errors.District.message}</div>
+                <div className="invalid-feedback">
+                  {errors.District.message}
+                </div>
               )}
             </div>
           </div>
 
           <div className="row">
             <div className="col-md-6 mb-3">
-              <label className="form-label d-flex align-items-center gap-2 small text-muted fw-bold">
+              <label className="form-label small text-muted fw-bold">
                 <FaMapMarkerAlt /> State
               </label>
               <input
                 type="text"
                 {...register("State", { required: "State is required" })}
-                className={`form-control ${errors.State ? "is-invalid" : ""}`}
+                className={`form-control ${
+                  errors.State ? "is-invalid" : ""
+                }`}
                 placeholder="State"
-                style={{
-                  borderRadius: "8px",
-                  backgroundColor: "#f9f9f9",
-                }}
               />
               {errors.State && (
-                <div className="invalid-feedback">{errors.State.message}</div>
+                <div className="invalid-feedback">
+                  {errors.State.message}
+                </div>
               )}
             </div>
 
             <div className="col-md-6 mb-3">
-              <label className="form-label d-flex align-items-center gap-2 small text-muted fw-bold">
+              <label className="form-label small text-muted fw-bold">
                 <FaMapMarkerAlt /> Pincode
               </label>
               <input
@@ -214,20 +200,18 @@ function Register_manu() {
                   errors.Pincode ? "is-invalid" : ""
                 }`}
                 placeholder="Pincode"
-                style={{
-                  borderRadius: "8px",
-                  backgroundColor: "#f9f9f9",
-                }}
               />
               {errors.Pincode && (
-                <div className="invalid-feedback">{errors.Pincode.message}</div>
+                <div className="invalid-feedback">
+                  {errors.Pincode.message}
+                </div>
               )}
             </div>
           </div>
 
-          {/* Contact, Email, Password */}
+          {/* Contact */}
           <div className="mb-3">
-            <label className="form-label d-flex align-items-center gap-2 small text-muted fw-bold">
+            <label className="form-label small text-muted fw-bold">
               <FaPhone /> Contact Number
             </label>
             <input
@@ -243,18 +227,17 @@ function Register_manu() {
                 errors.Contact_No ? "is-invalid" : ""
               }`}
               placeholder="10-digit phone number"
-              style={{
-                borderRadius: "8px",
-                backgroundColor: "#f9f9f9",
-              }}
             />
             {errors.Contact_No && (
-              <div className="invalid-feedback">{errors.Contact_No.message}</div>
+              <div className="invalid-feedback">
+                {errors.Contact_No.message}
+              </div>
             )}
           </div>
 
+          {/* Email */}
           <div className="mb-3">
-            <label className="form-label d-flex align-items-center gap-2 small text-muted fw-bold">
+            <label className="form-label small text-muted fw-bold">
               <FaEnvelope /> Email
             </label>
             <input
@@ -264,43 +247,89 @@ function Register_manu() {
                 errors.Email_ID ? "is-invalid" : ""
               }`}
               placeholder="Email address"
-              style={{
-                borderRadius: "8px",
-                backgroundColor: "#f9f9f9",
-              }}
             />
             {errors.Email_ID && (
-              <div className="invalid-feedback">{errors.Email_ID.message}</div>
+              <div className="invalid-feedback">
+                {errors.Email_ID.message}
+              </div>
             )}
           </div>
 
-          <div className="mb-4">
-            <label className="form-label d-flex align-items-center gap-2 small text-muted fw-bold">
+          {/* Password */}
+          <div className="mb-3">
+            <label className="form-label small text-muted fw-bold">
               <FaLock /> Password
             </label>
-            <input
-              type="password"
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Password must be 6+ chars",
-                },
-              })}
-              className={`form-control ${
-                errors.password ? "is-invalid" : ""
-              }`}
-              placeholder="Enter password"
-              style={{
-                borderRadius: "8px",
-                backgroundColor: "#f9f9f9",
-              }}
-            />
+
+            <div className="input-group">
+              <input
+                type={showPass ? "text" : "password"}
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Password must be 6+ chars",
+                  },
+                })}
+                className={`form-control ${
+                  errors.password ? "is-invalid" : ""
+                }`}
+                placeholder="Enter password"
+              />
+
+              <span
+                className="input-group-text"
+                style={{ cursor: "pointer" }}
+                onClick={() => setShowPass(!showPass)}
+              >
+                {showPass ? <FaEyeSlash /> : <FaEye />}
+              </span>
+            </div>
+
             {errors.password && (
-              <div className="invalid-feedback">{errors.password.message}</div>
+              <div className="invalid-feedback">
+                {errors.password.message}
+              </div>
             )}
           </div>
 
+          {/* Confirm Password */}
+          <div className="mb-4">
+            <label className="form-label small text-muted fw-bold">
+              <FaLock /> Confirm Password
+            </label>
+
+            <div className="input-group">
+              <input
+                type={showConfirmPass ? "text" : "password"}
+                {...register("confirmPassword", {
+                  required: "Confirm password is required",
+                  validate: (value) =>
+                    value === password || "Passwords do not match",
+                })}
+                className={`form-control ${
+                  errors.confirmPassword ? "is-invalid" : ""
+                }`}
+                placeholder="Confirm password"
+              />
+
+              <span
+                className="input-group-text"
+                style={{ cursor: "pointer" }}
+                onClick={() => setShowConfirmPass(!showConfirmPass)}
+              >
+                {showConfirmPass ? <FaEyeSlash /> : <FaEye />}
+              </span>
+            </div>
+
+            {errors.confirmPassword && (
+              <div className="invalid-feedback">
+                {errors.confirmPassword.message}
+              </div>
+            )}
+          </div>
+
+          {/* Button */}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -309,25 +338,6 @@ function Register_manu() {
               background: "linear-gradient(180deg, #1c1c1c 0%, #000 100%)",
               color: "#fff",
               borderRadius: "10px",
-              height: "42px",
-              fontSize: "0.92rem",
-              fontWeight: "600",
-              letterSpacing: "0.4px",
-              border: "none",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-              transition: "all 0.25s ease",
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background =
-                "linear-gradient(180deg, #000 0%, #1a1a1a 100%)";
-              e.target.style.boxShadow = "0 6px 12px rgba(0,0,0,0.25)";
-              e.target.style.transform = "translateY(-1px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background =
-                "linear-gradient(180deg, #1c1c1c 0%, #000 100%)";
-              e.target.style.boxShadow = "0 4px 10px rgba(0,0,0,0.15)";
-              e.target.style.transform = "translateY(0)";
             }}
           >
             {isSubmitting ? "Registering..." : "Complete Registration"}
@@ -339,18 +349,14 @@ function Register_manu() {
               to="/manufacturer-login"
               onClick={() => localStorage.removeItem("manufacturer")}
               className="fw-semibold"
-              style={{ color: "#000", textDecoration: "none" }}
+              style={{ color: "#000" }}
             >
               Login here
             </Link>
           </div>
         </form>
 
-        {/* Footer */}
-        <p
-          className="text-center text-muted mt-3 mb-0"
-          style={{ fontSize: "0.8rem" }}
-        >
+        <p className="text-center text-muted mt-3 mb-0" style={{ fontSize: "0.8rem" }}>
           © 2025 AP Police Health Division
         </p>
       </div>
