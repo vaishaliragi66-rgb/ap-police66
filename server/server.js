@@ -25,6 +25,8 @@ app.use("/family-api",FamilyApp);
 app.use("/prescription-api", prescriptionApp);
 app.use("/diagnosis-api",diagnosisApp);
 app.use("/disease-api",diseaseApp)
+app.use("/uploads", express.static("uploads"));
+
 // Base route
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 

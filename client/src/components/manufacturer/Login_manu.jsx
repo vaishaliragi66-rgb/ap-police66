@@ -19,7 +19,7 @@ function Login_manu() {
       try {
         const parsed = JSON.parse(storedUser);
         if (parsed.Manufacturer_Name && parsed._id) {
-          navigate(`/manufacturer-dashboard`);
+          navigate(`/add_medicine`);
         } else {
           localStorage.removeItem("manufacturer");
         }
@@ -46,7 +46,7 @@ function Login_manu() {
       if (manufacturer.password === data.password) {
         localStorage.setItem("manufacturer", JSON.stringify(manufacturer));
         alert("✅ Login successful!");
-        navigate(`/manufacturer-layout/${manufacturer.Manufacturer_Name}`);
+        navigate(`/manufacturer-layout/${manufacturer.Manufacturer_Name}/add_medicine`);
       } else {
         alert("❌ Incorrect password");
       }

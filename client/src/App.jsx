@@ -95,7 +95,7 @@ function App() {
       element:<EmployeeRegistration/>,
     },
   {
-      path:"/employee-login",
+      path:"/employee/login",
       element:<EmployeeLogin/>,
       
     },

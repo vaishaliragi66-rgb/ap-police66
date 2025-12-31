@@ -9,12 +9,14 @@ function Medicines_table() {
   const [filteredMeds, setFilteredMeds] = useState([]);
   const [selectedMed, setSelectedMed] = useState(null);
   const [formData, setFormData] = useState({
-    Medicine_Name: "",
-    Type: "",
-    Category: "",
-    Quantity: "",
-    Threshold_Qty: "",
-  });
+  Medicine_Name: "",
+  Type: "",
+  Category: "",
+  Quantity: "",
+  Threshold_Qty: "",
+  Expiry_Date: "",
+});
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const manufacturer = JSON.parse(localStorage.getItem("manufacturer"));
@@ -77,12 +79,16 @@ function Medicines_table() {
   const openUpdateModal = (med) => {
     setSelectedMed(med);
     setFormData({
-      Medicine_Name: med.Medicine_Name,
-      Type: med.Type,
-      Category: med.Category,
-      Quantity: med.Quantity,
-      Threshold_Qty: med.Threshold_Qty,
-    });
+  Medicine_Name: med.Medicine_Name,
+  Type: med.Type,
+  Category: med.Category,
+  Quantity: med.Quantity,
+  Threshold_Qty: med.Threshold_Qty,
+  Expiry_Date: med.Expiry_Date
+    ? med.Expiry_Date.split("T")[0]
+    : "",
+});
+
 
     const modalEl = document.getElementById("updateModal");
     const modal = new Modal(modalEl);
@@ -108,6 +114,7 @@ function Medicines_table() {
             Category: formData.Category.trim(),
             Quantity: parseInt(formData.Quantity),
             Threshold_Qty: parseInt(formData.Threshold_Qty),
+            Expiry_Date: formData.Expiry_Date,
           }),
         }
       );
@@ -213,7 +220,9 @@ function Medicines_table() {
                 <th>Category</th>
                 <th>Quantity</th>
                 <th>Threshold</th>
-                <th>Actions</th>
+<th>Expiry Date</th>
+<th>Actions</th>
+
               </tr>
             </thead>
             <tbody style={{ fontSize: "0.92rem" }}>
@@ -237,6 +246,10 @@ function Medicines_table() {
                     <td>{med.Category || "-"}</td>
                     <td>{med.Quantity}</td>
                     <td>{med.Threshold_Qty}</td>
+<td>
+  {new Date(med.Expiry_Date).toLocaleDateString()}
+</td>
+
                     <td>
                       <button
                         className="btn btn-sm me-2"
@@ -306,14 +319,22 @@ function Medicines_table() {
               </div>
 
               <div className="modal-body pt-2">
-                {["Medicine_Name", "Type", "Category", "Quantity", "Threshold_Qty"].map(
+                {["Medicine_Name", "Type", "Category", "Quantity", "Threshold_Qty", "Expiry_Date"]
+.map(
                   (field) => (
                     <div className="mb-3" key={field}>
                       <label className="form-label text-muted small">
                         {field.replace("_", " ")}
                       </label>
                       <input
-                        type={field.includes("Quantity") ? "number" : "text"}
+                        type={
+  field === "Expiry_Date"
+    ? "date"
+    : field.includes("Quantity")
+    ? "number"
+    : "text"
+}
+
                         name={field}
                         value={formData[field]}
                         onChange={handleChange}

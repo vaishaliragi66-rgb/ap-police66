@@ -15,12 +15,12 @@ const DiagnosisRecordSchema = new Schema({
       Result_Value: { type: String, required: true },
       Reference_Range: { type: String },
       Units: { type: String },
-      Remarks: { type: String }
+      Remarks: { type: String },
+      Timestamp: { type: Date, default: Date.now }
     }
   ],
 
-  Diagnosis_Notes: { type: String },
-  Timestamp: { type: Date, default: Date.now }
+  Diagnosis_Notes: { type: String }
 });
 
 module.exports = mongoose.model("DiagnosisRecord", DiagnosisRecordSchema);

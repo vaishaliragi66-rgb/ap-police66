@@ -1,12 +1,76 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
-import { FaUserCircle } from "react-icons/fa";
+import { 
+  FaUserCircle, 
+  FaUsers, 
+  FaBox, 
+  FaShoppingCart, 
+  FaHistory, 
+  FaChartLine,
+  FaPills,
+  FaFileMedical,
+  FaClipboardList,
+  FaHospital,
+  FaVials
+} from "react-icons/fa";
 import { IoClose, IoMenu } from "react-icons/io5";
+import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const Institute_home = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [employees, setEmployees] = useState([]);
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalEmployees: 0,
+    totalOrdersPlaced: 0,
+    registeredEmployees: 0,
+    pendingOrdersCount: 0,
+    deliveredOrdersCount: 0,
+    totalMedicinesInInventory: 0,
+    lowStockMedicines: 0,
+    inventoryItemCount: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Get institute ID from localStorage
+  const institute = JSON.parse(localStorage.getItem("institute") || "{}");
+  const instituteId = institute?._id;
+
+  // Fetch dashboard statistics
+  const fetchDashboardStats = async () => {
+    if (!instituteId) return;
+    
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        `http://localhost:6100/institute-api/dashboard-stats/${instituteId}`
+      );
+      setDashboardStats(res.data);
+    } catch (err) {
+      console.error("Failed to fetch dashboard stats", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch detailed employees
+  const fetchEmployees = async () => {
+    try {
+      const res = await axios.get("http://localhost:6100/institute-api/employees-detailed");
+      setEmployees(res.data.employees);
+      setShowEmployeeModal(true);
+    } catch (err) {
+      console.error("Failed to load employees", err);
+      alert("Failed to load employees");
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, [instituteId]);
 
   const handleProfileClick = () => navigate("/institutes/profile");
   const handleSignout = () => {
@@ -14,6 +78,18 @@ const Institute_home = () => {
     navigate("/");
   };
   const handleOrderClick = () => navigate("/institutes/placeorder");
+
+  const navItems = [
+    { icon: <FaShoppingCart />, label: "Orders Medicines", path: "/institutes/manufacturer-orders" },
+    { icon: <FaUsers />, label: "Orders from Employees", path: "/institutes/employee-orders" },
+    { icon: <FaBox />, label: "Inventory", path: "/institutes/inventory" },
+    { icon: <FaVials />, label: "🧬 Diseases", path: "/institutions/diseases" },
+    { icon: <FaPills />, label: "💊 Prescriptions", path: "/institutions/prescriptions" },
+    { icon: <FaFileMedical />, label: "📋 View Employee Reports", path: "/institutions/reports" },
+    { icon: <FaClipboardList />, label: "Diagnosis", path: "/institutions/diagnosis-entry" },
+    { icon: <FaHistory />, label: "Order History", path: "/institutes/order-history" },
+    { icon: <FaChartLine />, label: "Analytics", path: "/institutes/analytics" },
+  ];
 
   return (
     <div
@@ -24,253 +100,383 @@ const Institute_home = () => {
         overflowX: "hidden",
       }}
     >
-      {/* Sidebar */}
+      {/* ================= SIDEBAR ================= */}
       <div
         className={`bg-white text-dark p-4 border-end shadow-sm position-fixed h-100 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-100"
         }`}
         style={{
-          width: "260px",
+          width: "280px",
           minHeight: "100vh",
           transition: "all 0.4s ease",
           zIndex: 1050,
         }}
       >
-        {/* Close Button */}
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h5
-            className="fw-bold mb-0"
-            style={{ fontSize: "1.25rem", letterSpacing: "0.3px" }}
-          >
-            Institute Panel
-          </h5>
+          <div className="d-flex align-items-center gap-2">
+            <FaHospital size={24} className="text-primary" />
+            <h5 className="fw-bold mb-0">Institute Panel</h5>
+          </div>
           <IoClose
             size={28}
-            className="text-dark cursor-pointer"
-            onClick={() => setSidebarOpen(false)}
             style={{ cursor: "pointer" }}
+            onClick={() => setSidebarOpen(false)}
+            className="text-muted"
           />
         </div>
 
-        {/* Sidebar Items */}
-        <ul className="list-unstyled mt-4">
-          <li
-            className="mb-3 p-2 rounded hover-item"
-            style={{ fontSize: "1.05rem" }}
-            onClick={() => navigate("/institutes/manufacturer-orders")}
-          >
-             Orders Medicines
-          </li>
+        <div className="text-center mb-4">
+          <div className="bg-light rounded-circle d-inline-flex p-3 mb-2">
+            <FaHospital size={32} className="text-primary" />
+          </div>
+          <h6 className="fw-bold">{institute?.Institute_Name || "Institute"}</h6>
+          <small className="text-muted">{institute?.Email_ID || ""}</small>
+        </div>
 
-          <li
-            className="mb-3 p-2 rounded hover-item"
-            style={{ fontSize: "1.05rem" }}
-            onClick={() => alert("Show employee orders")}
-          >
-            Orders from Employees
-          </li>
-
-          <li
-            className="mb-3 p-2 rounded hover-item"
-            style={{ fontSize: "1.05rem" }}
-            onClick={() => navigate("/institutes/inventory")}
-          >
-             Inventory
-          </li>
-
-          {/* NEW: Prescriptions Link */}
-          <li
-            className="mb-3 p-2 rounded hover-item"
-            onClick={() => navigate("/institutions/diseases")}
-          >
-            🧬 Diseases
-          </li>
-          <li
-            className="mb-3 p-2 rounded hover-item"
-            onClick={() => navigate("/institutions/prescriptions")}
-          >
-            💊 Prescriptions
-          </li>
-          <li
-            className="mb-3 p-2 rounded hover-item"
-            onClick={() => navigate("/institutions/reports")}
-          >
-            📋 View Employee Reports
-          </li>
-          <li
-            className="mb-3 p-2 rounded hover-item"
-            style={{ fontSize: "1.05rem" }}
-            onClick={() => navigate("/institutions/diagnosis-entry")}
-          >
-             Diagnosis
-          </li>
+        <ul className="list-unstyled mt-3">
+          {navItems.map((item, index) => (
+            <li 
+              key={index} 
+              className="mb-2 hover-item d-flex align-items-center gap-3 p-2 rounded"
+              onClick={() => navigate(item.path)}
+            >
+              <span className="text-primary">{item.icon}</span>
+              <span>{item.label}</span>
+            </li>
+          ))}
         </ul>
 
-        <p
-          className="text-center small mt-auto"
-          style={{
-            color: "#777",
-            marginTop: "100px",
-            fontSize: "0.85rem",
-            letterSpacing: "0.3px",
-          }}
-        >
-          ©️ 2025 AP Police Health
-        </p>
+        <div className="mt-5 pt-4 border-top">
+          <p className="text-center small text-muted">
+            © 2025 AP Police Health Division
+          </p>
+        </div>
       </div>
 
-      {/* Main Content */}
+      {/* ================= MAIN CONTENT ================= */}
       <div
         className="flex-grow-1"
         style={{
-          marginLeft: sidebarOpen ? "260px" : "0px",
+          marginLeft: sidebarOpen ? "280px" : "0",
           transition: "all 0.4s ease",
-          width: "100%",
         }}
       >
-        {/* Header */}
-        <div
-          className="d-flex justify-content-between align-items-center p-3 bg-white shadow-sm"
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 10,
-          }}
-        >
+        {/* HEADER */}
+        <div className="d-flex justify-content-between align-items-center p-3 bg-white shadow-sm">
           <div className="d-flex align-items-center gap-3">
             {!sidebarOpen && (
               <IoMenu
                 size={30}
-                className="text-dark cursor-pointer"
-                onClick={() => setSidebarOpen(true)}
                 style={{ cursor: "pointer" }}
+                onClick={() => setSidebarOpen(true)}
+                className="text-dark"
               />
             )}
-            <h3
-              className="fw-bold mb-0"
-              style={{ color: "#111", fontSize: "1.7rem" }}
-            >
-              Institute Dashboard
-            </h3>
+            <div>
+              <h3 className="fw-bold mb-0">Institute Dashboard</h3>
+              <small className="text-muted">Welcome back, {institute?.Institute_Name || "Admin"}</small>
+            </div>
           </div>
 
-          {/* Profile Icon */}
           <div className="position-relative">
-            <FaUserCircle
-              size={38}
-              className="text-dark cursor-pointer"
-              onClick={() => setShowDropdown(!showDropdown)}
-              style={{ cursor: "pointer" }}
-            />
+            <div className="d-flex align-items-center gap-3">
+              <div className="text-end d-none d-md-block">
+                <h6 className="mb-0 fw-semibold">{institute?.Institute_Name}</h6>
+                <small className="text-muted">Institute Admin</small>
+              </div>
+              <FaUserCircle
+                size={42}
+                style={{ cursor: "pointer" }}
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="text-primary"
+              />
+            </div>
             {showDropdown && (
-              <div
-                className="position-absolute bg-white border rounded shadow p-2"
-                style={{
-                  right: 0,
-                  top: "45px",
-                  width: "160px",
-                  zIndex: 100,
-                }}
-              >
-                <p
-                  className="mb-2 fw-semibold text-black small"
-                  style={{ cursor: "pointer" }}
+              <div className="position-absolute bg-white border rounded shadow p-2"
+                   style={{ right: 0, top: "50px", width: "180px", zIndex: 1000 }}>
+                <div className="p-2 border-bottom">
+                  <small className="text-muted">Signed in as</small>
+                  <p className="fw-semibold mb-0 small">{institute?.Institute_Name}</p>
+                </div>
+                <button 
                   onClick={handleProfileClick}
+                  className="btn btn-sm btn-outline-primary w-100 mb-2"
                 >
-                  Profile
-                </p>
-                <hr className="my-1" />
-                <p
-                  className="mb-0 fw-semibold text-black small"
-                  style={{ cursor: "pointer" }}
+                  Profile Settings
+                </button>
+                <button 
                   onClick={handleSignout}
+                  className="btn btn-sm btn-outline-danger w-100"
                 >
                   Sign Out
-                </p>
+                </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Dashboard Stats */}
+        {/* DASHBOARD STATS */}
         <div className="container py-4">
-          <div className="row g-4">
-            <div className="col-md-4">
-              <div className="card text-center p-3 border-0 shadow-sm rounded-4">
-                <h6 className="text-muted mb-1">Total Employees</h6>
-                <h3 className="fw-bold text-dark">25</h3>
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
               </div>
+              <p className="mt-2">Loading dashboard...</p>
             </div>
-            <div className="col-md-4">
-              <div className="card text-center p-3 border-0 shadow-sm rounded-4">
-                <h6 className="text-muted mb-1">Total Orders Placed</h6>
-                <h3 className="fw-bold text-dark">40</h3>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="card text-center p-3 border-0 shadow-sm rounded-4">
-                <h6 className="text-muted mb-1">Registered Employees</h6>
-                <h3 className="fw-bold text-dark">18</h3>
-              </div>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="row g-4 mb-4">
+                <div className="col-md-3 col-sm-6">
+                  <div
+                    className="card text-center p-4 shadow-sm rounded-4 border-0 bg-gradient-primary text-white"
+                    style={{ cursor: "pointer", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}
+                    onClick={fetchEmployees}
+                  >
+                    <div className="d-flex justify-content-center mb-3">
+                      <div className="bg-white rounded-circle p-3">
+                        <FaUsers size={24} className="text-primary" />
+                      </div>
+                    </div>
+                    <h6 className="mb-2">Total Employees</h6>
+                    <h2 className="fw-bold">{dashboardStats.totalEmployees}</h2>
+                    <small className="opacity-75">Click to view details</small>
+                  </div>
+                </div>
 
-          {/* Place Order Button */}
-          <div className="text-center mt-5">
-            <button
-              className="btn px-5 py-2 fw-semibold"
-              onClick={handleOrderClick}
-              style={{
-                background: "linear-gradient(180deg, #1c1c1c, #000)",
-                color: "#fff",
-                borderRadius: "10px",
-                letterSpacing: "0.3px",
-                transition: "0.3s ease",
-                fontSize: "1rem",
-              }}
-              onMouseOver={(e) =>
-                (e.target.style.background =
-                  "linear-gradient(180deg, #000, #1c1c1c)")
-              }
-              onMouseOut={(e) =>
-                (e.target.style.background =
-                  "linear-gradient(180deg, #1c1c1c, #000)")
-              }
-            >
-              ➕ Place New Order
-            </button>
-          </div>
+                <div className="col-md-3 col-sm-6">
+                  <div className="card text-center p-4 shadow-sm rounded-4 border-0 bg-gradient-success text-white"
+                       style={{ background: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)" }}>
+                    <div className="d-flex justify-content-center mb-3">
+                      <div className="bg-white rounded-circle p-3">
+                        <FaShoppingCart size={24} className="text-success" />
+                      </div>
+                    </div>
+                    <h6 className="mb-2">Total Orders</h6>
+                    <h2 className="fw-bold">{dashboardStats.totalOrdersPlaced}</h2>
+                    <div className="d-flex justify-content-center gap-3 mt-2">
+                      <small className="badge bg-warning">Pending: {dashboardStats.pendingOrdersCount}</small>
+                      <small className="badge bg-success">Delivered: {dashboardStats.deliveredOrdersCount}</small>
+                    </div>
+                  </div>
+                </div>
 
-          {/* Nested Outlet */}
-          <div className="mt-5">
-            <Outlet />
-          </div>
+                <div className="col-md-3 col-sm-6">
+                  <div className="card text-center p-4 shadow-sm rounded-4 border-0 bg-gradient-info text-white"
+                       style={{ background: "linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)" }}>
+                    <div className="d-flex justify-content-center mb-3">
+                      <div className="bg-white rounded-circle p-3">
+                        <FaBox size={24} className="text-info" />
+                      </div>
+                    </div>
+                    <h6 className="mb-2">Inventory</h6>
+                    <h2 className="fw-bold">{dashboardStats.totalMedicinesInInventory}</h2>
+                    <div className="d-flex justify-content-center gap-3 mt-2">
+                      <small className="badge bg-light text-dark">Items: {dashboardStats.inventoryItemCount}</small>
+                      <small className="badge bg-danger">Low: {dashboardStats.lowStockMedicines}</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-md-3 col-sm-6">
+                  <div className="card text-center p-4 shadow-sm rounded-4 border-0 bg-gradient-warning text-white"
+                       style={{ background: "linear-gradient(135deg, #f7971e 0%, #ffd200 100%)" }}>
+                    <div className="d-flex justify-content-center mb-3">
+                      <div className="bg-white rounded-circle p-3">
+                        <FaUsers size={24} className="text-warning" />
+                      </div>
+                    </div>
+                    <h6 className="mb-2">Registered Employees</h6>
+                    <h2 className="fw-bold">{dashboardStats.registeredEmployees}</h2>
+                    <small className="opacity-75">Active in system</small>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="row mt-5">
+                <div className="col-12">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body">
+                      <h5 className="card-title fw-bold mb-4">Quick Actions</h5>
+                      <div className="row g-3">
+                        <div className="col-md-4">
+                          <button 
+                            className="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2"
+                            onClick={handleOrderClick}
+                          >
+                            <FaShoppingCart /> Place New Order
+                          </button>
+                        </div>
+                        <div className="col-md-4">
+                          <button 
+                            className="btn btn-success w-100 py-3 d-flex align-items-center justify-content-center gap-2"
+                            onClick={() => navigate("/institutes/inventory")}
+                          >
+                            <FaBox /> Manage Inventory
+                          </button>
+                        </div>
+                        <div className="col-md-4">
+                          <button 
+                            className="btn btn-info w-100 py-3 d-flex align-items-center justify-content-center gap-2"
+                            onClick={() => navigate("/institutions/reports")}
+                          >
+                            <FaFileMedical /> View Reports
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Activity Placeholder */}
+              <div className="row mt-4">
+                <div className="col-12">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body">
+                      <h5 className="card-title fw-bold mb-4">Recent Activity</h5>
+                      <p className="text-muted">No recent activity to display.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Outlet />
+            </>
+          )}
         </div>
       </div>
 
-      {/* Hover effect for sidebar links */}
+      {/* ================= EMPLOYEE MODAL ================= */}
+      {showEmployeeModal && (
+        <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title">
+                  <FaUsers className="me-2" />
+                  Employee Details ({employees.length} employees)
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close btn-close-white" 
+                  onClick={() => setShowEmployeeModal(false)}
+                />
+              </div>
+
+              <div className="modal-body p-0">
+                <div className="table-responsive" style={{ maxHeight: "60vh" }}>
+                  <table className="table table-hover table-striped mb-0">
+                    <thead className="table-dark sticky-top">
+                      <tr>
+                        <th>ABS No</th>
+                        <th>Name</th>
+                        <th>Designation</th>
+                        <th>Email</th>
+                        <th>DOB</th>
+                        <th>Phone</th>
+                        <th>Height</th>
+                        <th>Weight</th>
+                        <th>Address</th>
+                        <th>Blood Group</th>
+                        <th>Medical History</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees.map(emp => (
+                        <tr key={emp._id}>
+                          <td className="fw-semibold">{emp.ABS_NO}</td>
+                          <td>
+                            <div className="d-flex align-items-center gap-2">
+                              {emp.Photo ? (
+                                <img 
+                                  src={emp.Photo.startsWith('/') ? `http://localhost:6100${emp.Photo}` : emp.Photo}
+                                  alt={emp.Name}
+                                  className="rounded-circle"
+                                  style={{ width: "32px", height: "32px", objectFit: "cover" }}
+                                />
+                              ) : (
+                                <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
+                                     style={{ width: "32px", height: "32px" }}>
+                                  <FaUserCircle className="text-white" size={16} />
+                                </div>
+                              )}
+                              <span>{emp.Name}</span>
+                            </div>
+                          </td>
+                          <td>{emp.Designation || "-"}</td>
+                          <td><small>{emp.Email}</small></td>
+                          <td>{emp.DOB || "-"}</td>
+                          <td>{emp.Phone_No || "-"}</td>
+                          <td>{emp.Height ? `${emp.Height} cm` : "-"}</td>
+                          <td>{emp.Weight ? `${emp.Weight} kg` : "-"}</td>
+                          <td>
+                            <small className="text-muted">
+                              {emp.Address || "-"}
+                            </small>
+                          </td>
+                          <td>
+                            <span className={`badge ${
+                              emp.Blood_Group ? "bg-danger" : "bg-secondary"
+                            }`}>
+                              {emp.Blood_Group || "-"}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`badge ${
+                              emp.Medical_History_Count > 0 ? "bg-info" : "bg-light text-dark"
+                            }`}>
+                              {emp.Medical_History_Count} records
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => setShowEmployeeModal(false)}
+                >
+                  Close
+                </button>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => {
+                    // Export functionality could be added here
+                    alert("Export functionality coming soon!");
+                  }}
+                >
+                  Export to CSV
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Styles */}
       <style>
         {`
           .hover-item {
-            color: #333;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.25s ease;
+            padding: 10px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
           }
-
           .hover-item:hover {
-            background-color: #f0f0f0;
-            color: #000;
-            transform: translateX(2px);
+            background: linear-gradient(135deg, #667eea0d 0%, #764ba20d 100%);
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           }
-
-          .translate-x-0 {
-            transform: translateX(0);
-          }
-
-          .-translate-x-100 {
-            transform: translateX(-100%);
-          }
+          .bg-gradient-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
+          .bg-gradient-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important; }
+          .bg-gradient-info { background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%) !important; }
+          .bg-gradient-warning { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%) !important; }
         `}
       </style>
     </div>

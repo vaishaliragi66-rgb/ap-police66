@@ -7,6 +7,10 @@ const ManufacturerSchema = new mongoose.Schema({
     type: Number,
     unique: true
   },
+  Profile_Pic: {
+    type: String,
+    default: null   // optional
+  },
   Manufacturer_Name: { type: String, required: true },
   Contact_No: { type: String, required: true, match: /^[0-9]{10}$/ },
   Email_ID: { type: String, required: true },

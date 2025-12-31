@@ -7,6 +7,8 @@ const Institute = require('../models/master_institute');
 const Manufacturer = require("../models/master_manufacture");
 const Medicine = require("../models/master_medicine");  
 const Order = require("../models/master_order");
+const Employee = require("../models/employee"); // Add this import
+
 instituteApp.get("/institutions", async (req, res) => {
   try {
     const institutions = await Institute.find();
@@ -464,5 +466,143 @@ instituteApp.get("/institution/:id", async (req, res) => {
   }
 });
 
+// GET /institute-api/dashboard-stats/:instituteId - UPDATED VERSION
+instituteApp.get("/dashboard-stats/:instituteId", async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Invalid institute ID" });
+    }
+
+    // 1️⃣ Total Employees (with all new fields)
+    const totalEmployees = await Employee.countDocuments();
+
+    // 2️⃣ Registered Employees (same as total employees for now)
+    const registeredEmployees = totalEmployees;
+
+    // 3️⃣ Total Orders Placed by this institute
+    const institute = await Institute.findById(instituteId).lean();
+    if (!institute) {
+      return res.status(404).json({ message: "Institute not found" });
+    }
+
+    // Count PENDING orders
+    const pendingOrdersCount = await Order.countDocuments({
+      Institute_ID: instituteId,
+      institute_Status: "PENDING"
+    });
+
+    // Count DELIVERED orders
+    const deliveredOrdersCount = await Order.countDocuments({
+      Institute_ID: instituteId,
+      institute_Status: "DELIVERED"
+    });
+
+    const totalOrdersPlaced = institute.Orders?.length || 0;
+
+    // 4️⃣ Total medicines in inventory
+    const totalMedicinesInInventory = institute.Medicine_Inventory?.reduce((sum, item) => 
+      sum + (item.Quantity || 0), 0) || 0;
+
+    // 5️⃣ Low stock medicines
+    const lowStockMedicines = institute.Medicine_Inventory?.filter(item => {
+      const threshold = item.Medicine_ID?.Threshold_Qty || 0;
+      return (item.Quantity || 0) < threshold;
+    }).length || 0;
+
+    return res.json({
+      totalEmployees,
+      totalOrdersPlaced,
+      registeredEmployees,
+      pendingOrdersCount,
+      deliveredOrdersCount,
+      totalMedicinesInInventory,
+      lowStockMedicines,
+      inventoryItemCount: institute.Medicine_Inventory?.length || 0
+    });
+  } catch (err) {
+    console.error("Dashboard stats error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// GET /institute-api/employees-detailed - Get detailed employee list with all fields
+instituteApp.get("/employees-detailed", async (req, res) => {
+  try {
+    const employees = await Employee.find({})
+      .select('ABS_NO Name Email Designation DOB Phone_No Height Weight Address Blood_Group Photo Medical_History')
+      .sort({ Name: 1 })
+      .lean();
+
+    // Format the response
+    const formattedEmployees = employees.map(emp => ({
+      _id: emp._id,
+      ABS_NO: emp.ABS_NO || "-",
+      Name: emp.Name || "-",
+      Email: emp.Email || "-",
+      Designation: emp.Designation || "-",
+      DOB: emp.DOB ? new Date(emp.DOB).toISOString().split('T')[0] : "-",
+      Phone_No: emp.Phone_No || "-",
+      Height: emp.Height || "-",
+      Weight: emp.Weight || "-",
+      Address: emp.Address ? 
+        `${emp.Address.Street || ""}, ${emp.Address.District || ""}, ${emp.Address.State || ""} - ${emp.Address.Pincode || ""}`.trim() 
+        : "-",
+      Blood_Group: emp.Blood_Group || "-",
+      Photo: emp.Photo || null,
+      Medical_History_Count: emp.Medical_History?.length || 0,
+      Medical_History: emp.Medical_History || []
+    }));
+
+    res.status(200).json({
+      count: formattedEmployees.length,
+      employees: formattedEmployees
+    });
+  } catch (err) {
+    console.error("Error fetching detailed employees:", err);
+    res.status(500).json({ 
+      message: "Failed to fetch employees", 
+      error: err.message 
+    });
+  }
+});
+
+// GET /institute-api/employee/:id - Get single employee details
+instituteApp.get("/employee/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid employee ID" });
+    }
+
+    const employee = await Employee.findById(id)
+      .select('-Password')
+      .lean();
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // Format the response
+    const formattedEmployee = {
+      ...employee,
+      DOB: employee.DOB ? new Date(employee.DOB).toISOString().split('T')[0] : null,
+      Address: employee.Address ? 
+        `${employee.Address.Street || ""}, ${employee.Address.District || ""}, ${employee.Address.State || ""} - ${employee.Address.Pincode || ""}`.trim() 
+        : null,
+      Medical_History_Count: employee.Medical_History?.length || 0
+    };
+
+    res.status(200).json(formattedEmployee);
+  } catch (err) {
+    console.error("Error fetching employee details:", err);
+    res.status(500).json({ 
+      message: "Failed to fetch employee details", 
+      error: err.message 
+    });
+  }
+});
 
 module.exports = instituteApp;

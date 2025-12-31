@@ -65,14 +65,16 @@ const DiagnosisReport = () => {
     }
   };
 
-  const formatDate = (report) => {
-    const lastTest = report.Tests?.[report.Tests.length - 1];
-    if (lastTest?.Timestamp)
-      return new Date(lastTest.Timestamp).toLocaleString("en-IN");
-    return report.createdAt
-      ? new Date(report.createdAt).toLocaleString("en-IN")
-      : "N/A";
-  };
+const formatDate = (report) => {
+  if (report.Timestamp)
+    return new Date(report.Timestamp).toLocaleString("en-IN");
+
+  if (report.createdAt)
+    return new Date(report.createdAt).toLocaleString("en-IN");
+
+  return "N/A";
+};
+
 
   return (
     <div
