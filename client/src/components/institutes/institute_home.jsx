@@ -83,12 +83,11 @@ const Institute_home = () => {
     { icon: <FaShoppingCart />, label: "Orders Medicines", path: "/institutes/manufacturer-orders" },
     { icon: <FaUsers />, label: "Orders from Employees", path: "/institutes/employee-orders" },
     { icon: <FaBox />, label: "Inventory", path: "/institutes/inventory" },
-    { icon: <FaVials />, label: "🧬 Diseases", path: "/institutions/diseases" },
-    { icon: <FaPills />, label: "💊 Prescriptions", path: "/institutions/prescriptions" },
-    { icon: <FaFileMedical />, label: "📋 View Employee Reports", path: "/institutions/reports" },
+    { icon: <FaVials />, label: "Diseases", path: "/institutions/diseases" },
+    { icon: <FaPills />, label: "Prescriptions", path: "/institutions/prescriptions" },
+    { icon: <FaFileMedical />, label: "View Employee Reports", path: "/institutions/reports" },
     { icon: <FaClipboardList />, label: "Diagnosis", path: "/institutions/diagnosis-entry" },
-    { icon: <FaHistory />, label: "Order History", path: "/institutes/order-history" },
-    { icon: <FaChartLine />, label: "Analytics", path: "/institutes/analytics" },
+    { icon: <FaClipboardList />, label: "Ledger", path: "/institutes/ledger" },
   ];
 
   return (

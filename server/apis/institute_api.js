@@ -7,7 +7,8 @@ const Institute = require('../models/master_institute');
 const Manufacturer = require("../models/master_manufacture");
 const Medicine = require("../models/master_medicine");  
 const Order = require("../models/master_order");
-const Employee = require("../models/employee"); // Add this import
+const Employee = require("../models/employee"); 
+const InstituteLedger = require("../models/InstituteLedger");
 
 instituteApp.get("/institutions", async (req, res) => {
   try {
@@ -320,110 +321,84 @@ instituteApp.get("/orders/:instituteId", expressAsyncHandler(async (req, res) =>
 // institute marks its side delivered
 instituteApp.put(
   "/orders/:manufacturerId/:orderId/delivered",
-  expressAsyncHandler(async (req, res) => {
+  async (req, res) => {
     try {
       const { manufacturerId, orderId } = req.params;
-      const debug = { steps: [] };
 
-      if (
-        !mongoose.Types.ObjectId.isValid(manufacturerId) ||
-        !mongoose.Types.ObjectId.isValid(orderId)
-      ) {
-        return res.status(400).json({ error: "Invalid IDs", debug });
-      }
-
-      // Load Order doc
       const order = await Order.findById(orderId);
-      if (!order) return res.status(404).json({ error: "Order not found", debug });
+      if (!order)
+        return res.status(404).json({ message: "Order not found" });
 
-      // Confirm this order belongs to the manufacturer passed
-      if (String(order.Manufacturer_ID) !== String(manufacturerId)) {
+      // Institute can deliver only after approval
+      if (order.institute_Status !== "APPROVED") {
         return res
           .status(400)
-          .json({ error: "Manufacturer ID mismatch for this order", debug });
+          .json({ message: "Order must be approved first" });
       }
 
-      // If manufacturer already rejected, reject institute side too
-      if (order.manufacture_Status && order.manufacture_Status.toUpperCase() === "REJECTED") {
-        order.institute_Status = "REJECTED";
-        await order.save();
-        debug.steps.push("Manufacturer rejected → Institute automatically REJECTED");
-        return res.status(200).json({
-          message: "Order rejected by manufacturer → Institute automatically rejected",
-          manufacturerDelivered: false,
-          orderId: order._id,
-          debug
-        });
-      }
-
-      // Business rule: only APPROVED institute orders can be marked delivered
-      if (!order.institute_Status || order.institute_Status.toUpperCase() !== "APPROVED") {
-        return res.status(400).json({
-          error: "Order must be APPROVED before institute marks delivered",
-          debug
-        });
-      }
-
-      // Mark institute side delivered
+      // Mark institute delivered
       order.institute_Status = "DELIVERED";
       if (!order.Delivery_Date) order.Delivery_Date = new Date();
       await order.save();
-      debug.steps.push("Institute side marked DELIVERED on Order");
 
-      let manufacturerDelivered = false;
-
-      // If manufacturer already delivered, do final inventory update
-      if (
-        order.manufacture_Status &&
-        order.manufacture_Status.toUpperCase() === "DELIVERED"
-      ) {
-        manufacturerDelivered = true;
-        const institute = await Institute.findById(order.Institute_ID);
-        if (!institute) {
-          return res
-            .status(404)
-            .json({ error: "Institute not found when updating inventory", debug });
-        }
-
-        const qty = Number(order.Quantity_Requested || 0);
-
-        // Merge inventory
-        const inv = institute.Medicine_Inventory.find(
-          (it) => String(it.Medicine_ID) === String(order.Medicine_ID)
-        );
-        if (inv) {
-          inv.Quantity = (inv.Quantity || 0) + qty;
-        } else {
-          institute.Medicine_Inventory.push({ Medicine_ID: order.Medicine_ID, Quantity: qty });
-        }
-
-        // Decrement global medicine
-        const medDoc = await Medicine.findById(order.Medicine_ID);
-        if (medDoc) {
-          medDoc.Quantity = Math.max(0, (medDoc.Quantity || 0) - qty);
-          console.log(medDoc.Quantity)
-          await medDoc.save();
-        }
-
-        await institute.save();
-        debug.steps.push("Inventory merged and global Medicine.Quantity decremented");
+      // 🔒 IMPORTANT: DO NOTHING ELSE unless manufacturer also delivered
+      if (order.manufacture_Status !== "DELIVERED") {
+        return res.json({
+          message:
+            "Institute delivery recorded. Waiting for manufacturer delivery.",
+          finalDelivered: false
+        });
       }
 
-      return res.status(200).json({
-        message: manufacturerDelivered
-          ? "Order marked DELIVERED and inventory updated (both sides delivered)."
-          : "Order marked DELIVERED on institute side. Waiting for manufacturer confirmation.",
-        manufacturerDelivered,
-        orderId: order._id,
-        debug
+      // ✅ BOTH SIDES DELIVERED → NOW update inventory + ledger
+      const institute = await Institute.findById(order.Institute_ID);
+      const medicine = await Medicine.findById(order.Medicine_ID).populate(
+        "Manufacturer_ID",
+        "Manufacturer_Name"
+      );
+
+      const qty = Number(order.Quantity_Requested);
+
+      let invItem = institute.Medicine_Inventory.find(
+        (m) => m.Medicine_ID.toString() === order.Medicine_ID.toString()
+      );
+
+      if (invItem) {
+        invItem.Quantity += qty;
+      } else {
+        institute.Medicine_Inventory.push({
+          Medicine_ID: order.Medicine_ID,
+          Quantity: qty
+        });
+        invItem = institute.Medicine_Inventory.at(-1);
+      }
+
+      await institute.save();
+
+      // ✅ LEDGER ENTRY (IN) — ONLY HERE
+      await InstituteLedger.create({
+        Institute_ID: institute._id,
+        Transaction_Type: "ORDER_DELIVERY",
+        Reference_ID: order._id,
+        Medicine_ID: order.Medicine_ID,
+        Medicine_Name: medicine.Medicine_Name,
+        Manufacturer_Name:
+          medicine.Manufacturer_ID?.Manufacturer_Name || "",
+        Expiry_Date: medicine.Expiry_Date,
+        Direction: "IN",
+        Quantity: qty,
+        Balance_After: invItem.Quantity
+      });
+
+      return res.json({
+        message: "Order fully delivered (both sides confirmed)",
+        finalDelivered: true
       });
     } catch (err) {
-      console.error("deliver-route-error:", err);
-      return res
-        .status(500)
-        .json({ error: "Internal server error", details: err.message });
+      console.error("Institute deliver error:", err);
+      return res.status(500).json({ error: err.message });
     }
-  })
+  }
 );
 
 instituteApp.get("/inventory/:instituteId", async (req, res) => {

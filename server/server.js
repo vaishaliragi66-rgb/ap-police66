@@ -17,6 +17,7 @@ const FamilyApp=require('./apis/family_member_api')
 const prescriptionApp = require("./apis/prescription-api");
 const diagnosisApp=require("./apis/diagnosis_api")
 const diseaseApp=require("./apis/institute_enter_disease");
+const ledgerApp = require("./apis/instituteLedgerApi");
 app.use("/medicine-api", medicineApp);
 app.use("/institute-api", instituteApp);
 app.use("/manufacturer-api", manufacturerApp);
@@ -26,7 +27,7 @@ app.use("/prescription-api", prescriptionApp);
 app.use("/diagnosis-api",diagnosisApp);
 app.use("/disease-api",diseaseApp)
 app.use("/uploads", express.static("uploads"));
-
+app.use("/ledger-api", ledgerApp);
 // Base route
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 

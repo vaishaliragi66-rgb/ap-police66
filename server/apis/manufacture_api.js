@@ -3,7 +3,8 @@ const manufacturerApp = express.Router();
 const Manufacturer = require("../models/master_manufacture");
 const Institute = require('../models/master_institute');
 const Medicine = require("../models/master_medicine");
-const Order = require("../models/master_order"); // ✅ Import the new Order model
+const Order = require("../models/master_order"); 
+const InstituteLedger = require("../models/InstituteLedger");
 const mongoose = require("mongoose");
 const axios = require("axios");
 
@@ -382,97 +383,80 @@ manufacturerApp.get("/debug/test-institute-connection", async (req, res) => {
   }
 });
 
-manufacturerApp.put("/manufacturer/order/deliver/:manufacturerId/:orderId", async (req, res) => {
-  try {
-    const { manufacturerId, orderId } = req.params;
-    console.log("🚚 Deliver route hit:", { manufacturerId, orderId });
-    const debug = { steps: [] };
+manufacturerApp.put(
+  "/manufacturer/order/deliver/:manufacturerId/:orderId",
+  async (req, res) => {
+    try {
+      const { manufacturerId, orderId } = req.params;
 
-    // Validate IDs
-    if (!mongoose.Types.ObjectId.isValid(orderId)) {
-      console.log("❌ Invalid orderId");
-      return res.status(400).json({ error: "Invalid Order ID", debug });
-    }
+      const order = await Order.findById(orderId);
+      if (!order) return res.status(404).json({ message: "Order not found" });
 
-    const order = await Order.findById(orderId);
-    if (!order) {
-      console.log("❌ Order not found");
-      return res.status(404).json({ error: "Order not found", debug });
-    }
+      const manufacturer = await Manufacturer.findOne({ Manufacturer_ID: manufacturerId });
+      if (!manufacturer) return res.status(404).json({ message: "Manufacturer not found" });
 
-    console.log("📦 Order found:", order._id, "status:", order.manufacture_Status, order.institute_Status);
-
-    const manufacturer = await Manufacturer.findOne({ Manufacturer_ID: manufacturerId });
-    if (!manufacturer) {
-      console.log("❌ Manufacturer not found");
-      return res.status(404).json({ error: "Manufacturer not found", debug });
-    }
-
-    console.log("🏭 Manufacturer found:", manufacturer._id);
-
-    if (String(order.Manufacturer_ID) !== String(manufacturer._id)) {
-      console.log("❌ Mismatch:", order.Manufacturer_ID, "vs", manufacturer._id);
-      return res.status(400).json({ error: "Manufacturer ID mismatch", debug });
-    }
-
-    const status = (order.manufacture_Status || "").toUpperCase();
-    console.log("🟡 manufacture_Status:", status);
-
-    if (status !== "APPROVED") {
-      console.log("❌ Order not APPROVED, skipping delivery");
-      return res.status(400).json({ error: "Order must be APPROVED before marking DELIVERED", debug });
-    }
-
-    order.manufacture_Status = "DELIVERED";
-    if (!order.Delivery_Date) order.Delivery_Date = new Date();
-    await order.save();
-
-    console.log("✅ Manufacturer marked DELIVERED");
-
-    if ((order.institute_Status || "").toUpperCase() === "DELIVERED") {
-      console.log("🔄 Both sides DELIVERED - syncing inventory");
-
-      const medDoc = await Medicine.findById(order.Medicine_ID);
-      console.log("💊 Medicine found:", medDoc ? medDoc.Medicine_Name : "❌ Not found");
-
-      const qty = Number(order.Quantity_Requested || 0);
-
-      if (!medDoc) {
-        console.log("❌ Medicine not found in manufacturer stock");
-        return res.status(404).json({ error: "Medicine not found in manufacturer inventory", debug });
+      if (String(order.Manufacturer_ID) !== String(manufacturer._id)) {
+        return res.status(400).json({ message: "Manufacturer mismatch" });
       }
 
-      medDoc.Quantity = Math.max(0, (medDoc.Quantity || 0) - qty);
-      await medDoc.save();
-      console.log("📉 Medicine quantity decreased:", medDoc.Quantity);
-
-      const institute = await Institute.findById(order.Institute_ID);
-      console.log("🏫 Institute found:", institute ? institute.Institute_Name : "❌ Not found");
-
-      const existingMed = institute.Medicine_Inventory.find(
-        (it) => String(it.Medicine_ID) === String(order.Medicine_ID)
-      );
-
-      if (existingMed) {
-        existingMed.Quantity = (existingMed.Quantity || 0) + qty;
-        console.log("➕ Increased existing medicine:", existingMed.Quantity);
-      } else {
-        institute.Medicine_Inventory.push({ Medicine_ID: order.Medicine_ID, Quantity: qty });
-        console.log("🆕 Added new medicine to inventory");
+      if (order.manufacture_Status !== "APPROVED") {
+        return res.status(400).json({ message: "Order must be approved first" });
       }
-      await institute.save();
-      console.log("✅ Institute inventory updated");
-    } else {
-      console.log("⏳ Waiting for institute side to mark DELIVERED");
-    }
 
-    return res.status(200).json({ message: "Processed", debug });
-  } catch (err) {
-    console.error("🔥 manufacturer-deliver-error:", err);
-    res.status(500).json({ error: "Internal Server Error", details: err.message });
+      order.manufacture_Status = "DELIVERED";
+      if (!order.Delivery_Date) order.Delivery_Date = new Date();
+      await order.save();
+
+      // ✅ If institute already delivered → update inventory + ledger
+      if (order.institute_Status === "DELIVERED") {
+        const institute = await Institute.findById(order.Institute_ID);
+        const medicine = await Medicine.findById(order.Medicine_ID).populate(
+          "Manufacturer_ID",
+          "Manufacturer_Name"
+        );
+
+        const qty = Number(order.Quantity_Requested);
+
+        let invItem = institute.Medicine_Inventory.find(
+          (m) => m.Medicine_ID.toString() === order.Medicine_ID.toString()
+        );
+
+        if (invItem) {
+          invItem.Quantity += qty;
+        } else {
+          institute.Medicine_Inventory.push({
+            Medicine_ID: order.Medicine_ID,
+            Quantity: qty
+          });
+          invItem = institute.Medicine_Inventory.at(-1);
+        }
+
+        await institute.save();
+
+        // ✅ LEDGER ENTRY (IN)
+        await InstituteLedger.create({
+          Institute_ID: institute._id,
+          Transaction_Type: "ORDER_DELIVERY",
+          Reference_ID: order._id,
+          Medicine_ID: order.Medicine_ID,
+          Medicine_Name: medicine.Medicine_Name,
+          Manufacturer_Name: medicine.Manufacturer_ID?.Manufacturer_Name || "",
+          Expiry_Date: medicine.Expiry_Date,
+          Direction: "IN",
+          Quantity: qty,
+          Balance_After: invItem.Quantity
+        });
+      }
+
+      return res.json({
+        message: "Manufacturer delivery processed (ledger safe)"
+      });
+
+    } catch (err) {
+      console.error("Manufacturer deliver error:", err);
+      return res.status(500).json({ error: err.message });
+    }
   }
-});
-
-
+);
 
 module.exports = manufacturerApp;

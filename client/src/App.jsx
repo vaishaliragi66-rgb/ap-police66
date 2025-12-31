@@ -27,6 +27,7 @@ import DiagnosisReport from './components/employee/DiagnosisReport'
 import Diseases from "./components/institutes/Diseases";
 import InstituteReports from "./components/institutes/institutions_reports";
 import InstituteAnalytics from "./components/institutes/institute_analytics";
+import InstituteLedger from "./components/institutes/InstituteLedger";
 function App() {
   const router = createBrowserRouter([
     {
@@ -89,6 +90,10 @@ function App() {
     {
       path:"/institutes/inventory",
       element:<InstituteInventory/>
+    },
+    {
+      path:"/institutes/ledger",
+      element:<InstituteLedger/>
     },
     {
       path:"/employee-register",
