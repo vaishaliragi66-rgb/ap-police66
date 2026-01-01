@@ -28,6 +28,10 @@ import Diseases from "./components/institutes/Diseases";
 import InstituteReports from "./components/institutes/institutions_reports";
 import InstituteAnalytics from "./components/institutes/institute_analytics";
 import InstituteLedger from "./components/institutes/InstituteLedger";
+import MedicinesIssuedRegister from "./components/institutes/MedicinesIssuedRegister";
+import EmployeeDiseaseReport from "./components/employee/EmployeeDiseaseReport";
+import EmployeeProfile from "./components/employee/EmployeeProfile";
+import FamilyMemberProfile from "./components/employee/FamilyMemberProfile";
 function App() {
   const router = createBrowserRouter([
     {
@@ -96,35 +100,14 @@ function App() {
       element:<InstituteLedger/>
     },
     {
-      path:"/employee-register",
-      element:<EmployeeRegistration/>,
-    },
-  {
-      path:"/employee/login",
-      element:<EmployeeLogin/>,
-      
-    },
-    {
-      path: "employee/family_register",
-      element: <FamilyMemberRegistration />,
+      path:"/institutes/medicines-issued-register",
+      element:<MedicinesIssuedRegister/>
     },
     {
       path:"institutions/diagnosis-entry",
       element:<DiagnosisEntryForm/>
     },
     {
-      path: "employee/prescription-report",
-      element: <PrescriptionReport />,
-    },
-    {
-      path: "employee/diagnosis-report",
-      element: <DiagnosisReport />,
-    },
-    
-    {
-      path:"employee/home",
-      element:<EmployeeHome/>
-    },{
       path:"institutions/prescriptions",
       element:<PharmacyPrescriptionForm/>
     },{
@@ -136,6 +119,43 @@ function App() {
     },{
       path:"institutions/analytics",
       element:<InstituteAnalytics/>
+    },
+    {
+      path:"/employee-register",
+      element:<EmployeeRegistration/>,
+    },
+    {
+      path:"/employee-login",
+      element:<EmployeeLogin/>,
+      
+    },
+    {
+      path: "employee/family_register",
+      element: <FamilyMemberRegistration />,
+    },
+    {
+      path: "employee/prescription-report",
+      element: <PrescriptionReport />,
+    },
+    {
+      path: "employee/diagnosis-report",
+      element: <DiagnosisReport />,
+    },
+    {
+      path:"employee/home",
+      element:<EmployeeHome/>
+    },
+    {
+      path:"employee/disease-history",
+      element:<EmployeeDiseaseReport/>
+    },
+    {
+      path:"/employee/profile",
+      element:<EmployeeProfile/>
+    },
+    {
+      path:"/employee/family/:id",
+      element:<FamilyMemberProfile/>
     }
   ]);
 

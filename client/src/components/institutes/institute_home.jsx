@@ -81,7 +81,7 @@ const Institute_home = () => {
 
   const navItems = [
     { icon: <FaShoppingCart />, label: "Orders Medicines", path: "/institutes/manufacturer-orders" },
-    { icon: <FaUsers />, label: "Orders from Employees", path: "/institutes/employee-orders" },
+    { icon: <FaUsers />, label: "Medicines Issued Register", path: "/institutes/medicines-issued-register" },
     { icon: <FaBox />, label: "Inventory", path: "/institutes/inventory" },
     { icon: <FaVials />, label: "Diseases", path: "/institutions/diseases" },
     { icon: <FaPills />, label: "Prescriptions", path: "/institutions/prescriptions" },
@@ -328,19 +328,6 @@ const Institute_home = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Recent Activity Placeholder */}
-              <div className="row mt-4">
-                <div className="col-12">
-                  <div className="card shadow-sm border-0">
-                    <div className="card-body">
-                      <h5 className="card-title fw-bold mb-4">Recent Activity</h5>
-                      <p className="text-muted">No recent activity to display.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <Outlet />
             </>
           )}

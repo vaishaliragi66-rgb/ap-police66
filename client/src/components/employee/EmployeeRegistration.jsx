@@ -157,7 +157,7 @@ const EmployeeRegister = () => {
 
       // Navigate after 2 seconds
       setTimeout(() => {
-        navigate("/employee/login");
+        navigate("/employee-login");
       }, 2000);
 
     } catch (error) {

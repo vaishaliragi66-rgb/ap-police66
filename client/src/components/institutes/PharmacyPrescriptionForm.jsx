@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const PharmacyPrescriptionForm = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
@@ -11,12 +12,18 @@ const PharmacyPrescriptionForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [instituteName, setInstituteName] = useState("");
 
+  const [employeeProfile, setEmployeeProfile] = useState(null);
+  const [diseases, setDiseases] = useState([]);
+
+  // 🔴 medicine limit errors (ONLY NEW STATE)
+  const [medicineErrors, setMedicineErrors] = useState({});
+
   const [formData, setFormData] = useState({
     Institute_ID: "",
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Medicines: [{ Medicine_ID: "", Medicine_Name: "", Quantity: "" }],
+    Medicines: [{ medicineId: "", medicineName: "", quantity: 0 }],
     Notes: ""
   });
 
@@ -53,6 +60,17 @@ const PharmacyPrescriptionForm = () => {
     setInventory(res.data || []);
   };
 
+  const fetchDiseases = async (employeeId) => {
+    try {
+      const res = await axios.get(
+        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
+      );
+      setDiseases(res.data || []);
+    } catch {
+      setDiseases([]);
+    }
+  };
+
   /* ================= EMPLOYEE SEARCH ================= */
   useEffect(() => {
     if (!searchTerm) {
@@ -72,9 +90,22 @@ const PharmacyPrescriptionForm = () => {
       IsFamilyMember: false,
       FamilyMember_ID: ""
     }));
+
     setSearchTerm(emp.ABS_NO);
     setFilteredEmployees([]);
+    fetchDiseases(emp._id);
   };
+
+  useEffect(() => {
+    if (!formData.Employee_ID) return;
+
+    axios
+      .get(
+        `http://localhost:${BACKEND_PORT}/employee-api/profile/${formData.Employee_ID}`
+      )
+      .then((res) => setEmployeeProfile(res.data))
+      .catch(() => setEmployeeProfile(null));
+  }, [formData.Employee_ID]);
 
   /* ================= FAMILY MEMBERS ================= */
   useEffect(() => {
@@ -90,23 +121,85 @@ const PharmacyPrescriptionForm = () => {
       .then((res) => setFamilyMembers(res.data || []));
   }, [formData.Employee_ID]);
 
-   // 🟢 Medicine Handlers
+  /* ================= DISEASE FILTER ================= */
+  const twoMonthsAgo = new Date();
+  twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+  const relevantDiseases = diseases.filter((d) => {
+    if (formData.IsFamilyMember) {
+      return String(d.FamilyMember_ID?._id) === String(formData.FamilyMember_ID);
+    }
+    return !d.IsFamilyMember;
+  });
+
+  const communicableRecent = relevantDiseases.filter(
+    (d) =>
+      d.Category === "Communicable" &&
+      new Date(d.createdAt) >= twoMonthsAgo
+  );
+
+  /* ================= MEDICINE LIMIT VALIDATION (FIXED) ================= */
+  const validateMedicineQuantity = async (index, medicineName, quantity) => {
+  try {
+    const res = await axios.post(
+      `http://localhost:${BACKEND_PORT}/medicine-limit-api/validate-medicine-quantity`,
+      {
+        medicine_name: medicineName.trim(),
+        quantity: Number(quantity)
+      }
+    );
+
+    // clear error
+    setMedicineErrors((prev) => {
+      const updated = { ...prev };
+      delete updated[index];
+      return updated;
+    });
+
+  } catch (err) {
+    const max = err?.response?.data?.max_quantity;
+
+    setMedicineErrors((prev) => ({
+      ...prev,
+      [index]: `Maximum allowed quantity is ${max}`
+    }));
+  }
+};
+
+
+  /* ================= MEDICINE HANDLERS ================= */
   const handleMedicineChange = (index, field, value) => {
     setFormData((prev) => {
       const updated = [...prev.Medicines];
-      if (field === "medicineId") {
-  const selected = inventory.find(m => m.medicineId === value);
 
-  updated[index] = {
-    medicineId: selected?.medicineId || "",
-    medicineName: selected?.medicineName || "",
-    quantity: 0
-  };
-}
- else if (field === "quantity") {
-        updated[index].quantity = value;
+      if (field === "medicineId") {
+        const selected = inventory.find((m) => m.medicineId === value);
+        updated[index] = {
+          medicineId: selected?.medicineId || "",
+          medicineName: selected?.medicineName || "",
+          quantity: 0
+        };
+
+        // clear error when medicine changes
+        setMedicineErrors((prevErr) => {
+          const e = { ...prevErr };
+          delete e[index];
+          return e;
+        });
       }
-      console.log("Updated Medicines:", updated);
+
+      if (field === "quantity") {
+        updated[index].quantity = value;
+
+        if (updated[index].medicineName && value > 0) {
+          validateMedicineQuantity(
+            index,
+            updated[index].medicineName,
+            value
+          );
+        }
+      }
+
       return { ...prev, Medicines: updated };
     });
   };
@@ -116,18 +209,24 @@ const PharmacyPrescriptionForm = () => {
       ...prev,
       Medicines: [
         ...prev.Medicines,
-        { medicineId: "", medicineName: "", quantity: 0 },
-      ],
+        { medicineId: "", medicineName: "", quantity: 0 }
+      ]
     }));
 
   const removeMedicine = (index) =>
     setFormData((prev) => ({
       ...prev,
-      Medicines: prev.Medicines.filter((_, i) => i !== index),
+      Medicines: prev.Medicines.filter((_, i) => i !== index)
     }));
+
   /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (Object.keys(medicineErrors).length > 0) {
+      alert("❌ One or more medicines exceed allowed quantity limits");
+      return;
+    }
 
     if (!formData.Employee_ID) {
       alert("Please select an employee");
@@ -139,217 +238,227 @@ const PharmacyPrescriptionForm = () => {
       return;
     }
 
-   const payload = {
-  Institute_ID: formData.Institute_ID,
-  Employee_ID: formData.Employee_ID,
-  IsFamilyMember: formData.IsFamilyMember,
-  FamilyMember_ID: formData.IsFamilyMember
-    ? formData.FamilyMember_ID
-    : null,
+    const payload = {
+      Institute_ID: formData.Institute_ID,
+      Employee_ID: formData.Employee_ID,
+      IsFamilyMember: formData.IsFamilyMember,
+      FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
+      Medicines: formData.Medicines.map((m) => ({
+        Medicine_ID: m.medicineId,
+        Medicine_Name: m.medicineName,
+        Quantity: Number(m.quantity)
+      })),
+      Notes: formData.Notes
+    };
 
-  Medicines: formData.Medicines.map(m => ({
-    Medicine_ID: m.medicineId,
-    Medicine_Name: m.medicineName,
-    Quantity: Number(m.quantity)
-  })),
+    await axios.post(
+      `http://localhost:${BACKEND_PORT}/prescription-api/add`,
+      payload
+    );
 
-  Notes: formData.Notes
-};
-
-
-    try {
-      await axios.post(
-        `http://localhost:${BACKEND_PORT}/prescription-api/add`,
-        payload
-      );
-
-      alert("✅ Prescription saved successfully");
-
-      setFormData({
-        ...formData,
-        Employee_ID: "",
-        IsFamilyMember: false,
-        FamilyMember_ID: "",
-        Medicines: [{ Medicine_ID: "", Medicine_Name: "", Quantity: "" }],
-        Notes: ""
-      });
-      setSearchTerm("");
-      setFamilyMembers([]);
-    } catch (err) {
-      alert(err?.response?.data?.message || "Prescription failed");
-    }
+    alert("✅ Prescription saved successfully");
   };
 
   /* ================= UI ================= */
   return (
-    <div className="container mt-4">
-      <div className="card shadow">
-        <div className="card-header bg-dark text-white">
-          <h5 className="mb-0">Pharmacy Prescription</h5>
-        </div>
-
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
-            {/* Institute */}
-            <div className="mb-3">
-              <label className="form-label">Institute</label>
-              <input className="form-control" value={instituteName} readOnly />
+    <div className="container-fluid mt-4">
+      <div className="row justify-content-center">
+        {/* FORM */}
+        <div className="col-lg-8">
+          <div className="card shadow border-0">
+            <div className="card-header bg-dark text-white">
+              <h5 className="mb-0">Pharmacy Prescription</h5>
             </div>
 
-            {/* Employee */}
-            <div className="mb-3 position-relative">
-              <label className="form-label">Employee ABS_NO</label>
-              <input
-                className="form-control"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Type ABS_NO"
-              />
-
-              {filteredEmployees.length > 0 && (
-                <div className="list-group position-absolute w-100 z-3">
-                  {filteredEmployees.map((e) => (
-                    <button
-                      type="button"
-                      key={e._id}
-                      className="list-group-item list-group-item-action"
-                      onClick={() => selectEmployee(e)}
-                    >
-                      {e.ABS_NO} — {e.Name}
-                    </button>
-                  ))}
+            <div className="card-body">
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Institute</label>
+                  <input className="form-control" value={instituteName} readOnly />
                 </div>
-              )}
-            </div>
 
-            {/* Family Member Checkbox */}
-            <div className="form-check mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                checked={formData.IsFamilyMember}
-                onChange={(e) =>
-                  setFormData((f) => ({
-                    ...f,
-                    IsFamilyMember: e.target.checked,
-                    FamilyMember_ID: ""
-                  }))
-                }
-              />
-              <label className="form-check-label">
-                Prescription for Family Member
-              </label>
-            </div>
+                <div className="mb-3 position-relative">
+                  <label className="form-label fw-semibold">Employee ABS_NO</label>
+                  <input
+                    className="form-control"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Type ABS_NO"
+                  />
 
-            {/* Family Member Dropdown */}
-            {formData.IsFamilyMember && (
-              <div className="mb-3">
-                <label className="form-label">Select Family Member</label>
-                <select
-                  className="form-select"
-                  value={formData.FamilyMember_ID}
-                  onChange={(e) =>
-                    setFormData((f) => ({
-                      ...f,
-                      FamilyMember_ID: e.target.value
-                    }))
-                  }
+                  {filteredEmployees.length > 0 && (
+                    <div className="list-group position-absolute w-100 z-3">
+                      {filteredEmployees.map((e) => (
+                        <button
+                          type="button"
+                          key={e._id}
+                          className="list-group-item list-group-item-action"
+                          onClick={() => selectEmployee(e)}
+                        >
+                          {e.ABS_NO} — {e.Name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* FAMILY MEMBER */}
+                <div className="form-check mb-3">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    checked={formData.IsFamilyMember}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        IsFamilyMember: e.target.checked,
+                        FamilyMember_ID: ""
+                      }))
+                    }
+                  />
+                  <label className="form-check-label">
+                    Prescription for Family Member
+                  </label>
+                </div>
+
+                {formData.IsFamilyMember && (
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      Select Family Member
+                    </label>
+                    <select
+                      className="form-select"
+                      value={formData.FamilyMember_ID}
+                      onChange={(e) =>
+                        setFormData((f) => ({
+                          ...f,
+                          FamilyMember_ID: e.target.value
+                        }))
+                      }
+                    >
+                      <option value="">Select Family Member</option>
+                      {familyMembers.map((f) => (
+                        <option key={f._id} value={f._id}>
+                          {f.Name} ({f.Relationship})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {communicableRecent.length > 0 && (
+                  <div className="alert alert-warning">
+                    <strong>Disease History (Reference Only)</strong>
+                    <ul className="mb-0 mt-2">
+                      {communicableRecent.map((d, i) => (
+                        <li key={i}>{d.Disease_Name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <h6 className="fw-bold mt-4">Medicines</h6>
+
+                {formData.Medicines.map((med, i) => (
+                  <div key={i} className="mb-3">
+                    <div className="d-flex gap-2">
+                      <select
+                        className="form-select"
+                        value={med.medicineId}
+                        onChange={(e) =>
+                          handleMedicineChange(i, "medicineId", e.target.value)
+                        }
+                        required
+                      >
+                        <option value="">Select Medicine</option>
+                        {inventory.map((m) => (
+                          <option key={m.medicineId} value={m.medicineId}>
+                            {m.medicineName} — {m.quantity}
+                          </option>
+                        ))}
+                      </select>
+
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={med.quantity}
+                        onChange={(e) =>
+                          handleMedicineChange(i, "quantity", e.target.value)
+                        }
+                        placeholder="Qty"
+                        required
+                      />
+
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger"
+                        onClick={() => removeMedicine(i)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {medicineErrors[i] && (
+                      <div className="text-danger fw-bold mt-1">
+                        {medicineErrors[i]}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className="btn btn-outline-primary mt-2"
+                  onClick={addMedicine}
                 >
-                  <option value="">Select Family Member</option>
-                  {familyMembers.map((f) => (
-                    <option key={f._id} value={f._id}>
-                      {f.Name} ({f.Relationship})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+                  + Add Medicine
+                </button>
 
-            {/* Medicines */}
-           <h4 style={{ marginTop: 20 }}>Medicines</h4>
-        {formData.Medicines.map((med, i) => (
-          <div key={i} style={{ marginBottom: 12 }}>
-            <select
-              value={med.medicineId}
-              onChange={(e) =>
-                handleMedicineChange(i, "medicineId", e.target.value)
-              }
-              required
-              style={{
-                width: "70%",
-                padding: 8,
-                borderRadius: 6,
-                marginRight: 8,
-              }}
-            >
-              <option value="">Select Medicine</option>
-              {inventory.map((m) => (
-                <option key={m.medicineId} value={m.medicineId}>
-                  {m.medicineName} ({m.manufacturerName}) — Available:{" "}
-                  {m.quantity}
-                </option>
-              ))}
-            </select>
+                <div className="mt-3">
+                  <label className="form-label fw-semibold">Notes</label>
+                  <textarea
+                    className="form-control"
+                    rows="3"
+                    value={formData.Notes}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, Notes: e.target.value }))
+                    }
+                  />
+                </div>
 
-            <input
-              type="number"
-              value={med.quantity}
-              placeholder="Qty"
-              onChange={(e) =>
-                handleMedicineChange(i, "quantity", e.target.value)
-              }
-              required
-              style={{ width: "20%", padding: 8, borderRadius: 6 }}
-            />
-            <button
-              type="button"
-              onClick={() => removeMedicine(i)}
-              style={{
-                marginLeft: 5,
-                background: "red",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                padding: "6px 10px",
-              }}
-            >
-              X
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={addMedicine}
-          style={{
-            background: "#007bff",
-            color: "#fff",
-            border: "none",
-            padding: 8,
-            borderRadius: 6,
-          }}
-        >
-          + Add Medicine
-        </button>
-
-            {/* Notes */}
-            <div className="mt-3">
-              <label className="form-label">Notes</label>
-              <textarea
-                className="form-control"
-                rows="3"
-                value={formData.Notes}
-                onChange={(e) =>
-                  setFormData((f) => ({ ...f, Notes: e.target.value }))
-                }
-              />
+                <button type="submit" className="btn btn-dark w-100 mt-4">
+                  Submit Prescription
+                </button>
+              </form>
             </div>
-
-            {/* Submit */}
-            <button type="submit" className="btn btn-dark w-100 mt-4">
-              Submit Prescription
-            </button>
-          </form>
+          </div>
         </div>
+
+        {/* EMPLOYEE CARD */}
+        {employeeProfile && (
+          <div className="col-lg-3 d-none d-lg-block">
+            <div
+              className="card shadow-sm border-0 text-center p-4 sticky-top"
+              style={{ top: "90px" }}
+            >
+              <img
+                src={`http://localhost:${BACKEND_PORT}${employeeProfile.Photo}`}
+                alt="Employee"
+                className="rounded-circle mx-auto mb-3"
+                style={{
+                  width: "120px",
+                  height: "120px",
+                  objectFit: "cover",
+                  border: "2px solid #ddd"
+                }}
+              />
+              <h6 className="fw-bold mb-1">{employeeProfile.Name}</h6>
+              <div className="text-muted">
+                ABS No: {employeeProfile.ABS_NO}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

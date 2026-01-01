@@ -1,198 +1,205 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const DiagnosisReport = () => {
   const [reports, setReports] = useState([]);
   const navigate = useNavigate();
   const employeeId = localStorage.getItem("employeeId");
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
-
-  console.log("Employee ID from localStorage:", employeeId);
+  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 
   useEffect(() => {
+    if (!employeeId) return;
+
     axios
-      .get(`http://localhost:${BACKEND_PORT_NO}/diagnosis-api/records/${employeeId}`)
-      .then((res) => setReports(res.data))
-      .catch((err) => console.error("Error fetching reports:", err));
-  }, [employeeId, BACKEND_PORT_NO]);
+      .get(
+        `http://localhost:${BACKEND_PORT}/diagnosis-api/records/${employeeId}`
+      )
+      .then((res) => setReports(res.data || []))
+      .catch((err) =>
+        console.error("Error fetching diagnosis reports:", err)
+      );
+  }, [employeeId, BACKEND_PORT]);
 
-  // Function to check if result is in normal range
-  const getStatusStyle = (result, range) => {
+  /* ================= DATE FIX (ONLY createdAt) ================= */
+  const formatDate = (report) => {
+    // Priority:
+    // 1. First test timestamp
+    // 2. Report-level Timestamp (future-safe)
+    // 3. createdAt (future-safe)
+
+    if (report?.Tests?.length > 0 && report.Tests[0].Timestamp) {
+      const d = new Date(report.Tests[0].Timestamp);
+      return isNaN(d.getTime()) ? "N/A" : d.toLocaleString("en-IN");
+    }
+
+    if (report.Timestamp) {
+      const d = new Date(report.Timestamp);
+      return isNaN(d.getTime()) ? "N/A" : d.toLocaleString("en-IN");
+    }
+
+    if (report.createdAt) {
+      const d = new Date(report.createdAt);
+      return isNaN(d.getTime()) ? "N/A" : d.toLocaleString("en-IN");
+    }
+
+    return "N/A";
+  };
+
+  /* ================= STATUS ================= */
+  const getStatus = (result, range) => {
     try {
-      const num = parseFloat(result);
-      const matches = range.match(/(\d+\.?\d*)-(\d+\.?\d*)/);
+      const value = parseFloat(result);
+      const match = range?.match(/(\d+\.?\d*)-(\d+\.?\d*)/);
+      if (!match || isNaN(value)) return "N/A";
 
-      if (matches && num) {
-        const low = parseFloat(matches[1]);
-        const high = parseFloat(matches[2]);
-        if (num >= low && num <= high)
-          return {
-            label: "Normal",
-            style: {
-              backgroundColor: "#dff0d8", // light green
-              color: "#155724",
-              fontWeight: "600",
-              borderRadius: "6px",
-              padding: "4px 10px",
-              display: "inline-block",
-            },
-          };
-      }
-      return {
-        label: "Risk",
-        style: {
-          backgroundColor: "#f8d7da", // light red
-          color: "#721c24",
-          fontWeight: "600",
-          borderRadius: "6px",
-          padding: "4px 10px",
-          display: "inline-block",
-        },
-      };
+      const low = parseFloat(match[1]);
+      const high = parseFloat(match[2]);
+      return value >= low && value <= high ? "Normal" : "Risk";
     } catch {
-      return {
-        label: "N/A",
-        style: {
-          backgroundColor: "#e2e3e5",
-          color: "#383d41",
-          borderRadius: "6px",
-          padding: "4px 10px",
-          display: "inline-block",
-        },
-      };
+      return "N/A";
     }
   };
 
-const formatDate = (report) => {
-  if (report.Timestamp)
-    return new Date(report.Timestamp).toLocaleString("en-IN");
+  /* ================= LAB REPORT PDF ================= */
+  const downloadLabReport = (report) => {
+    const doc = new jsPDF("p", "mm", "a4");
 
-  if (report.createdAt)
-    return new Date(report.createdAt).toLocaleString("en-IN");
+    // Margins
+    const left = 15;
+    const right = 195;
 
-  return "N/A";
-};
+    const instituteName =
+      report.Institute?.Institute_Name || "Medical Institute";
 
+    const reportDate = formatDate(report);
+
+    const patientName = report.Employee?.Name || "Employee";
+    const employeeIdText = report.Employee?.ABS_NO
+      ? `(${report.Employee.ABS_NO})`
+      : "";
+
+    const issuedTo = report.IsFamilyMember
+      ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})`
+      : "Self";
+
+    /* ---------- HEADER ---------- */
+    doc.setFontSize(16);
+    doc.text(instituteName.toUpperCase(), 105, 20, {
+      align: "center"
+    });
+
+    doc.setFontSize(12);
+    doc.text("DIAGNOSTIC LABORATORY REPORT", 105, 28, {
+      align: "center"
+    });
+
+    doc.line(left, 32, right, 32);
+
+    /* ---------- PATIENT DETAILS ---------- */
+    doc.setFontSize(10);
+    doc.text(`Employee Name: ${patientName} ${employeeIdText}`, left, 42);
+    doc.text(`Report For: ${issuedTo}`, left, 48);
+    doc.text(`Report Date: ${reportDate}`, left, 54);
+
+    /* ---------- TEST TABLE ---------- */
+    const tableData = report.Tests.map((t) => [
+      t.Test_Name,
+      `${t.Result_Value} ${t.Units || ""}`,
+      t.Reference_Range || "-",
+      getStatus(t.Result_Value, t.Reference_Range)
+    ]);
+
+    autoTable(doc, {
+      startY: 62,
+      head: [["Test Name", "Result", "Reference Range", "Status"]],
+      body: tableData,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [40, 40, 40] },
+      margin: { left, right: 15 }
+    });
+
+    /* ---------- FOOTER ---------- */
+    doc.setFontSize(9);
+    doc.text(
+      "This is a system-generated diagnostic laboratory report.",
+      105,
+      doc.lastAutoTable.finalY + 15,
+      { align: "center" }
+    );
+
+    doc.save(`Lab_Report_${report._id.slice(-6)}.pdf`);
+  };
 
   return (
-    <div
-      className="container mt-5"
-      style={{
-        fontFamily: "'Inter', sans-serif",
-        color: "#111",
-      }}
-    >
+    <div className="container mt-5">
       <button
         className="btn btn-outline-dark mb-3"
         onClick={() => navigate(-1)}
-        style={{ borderRadius: "8px" }}
       >
         ← Back
       </button>
 
-      <div className="card border-0 shadow-sm">
+      <div className="card shadow-sm">
         <div className="card-body">
-          <h4
-            className="text-center mb-4 fw-bold"
-            style={{ color: "#111", letterSpacing: "0.5px" }}
-          >
-            Diagnosis Report
+          <h4 className="text-center mb-4 fw-bold">
+            Diagnosis Reports
           </h4>
 
           {reports.length === 0 ? (
-            <p className="text-center text-muted">No reports found.</p>
+            <p className="text-center text-muted">
+              No diagnosis reports found.
+            </p>
           ) : (
             <div className="table-responsive">
-              <table
-                className="table align-middle"
-                style={{
-                  borderCollapse: "separate",
-                  borderSpacing: "0 10px",
-                }}
-              >
-                <thead
-                  style={{
-                    backgroundColor: "#f1f1f1",
-                    color: "#111",
-                    fontWeight: "600",
-                    borderBottom: "2px solid #ccc",
-                  }}
-                >
+              <table className="table table-bordered align-middle">
+                <thead className="table-dark">
                   <tr>
                     <th>#</th>
-                    <th>Name</th>
-                    <th>Type</th>
+                    <th>Patient</th>
+                    <th>Report For</th>
                     <th>Institute</th>
-                    <th>Test Name</th>
-                    <th>Result</th>
-                    <th>Reference Range</th>
-                    <th>Status</th>
-                    <th>Test Date</th>
+                    <th>No. of Tests</th>
+                    <th>Report Date</th>
+                    <th>Lab Report</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {reports.map((report, index) =>
-                    report.Tests.map((test, tIndex) => {
-                      const status = getStatusStyle(
-                        test.Result_Value,
-                        test.Reference_Range
-                      );
-                      return (
-                        <tr
-                          key={`${report._id}-${tIndex}`}
-                          style={{
-                            backgroundColor: "#fff",
-                            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                            borderRadius: "8px",
-                          }}
+                  {reports.map((report, index) => (
+                    <tr key={report._id}>
+                      <td>{index + 1}</td>
+                      <td>
+                        {report.Employee?.Name}{" "}
+                        {report.Employee?.ABS_NO
+                          ? `(${report.Employee.ABS_NO})`
+                          : ""}
+                      </td>
+                      <td>
+                        {report.IsFamilyMember
+                          ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})`
+                          : "Self"}
+                      </td>
+                      <td>
+                        {report.Institute?.Institute_Name ||
+                          "Medical Institute"}
+                      </td>
+                      <td>{report.Tests.length}</td>
+                      <td>{formatDate(report)}</td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() =>
+                            downloadLabReport(report)
+                          }
                         >
-                          <td>{index + 1}</td>
-                          <td>
-                            {report.IsFamilyMember && report.FamilyMember
-                              ? `${report.FamilyMember.Name} (${report.FamilyMember.Relationship})`
-                              : report.Employee?.Name || "Employee"}
-                          </td>
-                          <td>
-                            {report.IsFamilyMember ? (
-                              <span
-                                style={{
-                                  backgroundColor: "#e9ecef",
-                                  borderRadius: "6px",
-                                  padding: "4px 8px",
-                                  fontSize: "0.85rem",
-                                }}
-                              >
-                                Family Member
-                              </span>
-                            ) : (
-                              <span
-                                style={{
-                                  backgroundColor: "#f1f3f5",
-                                  borderRadius: "6px",
-                                  padding: "4px 8px",
-                                  fontSize: "0.85rem",
-                                }}
-                              >
-                                Employee
-                              </span>
-                            )}
-                          </td>
-                          <td>{report.Institute?.Institute_Name || "Apollo"}</td>
-                          <td>{test.Test_Name}</td>
-                          <td>
-                            {test.Result_Value} {test.Units}
-                          </td>
-                          <td>{test.Reference_Range}</td>
-                          <td>
-                            <span style={status.style}>{status.label}</span>
-                          </td>
-                          <td>{formatDate(report)}</td>
-                        </tr>
-                      );
-                    })
-                  )}
+                          Download Report
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

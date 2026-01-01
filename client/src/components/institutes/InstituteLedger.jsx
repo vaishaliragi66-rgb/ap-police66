@@ -1,150 +1,271 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
 const InstituteLedger = () => {
-  const [ledger, setLedger] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const BACKEND_PORT =
-    import.meta.env.VITE_BACKEND_PORT || 6100;
-
+  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
   const instituteId = localStorage.getItem("instituteId");
 
-  useEffect(() => {
-    const fetchLedger = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(
-          `http://localhost:${BACKEND_PORT}/ledger-api/institute/${instituteId}`
-        );
-        setLedger(res.data.ledger || []);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch ledger data");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [ledger, setLedger] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    if (instituteId) fetchLedger();
-    else {
-      setError("Institute not logged in");
-      setLoading(false);
-    }
+  // Filters
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [directionFilter, setDirectionFilter] = useState("ALL");
+  const [medicineFilter, setMedicineFilter] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  useEffect(() => {
+    axios
+      .get(
+        `http://localhost:${BACKEND_PORT}/ledger-api/institute/${instituteId}`
+      )
+      .then((res) => {
+        setLedger(res.data.ledger || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [instituteId]);
 
-  if (loading)
-    return (
-      <div style={{ textAlign: "center", marginTop: 40 }}>
-        Loading ledger...
-      </div>
-    );
+  // ---------------- FILTERED DATA (FIXED DATE LOGIC) ----------------
+  const filteredLedger = useMemo(() => {
+    return ledger.filter((l) => {
+      const txDate = new Date(l.Timestamp);
 
-  if (error)
+      if (typeFilter !== "ALL" && l.Transaction_Type !== typeFilter)
+        return false;
+
+      if (directionFilter !== "ALL" && l.Direction !== directionFilter)
+        return false;
+
+      if (
+        medicineFilter &&
+        !l.Medicine_Name.toLowerCase().includes(
+          medicineFilter.toLowerCase()
+        )
+      )
+        return false;
+
+      if (fromDate) {
+        const from = new Date(fromDate);
+        from.setHours(0, 0, 0, 0); // start of day
+        if (txDate < from) return false;
+      }
+
+      if (toDate) {
+        const to = new Date(toDate);
+        to.setHours(23, 59, 59, 999); // end of day
+        if (txDate > to) return false;
+      }
+
+      return true;
+    });
+  }, [
+    ledger,
+    typeFilter,
+    directionFilter,
+    medicineFilter,
+    fromDate,
+    toDate
+  ]);
+
+  const handlePrint = () => window.print();
+
+  const downloadCSV = () => {
+    const headers = [
+      "Date",
+      "Transaction",
+      "Medicine",
+      "Manufacturer",
+      "Expiry",
+      "IN/OUT",
+      "Quantity",
+      "Balance",
+      "Reference"
+    ];
+
+    const rows = filteredLedger.map((l) => [
+      new Date(l.Timestamp).toLocaleString(),
+      l.Transaction_Type,
+      l.Medicine_Name,
+      l.Manufacturer_Name,
+      l.Expiry_Date
+        ? new Date(l.Expiry_Date).toLocaleDateString()
+        : "",
+      l.Direction,
+      l.Quantity,
+      l.Balance_After,
+      l.Reference_ID
+    ]);
+
+    const csv =
+      [headers, ...rows]
+        .map((r) => r.map((x) => `"${x ?? ""}"`).join(","))
+        .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Institute_Ledger.csv";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  if (loading) {
     return (
-      <div style={{ textAlign: "center", color: "red", marginTop: 40 }}>
-        {error}
+      <div className="text-center mt-5">
+        <strong>Loading ledger...</strong>
       </div>
     );
+  }
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ textAlign: "center", marginBottom: 20 }}>
-        Institute Medicine Ledger
-      </h2>
+    <div className="container mt-4 ledger-page">
+      <div className="card shadow">
+        <div className="card-header bg-dark text-white d-flex justify-content-between">
+          <h5 className="mb-0">Institute Medicine Ledger</h5>
+          <div>
+            <button className="btn btn-light btn-sm me-2" onClick={handlePrint}>
+              🖨 Print
+            </button>
+            <button className="btn btn-light btn-sm" onClick={downloadCSV}>
+              ⬇ Download
+            </button>
+          </div>
+        </div>
 
-      <div
-        style={{
-          overflowX: "auto",
-          background: "#fff",
-          borderRadius: 8,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-        }}
-      >
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            fontSize: 14
-          }}
-        >
-          <thead>
-            <tr style={{ background: "#000", color: "#fff" }}>
-              <th style={th}>Date & Time</th>
-              <th style={th}>Transaction</th>
-              <th style={th}>Medicine</th>
-              <th style={th}>Manufacturer</th>
-              <th style={th}>Expiry</th>
-              <th style={th}>IN / OUT</th>
-              <th style={th}>Qty</th>
-              <th style={th}>Balance</th>
-              <th style={th}>Reference</th>
-            </tr>
-          </thead>
+        <div className="card-body">
+          {/* FILTERS */}
+          <div className="row g-2 mb-3 align-items-end">
 
-          <tbody>
-            {ledger.length === 0 && (
-              <tr>
-                <td colSpan="9" style={{ textAlign: "center", padding: 20 }}>
-                  No ledger entries found
-                </td>
-              </tr>
-            )}
+            <div className="col-md-2">
+              <label className="form-label mb-1">Transaction</label>
+              <select
+                className="form-select"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
+                <option value="ALL">All Transactions</option>
+                <option value="ORDER_DELIVERY">Order Delivery</option>
+                <option value="PRESCRIPTION_ISSUE">Prescription</option>
+              </select>
+            </div>
 
-            {ledger.map((row, index) => (
-              <tr key={index} style={{ borderBottom: "1px solid #ddd" }}>
-                <td style={td}>
-                  {new Date(row.Timestamp).toLocaleString()}
-                </td>
-                <td style={td}>
-                  {row.Transaction_Type === "ORDER_DELIVERY"
-                    ? "Order Delivery"
-                    : "Prescription"}
-                </td>
-                <td style={td}>{row.Medicine_Name}</td>
-                <td style={td}>{row.Manufacturer_Name || "-"}</td>
-                <td style={td}>
-                  {row.Expiry_Date
-                    ? new Date(row.Expiry_Date)
-                        .toISOString()
-                        .split("T")[0]
-                    : "-"}
-                </td>
-                <td
-                  style={{
-                    ...td,
-                    fontWeight: "bold",
-                    color: row.Direction === "IN" ? "green" : "red"
-                  }}
-                >
-                  {row.Direction}
-                </td>
-                <td style={td}>{row.Quantity}</td>
-                <td style={td}>{row.Balance_After}</td>
-                <td style={{ ...td, fontSize: 12 }}>
-                  {row.Reference_ID
-                    ? row.Reference_ID.toString().slice(-6)
-                    : "-"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            <div className="col-md-2">
+              <label className="form-label mb-1">IN / OUT</label>
+              <select
+                className="form-select"
+                value={directionFilter}
+                onChange={(e) => setDirectionFilter(e.target.value)}
+              >
+                <option value="ALL">IN & OUT</option>
+                <option value="IN">IN</option>
+                <option value="OUT">OUT</option>
+              </select>
+            </div>
+
+            <div className="col-md-3">
+              <label className="form-label mb-1">Medicine</label>
+              <input
+                className="form-control"
+                placeholder="Search medicine"
+                value={medicineFilter}
+                onChange={(e) => setMedicineFilter(e.target.value)}
+              />
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label mb-1">From Date</label>
+              <input
+                type="date"
+                className="form-control"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label mb-1">To Date</label>
+              <input
+                type="date"
+                className="form-control"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+            </div>
+
+          </div>
+
+          {/* TABLE */}
+          <div className="table-responsive">
+            <table className="table table-bordered table-hover align-middle">
+              <thead className="table-dark">
+                <tr>
+                  <th>Date & Time</th>
+                  <th>Transaction</th>
+                  <th>Medicine</th>
+                  <th>Manufacturer</th>
+                  <th>Expiry</th>
+                  <th>IN / OUT</th>
+                  <th>Qty</th>
+                  <th>Balance</th>
+                  <th>Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLedger.length === 0 && (
+                  <tr>
+                    <td colSpan="9" className="text-center">
+                      No records found
+                    </td>
+                  </tr>
+                )}
+
+                {filteredLedger.map((l, i) => (
+                  <tr key={i}>
+                    <td>{new Date(l.Timestamp).toLocaleString()}</td>
+                    <td>{l.Transaction_Type}</td>
+                    <td>{l.Medicine_Name}</td>
+                    <td>{l.Manufacturer_Name}</td>
+                    <td>
+                      {l.Expiry_Date
+                        ? new Date(l.Expiry_Date).toLocaleDateString()
+                        : "-"}
+                    </td>
+                    <td
+                      style={{
+                        color:
+                          l.Direction === "IN" ? "green" : "red",
+                        fontWeight: "bold"
+                      }}
+                    >
+                      {l.Direction}
+                    </td>
+                    <td>{l.Quantity}</td>
+                    <td>{l.Balance_After}</td>
+                    <td>{l.Reference_ID.slice(-6)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
+      <style>
+        {`
+          @media print {
+            body * { visibility: hidden; }
+            .ledger-page, .ledger-page * { visibility: visible; }
+            .ledger-page { position: absolute; left: 0; top: 0; width: 100%; }
+            button { display: none !important; }
+          }
+        `}
+      </style>
     </div>
   );
-};
-
-const th = {
-  padding: "10px 8px",
-  textAlign: "left",
-  whiteSpace: "nowrap"
-};
-
-const td = {
-  padding: "8px",
-  whiteSpace: "nowrap"
 };
 
 export default InstituteLedger;

@@ -68,21 +68,31 @@ const EmployeeHome = () => {
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Header */}
       <header
         style={{
           backgroundColor: "#fff",
-          color: "#000",
           width: "100%",
-          textAlign: "center",
-          padding: "20px 0",
+          padding: "20px 30px",
           fontWeight: "700",
           fontSize: "1.8rem",
-          letterSpacing: "0.5px",
           boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        Employee Dashboard
+        <span>Employee Dashboard</span>
+
+        <div
+          style={{
+            cursor: "pointer",
+            fontSize: "1.5rem",
+          }}
+          title="Profile"
+          onClick={() => navigate("/employee/profile")}
+        >
+          👤
+        </div>
       </header>
 
       {/* Welcome Section */}
