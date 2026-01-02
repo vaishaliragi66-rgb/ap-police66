@@ -2,230 +2,248 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 const InstituteReports = () => {
+
+  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [report, setReport] = useState(null);
 
-  const [employeeData, setEmployeeData] = useState(null);
-  const [familyMembers, setFamilyMembers] = useState([]);
-  const [selectedFamilyId, setSelectedFamilyId] = useState("");
-  const [familyReport, setFamilyReport] = useState(null);
+  /* --------------------------------------------------
+      FETCH ALL EMPLOYEES (ABS + NAME)
+  -------------------------------------------------- */
+ useEffect(() => {
+  axios
+    .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
+    .then(res => {
+      const list =
+        Array.isArray(res.data?.employees)
+          ? res.data.employees
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || "6100";
+      setEmployees(list);
+    })
+    .catch(err => console.error("Employee fetch error:", err));
+}, []);
 
-  // 🟩 Fetch employees on mount
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:${BACKEND_PORT_NO}/employee-api/employees`
-        );
-        setEmployees(res.data || []);
-      } catch (err) {
-        console.error("Error fetching employees:", err);
-      }
-    };
-    fetchEmployees();
-  }, []);
 
-  // 🟩 Filter employees based on ABS_NO
+  /* --------------------------------------------------
+      LIVE AUTO-SUGGEST SEARCH  (supports 1 digit)
+  -------------------------------------------------- */
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredEmployees([]);
-    } else {
-      const filtered = employees.filter((emp) =>
-        String(emp.ABS_NO || "")
-          .toLowerCase()
-          .startsWith(searchTerm.toLowerCase())
-      );
-      setFilteredEmployees(filtered);
+      return;
     }
+
+    const filtered = employees.filter((emp) =>
+      String(emp.ABS_NO || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())   // 👈 partial match
+    );
+
+    // show only first 10 suggestions
+    setFilteredEmployees(filtered.slice(0, 10));
+
   }, [searchTerm, employees]);
 
-  // 🟩 Fetch selected employee report
-  const fetchEmployeeReport = async (emp) => {
+  /* --------------------------------------------------
+      LOAD EMPLOYEE + FAMILY HEALTH REPORT
+  -------------------------------------------------- */
+  const loadHealthReport = async (absNo) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/employee-api/by-abs/${emp.ABS_NO}`
+        `http://localhost:${BACKEND_PORT}/employee-api/health-report/${absNo}`
       );
-      setEmployeeData(res.data);
-      setFamilyMembers(res.data.FamilyMembers || []);
-      setFamilyReport(null);
-      setSelectedEmployee(emp);
-      setSearchTerm(emp.ABS_NO);
-      setFilteredEmployees([]);
-    } catch (err) {
-      console.error("Error fetching employee report:", err);
-      alert("❌ Employee not found or server error");
-    }
-  };
+      console.log(res.data);
+      setReport(res.data);
+      setSearchTerm(absNo);     // update textbox to selected ABS_NO
+      setFilteredEmployees([]); // close dropdown
 
-  // 🟩 Fetch selected family member report
-  const fetchFamilyReport = async (id) => {
-    try {
-      const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/family-api/family-report/${id}`
-      );
-      setFamilyReport(res.data);
     } catch (err) {
-      console.error("Error fetching family report:", err);
-      alert("❌ Error fetching family report");
+      console.error("Health report fetch failed:", err);
+      alert("❌ Unable to fetch health report");
     }
   };
 
   return (
     <div
       className="container bg-white shadow-sm rounded-4 p-4 mt-4"
-      style={{ maxWidth: "800px" }}
+      style={{ maxWidth: "900px" }}
     >
-      <h3 className="fw-bold mb-4">📋 Employee & Family Health Reports</h3>
+      <h3 className="fw-bold mb-3">
+        📋 Employee + Family Disease & Diagnosis Report
+      </h3>
 
-      {/* Search Field (with dynamic ABS_NO search) */}
-      <label className="fw-semibold mb-2">Employee ABS_NO</label>
+      {/* ================= SEARCH EMPLOYEE ================= */}
+      <label className="fw-semibold mb-1">Employee ABS Number</label>
+
       <input
         type="text"
-        placeholder="Type ABS_NO..."
         value={searchTerm}
+        placeholder="Type ABS_NO..."
         onChange={(e) => setSearchTerm(e.target.value)}
-        style={{
-          width: "100%",
-          padding: 8,
-          borderRadius: 6,
-          border: "1px solid #ccc",
-        }}
+        className="form-control"
       />
 
-      {/* Dropdown suggestions */}
+      {/* ================= AUTOCOMPLETE DROPDOWN ================= */}
       {searchTerm && filteredEmployees.length > 0 && (
         <div
-          style={{
-            border: "1px solid #ccc",
-            maxHeight: 150,
-            overflowY: "auto",
-            marginTop: 6,
-            borderRadius: 6,
-          }}
+          className="border rounded mt-1 bg-light"
+          style={{ maxHeight: 200, overflowY: "auto" }}
         >
           {filteredEmployees.map((emp) => (
             <div
               key={emp._id}
-              onClick={() => fetchEmployeeReport(emp)}
-              style={{
-                padding: "8px 10px",
-                cursor: "pointer",
-                borderBottom: "1px solid #eee",
-              }}
+              className="p-2 border-bottom"
+              style={{ cursor: "pointer" }}
+              onClick={() => loadHealthReport(emp.ABS_NO)}
             >
-              {emp.ABS_NO} — {emp.Name}
+              <strong>{emp.ABS_NO}</strong> — {emp.Name}
             </div>
           ))}
         </div>
       )}
 
-      {/* Show Employee Data */}
-      {employeeData && (
+      {/* =======================================================
+          EMPLOYEE REPORT
+      ======================================================== */}
+      {report && (
         <div className="mt-4">
-          <h5>
-            🧑‍💼 Employee: <b>{employeeData.Name}</b> ({employeeData.ABS_NO})
-          </h5>
-          <p>Email: {employeeData.Email}</p>
 
-          <h6 className="mt-3">🩺 Medical History:</h6>
-          {employeeData.Medical_History?.length > 0 ? (
-            <table className="table table-bordered mt-2">
+          <h5 className="fw-bold">
+            🧑‍💼 Employee: {report.employee.Name} ({report.employee.ABS_NO})
+          </h5>
+
+          {/* EMPLOYEE DISEASES */}
+          <h6 className="mt-3">🦠 Diseases</h6>
+
+          {report.employeeDiseases?.length ? (
+            <table className="table table-bordered">
+              <thead className="table-light">
+                <tr>
+                  <th>Disease</th>
+                  <th>Category</th>
+                  <th>Severity</th>
+                  <th>Diagnosis</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.employeeDiseases.map((d, i) => (
+                  <tr key={i}>
+                    <td>{d.Disease_Name}</td>
+                    <td>{d.Category}</td>
+                    <td>{d.Severity_Level}</td>
+                    <td>{d.Diagnosis || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No employee disease records.</p>
+          )}
+
+          {/* EMPLOYEE DIAGNOSIS TESTS */}
+          <h6 className="mt-3">🩺 Diagnosis Tests</h6>
+
+          {report.employeeDiagnosis?.length ? (
+            <table className="table table-bordered">
               <thead className="table-light">
                 <tr>
                   <th>Date</th>
+                  <th>Test</th>
+                  <th>Result</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.employeeDiagnosis.flatMap((rec, i) =>
+                  rec.Tests.map((t, j) => (
+                    <tr key={`${i}-${j}`}>
+                      <td>{new Date(t.Timestamp).toLocaleDateString()}</td>
+                      <td>{t.Test_Name}</td>
+                      <td>{t.Result_Value}</td>
+                      <td>{t.Remarks || "—"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          ) : (
+            <p>No employee diagnosis records.</p>
+          )}
+
+          {/* =======================================================
+              FAMILY SECTION
+          ======================================================== */}
+          <h5 className="mt-4 fw-bold">👨‍👩‍👧 Family Members</h5>
+
+          {/* FAMILY DISEASES */}
+          <h6 className="mt-2">🦠 Diseases</h6>
+
+          {report.familyDiseases?.length ? (
+            <table className="table table-bordered">
+              <thead className="table-light">
+                <tr>
+                  <th>Member</th>
                   <th>Disease</th>
                   <th>Category</th>
                   <th>Severity</th>
                 </tr>
               </thead>
               <tbody>
-                {employeeData.Medical_History.map((mh, i) => (
+                {report.familyDiseases.map((d, i) => (
                   <tr key={i}>
-                    <td>{new Date(mh.Date).toLocaleDateString()}</td>
                     <td>
-                      {mh.Disease.map((d) => d.Disease_Name).join(", ") || "—"}
+                      {d.FamilyMember_ID?.Name} (
+                      {d.FamilyMember_ID?.Relationship})
                     </td>
-                    <td>
-                      {mh.Disease.map((d) => d.Category).join(", ") || "—"}
-                    </td>
-                    <td>
-                      {mh.Disease.map((d) => d.Severity_Level).join(", ") ||
-                        "—"}
-                    </td>
+                    <td>{d.Disease_Name}</td>
+                    <td>{d.Category}</td>
+                    <td>{d.Severity_Level}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p>No diseases recorded.</p>
+            <p>No family disease records.</p>
           )}
 
-          {/* Family Members Section */}
-          {familyMembers.length > 0 && (
-            <div className="mt-4">
-              <h6>👨‍👩‍👧 Family Members:</h6>
-              <select
-                className="form-select mt-2"
-                value={selectedFamilyId}
-                onChange={(e) => {
-                  setSelectedFamilyId(e.target.value);
-                  if (e.target.value) fetchFamilyReport(e.target.value);
-                }}
-              >
-                <option value="">Select Family Member</option>
-                {familyMembers.map((f) => (
-                  <option key={f._id} value={f._id}>
-                    {f.Name} ({f.Relationship})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      )}
+          {/* FAMILY DIAGNOSIS TESTS */}
+          <h6 className="mt-2">🩺 Diagnosis Tests</h6>
 
-      {/* Family Member Report */}
-      {familyReport && (
-        <div className="mt-5">
-          <h5>
-            👩‍👧 Family Member: <b>{familyReport.Name}</b> (
-            {familyReport.Relationship})
-          </h5>
-
-          {familyReport.Medical_History?.length > 0 ? (
-            <table className="table table-bordered mt-2">
+          {report.familyDiagnosis?.length ? (
+            <table className="table table-bordered">
               <thead className="table-light">
                 <tr>
+                  <th>Member</th>
+                  <th>Test</th>
+                  <th>Result</th>
                   <th>Date</th>
-                  <th>Disease</th>
-                  <th>Category</th>
-                  <th>Severity</th>
                 </tr>
               </thead>
               <tbody>
-                {familyReport.Medical_History.map((mh, i) => (
-                  <tr key={i}>
-                    <td>{new Date(mh.Date).toLocaleDateString()}</td>
-                    <td>
-                      {mh.Disease.map((d) => d.Disease_Name).join(", ") || "—"}
-                    </td>
-                    <td>
-                      {mh.Disease.map((d) => d.Category).join(", ") || "—"}
-                    </td>
-                    <td>
-                      {mh.Disease.map((d) => d.Severity_Level).join(", ") ||
-                        "—"}
-                    </td>
-                  </tr>
-                ))}
+                {report.familyDiagnosis.flatMap((rec, i) =>
+                  rec.Tests.map((t, j) => (
+                    <tr key={`${i}-${j}`}>
+                      <td>
+                        {rec.FamilyMember?.Name} (
+                        {rec.FamilyMember?.Relationship})
+                      </td>
+                      <td>{t.Test_Name}</td>
+                      <td>{t.Result_Value}</td>
+                      <td>{new Date(t.Timestamp).toLocaleDateString()}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           ) : (
-            <p>No disease history found for this family member.</p>
+            <p>No family diagnosis test records.</p>
           )}
         </div>
       )}

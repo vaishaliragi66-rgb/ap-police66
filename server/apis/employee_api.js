@@ -7,6 +7,10 @@ const path = require("path");
 const fs = require("fs");
 
 const Employee = require("../models/employee");
+const Disease = require("../models/disease");
+const DiagnosisRecord = require("../models/diagnostics_record");
+const FamilyMember = require("../models/family_member");
+
 const employeeApp = express.Router();
 
 /* ================= MULTER CONFIG ================= */
@@ -266,6 +270,101 @@ employeeApp.get(
       res.status(500).json({ 
         message: "Failed to fetch employees", 
         error: err.message 
+      });
+    }
+  })
+);
+/* ================= EMPLOYEE + FAMILY HEALTH REPORT ================= */
+
+employeeApp.get(
+  "/health-report/:absNo",
+  expressAsyncHandler(async (req, res) => {
+    try {
+      const { absNo } = req.params;
+
+      if (!absNo || absNo.trim() === "") {
+        return res.status(400).json({
+          message: "ABS Number is required",
+        });
+      }
+
+      // 🔹 Fetch Employee
+      const employee = await Employee.findOne({ ABS_NO: absNo.trim() })
+        .select("ABS_NO Name Email Photo");
+
+      if (!employee) {
+        return res.status(404).json({
+          message: "Employee not found",
+        });
+      }
+
+      const employeeId = employee._id;
+
+      /* =====================================================
+         EMPLOYEE DISEASE RECORDS
+      ===================================================== */
+      const employeeDiseases = await Disease.find({
+        Employee_ID: employeeId,
+        IsFamilyMember: false,
+      })
+        .select(
+          "Disease_Name Category Severity_Level Diagnosis Notes createdAt"
+        )
+        .sort({ createdAt: -1 });
+
+      /* =====================================================
+         EMPLOYEE DIAGNOSIS TEST RECORDS
+      ===================================================== */
+      const employeeDiagnosis = await DiagnosisRecord.find({
+        Employee: employeeId,
+        IsFamilyMember: false,
+      })
+        .populate("Tests.Test_ID", "Test_Name")
+        .select("Tests Diagnosis_Notes Timestamp")
+        .sort({ Timestamp: -1 });
+
+      /* =====================================================
+         FAMILY DISEASE RECORDS
+      ===================================================== */
+      const familyDiseases = await Disease.find({
+        Employee_ID: employeeId,
+        IsFamilyMember: true,
+      })
+        .populate("FamilyMember_ID", "Name Relationship")
+        .select(
+          "Disease_Name Category Severity_Level Diagnosis Notes FamilyMember_ID createdAt"
+        )
+        .sort({ createdAt: -1 });
+
+      /* =====================================================
+         FAMILY DIAGNOSIS TEST RECORDS
+      ===================================================== */
+      const familyDiagnosis = await DiagnosisRecord.find({
+        Employee: employeeId,
+        IsFamilyMember: true,
+      })
+        .populate("FamilyMember", "Name Relationship")
+        .select("Tests FamilyMember Timestamp Diagnosis_Notes")
+        .sort({ Timestamp: -1 });
+
+      /* =====================================================
+         RESPONSE OBJECT
+      ===================================================== */
+      return res.status(200).json({
+        message: "Health report fetched successfully",
+        employee,
+        employeeDiseases,
+        employeeDiagnosis,
+        familyDiseases,
+        familyDiagnosis,
+      });
+
+    } catch (err) {
+      console.error("Health report fetch error:", err);
+
+      res.status(500).json({
+        message: "Failed to fetch health report",
+        error: err.message,
       });
     }
   })

@@ -80,15 +80,21 @@ const Institute_home = () => {
   const handleOrderClick = () => navigate("/institutes/placeorder");
 
   const navItems = [
-    { icon: <FaShoppingCart />, label: "Orders Medicines", path: "/institutes/manufacturer-orders" },
-    { icon: <FaUsers />, label: "Medicines Issued Register", path: "/institutes/medicines-issued-register" },
-    { icon: <FaBox />, label: "Inventory", path: "/institutes/inventory" },
-    { icon: <FaVials />, label: "Diseases", path: "/institutions/diseases" },
-    { icon: <FaPills />, label: "Prescriptions", path: "/institutions/prescriptions" },
-    { icon: <FaFileMedical />, label: "View Employee Reports", path: "/institutions/analytics" },
-    { icon: <FaClipboardList />, label: "Diagnosis", path: "/institutions/diagnosis-entry" },
-    { icon: <FaClipboardList />, label: "Ledger", path: "/institutes/ledger" },
-  ];
+  { icon: <FaShoppingCart />, label: "Orders Medicines", path: "/institutes/manufacturer-orders" },
+  { icon: <FaUsers />, label: "Medicines Issued Register", path: "/institutes/medicines-issued-register" },
+  { icon: <FaBox />, label: "Inventory", path: "/institutes/inventory" },
+  { icon: <FaVials />, label: "Diseases", path: "/institutions/diseases" },
+  { icon: <FaPills />, label: "Prescriptions", path: "/institutions/prescriptions" },
+
+  // 🔥 friend’s analytics
+  { icon: <FaFileMedical />, label: "View Employee Reports", path: "/institutions/reports" },
+
+  // 🔥 your work
+  { icon: <FaClipboardList />, label: "Diagnosis", path: "/institutions/diagnosis-entry" },
+  { icon: <FaClipboardList />, label: "Ledger", path: "/institutes/ledger" },
+  { icon: <FaClipboardList />, label: "Indent", path: "/institutes/indent" },
+];
+
 
   return (
     <div

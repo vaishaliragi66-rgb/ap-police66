@@ -4,18 +4,16 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const PharmacyPrescriptionForm = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
-
+  const [medicineSearch, setMedicineSearch] = useState("");
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [instituteName, setInstituteName] = useState("");
-
+  const [filteredMedicines, setFilteredMedicines] = useState([]);
   const [employeeProfile, setEmployeeProfile] = useState(null);
   const [diseases, setDiseases] = useState([]);
-
-  // 🔴 medicine limit errors (ONLY NEW STATE)
   const [medicineErrors, setMedicineErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -23,9 +21,22 @@ const PharmacyPrescriptionForm = () => {
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Medicines: [{ medicineId: "", medicineName: "", quantity: 0 }],
+    Medicines: [{ medicineId: "", medicineName: "", expiryDate: "", quantity: 0 }],
     Notes: ""
   });
+  const formatDateDMY = (value) => {
+    if (!value) return "—";
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return "—";
+
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
 
   /* ================= INITIAL LOAD ================= */
   useEffect(() => {
@@ -53,11 +64,32 @@ const PharmacyPrescriptionForm = () => {
     setEmployees(res.data.employees || []);
   };
 
+  useEffect(() => {
+  if (!medicineSearch.trim()) {
+    setFilteredMedicines([]);
+    return;
+  }
+
+  const results = inventory
+    .filter((m) =>
+      m.medicineName
+        ?.toLowerCase()
+        .includes(medicineSearch.toLowerCase())
+    )
+    .sort(
+      (a, b) => new Date(a.expiryDate) - new Date(b.expiryDate)
+    );
+
+  setFilteredMedicines(results);
+}, [medicineSearch, inventory]);
+
+
   const fetchInventory = async (id) => {
     const res = await axios.get(
       `http://localhost:${BACKEND_PORT}/institute-api/inventory/${id}`
     );
     setInventory(res.data || []);
+    console.log("PRESCRIPTION INVENTORY RESPONSE:", res.data);
   };
 
   const fetchDiseases = async (employeeId) => {
@@ -177,6 +209,7 @@ const PharmacyPrescriptionForm = () => {
         updated[index] = {
           medicineId: selected?.medicineId || "",
           medicineName: selected?.medicineName || "",
+          expiryDate: selected?.expiryDate || "",
           quantity: 0
         };
 
@@ -190,6 +223,44 @@ const PharmacyPrescriptionForm = () => {
 
       if (field === "quantity") {
         updated[index].quantity = value;
+        const selectedMedicine = inventory.find(
+          (m) => m.medicineId === updated[index].medicineId
+        );
+
+        if (selectedMedicine) {
+            const availableQty = selectedMedicine.quantity;
+            const threshold = selectedMedicine.threshold;
+            const requestedQty = Number(value);
+
+            // ❌ HARD ERROR: insufficient stock
+            if (requestedQty > availableQty) {
+              setMedicineErrors((prev) => ({
+                ...prev,
+                [index]: `❌ Only ${availableQty} units available in stock`
+              }));
+              return { ...prev, Medicines: updated };
+            }
+
+            // ⚠️ SOFT WARNING: below threshold
+            if (availableQty - requestedQty < threshold) {
+              setMedicineErrors((prev) => {
+                // if a hard error already exists, do NOT override it
+                if (prev[index]?.startsWith("❌")) return prev;
+
+                return {
+                  ...prev,
+                  [index]: `⚠️ Warning: Stock will fall below threshold (${threshold}). Remaining: ${availableQty - requestedQty}`
+                };
+              });
+            } else {
+              // clear stock warnings if safe
+              setMedicineErrors((prev) => {
+                const copy = { ...prev };
+                delete copy[index];
+                return copy;
+              });
+            }
+          }
 
         if (updated[index].medicineName && value > 0) {
           validateMedicineQuantity(
@@ -223,8 +294,12 @@ const PharmacyPrescriptionForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (Object.keys(medicineErrors).length > 0) {
-      alert("❌ One or more medicines exceed allowed quantity limits");
+    const hasHardError = Object.values(medicineErrors).some(
+      (msg) => msg.startsWith("❌")
+    );
+
+    if (hasHardError) {
+      alert("❌ Fix stock / quantity errors before submitting");
       return;
     }
 
@@ -246,6 +321,7 @@ const PharmacyPrescriptionForm = () => {
       Medicines: formData.Medicines.map((m) => ({
         Medicine_ID: m.medicineId,
         Medicine_Name: m.medicineName,
+        Expiry_Date: m.expiryDate,
         Quantity: Number(m.quantity)
       })),
       Notes: formData.Notes
@@ -258,6 +334,16 @@ const PharmacyPrescriptionForm = () => {
 
     alert("✅ Prescription saved successfully");
   };
+  const filteredAndSortedInventory = inventory
+  .filter((m) =>
+    m.medicineName
+      ?.toLowerCase()
+      .includes(medicineSearch.toLowerCase())
+  )
+  .sort(
+    (a, b) => new Date(a.expiryDate) - new Date(b.expiryDate)
+  );
+
 
   /* ================= UI ================= */
   return (
@@ -361,22 +447,37 @@ const PharmacyPrescriptionForm = () => {
 
                 {formData.Medicines.map((med, i) => (
                   <div key={i} className="mb-3">
-                    <div className="d-flex gap-2">
-                      <select
-                        className="form-select"
-                        value={med.medicineId}
-                        onChange={(e) =>
-                          handleMedicineChange(i, "medicineId", e.target.value)
-                        }
-                        required
-                      >
-                        <option value="">Select Medicine</option>
-                        {inventory.map((m) => (
-                          <option key={m.medicineId} value={m.medicineId}>
-                            {m.medicineName} — {m.quantity}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="d-flex gap-2 align-items-start">
+                      <div className="d-flex flex-column w-100">
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Type medicine name..."
+                          value={medicineSearch}
+                          onChange={(e) => setMedicineSearch(e.target.value)}
+                        />
+
+                        {filteredMedicines.length > 0 && (
+                          <div className="list-group w-100 mt-1">
+                            {filteredMedicines.map((m) => (
+                              <button
+                                type="button"
+                                key={m.medicineId}
+                                className="list-group-item list-group-item-action"
+                                onClick={() => {
+                                  handleMedicineChange(i, "medicineId", m.medicineId);
+                                  setMedicineSearch(
+                                    `${m.medicineName} | Exp: ${formatDateDMY(m.expiryDate)}`
+                                  );
+                                  setFilteredMedicines([]);
+                                }}
+                              >
+                                {m.medicineName} | Exp: {formatDateDMY(m.expiryDate)} | Qty: {m.quantity}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
                       <input
                         type="number"
@@ -397,12 +498,17 @@ const PharmacyPrescriptionForm = () => {
                         ✕
                       </button>
                     </div>
-
                     {medicineErrors[i] && (
-                      <div className="text-danger fw-bold mt-1">
-                        {medicineErrors[i]}
-                      </div>
-                    )}
+                    <div
+                      className={`fw-bold mt-1 ${
+                        medicineErrors[i].startsWith("⚠️")
+                          ? "text-warning"
+                          : "text-danger"
+                      }`}
+                    >
+                      {medicineErrors[i]}
+                    </div>
+                  )}
                   </div>
                 ))}
 
@@ -426,7 +532,13 @@ const PharmacyPrescriptionForm = () => {
                   />
                 </div>
 
-                <button type="submit" className="btn btn-dark w-100 mt-4">
+                <button
+                  type="submit"
+                  className="btn btn-dark w-100 mt-4"
+                  disabled={Object.values(medicineErrors).some(
+                    (msg) => msg.startsWith("❌")
+                  )}
+                >
                   Submit Prescription
                 </button>
               </form>

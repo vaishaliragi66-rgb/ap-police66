@@ -6,8 +6,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -27,7 +25,6 @@ const InstituteAnalytics = () => {
     const institute = JSON.parse(localStorage.getItem("institute"));
     if (!institute?._id) return;
 
-    // Fetch orders and inventory data
     const fetchData = async () => {
       try {
         const [ordersRes, inventoryRes] = await Promise.all([
@@ -49,45 +46,142 @@ const InstituteAnalytics = () => {
     fetchData();
   }, []);
 
-  // Prepare bar chart data
-  const barData = ordersData.map((o) => ({
-    name: o.Manufacturer_ID?.Manufacturer_Name || "Unknown",
-    quantity: o.Quantity_Requested,
-  }));
+  // ===========================
+  // MONTH-WISE + MANUFACTURER-WISE ORDERS
+  // ===========================
+  const barData = ordersData.reduce((acc, order) => {
+    const date = new Date(order.Order_Date);
 
-  // Prepare pie chart data
-  const pieData = inventoryData.map((m) => ({
-    name: m.medicineName,
-    value: m.quantity,
-  }));
-
-  // Line chart for monthly trends
-  const monthlyTrend = ordersData.reduce((acc, order) => {
-    const month = new Date(order.Order_Date).toLocaleString("default", {
+    const month = date.toLocaleString("default", {
       month: "short",
+      year: "numeric",
     });
-    const existing = acc.find((a) => a.month === month);
-    if (existing) existing.orders++;
-    else acc.push({ month, orders: 1 });
+
+    const manufacturer =
+      order?.Manufacturer_ID?.Manufacturer_Name || "Unknown";
+
+    let monthEntry = acc.find((m) => m.month === month);
+
+    if (!monthEntry) {
+      monthEntry = {
+        month,
+        quantity: 0,
+        manufacturers: {},
+      };
+      acc.push(monthEntry);
+    }
+
+    const qty = order?.Quantity_Requested || 0;
+    monthEntry.quantity += qty;
+
+    monthEntry.manufacturers[manufacturer] =
+      (monthEntry.manufacturers[manufacturer] || 0) + qty;
+
     return acc;
   }, []);
 
+  // convert manufacturers object to list for tooltip
+  const formattedBarData = barData.map((m) => ({
+    ...m,
+    manufacturersList: Object.entries(m.manufacturers).map(
+      ([name, qty]) => ({ name, qty })
+    ),
+  }));
+
+  // ===========================
+  // INVENTORY PIE DATA + BATCH NO
+  // ===========================
+  const pieData = inventoryData.map((m) => ({
+    name: m.medicineName,
+    value: m.quantity,
+    batch:
+      m.batchNo ||
+      m.batch_number ||
+      m.batchNumber ||
+      m.Medicine_Code ||
+      "Not Available",
+  }));
+
+  // ===========================
+  // CUSTOM BAR TOOLTIP
+  // ===========================
+  const CustomBarTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+
+    const data = payload[0].payload;
+
+    return (
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #ddd",
+          padding: "10px",
+          borderRadius: "8px",
+        }}
+      >
+        <strong>{data.month}</strong>
+        <br />
+        Total Quantity: {data.quantity}
+        <hr />
+        <strong>Manufacturers</strong>
+        <ul style={{ margin: 0, paddingLeft: "18px" }}>
+          {data.manufacturersList.map((m, i) => (
+            <li key={i}>
+              {m.name} — <b>{m.qty}</b>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  // ===========================
+  // CUSTOM PIE TOOLTIP (BATCH NO)
+  // ===========================
+  const CustomPieTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+
+    const data = payload[0].payload;
+
+    return (
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #ddd",
+          padding: "10px",
+          borderRadius: "8px",
+        }}
+      >
+        <strong>{data.name}</strong>
+        <br />
+        Quantity: {data.value}
+        <br />
+        Batch No: <b>{data.batch}</b>
+      </div>
+    );
+  };
+
   return (
     <div className="container py-4">
-      <h2 className="text-center fw-bold mb-4">📊 Institute Analytics Dashboard</h2>
+      <h2 className="text-center fw-bold mb-4">
+        📊 Institute Analytics Dashboard
+      </h2>
+
       <div className="row g-4">
-        {/* Bar Chart */}
-        <div className="col-md-6">
+
+        {/* ================= BAR CHART ================= */}
+        <div className="col-md-12">
           <div className="p-3 bg-white rounded-4 shadow-sm">
             <h5 className="text-center mb-3 fw-semibold">
-              Orders To Manufacturers
+              Monthly Orders From Manufacturers
             </h5>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={barData}>
+
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={formattedBarData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip content={<CustomBarTooltip />} />
                 <Legend />
                 <Bar dataKey="quantity" fill="#1e90ff" />
               </BarChart>
@@ -95,12 +189,13 @@ const InstituteAnalytics = () => {
           </div>
         </div>
 
-        {/* Pie Chart */}
+        {/* ================= PIE CHART ================= */}
         <div className="col-md-6">
           <div className="p-3 bg-white rounded-4 shadow-sm">
             <h5 className="text-center mb-3 fw-semibold">
               Medicine Stock Distribution
             </h5>
+
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -113,33 +208,20 @@ const InstituteAnalytics = () => {
                   label
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={index}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
-                <Tooltip />
+
+                <Tooltip content={<CustomPieTooltip />} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Line Chart */}
-        <div className="col-md-12">
-          <div className="p-3 bg-white rounded-4 shadow-sm mt-4">
-            <h5 className="text-center mb-3 fw-semibold">
-              Monthly Order Trend
-            </h5>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="orders" stroke="#ff7300" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
       </div>
     </div>
   );

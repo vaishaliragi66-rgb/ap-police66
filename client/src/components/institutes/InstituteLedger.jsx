@@ -7,6 +7,13 @@ const InstituteLedger = () => {
 
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const handleRowsChange = (e) => {
+    setRowsPerPage(Number(e.target.value));
+    setCurrentPage(1); // reset page
+  };
+
 
   // Filters
   const [typeFilter, setTypeFilter] = useState("ALL");
@@ -14,6 +21,19 @@ const InstituteLedger = () => {
   const [medicineFilter, setMedicineFilter] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+
+  const formatDateDMY = (dateValue) => {
+  if (!dateValue) return "—";
+
+  const date = new Date(dateValue);
+  if (isNaN(date)) return "—";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`; // ✅ DD-MM-YYYY
+};
 
   useEffect(() => {
     axios
@@ -68,6 +88,16 @@ const InstituteLedger = () => {
     fromDate,
     toDate
   ]);
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+
+  const currentLedger = filteredLedger.slice(
+    indexOfFirstRow,
+    indexOfLastRow
+  );
+
+  const totalPages = Math.ceil(filteredLedger.length / rowsPerPage);
+
 
   const handlePrint = () => window.print();
 
@@ -90,7 +120,7 @@ const InstituteLedger = () => {
       l.Medicine_Name,
       l.Manufacturer_Name,
       l.Expiry_Date
-        ? new Date(l.Expiry_Date).toLocaleDateString()
+        ? formatDateDMY(new Date(l.Expiry_Date))
         : "",
       l.Direction,
       l.Quantity,
@@ -113,6 +143,9 @@ const InstituteLedger = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [typeFilter, directionFilter, medicineFilter, fromDate, toDate]);
   if (loading) {
     return (
       <div className="text-center mt-5">
@@ -197,12 +230,28 @@ const InstituteLedger = () => {
             </div>
 
           </div>
+          <div className="d-flex justify-content-end mb-3">
+            <div className="d-flex align-items-center gap-2">
+              <span className="fw-semibold text-muted">Rows per page:</span>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: "80px" }}
+                value={rowsPerPage}
+                onChange={handleRowsChange}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
+          </div>
 
           {/* TABLE */}
           <div className="table-responsive">
             <table className="table table-bordered table-hover align-middle">
               <thead className="table-dark">
                 <tr>
+                  <th>S.No</th>
                   <th>Date & Time</th>
                   <th>Transaction</th>
                   <th>Medicine</th>
@@ -223,15 +272,16 @@ const InstituteLedger = () => {
                   </tr>
                 )}
 
-                {filteredLedger.map((l, i) => (
+                {currentLedger.map((l, i) => (
                   <tr key={i}>
+                    <td>{indexOfFirstRow + i + 1}</td>
                     <td>{new Date(l.Timestamp).toLocaleString()}</td>
                     <td>{l.Transaction_Type}</td>
                     <td>{l.Medicine_Name}</td>
                     <td>{l.Manufacturer_Name}</td>
                     <td>
                       {l.Expiry_Date
-                        ? new Date(l.Expiry_Date).toLocaleDateString()
+                        ? formatDateDMY(new Date(l.Expiry_Date))
                         : "-"}
                     </td>
                     <td
@@ -250,6 +300,38 @@ const InstituteLedger = () => {
                 ))}
               </tbody>
             </table>
+            <div className="d-flex justify-content-center align-items-center gap-2 mt-4">
+              <button
+                className="btn btn-outline-dark btn-sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
+                Previous
+              </button>
+
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  className={`btn btn-sm ${
+                    currentPage === i + 1
+                      ? "btn-dark"
+                      : "btn-outline-dark"
+                  }`}
+                  onClick={() => setCurrentPage(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                className="btn btn-outline-dark btn-sm"
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Next
+              </button>
+            </div>
+
           </div>
         </div>
       </div>

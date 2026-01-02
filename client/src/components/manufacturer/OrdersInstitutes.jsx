@@ -12,6 +12,18 @@ function OrdersInstitutes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const formatDateDMY = (dateValue) => {
+  if (!dateValue) return "—";
+
+  const date = new Date(dateValue);
+  if (isNaN(date)) return "—";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`; 
+};
   // ✅ Get manufacturer from localStorage
   useEffect(() => {
     try {
@@ -81,6 +93,7 @@ function OrdersInstitutes() {
             : order
         )
       );
+      
       alert("✅ Order accepted successfully");
     } catch (err) {
       alert("❌ Failed to accept order: " + (err.response?.data?.error || err.message));
@@ -276,6 +289,7 @@ function OrdersInstitutes() {
               <tr>
                 <th>Institute</th>
                 <th>Medicine</th>
+                <th>Expiry Date</th>
                 <th>Quantity</th>
                 <th>Order Date</th>
                 <th>Status</th>
@@ -286,6 +300,17 @@ function OrdersInstitutes() {
             <tbody style={{ fontSize: "0.92rem" }}>
               {filteredOrders.length > 0 ? (
                 filteredOrders.map((order) => {
+                  console.log("Medicine object:", order.Medicine_ID);
+                  const availableQty = order.Medicine_ID?.Quantity;
+                  const threshold = order.Medicine_ID?.Threshold_Qty;
+                  const requestedQty = order.Quantity_Requested || order.Quantity || 0;
+                  const insufficientStock =
+                  typeof availableQty === "number" &&
+                  requestedQty > availableQty;
+                  const belowThreshold =
+                    typeof availableQty === "number" &&
+                    typeof threshold === "number" &&
+                    availableQty - requestedQty < threshold;
                   const status = (order.manufacture_Status || "").toUpperCase();
                   const remarks = (order.Remarks || "").toLowerCase();
 
@@ -293,9 +318,30 @@ function OrdersInstitutes() {
                     <tr key={order._id}>
                       <td>{order.Institute_ID?.Institute_Name || "N/A"}</td>
                       <td>{order.Medicine_ID?.Medicine_Name || "N/A"}</td>
-                      <td>{order.Quantity_Requested || order.Quantity}</td>
                       <td>
-                        {new Date(order.Order_Date).toLocaleDateString()}
+                        {order.Medicine_ID?.Expiry_Date
+                          ?formatDateDMY( new Date(order.Medicine_ID?.Expiry_Date))
+                          : "—"}
+                      </td>
+                      <td>
+                        {requestedQty}
+
+                        {/* ❌ HARD STOP */}
+                        {insufficientStock && status === "PENDING" && (
+                          <div className="text-danger fw-semibold small mt-1">
+                            ❌ Only {availableQty} left in stock
+                          </div>
+                        )}
+
+                        {/* ⚠️ SOFT WARNING */}
+                        {!insufficientStock && belowThreshold && status === "PENDING" && (
+                          <div className="text-warning fw-semibold small mt-1">
+                            ⚠️ Stock will fall below threshold ({threshold})
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        {formatDateDMY(new Date(order.Order_Date))}
                       </td>
                       <td
                         className={`fw-semibold ${
@@ -319,6 +365,14 @@ function OrdersInstitutes() {
                             <button
                               onClick={() => handleAccept(order._id)}
                               className="btn btn-sm btn-success"
+                              disabled={insufficientStock}
+                              title={
+                                insufficientStock
+                                  ? `Cannot accept. Only ${availableQty} available`
+                                  : belowThreshold
+                                  ? `Warning: stock will fall below threshold (${threshold})`
+                                  : "Accept order"
+                              }
                             >
                               Accept
                             </button>

@@ -189,8 +189,11 @@ prescriptionApp.get("/institute/:instituteId", async (req, res) => {
   try {
     const { instituteId } = req.params;
 
+    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
-      return res.status(400).json({ message: "Invalid Institute ID" });
+      return res.status(400).json({
+        message: "Invalid Institute ID"
+      });
     }
 
     const prescriptions = await Prescription.find({
@@ -200,19 +203,25 @@ prescriptionApp.get("/institute/:instituteId", async (req, res) => {
       .populate("FamilyMember", "Name Relationship")
       .populate({
         path: "Medicines.Medicine_ID",
-        select: "Medicine_Name Expiry_Date"
+        select: `
+          Medicine_Name
+          Type
+          Category
+          Expiry_Date
+          Medicine_Code
+        `
       })
       .sort({ createdAt: -1 });
 
-    res.status(200).json(prescriptions);
+    return res.status(200).json(prescriptions);
   } catch (err) {
     console.error("Issue register error:", err);
-    res.status(500).json({
+
+    return res.status(500).json({
       message: "Failed to fetch issued medicines",
       error: err.message
     });
   }
 });
-
 
 module.exports = prescriptionApp;

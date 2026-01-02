@@ -9,7 +9,6 @@ const DiagnosisEntryForm = () => {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [instituteName, setInstituteName] = useState("");
   const [loading, setLoading] = useState(false);
-
   const [formData, setFormData] = useState({
     Institute_ID: "",
     Employee_ID: "",
@@ -20,7 +19,20 @@ const DiagnosisEntryForm = () => {
   });
 
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || "6100";
- 
+
+  const formatDateDMY = (dateValue) => {
+  if (!dateValue) return "—";
+
+  const date = new Date(dateValue);
+  if (isNaN(date)) return "—";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`; // ✅ DD-MM-YYYY
+};
+
   useEffect(() => {
     const localInstituteId = localStorage.getItem("instituteId");
     if (localInstituteId) {
@@ -435,7 +447,7 @@ const DiagnosisEntryForm = () => {
               )}
               {familyMembers.map(f => (
                 <option key={f._id} value={f._id}>
-                  {f.Name} ({f.Relationship || "Family"}) {f.DOB ? ` - DOB: ${new Date(f.DOB).toLocaleDateString()}` : ""}
+                  {f.Name} ({f.Relationship || "Family"}) {f.DOB ? ` - DOB: ${formatDateDMY(new Date(f.DOB))}` : ""}
                 </option>
               ))}
             </select>

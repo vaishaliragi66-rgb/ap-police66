@@ -96,7 +96,10 @@ manufacturerApp.get("/manufacturer/orders/:manufacturerId", async (req, res) => 
     // Get orders from Order collection using Manufacturer _id
     const orders = await Order.find({ Manufacturer_ID: manufacturer._id })
       .populate('Institute_ID', 'Institute_Name')
-      .populate('Medicine_ID', 'Medicine_Name')
+      .populate(
+        'Medicine_ID',
+        'Medicine_Name Quantity Threshold_Qty Expiry_Date'
+      )
       .sort({ Order_Date: -1 });
 
     console.log("📊 Orders count:", orders.length);

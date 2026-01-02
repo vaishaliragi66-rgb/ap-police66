@@ -9,6 +9,37 @@ import "bootstrap/dist/css/bootstrap.min.css";
 function Institute_manufacture() {
   const [orders, setOrders] = useState([]);
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 5000;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage, setOrdersPerPage] = useState(10);
+  const handleRowsChange = (e) => {
+    setOrdersPerPage(Number(e.target.value));
+    setCurrentPage(1); // reset to first page
+  };
+
+  const sortedOrders = [...orders].sort(
+  (a, b) => new Date(b.Order_Date) - new Date(a.Order_Date)
+);
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = sortedOrders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder
+  );
+
+  const totalPages = Math.ceil(sortedOrders.length / ordersPerPage);
+
+const formatDateDMY = (dateValue) => {
+  if (!dateValue) return "—";
+
+  const date = new Date(dateValue);
+  if (isNaN(date)) return "—";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`; // ✅ DD-MM-YYYY
+};
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -210,6 +241,21 @@ function Institute_manufacture() {
             boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
           }}
         >
+          <div className="d-flex justify-content-end p-3">
+            <div className="d-flex align-items-center gap-2">
+              <span className="fw-semibold text-muted">Rows per page:</span>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: "80px" }}
+                value={ordersPerPage}
+                onChange={handleRowsChange}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
+          </div>
           <table className="table align-middle text-center mb-0">
             <thead
               style={{
@@ -234,7 +280,7 @@ function Institute_manufacture() {
             </thead>
 
             <tbody>
-              {orders.map((order, idx) => (
+              {currentOrders.map((order, idx) => (
                 <tr
                   key={order._id}
                   style={{
@@ -248,14 +294,14 @@ function Institute_manufacture() {
                     (e.currentTarget.style.background = "transparent")
                   }
                 >
-                  <td className="fw-semibold text-secondary">{idx + 1}</td>
+                  <td className="fw-semibold text-secondary">{indexOfFirstOrder + idx + 1}</td>
                   <td className="fw-medium">{order.Medicine_Name}</td>
                   <td>{order.Manufacturer_Name}</td>
                   <td>{order.Quantity_Requested}</td>
-                  <td>{new Date(order.Order_Date).toLocaleDateString()}</td>
+                  <td>{formatDateDMY(new Date(order.Order_Date))}</td>
                   <td>
                     {order.Delivery_Date
-                      ? new Date(order.Delivery_Date).toLocaleDateString()
+                      ? formatDateDMY(new Date(order.Delivery_Date))
                       : "—"}
                   </td>
                   <td>
@@ -307,6 +353,36 @@ function Institute_manufacture() {
               ))}
             </tbody>
           </table>
+          <div className="d-flex justify-content-center align-items-center gap-2 py-4">
+            <button
+              className="btn btn-outline-dark btn-sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((prev) => prev - 1)}
+            >
+              Previous
+            </button>
+
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                className={`btn btn-sm ${
+                  currentPage === i + 1 ? "btn-dark" : "btn-outline-dark"
+                }`}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button
+              className="btn btn-outline-dark btn-sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((prev) => prev + 1)}
+            >
+              Next
+            </button>
+          </div>
+
         </div>
       )}
     </div>

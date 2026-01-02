@@ -4,12 +4,26 @@ import { FaCapsules } from "react-icons/fa";
 
 function Institutes_placeorder() {
   const [formData, setFormData] = useState({
-    Manufacturer_Name: "",
-    Manufacturer_ID: "",
-    Medicine_Name: "",
-    Medicine_ID: "",
-    Quantity_Requested: "",
-  });
+  Manufacturer_Name: "",
+  Manufacturer_ID: "",
+  Medicine_Name: "",
+  Medicine_ID: "",
+  Medicine_Expiry: "", 
+  Quantity_Requested: "",
+});
+
+const formatDateDMY = (dateValue) => {
+  if (!dateValue) return "—";
+
+  const date = new Date(dateValue);
+  if (isNaN(date)) return "—";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`; // ✅ DD-MM-YYYY
+};
 
   const [manufacturers, setManufacturers] = useState([]);
   const [medicines, setMedicines] = useState([]);
@@ -64,12 +78,15 @@ function Institutes_placeorder() {
   const handleMedicineChange = (e) => {
     const selectedId = e.target.value;
     const selectedMedicine = medicines.find((m) => m._id === selectedId);
+
     setFormData({
       ...formData,
       Medicine_ID: selectedId,
       Medicine_Name: selectedMedicine?.Medicine_Name || "",
+      Medicine_Expiry: selectedMedicine?.Expiry_Date || "", // ✅ ADD THIS
     });
   };
+
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -86,8 +103,10 @@ function Institutes_placeorder() {
       const payload = {
         Manufacturer_ID: formData.Manufacturer_ID,
         Medicine_ID: formData.Medicine_ID,
+        Expiry_Date: formData.Medicine_Expiry, 
         Quantity_Requested: formData.Quantity_Requested,
       };
+
 
       const res = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}/institute-api/place_order/${instituteId}`,
@@ -100,6 +119,7 @@ function Institutes_placeorder() {
         Manufacturer_ID: "",
         Medicine_Name: "",
         Medicine_ID: "",
+        Medicine_Expiry: "",   
         Quantity_Requested: "",
       });
       setMedicines([]);
@@ -188,7 +208,7 @@ function Institutes_placeorder() {
               <option value="">-- Select Medicine --</option>
               {medicines.map((med) => (
                 <option key={med._id} value={med._id}>
-                  {med.Medicine_Name}
+                  {med.Medicine_Name} | Exp: {formatDateDMY(med.Expiry_Date)}
                 </option>
               ))}
             </select>

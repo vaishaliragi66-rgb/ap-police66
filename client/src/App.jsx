@@ -32,6 +32,7 @@ import MedicinesIssuedRegister from "./components/institutes/MedicinesIssuedRegi
 import EmployeeDiseaseReport from "./components/employee/EmployeeDiseaseReport";
 import EmployeeProfile from "./components/employee/EmployeeProfile";
 import FamilyMemberProfile from "./components/employee/FamilyMemberProfile";
+import InstituteIndent from "./components/institutes/InstituteIndent";
 function App() {
   const router = createBrowserRouter([
     {
@@ -98,6 +99,10 @@ function App() {
     {
       path:"/institutes/ledger",
       element:<InstituteLedger/>
+    },
+    {
+      path:"/institutes/indent",
+      element:<InstituteIndent/>
     },
     {
       path:"/institutes/medicines-issued-register",
