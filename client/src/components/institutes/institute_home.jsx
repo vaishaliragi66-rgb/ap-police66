@@ -85,11 +85,8 @@ const Institute_home = () => {
   { icon: <FaBox />, label: "Inventory", path: "/institutes/inventory" },
   { icon: <FaVials />, label: "Diseases", path: "/institutions/diseases" },
   { icon: <FaPills />, label: "Prescriptions", path: "/institutions/prescriptions" },
-
-  // 🔥 friend’s analytics
+  { icon: <FaFileMedical />, label: "Analytics", path: "/institutions/analytics" },
   { icon: <FaFileMedical />, label: "View Employee Reports", path: "/institutions/reports" },
-
-  // 🔥 your work
   { icon: <FaClipboardList />, label: "Diagnosis", path: "/institutions/diagnosis-entry" },
   { icon: <FaClipboardList />, label: "Ledger", path: "/institutes/ledger" },
   { icon: <FaClipboardList />, label: "Indent", path: "/institutes/indent" },
