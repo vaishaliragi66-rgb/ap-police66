@@ -21,6 +21,10 @@ const DiagnosisRecordSchema = new Schema({
   ],
 
   Diagnosis_Notes: { type: String }
-});
+},
+{
+    timestamps: true   // ✅ THIS MAKES IT CONSISTENT
+  }
+);
 
 module.exports = mongoose.model("DiagnosisRecord", DiagnosisRecordSchema);

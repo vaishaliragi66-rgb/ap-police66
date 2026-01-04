@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import PatientSelector from "../institutes/PatientSelector";
 
 const DiagnosisEntryForm = () => {
-  const [employees, setEmployees] = useState([]);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [testsMaster, setTestsMaster] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [doctorDiagnosis, setDoctorDiagnosis] = useState([]);
+  // const [searchTerm, setSearchTerm] = useState("");
   const [instituteName, setInstituteName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [visitId, setVisitId] = useState(null);
   const [formData, setFormData] = useState({
     Institute_ID: "",
     Employee_ID: "",
@@ -33,6 +34,47 @@ const DiagnosisEntryForm = () => {
   return `${day}-${month}-${year}`; // ✅ DD-MM-YYYY
 };
 
+ const fetchDoctorDiagnosis = async (visitId) => {
+  try {
+    const res = await axios.get(
+      `http://localhost:${BACKEND_PORT_NO}/api/medical-actions/visit/${visitId}`
+    );
+
+    const actions = res.data || [];
+
+    // store all doctor diagnosis (raw)
+    setDoctorDiagnosis(
+      actions.filter(
+        a =>
+          a.action_type === "DOCTOR_DIAGNOSIS" &&
+          a.source === "DOCTOR"
+      )
+
+    );
+  } catch (err) {
+    console.error("Failed to fetch doctor diagnosis", err);
+    setDoctorDiagnosis([]);
+  }
+};
+
+
+  // useEffect(() => {
+  // if (doctorDiagnosis.length > 0) {
+  //   const testsFromDoctor = doctorDiagnosis[0].data.tests.map(t => ({
+  //     Test_ID: t.Test_ID || "",
+  //     Test_Name: t.Test_Name,
+  //     Result_Value: "",
+  //     Reference_Range: t.Reference_Range || "",
+  //     Units: t.Units || ""
+  //   }));
+
+//     setFormData(prev => ({
+//       ...prev,
+//       Tests: testsFromDoctor
+//     }));
+//   }
+// }, [doctorDiagnosis]);
+
   useEffect(() => {
     const localInstituteId = localStorage.getItem("instituteId");
     if (localInstituteId) {
@@ -42,7 +84,7 @@ const DiagnosisEntryForm = () => {
     } else {
       console.warn("No instituteId in localStorage");
     }
-    fetchEmployees();
+    // fetchEmployees();
   }, []);
 
   const fetchInstituteName = async (id) => {
@@ -54,23 +96,23 @@ const DiagnosisEntryForm = () => {
     }
   };
 
-  const fetchEmployees = async () => {
-    try {
-      const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/all`);
-      const employeesData = res.data?.employees || res.data || [];
-      setEmployees(employeesData);
-      console.log("Employees fetched:", employeesData.length);
-    } catch (err) {
-      console.error("Error fetching employees:", err);
-      // Try alternative endpoint
-      try {
-        const altRes = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/employees`);
-        setEmployees(altRes.data || []);
-      } catch (altErr) {
-        console.error("Alternative endpoint also failed:", altErr);
-      }
-    }
-  };
+  // const fetchEmployees = async () => {
+  //   try {
+  //     const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/all`);
+  //     const employeesData = res.data?.employees || res.data || [];
+  //     setEmployees(employeesData);
+  //     console.log("Employees fetched:", employeesData.length);
+  //   } catch (err) {
+  //     console.error("Error fetching employees:", err);
+  //     // Try alternative endpoint
+  //     try {
+  //       const altRes = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/employees`);
+  //       setEmployees(altRes.data || []);
+  //     } catch (altErr) {
+  //       console.error("Alternative endpoint also failed:", altErr);
+  //     }
+  //   }
+  // };
 
   const fetchTests = async () => {
     try {
@@ -83,16 +125,16 @@ const DiagnosisEntryForm = () => {
   };
 
   // Filter employees
-  useEffect(() => {
-    if (!searchTerm.trim()) return setFilteredEmployees([]);
-    const q = searchTerm.toLowerCase();
-    setFilteredEmployees(
-      employees.filter(e => 
-        String(e.ABS_NO || "").toLowerCase().startsWith(q) ||
-        String(e.Name || "").toLowerCase().includes(q)
-      )
-    );
-  }, [searchTerm, employees]);
+  // useEffect(() => {
+  //   if (!searchTerm.trim()) return setFilteredEmployees([]);
+  //   const q = searchTerm.toLowerCase();
+  //   setFilteredEmployees(
+  //     employees.filter(e => 
+  //       String(e.ABS_NO || "").toLowerCase().startsWith(q) ||
+  //       String(e.Name || "").toLowerCase().includes(q)
+  //     )
+  //   );
+  // }, [searchTerm, employees]);
 
   // Fetch family members - FIXED VERSION
   useEffect(() => {
@@ -165,12 +207,12 @@ const DiagnosisEntryForm = () => {
     }
   }, [formData.Employee_ID]);
 
-  const handleEmployeeSelect = (emp) => {
-    console.log("Selected employee:", emp);
-    setFormData(prev => ({ ...prev, Employee_ID: emp._id }));
-    setSearchTerm(emp.ABS_NO || "");
-    setFilteredEmployees([]);
-  };
+  // const handleEmployeeSelect = (emp) => {
+  //   console.log("Selected employee:", emp);
+  //   setFormData(prev => ({ ...prev, Employee_ID: emp._id }));
+  //   // setSearchTerm(emp.ABS_NO || "");
+  //   // setFilteredEmployees([]);
+  // };
 
   const handleCheckboxChange = (e) => {
     const { name, checked } = e.target;
@@ -227,6 +269,7 @@ const DiagnosisEntryForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     
     // Validation
     if (!formData.Institute_ID) {
@@ -257,50 +300,90 @@ const DiagnosisEntryForm = () => {
       }
     }
 
-    const payload = {
-      Institute_ID: formData.Institute_ID,
-      Employee_ID: formData.Employee_ID,
-      IsFamilyMember: formData.IsFamilyMember,
-      FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
-      Tests: formData.Tests.map(t => ({
-        Test_ID: t.Test_ID || null,
-        Test_Name: t.Test_Name,
-        Result_Value: t.Result_Value,
-        Reference_Range: t.Reference_Range || "",
-        Units: t.Units || "",
-        Remarks: t.Remarks || ""
-      })),
-      Diagnosis_Notes: formData.Diagnosis_Notes || ""
-    };
+    // const payload = {
+    //   Institute_ID: formData.Institute_ID,
+    //   Employee_ID: formData.Employee_ID,
+    //   IsFamilyMember: formData.IsFamilyMember,
+    //   FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
+    //   Tests: formData.Tests.map(t => ({
+    //     Test_ID: t.Test_ID || null,
+    //     Test_Name: t.Test_Name,
+    //     Result_Value: t.Result_Value,
+    //     Reference_Range: t.Reference_Range || "",
+    //     Units: t.Units || "",
+    //     Remarks: t.Remarks || ""
+    //   })),
+    //   Diagnosis_Notes: formData.Diagnosis_Notes || ""
+    // };
 
-    console.log("Submitting payload:", payload);
+    // console.log("Submitting payload:", payload);
 
     try {
-      const res = await axios.post(`http://localhost:${BACKEND_PORT_NO}/diagnosis-api/add`, payload);
-      alert("✅ Diagnosis record saved successfully!");
-      
-      // Reset form (keep institute ID)
-      setFormData(prev => ({ 
-        ...prev, 
-        Employee_ID: "", 
-        IsFamilyMember: false, 
-        FamilyMember_ID: "", 
-        Tests: [{ 
-          Test_ID: "", 
-          Test_Name: "", 
-          Result_Value: "", 
-          Reference_Range: "", 
-          Units: "" 
-        }], 
-        Diagnosis_Notes: "" 
-      }));
-      setSearchTerm("");
-      setFamilyMembers([]);
-    } catch (err) {
-      console.error("Error saving diagnosis:", err?.response?.data || err);
-      alert("❌ Error saving diagnosis: " + (err?.response?.data?.message || err?.message || "Server error"));
-    }
-  };
+      await axios.post(
+        `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/add`,
+        {
+          Institute_ID: formData.Institute_ID,
+          Employee_ID: formData.Employee_ID,
+          IsFamilyMember: formData.IsFamilyMember,
+          FamilyMember_ID: formData.IsFamilyMember
+            ? formData.FamilyMember_ID
+            : null,
+          Tests: formData.Tests.map(t => ({
+            Test_ID: t.Test_ID,
+            Test_Name: t.Test_Name,
+            Result_Value: t.Result_Value,
+            Reference_Range: t.Reference_Range,
+            Units: t.Units
+          })),
+          Diagnosis_Notes: formData.Diagnosis_Notes,
+          visit_id: visitId
+        }
+      );
+        alert("✅ Diagnosis record saved successfully!");
+        
+        // Reset form (keep institute ID)
+        setFormData(prev => ({ 
+          ...prev, 
+          Employee_ID: "", 
+          IsFamilyMember: false, 
+          FamilyMember_ID: "", 
+          Tests: [{ 
+            Test_ID: "", 
+            Test_Name: "", 
+            Result_Value: "", 
+            Reference_Range: "", 
+            Units: "" 
+          }], 
+          Diagnosis_Notes: "" 
+        }));
+        // setSearchTerm("");
+        setFamilyMembers([]);
+        setVisitId(null);
+      } catch (err) {
+        console.error("Error saving diagnosis:", err?.response?.data || err);
+        alert("❌ Error saving diagnosis: " + (err?.response?.data?.message || err?.message || "Server error"));
+      }
+    };
+
+const filteredDoctorDiagnosis = doctorDiagnosis.filter(d => {
+  const isFamily =
+    d.data?.is_family_member ??
+    d.data?.IsFamilyMember ??
+    false;
+
+  const familyId =
+    d.data?.family_member_id ??
+    d.data?.FamilyMember_ID ??
+    null;
+
+  // Employee self
+  if (!formData.IsFamilyMember) {
+    return isFamily === false;
+  }
+
+  // Family member
+  return isFamily === true && familyId === formData.FamilyMember_ID;
+});
 
   return (
     <div style={{ 
@@ -332,67 +415,51 @@ const DiagnosisEntryForm = () => {
         </div>
 
         {/* Employee Search */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#555" }}>Employee Search</label>
-          <input 
-            type="text" 
-            value={searchTerm} 
-            onChange={e => setSearchTerm(e.target.value)} 
-            placeholder="Type ABS_NO or Name..." 
-            style={{ 
-              width: "100%", 
-              padding: "10px 12px", 
-              borderRadius: 8, 
-              border: "1px solid #ddd" 
-            }} 
-          />
-          
-          {searchTerm && filteredEmployees.length > 0 && (
-            <div style={{ 
-              border: "1px solid #ddd", 
-              borderTop: "none",
-              maxHeight: 200, 
-              overflowY: "auto",
-              backgroundColor: "white",
-              borderRadius: "0 0 8px 8px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-            }}>
-              {filteredEmployees.map(emp => (
-                <div 
-                  key={emp._id} 
-                  onClick={() => handleEmployeeSelect(emp)}
-                  style={{ 
-                    padding: "10px 12px", 
-                    cursor: "pointer", 
-                    borderBottom: "1px solid #f0f0f0",
-                    transition: "background-color 0.2s"
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = "#f5f5f5"}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = "white"}
-                >
-                  <div style={{ fontWeight: "bold" }}>{emp.ABS_NO}</div>
-                  <div style={{ color: "#666", fontSize: "13px" }}>{emp.Name}</div>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {searchTerm && filteredEmployees.length === 0 && (
-            <div style={{ 
-              padding: "10px", 
-              color: "#888", 
-              fontStyle: "italic", 
-              fontSize: "13px",
-              backgroundColor: "#f9f9f9",
-              borderRadius: "0 0 8px 8px"
-            }}>
-              No employees found
-            </div>
-          )}
-        </div>
+        <PatientSelector
+          onSelect={({ employee, visit_id }) => {
+            setVisitId(visit_id);
+            setFormData(prev => ({
+              ...prev,
+              Employee_ID: employee._id,
+              IsFamilyMember: false,
+              FamilyMember_ID: ""
+            }));
+            if (visit_id) {
+              fetchDoctorDiagnosis(visit_id);
+            }
+          }}
+        />
+        {filteredDoctorDiagnosis.length > 0 && (
+          <div style={{
+            marginBottom: 20,
+            padding: 12,
+            backgroundColor: "#eef6ff",
+            borderRadius: 8,
+            border: "1px solid #cfe2ff"
+          }}>
+            <strong>Doctor Diagnosis (Reference)</strong>
 
-        {/* Selected Employee Info */}
-        {formData.Employee_ID && (
+            {filteredDoctorDiagnosis.map((d, i) => (
+              <div key={i} style={{ marginTop: 8 }}>
+                <ul style={{ marginBottom: 4 }}>
+                  {d.data.tests.map((t, idx) => (
+                    <li key={idx}>
+                      {t.Test_Name}
+                    </li>
+                  ))}
+                </ul>
+
+                {d.data.notes && (
+                  <div style={{ fontSize: 12, color: "#555" }}>
+                    Notes: {d.data.notes}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* {formData.Employee_ID && (
           <div style={{ 
             marginBottom: 20, 
             padding: "12px", 
@@ -408,7 +475,7 @@ const DiagnosisEntryForm = () => {
               })
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Family Member Checkbox */}
         <div style={{ marginBottom: 20 }}>

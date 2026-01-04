@@ -8,6 +8,7 @@ const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
 const Medicine = require("../models/master_medicine");
 const InstituteLedger = require("../models/InstituteLedger");
+const MedicalAction = require("../models/medical_action");
 
 
 // =======================================================

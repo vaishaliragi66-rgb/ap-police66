@@ -1,20 +1,37 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import PatientSelector from "../institutes/PatientSelector";
 
 const PharmacyPrescriptionForm = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [visitId, setVisitId] = useState(null); 
   const [medicineSearch, setMedicineSearch] = useState("");
-  const [employees, setEmployees] = useState([]);
-  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [activeMedicineIndex, setActiveMedicineIndex] = useState(null);
+  // const [employees, setEmployees] = useState([]);
+  // const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [inventory, setInventory] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  // const [searchTerm, setSearchTerm] = useState("");
   const [instituteName, setInstituteName] = useState("");
   const [filteredMedicines, setFilteredMedicines] = useState([]);
   const [employeeProfile, setEmployeeProfile] = useState(null);
   const [diseases, setDiseases] = useState([]);
   const [medicineErrors, setMedicineErrors] = useState({});
+  const [doctorPrescription, setDoctorPrescription] = useState([]);
+
+  const fetchDoctorActions = async (employeeId, visitId) => {
+  const res = await axios.get(
+      `http://localhost:${BACKEND_PORT}/api/medical-actions/visit/${visitId}`
+    );
+
+    const actions = res.data || [];
+
+    setDoctorPrescription(
+      actions.filter(a => a.action_type === "DOCTOR_PRESCRIPTION")
+    );
+  };
 
   const [formData, setFormData] = useState({
     Institute_ID: "",
@@ -37,6 +54,23 @@ const PharmacyPrescriptionForm = () => {
     return `${dd}-${mm}-${yyyy}`;
   };
 
+  const filteredDoctorPrescription = doctorPrescription.filter(p => {
+  const isFamily = p.data?.IsFamilyMember === true;
+  const familyId = p.data?.FamilyMember_ID || null;
+
+  // Employee case
+  if (!formData.IsFamilyMember) {
+    return isFamily === false;
+  }
+
+  // Family member case
+  return (
+    isFamily === true &&
+    String(familyId) === String(formData.FamilyMember_ID)
+  );
+});
+
+
 
   /* ================= INITIAL LOAD ================= */
   useEffect(() => {
@@ -45,7 +79,7 @@ const PharmacyPrescriptionForm = () => {
 
     setFormData((f) => ({ ...f, Institute_ID: instituteId }));
     fetchInstitute(instituteId);
-    fetchEmployees();
+    // fetchEmployees();
     fetchInventory(instituteId);
   }, []);
 
@@ -57,12 +91,12 @@ const PharmacyPrescriptionForm = () => {
     setInstituteName(res.data?.Institute_Name || "");
   };
 
-  const fetchEmployees = async () => {
-    const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/employee-api/all`
-    );
-    setEmployees(res.data.employees || []);
-  };
+  // const fetchEmployees = async () => {
+  //   const res = await axios.get(
+  //     `http://localhost:${BACKEND_PORT}/employee-api/all`
+  //   );
+  //   setEmployees(res.data.employees || []);
+  // };
 
   useEffect(() => {
   if (!medicineSearch.trim()) {
@@ -104,29 +138,29 @@ const PharmacyPrescriptionForm = () => {
   };
 
   /* ================= EMPLOYEE SEARCH ================= */
-  useEffect(() => {
-    if (!searchTerm) {
-      setFilteredEmployees([]);
-      return;
-    }
+  // useEffect(() => {
+  //   if (!searchTerm) {
+  //     setFilteredEmployees([]);
+  //     return;
+  //   }
 
-    setFilteredEmployees(
-      employees.filter((e) => String(e.ABS_NO).includes(searchTerm))
-    );
-  }, [searchTerm, employees]);
+  //   setFilteredEmployees(
+  //     employees.filter((e) => String(e.ABS_NO).includes(searchTerm))
+  //   );
+  // }, [searchTerm, employees]);
 
-  const selectEmployee = (emp) => {
-    setFormData((f) => ({
-      ...f,
-      Employee_ID: emp._id,
-      IsFamilyMember: false,
-      FamilyMember_ID: ""
-    }));
+  // const selectEmployee = (emp) => {
+  //   setFormData((f) => ({
+  //     ...f,
+  //     Employee_ID: emp._id,
+  //     IsFamilyMember: false,
+  //     FamilyMember_ID: ""
+  //   }));
 
-    setSearchTerm(emp.ABS_NO);
-    setFilteredEmployees([]);
-    fetchDiseases(emp._id);
-  };
+  //   setSearchTerm(emp.ABS_NO);
+  //   setFilteredEmployees([]);
+  //   fetchDiseases(emp._id);
+  // };
 
   useEffect(() => {
     if (!formData.Employee_ID) return;
@@ -197,7 +231,6 @@ const PharmacyPrescriptionForm = () => {
     }));
   }
 };
-
 
   /* ================= MEDICINE HANDLERS ================= */
   const handleMedicineChange = (index, field, value) => {
@@ -318,13 +351,14 @@ const PharmacyPrescriptionForm = () => {
       Employee_ID: formData.Employee_ID,
       IsFamilyMember: formData.IsFamilyMember,
       FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
-      Medicines: formData.Medicines.map((m) => ({
+      Medicines: formData.Medicines.map(m => ({
         Medicine_ID: m.medicineId,
         Medicine_Name: m.medicineName,
-        Expiry_Date: m.expiryDate,
-        Quantity: Number(m.quantity)
+        Quantity: Number(m.quantity),
+        source: "PHARMACY"
       })),
-      Notes: formData.Notes
+      Notes: formData.Notes,
+      visit_id: visitId
     };
 
     await axios.post(
@@ -334,15 +368,15 @@ const PharmacyPrescriptionForm = () => {
 
     alert("✅ Prescription saved successfully");
   };
-  const filteredAndSortedInventory = inventory
-  .filter((m) =>
-    m.medicineName
-      ?.toLowerCase()
-      .includes(medicineSearch.toLowerCase())
-  )
-  .sort(
-    (a, b) => new Date(a.expiryDate) - new Date(b.expiryDate)
-  );
+  // const filteredAndSortedInventory = inventory
+  // .filter((m) =>
+  //   m.medicineName
+  //     ?.toLowerCase()
+  //     .includes(medicineSearch.toLowerCase())
+  // )
+  // .sort(
+  //   (a, b) => new Date(a.expiryDate) - new Date(b.expiryDate)
+  // );
 
 
   /* ================= UI ================= */
@@ -362,32 +396,24 @@ const PharmacyPrescriptionForm = () => {
                   <label className="form-label fw-semibold">Institute</label>
                   <input className="form-control" value={instituteName} readOnly />
                 </div>
+                <PatientSelector
+                  onSelect={({ employee, visit_id }) => {
+                    setSelectedEmployee(employee);
+                    setVisitId(visit_id);
 
-                <div className="mb-3 position-relative">
-                  <label className="form-label fw-semibold">Employee ABS_NO</label>
-                  <input
-                    className="form-control"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Type ABS_NO"
-                  />
+                    setFormData(prev => ({
+                      ...prev,
+                      Employee_ID: employee._id,
+                      IsFamilyMember: false,
+                      FamilyMember_ID: ""
+                    }));
 
-                  {filteredEmployees.length > 0 && (
-                    <div className="list-group position-absolute w-100 z-3">
-                      {filteredEmployees.map((e) => (
-                        <button
-                          type="button"
-                          key={e._id}
-                          className="list-group-item list-group-item-action"
-                          onClick={() => selectEmployee(e)}
-                        >
-                          {e.ABS_NO} — {e.Name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
+                    fetchDiseases(employee._id);  
+                    if (visit_id) {
+                      fetchDoctorActions(employee._id, visit_id);
+                    }
+                  }}
+                />
                 {/* FAMILY MEMBER */}
                 <div className="form-check mb-3">
                   <input
@@ -453,7 +479,8 @@ const PharmacyPrescriptionForm = () => {
                           type="text"
                           className="form-control"
                           placeholder="Type medicine name..."
-                          value={medicineSearch}
+                          value={activeMedicineIndex === i ? medicineSearch : ""}
+                          onFocus={() => setActiveMedicineIndex(i)}
                           onChange={(e) => setMedicineSearch(e.target.value)}
                         />
 
@@ -470,6 +497,7 @@ const PharmacyPrescriptionForm = () => {
                                     `${m.medicineName} | Exp: ${formatDateDMY(m.expiryDate)}`
                                   );
                                   setFilteredMedicines([]);
+                                  setActiveMedicineIndex(null); // ✅ ADD THIS
                                 }}
                               >
                                 {m.medicineName} | Exp: {formatDateDMY(m.expiryDate)} | Qty: {m.quantity}
@@ -571,6 +599,29 @@ const PharmacyPrescriptionForm = () => {
             </div>
           </div>
         )}
+        {filteredDoctorPrescription.length > 0 && (
+          <div className="card mt-3 border-success">
+            <div className="card-header bg-success text-white">
+              Doctor Prescribed Medicines
+            </div>
+
+            <div className="card-body">
+              {filteredDoctorPrescription.map((p, i) => (
+                <ul key={i} className="mb-2">
+                  {p.data.medicines.map((m, idx) => (
+                    <li key={idx}>
+                      {m.Medicine_Name} — {m.Quantity}
+                      <span className="badge bg-success ms-2">
+                        Doctor Prescribed
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

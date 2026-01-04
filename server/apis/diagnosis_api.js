@@ -7,6 +7,7 @@ const DiagnosisRecord = require("../models/diagnostics_record");
 const Institute = require("../models/master_institute");
 const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
+const MedicalAction = require("../models/medical_action");
 
 // ✅ GET master test list
 diagnosisApp.get("/tests", async (req, res) => {
@@ -82,6 +83,25 @@ diagnosisApp.post("/add", async (req, res) => {
     }
 
     await record.save();
+    // ===================================================
+    // LOG MEDICAL ACTION (NON-BLOCKING)
+    // ===================================================
+    try {
+      await MedicalAction.create({
+        employee_id: Employee_ID,
+        visit_id: req.body.visit_id || null, // optional
+        action_type: "DIAGNOSIS_TEST",
+        source: "DIAGNOSIS",
+        data: {
+          diagnosis_record_id: record._id,
+          tests: Tests
+        },
+        remarks: Diagnosis_Notes || ""
+      });
+    } catch (logErr) {
+      console.error("⚠️ MedicalAction log failed (diagnosis):", logErr.message);
+      // DO NOT throw error — diagnosis must succeed
+    }
 
     const historyEntry = {
       Date: new Date(),
@@ -115,7 +135,12 @@ diagnosisApp.get("/records/:personId", async (req, res) => {
     const personObjectId = new mongoose.Types.ObjectId(personId);
 
     const records = await DiagnosisRecord.find({
-      $or: [{ Employee: personObjectId }, { FamilyMember: personObjectId }]
+      $or: [
+        { Employee: personObjectId },
+        { Employee: personId },        // 👈 support old string IDs
+        { FamilyMember: personObjectId },
+        { FamilyMember: personId }     // 👈 support old string IDs
+      ]
     })
       .populate("Employee", "Name")
       .populate("FamilyMember", "Name Relationship")
@@ -131,8 +156,5 @@ diagnosisApp.get("/records/:personId", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch records" });
   }
 });
-
-
-
 
 module.exports = diagnosisApp;

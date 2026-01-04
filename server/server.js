@@ -7,6 +7,7 @@ require('dotenv').config({ path: './.env' });
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // import your router here (adjust the path as needed)
 const manufacturerApp = require('./apis/manufacture_api'); 
@@ -20,8 +21,14 @@ const diseaseApp=require("./apis/institute_enter_disease");
 const ledgerApp = require("./apis/instituteLedgerApi");
 const indentApp = require("./apis/institute_indent_api");
 const analyticsApi = require("./apis/analytics-api");
-app.use("/analytics-api", analyticsApi);
+const dailyVisitRoutes = require("./apis/daily_visit_api");
+const medicalActionRoutes = require("./apis/medical_action_api");
+const doctorPrescriptionApi = require("./apis/doctor_prescription_api");
 
+app.use("/doctor-prescription-api", doctorPrescriptionApi);
+app.use("/api/visits", dailyVisitRoutes);
+app.use("/api/medical-actions", medicalActionRoutes);
+app.use("/analytics-api", analyticsApi);
 app.use("/medicine-api", medicineApp);
 app.use("/institute-api", instituteApp);
 app.use("/manufacturer-api", manufacturerApp);

@@ -90,6 +90,9 @@ const Institute_home = () => {
   { icon: <FaClipboardList />, label: "Diagnosis", path: "/institutions/diagnosis-entry" },
   { icon: <FaClipboardList />, label: "Ledger", path: "/institutes/ledger" },
   { icon: <FaClipboardList />, label: "Indent", path: "/institutes/indent" },
+  { icon: <FaHistory />, label: "Doctor prescription", path: "/institutes/doctor-prescription" },
+  { icon: <FaChartLine />, label: "Doctor Diagnosis", path: "/institutes/doctor-diagnosis" },
+  { icon: <FaUsers />, label: "Register Visit", path: "/institutes/visit-register" },
 ];
 
 

@@ -33,6 +33,9 @@ import EmployeeDiseaseReport from "./components/employee/EmployeeDiseaseReport";
 import EmployeeProfile from "./components/employee/EmployeeProfile";
 import FamilyMemberProfile from "./components/employee/FamilyMemberProfile";
 import InstituteIndent from "./components/institutes/InstituteIndent";
+import DoctorPrescriptionForm from "./components/institutes/DoctorPrescriptionForm";
+import VisitRegister from "./components/institutes/VisitRegister";
+import DoctorDiagnosisForm from "./components/institutes/DoctorDiagnosisForm";
 function App() {
   const router = createBrowserRouter([
     {
@@ -124,6 +127,17 @@ function App() {
     },{
       path:"institutions/analytics",
       element:<InstituteAnalytics/>
+    },
+    {
+      path:"/institutes/doctor-prescription",
+      element:<DoctorPrescriptionForm/>
+    },
+    {
+      path:"/institutes/doctor-diagnosis",
+      element:<DoctorDiagnosisForm/>
+    },
+    {path:"/institutes/visit-register",
+      element:<VisitRegister/>
     },
     {
       path:"/employee-register",

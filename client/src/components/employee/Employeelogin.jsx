@@ -23,11 +23,13 @@ const Employeelogin = () => {
       alert("✅ Login successful!");
 
       // ✅ Save Employee Data
+      console.log("LOGIN RESPONSE PAYLOAD:", res.data.payload);
       localStorage.setItem("employeeToken", res.data.payload.token);
       localStorage.setItem("employeeId", res.data.payload.id);
       localStorage.setItem("employeeName", res.data.payload.Name);
       localStorage.setItem("employeeDesignation", res.data.payload.Designation);
       localStorage.setItem("employeeABS", res.data.payload.ABS_NO);
+      localStorage.setItem("employeeObjectId", res.data.payload._id);
 
       navigate("/employee/home");
     } catch (error) {

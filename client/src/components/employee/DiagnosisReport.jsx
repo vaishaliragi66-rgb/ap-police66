@@ -8,21 +8,25 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const DiagnosisReport = () => {
   const [reports, setReports] = useState([]);
   const navigate = useNavigate();
-  const employeeId = localStorage.getItem("employeeId");
+  console.log("EmployeeObjectId from localStorage:", localStorage.getItem("employeeObjectId"));
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const employeeObjectId = localStorage.getItem("employeeObjectId")
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    if (!employeeId) return;
+useEffect(() => {
+  if (!employeeObjectId) return;
 
-    axios
-      .get(
-        `http://localhost:${BACKEND_PORT}/diagnosis-api/records/${employeeId}`
-      )
-      .then((res) => setReports(res.data || []))
-      .catch((err) =>
-        console.error("Error fetching diagnosis reports:", err)
-      );
-  }, [employeeId, BACKEND_PORT]);
+  axios
+    .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/records/${employeeObjectId}`)
+    .then(res => setReports(res.data || []))
+    .catch(err => {
+      if (err.response?.status === 404) {
+        setReports([]);
+      } else {
+        console.error(err);
+      }
+    });
+}, [employeeObjectId, refreshKey]); // ✅ IMPORTANT
 
   /* ================= DATE FIX (ONLY createdAt) ================= */
   const formatDate = (report) => {
@@ -134,6 +138,42 @@ const DiagnosisReport = () => {
     doc.save(`Lab_Report_${report._id.slice(-6)}.pdf`);
   };
 
+  const splitReportsByDate = (records) => {
+  const rows = [];
+
+  records.forEach((record) => {
+    if (!record.Tests || record.Tests.length === 0) return;
+
+    const grouped = {};
+
+    record.Tests.forEach((test) => {
+      if (!test.Timestamp) return;
+
+      // group by yyyy-mm-dd
+      const dateKey = new Date(test.Timestamp)
+        .toISOString()
+        .split("T")[0];
+
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(test);
+    });
+
+    Object.values(grouped).forEach((testsForDate) => {
+      rows.push({
+        ...record,
+        Tests: testsForDate // ✅ override tests for that date only
+      });
+    });
+  });
+
+  // latest first
+  return rows.sort(
+    (a, b) =>
+      new Date(b.Tests[0].Timestamp) -
+      new Date(a.Tests[0].Timestamp)
+  );
+};
+
   return (
     <div className="container mt-5">
       <button
@@ -148,7 +188,14 @@ const DiagnosisReport = () => {
           <h4 className="text-center mb-4 fw-bold">
             Diagnosis Reports
           </h4>
-
+          <div className="text-end mb-3">
+            <button
+              className="btn btn-sm btn-outline-secondary"
+              onClick={() => setRefreshKey(prev => prev + 1)}
+            >
+              Refresh Reports
+            </button>
+          </div>
           {reports.length === 0 ? (
             <p className="text-center text-muted">
               No diagnosis reports found.
@@ -168,7 +215,7 @@ const DiagnosisReport = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {reports.map((report, index) => (
+                  {splitReportsByDate(reports).map((report, index) => (
                     <tr key={report._id}>
                       <td>{index + 1}</td>
                       <td>
