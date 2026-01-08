@@ -2,23 +2,252 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaTruck, FaFilePdf } from "react-icons/fa";
 import jsPDF from "jspdf";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  AlignmentType,
+} from "docx";
+import { saveAs } from "file-saver";
+
 
 import autoTable from "jspdf-autotable";
 import "bootstrap/dist/css/bootstrap.min.css";
+
+
 
 function Institute_manufacture() {
   const [orders, setOrders] = useState([]);
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 5000;
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
+  const [searchMedicine, setSearchMedicine] = useState("");
+  const [quantityFilter, setQuantityFilter] = useState("");
+  const [orderDateFilter, setOrderDateFilter] = useState("");
+  const [deliveryDateFilter, setDeliveryDateFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+const [selectedOrder, setSelectedOrder] = useState(null);
+
+
   const handleRowsChange = (e) => {
     setOrdersPerPage(Number(e.target.value));
     setCurrentPage(1); // reset to first page
   };
 
-  const sortedOrders = [...orders].sort(
-  (a, b) => new Date(b.Order_Date) - new Date(a.Order_Date)
-);
+  const filteredOrders = orders.filter((order) => {
+    /* 🔍 Medicine name search */
+    if (
+      searchMedicine &&
+      !order.Medicine_Name?.toLowerCase().includes(
+        searchMedicine.toLowerCase()
+      )
+    )
+      return false;
+  
+    /* 🔢 Quantity ≤ */
+    if (quantityFilter !== "") {
+      const limit = Number(quantityFilter);
+      if (!Number.isFinite(limit)) return true; // allow typing
+      if (Number(order.Quantity_Requested) > limit) return false;
+    }
+  
+    /* 📅 Order Date ≤ */
+    if (orderDateFilter) {
+      const limitDate = new Date(orderDateFilter);
+      limitDate.setHours(23, 59, 59, 999);
+  
+      if (new Date(order.Order_Date) > limitDate) return false;
+    }
+  
+    /* 📅 Delivery Date ≤ */
+    if (deliveryDateFilter) {
+      if (!order.Delivery_Date) return false;
+  
+      const limitDate = new Date(deliveryDateFilter);
+      limitDate.setHours(23, 59, 59, 999);
+  
+      if (new Date(order.Delivery_Date) > limitDate) return false;
+    }
+  
+    /* 🚦 Status */
+    if (statusFilter && order.Display_Status !== statusFilter) return false;
+  
+    return true;
+  });
+  const generateWord = async (order) => {
+    if (order.Display_Status !== "DELIVERED") {
+      alert("Word document is available only for delivered orders");
+      return;
+    }
+  
+    const doc = new Document({
+      sections: [
+        {
+          children: [
+            /* ---------- TITLE ---------- */
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "OUT-PATIENT PHARMACY",
+                  bold: true,
+                  size: 32,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
+  
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "PHARMACY SALE RECEIPT",
+                  bold: true,
+                  size: 26,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
+  
+            new Paragraph(""),
+  
+            /* ---------- DETAILS ---------- */
+            new Paragraph(`Receipt No: ${order._id.slice(-6).toUpperCase()}`),
+            new Paragraph(`Manufacturer: ${order.Manufacturer_Name}`),
+            new Paragraph(`Medicine: ${order.Medicine_Name}`),
+            new Paragraph(`Quantity: ${order.Quantity_Requested}`),
+            new Paragraph(`Status: ${order.Display_Status}`),
+            new Paragraph(
+              `Delivery Date: ${
+                order.Delivery_Date
+                  ? new Date(order.Delivery_Date).toDateString()
+                  : "—"
+              }`
+            ),
+  
+            new Paragraph(""),
+  
+            /* ---------- TABLE ---------- */
+            new Table({
+              width: {
+                size: 100,
+                type: WidthType.PERCENTAGE,
+              },
+              rows: [
+                /* Header Row */
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: "Batch No", bold: true }),
+                          ],
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: "Expiry Date", bold: true }),
+                          ],
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: "Quantity", bold: true }),
+                          ],
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+  
+                /* Data Row */
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          text:
+                            "LOT" +
+                            Math.floor(Math.random() * 90 + 10),
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          text: "31-12-2026",
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          text: String(order.Quantity_Requested),
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+  
+            new Paragraph(""),
+  
+            /* ---------- DELIVERED STAMP ---------- */
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "DELIVERED",
+                  bold: true,
+                  size: 28,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        },
+      ],
+    });
+  
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `Pharmacy_Receipt_${order._id.slice(-6)}.docx`);
+  };
+  
+  
+
+
+  const openReceiptModal = (order) => {
+    if (order.Display_Status !== "DELIVERED") {
+      alert("Receipt available only for delivered orders");
+      return;
+    }
+    setSelectedOrder(order);
+    setShowReceiptModal(true);
+  };
+  
+    
+  
+  const sortedOrders = [...filteredOrders].sort(
+    (a, b) => new Date(b.Order_Date) - new Date(a.Order_Date)
+  );
+  
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
   const currentOrders = sortedOrders.slice(
@@ -227,11 +456,132 @@ const formatDateDMY = (dateValue) => {
           Review, track, and confirm deliveries for your medicine orders
         </p>
       </div>
+      <div
+  className="d-flex flex-wrap align-items-end gap-3 mx-auto mt-4 mb-3 p-3 rounded-4"
+  style={{
+    maxWidth: "90%",
+    backgroundColor: "#ffffff",
+    border: "1px solid #eee",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+  }}
+>
+  {/* Medicine Search */}
+  <div className="d-flex flex-column">
+    <label className="small fw-semibold text-muted mb-1">
+      Medicine
+    </label>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      placeholder="Search medicine"
+      value={searchMedicine}
+      onChange={(e) => {
+        setSearchMedicine(e.target.value);
+        setCurrentPage(1);
+      }}
+      style={{ minWidth: "180px" }}
+    />
+  </div>
+
+  {/* Quantity */}
+  <div className="d-flex flex-column">
+    <label className="small fw-semibold text-muted mb-1">
+      Quantity ≤
+    </label>
+    <input
+      type="number"
+      className="form-control form-control-sm"
+      placeholder="Qty"
+      value={quantityFilter}
+      onChange={(e) => {
+        setQuantityFilter(e.target.value);
+        setCurrentPage(1);
+      }}
+      style={{ width: "110px" }}
+    />
+  </div>
+
+  {/* Order Date */}
+  <div className="d-flex flex-column">
+    <label className="small fw-semibold text-muted mb-1">
+      Order Date ≤
+    </label>
+    <input
+      type="date"
+      className="form-control form-control-sm"
+      value={orderDateFilter}
+      onChange={(e) => {
+        setOrderDateFilter(e.target.value);
+        setCurrentPage(1);
+      }}
+    />
+  </div>
+
+  {/* Delivery Date */}
+  <div className="d-flex flex-column">
+    <label className="small fw-semibold text-muted mb-1">
+      Delivery Date ≤
+    </label>
+    <input
+      type="date"
+      className="form-control form-control-sm"
+      value={deliveryDateFilter}
+      onChange={(e) => {
+        setDeliveryDateFilter(e.target.value);
+        setCurrentPage(1);
+      }}
+    />
+  </div>
+
+  {/* Status */}
+  <div className="d-flex flex-column">
+    <label className="small fw-semibold text-muted mb-1">
+      Status
+    </label>
+    <select
+      className="form-select form-select-sm"
+      value={statusFilter}
+      onChange={(e) => {
+        setStatusFilter(e.target.value);
+        setCurrentPage(1);
+      }}
+      style={{ minWidth: "160px" }}
+    >
+      <option value="">All</option>
+      <option value="PENDING">PENDING</option>
+      <option value="APPROVED">APPROVED</option>
+      <option value="REJECTED">REJECTED</option>
+      <option value="DELIVERED">DELIVERED</option>
+    </select>
+  </div>
+
+  {/* Clear Filters */}
+  <div className="d-flex flex-column">
+    <label className="small fw-semibold text-muted mb-1">
+      &nbsp;
+    </label>
+    <button
+      className="btn btn-outline-dark btn-sm px-3"
+      onClick={() => {
+        setSearchMedicine("");
+        setQuantityFilter("");
+        setOrderDateFilter("");
+        setDeliveryDateFilter("");
+        setStatusFilter("");
+        setCurrentPage(1);
+      }}
+    >
+      Clear
+    </button>
+  </div>
+</div>
+
 
       {/* Orders Table */}
       {orders.length === 0 ? (
         <p className="text-center text-muted mt-5">No orders found.</p>
       ) : (
+        
         <div
           className="table-responsive shadow-sm rounded-4 mx-auto mt-4"
           style={{
@@ -276,6 +626,7 @@ const formatDateDMY = (dateValue) => {
                 <th>Delivery Date</th>
                 <th>Status</th>
                 <th>Action</th>
+                <th>Documents</th>
               </tr>
             </thead>
 
@@ -304,7 +655,7 @@ const formatDateDMY = (dateValue) => {
                       ? formatDateDMY(new Date(order.Delivery_Date))
                       : "—"}
                   </td>
-                  <td>
+                  <td>  
                     <span
                       className={`badge px-3 py-2 rounded-pill ${
                         order.Display_Status === "DELIVERED"
@@ -349,6 +700,44 @@ const formatDateDMY = (dateValue) => {
                       )}
                     </div>
                   </td>
+
+<td>
+  <div className="d-flex justify-content-center gap-2">
+
+    {/* VIEW */}
+    <button
+      className="btn btn-sm btn-outline-dark"
+      onClick={() => openReceiptModal(order)}
+    >
+      View
+    </button>
+
+    {/* PDF */}
+    {order.Display_Status === "DELIVERED" && (
+      <button
+        className="btn btn-sm btn-outline-danger"
+        onClick={() => generateReceipt(order)}
+        title="Download PDF"
+      >
+        <FaFilePdf size={14} />
+      </button>
+    )}
+
+    {/* WORD */}
+    {order.Display_Status === "DELIVERED" && (
+      <button
+        className="btn btn-sm btn-outline-primary"
+        onClick={() => generateWord(order)}
+        title="Download Word"
+      >
+        DOC
+      </button>
+    )}
+
+  </div>
+</td>
+
+
                 </tr>
               ))}
             </tbody>
@@ -366,7 +755,7 @@ const formatDateDMY = (dateValue) => {
               <button
                 key={i}
                 className={`btn btn-sm ${
-                  currentPage === i + 1 ? "btn-dark" : "btn-outline-dark"
+                  currentPage === i + 1 ? "btn-dark" : "btn-outline-dark" 
                 }`}
                 onClick={() => setCurrentPage(i + 1)}
               >
@@ -385,6 +774,121 @@ const formatDateDMY = (dateValue) => {
 
         </div>
       )}
+
+      {/* ================= RECEIPT VIEW MODAL ================= */}
+{showReceiptModal && selectedOrder && (
+  <div className="modal fade show d-block" tabIndex="-1">
+    <div className="modal-dialog modal-fullscreen modal-dialog-centered">
+    <div className="modal-content rounded-0">
+
+
+        {/* HEADER */}
+        <div className="modal-header">
+          <h5 className="modal-title fw-bold">
+            Pharmacy Receipt Preview
+          </h5>
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setShowReceiptModal(false)}
+          ></button>
+        </div>
+
+        {/* BODY */}
+        <div className="modal-body">
+
+          <div className="text-center mb-3">
+            <h5 className="fw-bold">OUT-PATIENT PHARMACY</h5>
+            <p className="text-muted mb-0">PHARMACY SALE RECEIPT</p>
+          </div>
+
+          <hr />
+
+          {/* DETAILS */}
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <p><strong>Receipt No:</strong> {selectedOrder._id.slice(-6).toUpperCase()}</p>
+              <p><strong>Manufacturer:</strong> {selectedOrder.Manufacturer_Name}</p>
+              <p><strong>Medicine:</strong> {selectedOrder.Medicine_Name}</p>
+            </div>
+            <div className="col-md-6">
+              <p><strong>Quantity:</strong> {selectedOrder.Quantity_Requested}</p>
+              <p><strong>Status:</strong> {selectedOrder.Display_Status}</p>
+              <p>
+                <strong>Delivery Date:</strong>{" "}
+                {selectedOrder.Delivery_Date
+                  ? formatDateDMY(new Date(selectedOrder.Delivery_Date))
+                  : "—"}
+              </p>
+            </div>
+          </div>
+
+          {/* TABLE */}
+          <table className="table table-bordered text-center">
+            <thead className="table-dark">
+              <tr>
+                <th>Batch No</th>
+                <th>Expiry Date</th>
+                <th>Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{"LOT" + Math.floor(Math.random() * 90 + 10)}</td>
+                <td>31-12-2026</td>
+                <td>{selectedOrder.Quantity_Requested}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="text-center mt-3">
+            <span className="badge bg-success px-4 py-2 fs-6">
+              DELIVERED
+            </span>
+          </div>
+
+        </div>
+
+        {/* FOOTER */}
+        <div className="modal-footer d-flex justify-content-between">
+
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => window.print()}
+          >
+            Print
+          </button>
+
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-outline-danger"
+              onClick={() => generateReceipt(selectedOrder)}
+            >
+              PDF
+            </button>
+
+            <button
+              className="btn btn-outline-primary"
+              onClick={() => generateWord(selectedOrder)}
+            >
+              Word
+            </button>
+
+            <button
+              className="btn btn-dark"
+              onClick={() => setShowReceiptModal(false)}
+            >
+              Close
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  
+  </div>
+)}
+
     </div>
   );
 }
