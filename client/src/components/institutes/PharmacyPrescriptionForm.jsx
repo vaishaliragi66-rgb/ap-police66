@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
+import "./PharmacyPrescriptionForm.css";
 
 const PharmacyPrescriptionForm = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
@@ -385,7 +386,8 @@ const PharmacyPrescriptionForm = () => {
       <div className="row justify-content-center">
         {/* FORM */}
         <div className="col-lg-8">
-          <div className="card shadow border-0">
+        <div className="card shadow border-0 pharmacy-card">
+
             <div className="card-header bg-dark text-white">
               <h5 className="mb-0">Pharmacy Prescription</h5>
             </div>
@@ -472,20 +474,27 @@ const PharmacyPrescriptionForm = () => {
                 <h6 className="fw-bold mt-4">Medicines</h6>
 
                 {formData.Medicines.map((med, i) => (
-                  <div key={i} className="mb-3">
+                 <div key={i} className="mb-3 medicine-row">
                     <div className="d-flex gap-2 align-items-start">
                       <div className="d-flex flex-column w-100">
                         <input
                           type="text"
                           className="form-control"
                           placeholder="Type medicine name..."
-                          value={activeMedicineIndex === i ? medicineSearch : ""}
+                          value={
+                            activeMedicineIndex === i
+                              ? medicineSearch
+                              : med.medicineName
+                                ? `${med.medicineName} (Exp: ${formatDateDMY(med.expiryDate)})`
+                                : ""
+                          }
+                            
                           onFocus={() => setActiveMedicineIndex(i)}
                           onChange={(e) => setMedicineSearch(e.target.value)}
                         />
 
                         {filteredMedicines.length > 0 && (
-                          <div className="list-group w-100 mt-1">
+                         <div className="list-group w-100 mt-1 medicine-dropdown">
                             {filteredMedicines.map((m) => (
                               <button
                                 type="button"
@@ -493,11 +502,10 @@ const PharmacyPrescriptionForm = () => {
                                 className="list-group-item list-group-item-action"
                                 onClick={() => {
                                   handleMedicineChange(i, "medicineId", m.medicineId);
-                                  setMedicineSearch(
-                                    `${m.medicineName} | Exp: ${formatDateDMY(m.expiryDate)}`
-                                  );
-                                  setFilteredMedicines([]);
-                                  setActiveMedicineIndex(null); // ✅ ADD THIS
+                                  setMedicineSearch("");
+                                setFilteredMedicines([]);
+                                setActiveMedicineIndex(null);
+
                                 }}
                               >
                                 {m.medicineName} | Exp: {formatDateDMY(m.expiryDate)} | Qty: {m.quantity}
@@ -576,51 +584,55 @@ const PharmacyPrescriptionForm = () => {
 
         {/* EMPLOYEE CARD */}
         {employeeProfile && (
-          <div className="col-lg-3 d-none d-lg-block">
-            <div
-              className="card shadow-sm border-0 text-center p-4 sticky-top"
-              style={{ top: "90px" }}
-            >
-              <img
-                src={`http://localhost:${BACKEND_PORT}${employeeProfile.Photo}`}
-                alt="Employee"
-                className="rounded-circle mx-auto mb-3"
-                style={{
-                  width: "120px",
-                  height: "120px",
-                  objectFit: "cover",
-                  border: "2px solid #ddd"
-                }}
-              />
-              <h6 className="fw-bold mb-1">{employeeProfile.Name}</h6>
-              <div className="text-muted">
-                ABS No: {employeeProfile.ABS_NO}
-              </div>
-            </div>
-          </div>
-        )}
-        {filteredDoctorPrescription.length > 0 && (
-          <div className="card mt-3 border-success">
-            <div className="card-header bg-success text-white">
-              Doctor Prescribed Medicines
-            </div>
+  <div className="col-lg-3 d-none d-lg-block">
+    
+    {/* PROFILE CARD */}
+    <div className="card shadow-sm border-0 text-center p-4 employee-card mb-3">
+      <img
+        src={`http://localhost:${BACKEND_PORT}${employeeProfile.Photo}`}
+        alt="Employee"
+        className="rounded-circle mx-auto mb-3"
+        style={{
+          width: "120px",
+          height: "120px",
+          objectFit: "cover",
+          border: "2px solid #ddd"
+        }}
+      />
+      <h6 className="fw-bold mb-1">{employeeProfile.Name}</h6>
+      <div className="text-muted">
+        ABS No: {employeeProfile.ABS_NO}
+      </div>
+    </div>
 
-            <div className="card-body">
-              {filteredDoctorPrescription.map((p, i) => (
-                <ul key={i} className="mb-2">
-                  {p.data.medicines.map((m, idx) => (
-                    <li key={idx}>
-                      {m.Medicine_Name} — {m.Quantity}
-                      <span className="badge bg-success ms-2">
-                        Doctor Prescribed
-                      </span>
-                    </li>
+        {/* DOCTOR PRESCRIPTION BELOW PROFILE */}
+        {filteredDoctorPrescription.length > 0 && (
+              <div className="card border-0 doctor-card">
+                <div className="card-header">
+                  Doctor Prescribed Medicines
+                </div>
+
+                <div className="card-body">
+                  {filteredDoctorPrescription.map((p, i) => (
+                    <ul key={i} className="mb-2 ps-3">
+                      {p.data.medicines.map((m, idx) => (
+                        <li key={idx}>
+                        {m.Medicine_Name} — {m.Quantity}
+                        <span className="badge bg-success ms-2">
+                          Doctor Prescribed
+                        </span>
+                      </li>
+                      ))}
+                    </ul>
                   ))}
-                </ul>
-              ))}
-            </div>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
+
+        
 
       </div>
     </div>

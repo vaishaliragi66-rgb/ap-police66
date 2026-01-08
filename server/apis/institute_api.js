@@ -396,7 +396,6 @@ instituteApp.put(
     }
   }
 );
-
 instituteApp.get("/inventory/:instituteId", async (req, res) => {
   try {
     const { instituteId } = req.params;
@@ -405,35 +404,36 @@ instituteApp.get("/inventory/:instituteId", async (req, res) => {
       return res.status(400).json({ error: "Invalid Institute ID" });
     }
 
-    const institute = await Institute.findById(instituteId).populate({
-      path: "Medicine_Inventory.Medicine_ID",
-      model: "Medicine",
-      populate: {
-        path: "Manufacturer_ID",
-        model: "Manufacturer",
-      },
-    });
+    const institute = await Institute.findById(instituteId)
+      .populate("Medicine_Inventory.Medicine_ID");
 
     if (!institute) {
       return res.status(404).json({ error: "Institute not found" });
     }
 
-    const inventory = institute.Medicine_Inventory.map((item) => ({
-      medicineId: item.Medicine_ID?._id,
-      medicineCode: item?.Medicine_ID?.Medicine_Code,
-      medicineName: item.Medicine_ID?.Medicine_Name,
-      manufacturerName: item.Medicine_ID?.Manufacturer_ID?.Manufacturer_Name,
-      quantity: item.Quantity,
-      threshold: item.Medicine_ID?.Threshold_Qty || 0,
-      expiryDate: item.Medicine_ID?.Expiry_Date || null,
-    }));
+    const rawInventory = Array.isArray(institute.Medicine_Inventory)
+      ? institute.Medicine_Inventory
+      : [];
+
+    const inventory = rawInventory
+      .filter(item => item && item.Medicine_ID)   // 🔥 skip broken refs
+      .map(item => ({
+        medicineId: item.Medicine_ID._id,
+        medicineCode: item.Medicine_ID.Medicine_Code,
+        medicineName: item.Medicine_ID.Medicine_Name,
+        quantity: item.Quantity ?? 0,
+        threshold: item.Medicine_ID.Threshold_Qty ?? 0,
+        expiryDate: item.Medicine_ID.Expiry_Date ?? null,
+      }));
 
     res.status(200).json(inventory);
+
   } catch (err) {
     console.error("Inventory fetch error:", err);
-    res.status(500).json({ error: "Failed to fetch inventory" });
+    res.status(500).json({ error: err.message });
   }
 });
+
 
 
 // GET single institute by ID

@@ -1,0 +1,67 @@
+/* ================== DOCTOR PRESCRIPTION CARD ================== */
+.doctor-card {
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+  
+  .doctor-card .card-header {
+    background: linear-gradient(135deg, #343a40, #212529);
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 12px 12px 0 0;
+    padding: 10px 14px;
+  }
+  
+  .doctor-card .card-body {
+    padding: 12px 14px;
+  }
+  
+  /* ================== MEDICINE LIST ================== */
+  .doctor-card ul {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+  }
+  
+  .doctor-card li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 0.85rem;
+    border-bottom: 1px dashed #e9ecef;
+  }
+  
+  .doctor-card li:last-child {
+    border-bottom: none;
+  }
+  
+  /* ================== DOCTOR BADGE ================== */
+  .doctor-card .badge {
+    background-color: #e9ecef !important;
+    color: #212529 !important;
+    font-weight: 500;
+    font-size: 0.65rem;
+    padding: 4px 8px;
+    border-radius: 10px;
+    border: 1px solid #ced4da;
+  }
+  
+  /* ================== PROFILE + DOCTOR STACK ================== */
+  .employee-card {
+    border-radius: 14px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  .employee-card h6 {
+    font-size: 0.95rem;
+  }
+  
+  .employee-card .text-muted {
+    font-size: 0.8rem;
+  }
+  
