@@ -124,11 +124,7 @@ const EmployeeRegister = () => {
       const response = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}/employee-api/register`,
         formPayload,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
+        
       );
 
       setSuccess(response.data.message || "✅ Employee registered successfully!");

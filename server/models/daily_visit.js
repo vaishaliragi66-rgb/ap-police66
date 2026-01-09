@@ -1,9 +1,42 @@
 const mongoose = require("mongoose");
 
+const PatientSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ["EMPLOYEE", "FAMILY"],
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    relation: String,
+    age: Number,
+    symptoms: {
+      type: String,
+      trim: true,
+      default: ""
+    }
+  },
+  { _id: false }
+);
+
+
 const DailyVisitSchema = new mongoose.Schema({
   employee_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
+    required: true
+  },
+
+  abs_no: {
+    type: String,
+    required: true
+  },
+
+  patient: {
+    type: PatientSchema,
     required: true
   },
 

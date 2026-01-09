@@ -253,27 +253,26 @@ employeeApp.get(
 
 /* ================= GET ALL EMPLOYEES ================= */
 
-employeeApp.get(
-  "/all",
-  expressAsyncHandler(async (req, res) => {
-    try {
-      const employees = await Employee.find({})
-        .select('ABS_NO Name Email Designation Photo')
-        .sort({ createdAt: -1 });
-      
-      res.status(200).json({
-        count: employees.length,
-        employees: employees
-      });
-    } catch (err) {
-      console.error("Get all employees error:", err);
-      res.status(500).json({ 
-        message: "Failed to fetch employees", 
-        error: err.message 
-      });
-    }
-  })
-);
+employeeApp.get("/all", async (req, res) => {
+  try {
+    const employees = await Employee.find({})
+      .select(
+        'ABS_NO Name Email DOB Blood_Group Height Weight Phone_No Photo'
+      )
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      count: employees.length,
+      employees
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch employees",
+      error: err.message
+    });
+  }
+});
+
 /* ================= EMPLOYEE + FAMILY HEALTH REPORT ================= */
 
 employeeApp.get(
