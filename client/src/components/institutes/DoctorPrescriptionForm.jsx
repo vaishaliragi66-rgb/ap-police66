@@ -10,6 +10,8 @@ const DoctorPrescriptionForm = () => {
 //   const [employees, setEmployees] = useState([]);
 //   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [familyMembers, setFamilyMembers] = useState([]);
+  const [lastTwoVisits, setLastTwoVisits] = useState([]);
+
 //   const [inventory, setInventory] = useState([]);
 //   const [searchTerm, setSearchTerm] = useState("");
   const [instituteName, setInstituteName] = useState("");
@@ -51,6 +53,29 @@ const DoctorPrescriptionForm = () => {
     // fetchEmployees();
     // fetchInventory(instituteId);
   }, []);
+
+  
+
+  const fetchTopTwoPrescriptions = async (employeeId) => {
+    try {
+      const res = await axios.get(
+        `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
+      );
+  
+      // Sort latest first (safety)
+      const sorted = [...res.data].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+  
+      // Take top 2
+      setLastTwoVisits(sorted.slice(0, 2));
+    } catch (err) {
+      console.error(err);
+      setLastTwoVisits([]);
+    }
+  };
+  
+  
 
   /* ================= API CALLS ================= */
   const fetchInstitute = async (id) => {
@@ -417,7 +442,8 @@ const DoctorPrescriptionForm = () => {
                         FamilyMember_ID: ""
                         }));
 
-                        fetchDiseases(employee._id);   // ✅ ADD THIS
+                        fetchDiseases(employee._id);
+                        fetchTopTwoPrescriptions(employee._id); // ✅ ADD THIS
                     }}
                     />
 
@@ -616,6 +642,44 @@ const DoctorPrescriptionForm = () => {
             </div>
           </div>
         )}
+
+{lastTwoVisits.length > 0 && (
+  <div className="mt-4">
+    <h6 className="fw-bold">Previous 2 Prescriptions</h6>
+
+    {lastTwoVisits.map((p, idx) => (
+      <div key={idx} className="card mb-3 border-secondary">
+        <div className="card-header bg-light fw-semibold">
+          Date: {formatDateDMY(p.createdAt)}
+        </div>
+
+        <div className="card-body">
+          {p.FamilyMember && (
+            <div className="text-muted mb-2">
+              Family Member: {p.FamilyMember.Name} ({p.FamilyMember.Relationship})
+            </div>
+          )}
+
+          <ul className="mb-2">
+            {p.Medicines.map((m, i) => (
+              <li key={i}>
+                {m.Medicine_Name || m.Medicine_ID?.Medicine_Name} — Qty: {m.Quantity}
+              </li>
+            ))}
+          </ul>
+
+          {p.Notes && (
+            <div className="fst-italic text-muted">
+              Notes: {p.Notes}
+            </div>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
+
       </div>
     </div>
   );

@@ -21,6 +21,9 @@ const PharmacyPrescriptionForm = () => {
   const [diseases, setDiseases] = useState([]);
   const [medicineErrors, setMedicineErrors] = useState({});
   const [doctorPrescription, setDoctorPrescription] = useState([]);
+  const [lastTwoVisits, setLastTwoVisits] = useState([]);
+
+
 
   const fetchDoctorActions = async (employeeId, visitId) => {
   const res = await axios.get(
@@ -70,6 +73,24 @@ const PharmacyPrescriptionForm = () => {
     String(familyId) === String(formData.FamilyMember_ID)
   );
 });
+
+const fetchLastTwoPrescriptions = async (employeeId) => {
+  try {
+    const res = await axios.get(
+      `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
+    );
+
+    const sorted = [...res.data].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    setLastTwoVisits(sorted.slice(0, 2));
+  } catch (err) {
+    console.error(err);
+    setLastTwoVisits([]);
+  }
+};
+
 
 
 
@@ -414,6 +435,7 @@ const PharmacyPrescriptionForm = () => {
                     if (visit_id) {
                       fetchDoctorActions(employee._id, visit_id);
                     }
+                    fetchLastTwoPrescriptions(employee._id);
                   }}
                 />
                 {/* FAMILY MEMBER */}
@@ -631,6 +653,45 @@ const PharmacyPrescriptionForm = () => {
 
           </div>
         )}
+    {lastTwoVisits.length > 0 && (
+  <div className="card shadow-sm border-0 mt-3">
+    <div className="card-header bg-light fw-semibold">
+      Previous 2 Prescriptions
+    </div>
+
+    <div className="card-body">
+      {lastTwoVisits.map((p, idx) => (
+        <div key={idx} className="mb-3 pb-2 border-bottom">
+          <div className="fw-semibold mb-1">
+            Date: {formatDateDMY(p.createdAt)}
+          </div>
+
+          {p.FamilyMember && (
+            <div className="text-muted mb-1">
+              Family Member: {p.FamilyMember.Name} ({p.FamilyMember.Relationship})
+            </div>
+          )}
+
+          <ul className="mb-1 ps-3">
+            {p.Medicines.map((m, i) => (
+              <li key={i}>
+                {m.Medicine_Name || m.Medicine_ID?.Medicine_Name}
+                {" — "}
+                Qty: {m.Quantity}
+              </li>
+            ))}
+          </ul>
+
+          {p.Notes && (
+            <div className="fst-italic text-muted">
+              Notes: {p.Notes}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
         
 

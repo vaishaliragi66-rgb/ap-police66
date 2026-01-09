@@ -225,4 +225,5 @@ prescriptionApp.get("/institute/:instituteId", async (req, res) => {
   }
 });
 
+
 module.exports = prescriptionApp;

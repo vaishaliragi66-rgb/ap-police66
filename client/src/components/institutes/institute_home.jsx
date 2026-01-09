@@ -108,17 +108,20 @@ const Institute_home = () => {
       }}
     >
       {/* ================= SIDEBAR ================= */}
-      <div
-        className={`bg-white text-dark p-4 border-end shadow-sm position-fixed h-100 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-100"
-        }`}
-        style={{
-          width: "280px",
-          minHeight: "100vh",
-          transition: "all 0.4s ease",
-          zIndex: 1050,
-        }}
-      >
+<div
+  className={`bg-white text-dark p-4 border-end shadow-sm position-fixed ${
+    sidebarOpen ? "translate-x-0" : "-translate-x-100"
+  }`}
+  style={{
+    width: "280px",
+    height: "100vh",          // ✅ FIXED height
+    overflowY: "auto",        // ✅ ENABLE SCROLL
+    overflowX: "hidden",      // ✅ NO SIDE SCROLL
+    transition: "all 0.4s ease",
+    zIndex: 1050,
+  }}
+>
+
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div className="d-flex align-items-center gap-2">
             <FaHospital size={24} className="text-primary" />
@@ -155,7 +158,7 @@ const Institute_home = () => {
 
         <div className="mt-5 pt-4 border-top">
           <p className="text-center small text-muted">
-            © 2025 AP Police Health Division
+            ©️ 2025 AP Police Health Division
           </p>
         </div>
       </div>
@@ -471,6 +474,24 @@ const Institute_home = () => {
           .bg-gradient-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important; }
           .bg-gradient-info { background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%) !important; }
           .bg-gradient-warning { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%) !important; }
+          /* Sidebar scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
         `}
       </style>
     </div>

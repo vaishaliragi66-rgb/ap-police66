@@ -4,7 +4,7 @@ import PatientSelector from "../institutes/PatientSelector";
 
 const DoctorDiagnosisForm = () => {
 //   const [employees, setEmployees] = useState([]);
-  const [familyMembers, setFamilyMembers] = useState([]);
+  // const [familyMembers, setFamilyMembers] = useState([]);
   const [testsMaster, setTestsMaster] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 //   const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -96,93 +96,6 @@ const DoctorDiagnosisForm = () => {
 //       )
 //     );
 //   }, [searchTerm, employees]);
-
-  // Fetch family members - FIXED VERSION
-  useEffect(() => {
-    const fetchFamily = async () => {
-      if (!formData.Employee_ID) {
-        setFamilyMembers([]);
-        return;
-      }
-      
-      setLoading(true);
-      try {
-        console.log("Fetching family for employee ID:", formData.Employee_ID);
-        
-        // Method 1: Direct family API
-        const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/family-api/family/${formData.Employee_ID}`);
-        
-        console.log("Family API response:", res.data);
-        
-        if (res.data && res.data.length > 0) {
-          setFamilyMembers(res.data);
-        } else {
-          // Method 2: Try through employee endpoint
-          console.log("No direct family found, checking employee profile...");
-          const employeeRes = await axios.get(
-            `http://localhost:${BACKEND_PORT_NO}/employee-api/profile/${formData.Employee_ID}`
-          );
-          
-          if (employeeRes.data?.FamilyMembers && employeeRes.data.FamilyMembers.length > 0) {
-            // Fetch details for each family member
-            const familyDetails = await Promise.all(
-              employeeRes.data.FamilyMembers.map(async (memberId) => {
-                try {
-                  const memberRes = await axios.get(
-                    `http://localhost:${BACKEND_PORT_NO}/family-api/member/${memberId}`
-                  );
-                  return memberRes.data;
-                } catch (err) {
-                  console.error(`Error fetching family member ${memberId}:`, err);
-                  return null;
-                }
-              })
-            );
-            
-            const validMembers = familyDetails.filter(m => m !== null);
-            setFamilyMembers(validMembers);
-          } else {
-            setFamilyMembers([]);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching family members:", err);
-        setFamilyMembers([]);
-        
-        // Try debug endpoint
-        try {
-          const debugRes = await axios.get(`http://localhost:${BACKEND_PORT_NO}/debug/family-data`);
-          console.log("Debug family data:", debugRes.data);
-        } catch (debugErr) {
-          console.error("Debug endpoint failed:", debugErr);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    if (formData.Employee_ID) {
-      fetchFamily();
-    } else {
-      setFamilyMembers([]);
-    }
-  }, [formData.Employee_ID]);
-
-//   const handleEmployeeSelect = (emp) => {
-//     console.log("Selected employee:", emp);
-//     setFormData(prev => ({ ...prev, Employee_ID: emp._id }));
-//     setSearchTerm(emp.ABS_NO || "");
-//     setFilteredEmployees([]);
-//   };
-
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: checked,
-      ...(name === "IsFamilyMember" && !checked ? { FamilyMember_ID: "" } : {})
-    }));
-  };
 
   const handleTestChange = (index, field, value) => {
     setFormData(prev => {
@@ -277,7 +190,7 @@ const DoctorDiagnosisForm = () => {
     try {
       await axios.post(`http://localhost:${BACKEND_PORT_NO}/api/medical-actions`, {
         employee_id: formData.Employee_ID,
-        visit_id: formData.visit_id || null,
+        visit_id: visitId,
         action_type: "DOCTOR_DIAGNOSIS",
         source: "DOCTOR",
         data: {
@@ -293,20 +206,20 @@ const DoctorDiagnosisForm = () => {
       alert("✅ Diagnosis record saved successfully!");
       
       // Reset form (keep institute ID)
-      setFormData(prev => ({ 
-        ...prev, 
-        Employee_ID: "", 
-        IsFamilyMember: false, 
-        FamilyMember_ID: "", 
-        Tests: [{ 
-          Test_ID: "", 
-          Test_Name: "", 
-          Result_Value: null, 
-          Reference_Range: "", 
-          Units: "" 
-        }], 
-        Diagnosis_Notes: "" 
+      setFormData(prev => ({
+        ...prev,
+        Employee_ID: "",
+        Tests: [{
+          Test_ID: "",
+          Test_Name: "",
+          Result_Value: null,
+          Reference_Range: "",
+          Units: ""
+        }],
+        Diagnosis_Notes: ""
       }));
+      setVisitId(null);
+
       setSearchTerm("");
       setFamilyMembers([]);
     } catch (err) {
@@ -314,6 +227,14 @@ const DoctorDiagnosisForm = () => {
       alert("❌ Error saving diagnosis: " + (err?.response?.data?.message || err?.message || "Server error"));
     }
   };
+
+  const fetchVisitDetails = async (visitId) => {
+  const res = await axios.get(
+    `http://localhost:${BACKEND_PORT_NO}/visit-api/visit/${visitId}`
+  );
+  return res.data;
+};
+
 
   return (
     <div style={{ 
@@ -346,15 +267,32 @@ const DoctorDiagnosisForm = () => {
 
         {/* Employee Search */}
         <PatientSelector
-        onSelect={({ employee, visit_id }) => {
-          setFormData(prev => ({
-            ...prev,
-            Employee_ID: employee._id,
-            visit_id: visit_id   // ✅ STORE DIRECTLY
-          }));
-        }}
-        />
+          onSelect={async ({ employee, visit_id }) => {
+            setVisitId(visit_id);
 
+            const visit = await fetchVisitDetails(visit_id);
+
+            setFormData(prev => ({
+              ...prev,
+              Employee_ID: employee._id,
+              IsFamilyMember: Boolean(visit?.IsFamilyMember),
+              FamilyMember_ID: visit?.FamilyMember_ID || ""
+            }));
+          }}
+        />
+        {formData.IsFamilyMember && (
+          <div
+            style={{
+              marginTop: 10,
+              padding: "10px",
+              backgroundColor: "#f1f3f5",
+              borderRadius: "6px",
+              fontSize: "14px"
+            }}
+          >
+            <strong>Family Member:</strong> {formData.FamilyMember_ID}
+          </div>
+        )}
         {/* Selected Employee Info */}
         {formData.Employee_ID && (
           <div style={{ 
@@ -375,7 +313,7 @@ const DoctorDiagnosisForm = () => {
         )}
 
         {/* Family Member Checkbox */}
-        <div style={{ marginBottom: 20 }}>
+        {/* <div style={{ marginBottom: 20 }}>
           <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
             <input 
               type="checkbox" 
@@ -386,10 +324,10 @@ const DoctorDiagnosisForm = () => {
             /> 
             <span style={{ fontWeight: "bold", color: "#555" }}>Diagnosis for Family Member?</span>
           </label>
-        </div>
+        </div> */}
 
         {/* Family Member Select */}
-        {formData.IsFamilyMember && (
+        {/* {formData.IsFamilyMember && (
           <div style={{ marginBottom: 25 }}>
             <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#555" }}>Select Family Member</label>
             <select 
@@ -422,7 +360,7 @@ const DoctorDiagnosisForm = () => {
               </div>
             )}
           </div>
-        )}
+        )} */}
 
         {/* Tests Section */}
         <div style={{ marginBottom: 30 }}>

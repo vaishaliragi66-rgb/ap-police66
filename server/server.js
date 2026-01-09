@@ -15,6 +15,7 @@ app.use(
   express.static(path.join(__dirname, "uploads"))
 );
 
+
 // import your router here (adjust the path as needed)
 const manufacturerApp = require('./apis/manufacture_api'); 
 const instituteApp = require('./apis/institute_api');
