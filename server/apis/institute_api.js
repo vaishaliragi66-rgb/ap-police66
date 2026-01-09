@@ -19,6 +19,32 @@ instituteApp.get("/institutions", async (req, res) => {
   }
 });
 
+instituteApp.get("/except/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(id)
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid institute ID" });
+    }
+
+    const institutes = await Institute.find({
+      _id: { $ne: id }   // 👈 exclude given institute
+    })
+    .select("Institute_Name Address District Institute_ID")
+    .sort({ Institute_Name: 1 });
+
+    res.json(institutes);
+
+  } catch (err) {
+    console.error("Get institutes except one error:", err);
+    res.status(500).json({
+      message: "Failed to fetch institutes",
+      error: err.message
+    });
+  }
+});
+
 // POST - Register new institute
 instituteApp.post(
   "/register/institute",

@@ -93,6 +93,8 @@ const Institute_home = () => {
   { icon: <FaHistory />, label: "Doctor prescription", path: "/institutes/doctor-prescription" },
   { icon: <FaChartLine />, label: "Doctor Diagnosis", path: "/institutes/doctor-diagnosis" },
   { icon: <FaUsers />, label: "Register Visit", path: "/institutes/visit-register" },
+  { icon: <FaPills />, label: "Main Store", path: "/institutions/main-store" },
+  { icon: <FaClipboardList />, label: "Sub Store", path: "/institutes/sub-store" },
 ];
 
 

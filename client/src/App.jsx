@@ -36,6 +36,10 @@ import InstituteIndent from "./components/institutes/InstituteIndent";
 import DoctorPrescriptionForm from "./components/institutes/DoctorPrescriptionForm";
 import VisitRegister from "./components/institutes/VisitRegister";
 import DoctorDiagnosisForm from "./components/institutes/DoctorDiagnosisForm";
+import MainStore from "./components/institutes/main_store"
+import SubStore from "./components/institutes/sub_store"
+import AddMainStoreMedicine from "./components/institutes/AddMainStoreMedicine";
+import TransferMainStoreMedicine from "./components/institutes/TransferMainstoreMedicine";
 function App() {
   const router = createBrowserRouter([
     {
@@ -175,6 +179,18 @@ function App() {
     {
       path:"/employee/family/:id",
       element:<FamilyMemberProfile/>
+    },{
+      path:"institutions/main-store",
+      element:<MainStore/>
+    },{
+      path:"institutes/sub-store",
+      element:<SubStore/>
+    },{
+      path:"/institutes/add",
+      element:<AddMainStoreMedicine/>
+    },{
+      path:"institutes/transfer",
+      element:<TransferMainStoreMedicine/>
     }
   ]);
 

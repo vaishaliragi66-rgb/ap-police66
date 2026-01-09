@@ -19,7 +19,7 @@ indentApp.get("/manufacturers", async (req, res) => {
 });
 
 /* ---------------------------------------------
-   GENERATE INDENT DATA (✅ CORRECT LOGIC)
+   GENERATE INDENT DATA (SALES + BUFFER LOGIC)
 --------------------------------------------- */
 indentApp.get("/generate/:manufacturerId", async (req, res) => {
   try {
@@ -39,28 +39,39 @@ indentApp.get("/generate/:manufacturerId", async (req, res) => {
       Manufacturer_ID: manufacturerId
     });
 
+    /* ---------- INVENTORY ---------- */
     const inventoryMap = new Map(
-      (institute.Medicine_Inventory || []).map((item) => [
-        String(item.Medicine_ID),
-        item.Quantity
+      (institute.Medicine_Inventory || []).map(i => [
+        String(i.Medicine_ID),
+        i.Quantity
       ])
     );
 
-    const items = medicines.map((med) => {
-      const instituteStock = inventoryMap.get(String(med._id)) || 0;
+    /* ---------- SALES ---------- */
+    const salesMap = new Map();
+    (institute.Medicine_Issues || []).forEach(i => {
+      const key = String(i.Medicine_ID);
+      salesMap.set(key, (salesMap.get(key) || 0) + i.Quantity);
+    });
 
-      const requiredQty = Math.max(
-        (med.Threshold_Qty || 0) - instituteStock,
-        0
+    const items = medicines.map(med => {
+      const stockOnHand = inventoryMap.get(String(med._id)) || 0;
+      const totalSales = salesMap.get(String(med._id)) || 0;
+
+      const bufferQty = Math.max(
+        Math.ceil(totalSales * 0.10),
+        10 // ✅ minimum buffer
       );
 
+      const requiredQty = Math.max(bufferQty - stockOnHand, 0);
+
       return {
-        Medicine_ID: med._id,
-        Medicine_Code: med.Medicine_Code,
         Medicine_Name: med.Medicine_Name,
-        Stock_On_Hand: instituteStock,        // ✅ FIXED
+        Type: med.Type,
+        Category: med.Category,
+        Stock_On_Hand: stockOnHand,
         Required_Quantity: requiredQty,
-        Remarks: requiredQty > 0 ? "Below threshold" : ""
+        Remarks: requiredQty > 0 ? "Below buffer stock" : ""
       };
     });
 
@@ -70,8 +81,9 @@ indentApp.get("/generate/:manufacturerId", async (req, res) => {
       Date: new Date(),
       Items: items
     });
+
   } catch (err) {
-    console.error("Indent generation failed:", err);
+    console.error(err);
     res.status(500).json({ message: "Failed to generate indent" });
   }
 });

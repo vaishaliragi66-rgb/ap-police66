@@ -5,215 +5,127 @@ import autoTable from "jspdf-autotable";
 
 const InstituteIndent = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const instituteId = localStorage.getItem("instituteId");
 
   const [manufacturers, setManufacturers] = useState([]);
-  const instituteId = localStorage.getItem("instituteId");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const handleRowsChange = (e) => {
-    setRowsPerPage(Number(e.target.value));
-    setCurrentPage(1);
-  };
 
-
-  /* ---------------- FETCH MANUFACTURERS ---------------- */
   useEffect(() => {
     axios
       .get(`http://localhost:${BACKEND_PORT}/indent-api/manufacturers`)
-      .then((res) => setManufacturers(res.data || []))
-      .catch((err) => {
-        console.error("Failed to load manufacturers", err);
-        setManufacturers([]);
-      });
+      .then(res => setManufacturers(res.data || []))
+      .catch(() => setManufacturers([]));
   }, [BACKEND_PORT]);
-  const indexOfLastRow = currentPage * rowsPerPage;
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
 
-  const currentManufacturers = manufacturers.slice(
-    indexOfFirstRow,
-    indexOfLastRow
-  );
-
-  const totalPages = Math.ceil(manufacturers.length / rowsPerPage);
-
-  useEffect(() => {
-  setCurrentPage(1);
-}, [manufacturers]);
-
-  /* ---------------- PDF GENERATION ---------------- */
   const generatePDF = async (manufacturerId) => {
-    if (!instituteId) {
-      alert("Institute not logged in");
-      return;
-    }
+    const res = await axios.get(
+      `http://localhost:${BACKEND_PORT}/indent-api/generate/${manufacturerId}`,
+      { params: { instituteId } }
+    );
 
-    try {
-      const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/indent-api/generate/${manufacturerId}`,
-        { params: { instituteId } }
-      );
+    const indent = res.data;
+    const doc = new jsPDF();
+    doc.setFontSize(10);
+doc.text(
+  `DATE: ${new Date(indent.Date).toLocaleDateString("en-GB")}`,
+  190,
+  42,
+  { align: "right" }
+);
 
-      const indent = res.data;
-      const doc = new jsPDF("p", "mm", "a4");
 
-      /* ------------ PAGE BORDER ------------ */
-      doc.rect(10, 10, 190, 277);
+    doc.setFontSize(14);
+    doc.setTextColor(40, 40, 40);
+    doc.text("INDENT REQUEST", 105, 20, { align: "center" });
 
-      /* ------------ HEADER ------------ */
-      doc.setFontSize(12);
-      doc.text("GENERATED INDENT", 105, 20, { align: "center" });
+    doc.setFontSize(11);
+    doc.text(indent.Institute_Name, 105, 28, { align: "center" });
+    doc.text(indent.Institute_Address, 105, 34, { align: "center" });
 
-      doc.setFontSize(11);
-      doc.text(indent.Institute_Name || "-", 105, 28, { align: "center" });
-      doc.text(indent.Institute_Address || "-", 105, 34, { align: "center" });
+    autoTable(doc, {
+      startY: 45,
+      head: [[
+        "S.NO",
+        "MEDICINE NAME",
+        "TYPE",
+        "CATEGORY",
+        "STOCK",
+        "REQUIRED",
+        "REMARKS"
+      ]],
+      body: indent.Items.map((i, idx) => [
+        idx + 1,
+        i.Medicine_Name,
+        i.Type,
+        i.Category,
+        i.Stock_On_Hand,
+        i.Required_Quantity,
+        i.Remarks
+      ]),
+      headStyles: {
+        fillColor: [52, 73, 94],
+        textColor: 255
+      },
+      styles: {
+        fontSize: 9,
+        halign: "center"
+      }
+    });
+    /* ------------ SIGNATURE BLOCK ------------ */
+const y = doc.lastAutoTable.finalY + 25;
 
-      doc.text(
-        `DATE: ${new Date(indent.Date).toLocaleDateString()}`,
-        150,
-        42
-      );
+doc.setFontSize(11);
+doc.setTextColor(0, 0, 0);
 
-      doc.setFontSize(13);
-      doc.text("INDENT", 105, 52, { align: "center" });
+/* Left: Pharmacy Officer */
+doc.text("Pharmacy Officer", 30, y);
+doc.text(indent.Institute_Name || "-", 30, y + 8);
+doc.text(indent.Institute_Address || "-", 30, y + 14, {
+  maxWidth: 70
+});
 
-      /* ------------ TABLE ------------ */
-      autoTable(doc, {
-        startY: 60,
-        head: [[
-          "S.NO",
-          "MEDICINE ID",
-          "MEDICINE NAME",
-          "STOCK ON HAND",
-          "REQUIRED QUANTITY",
-          "REMARKS"
-        ]],
-        body: (indent.Items || []).map((item, i) => [
-          i + 1,
-          item.Medicine_Code || item.Medicine_ID || "-", // ✅ FIXED
-          item.Medicine_Name || "-",
-          item.Stock_On_Hand ?? "-",
-          item.Required_Quantity ?? "-",
-          item.Remarks || ""
-        ]),
-        styles: {
-          fontSize: 9,
-          halign: "center",
-          valign: "middle",
-          lineWidth: 0.1,
-          lineColor: [0, 0, 0]
-        },
-        headStyles: {
-          fillColor: [220, 220, 220],
-          textColor: [0, 0, 0],
-          fontStyle: "bold"
-        }
-      });
+/* Right: Unit Medical Officer */
+doc.text("Unit Medical Officer", 130, y);
+doc.text(indent.Institute_Name || "-", 130, y + 8);
+doc.text(indent.Institute_Address || "-", 130, y + 14, {
+  maxWidth: 70
+});
 
-      /* ------------ FOOTER / SIGNATURES ------------ */
-      const y = doc.lastAutoTable.finalY + 30;
 
-      doc.setFontSize(11);
-      doc.text("Pharmacy Officer", 30, y);
-      doc.text("Unit Medical Officer", 140, y);
-
-      doc.text(indent.Institute_Name || "-", 30, y + 8);
-      doc.text(indent.Institute_Name || "-", 140, y + 8);
-
-      doc.text(indent.Institute_Address || "-", 30, y + 14);
-      doc.text(indent.Institute_Address || "-", 140, y + 14);
-
-      doc.save("Indent.pdf");
-
-    } catch (err) {
-      console.error("Failed to generate indent PDF", err);
-      alert("Failed to generate indent PDF");
-    }
+    doc.save("Indent.pdf");
   };
 
-  /* ---------------- UI ---------------- */
   return (
     <div className="container mt-4">
-      <h4 className="mb-3">Manufacturers – Generate Indent</h4>
-      <div className="d-flex justify-content-end mb-3">
-        <div className="d-flex align-items-center gap-2">
-          <span className="fw-semibold text-muted">Rows per page:</span>
-          <select
-            className="form-select form-select-sm"
-            style={{ width: "80px" }}
-            value={rowsPerPage}
-            onChange={handleRowsChange}
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-          </select>
-        </div>
-      </div>
-      <table className="table table-bordered table-hover">
-        <thead className="table-dark">
+      <h4 style={{ color: "#2c3e50" }}>Generate Indent</h4>
+
+      <table className="table table-hover mt-3">
+        <thead style={{ background: "#34495e", color: "#fff" }}>
           <tr>
-            <th style={{ width: "80px" }}>S.NO</th>
-            <th>Manufacturer Name</th>
-            <th style={{ width: "180px" }}>Action</th>
+            <th>#</th>
+            <th>Manufacturer</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          {manufacturers.length === 0 && (
-            <tr>
-              <td colSpan="3" className="text-center">
-                No manufacturers found
-              </td>
-            </tr>
-          )}
-
-          {currentManufacturers.map((m, i) => (
+          {manufacturers.map((m, i) => (
             <tr key={m._id}>
-              <td>{indexOfFirstRow + i + 1}</td>
+              <td>{i + 1}</td>
               <td>{m.Manufacturer_Name}</td>
               <td>
                 <button
-                  className="btn btn-sm btn-primary"
+                  className="btn btn-sm"
+                  style={{ background: "#3f51b5", color: "#fff" }}
                   onClick={() => generatePDF(m._id)}
                 >
-                  📄 Generate PDF
+                  Generate Indent
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="d-flex justify-content-center align-items-center gap-2 mt-4">
-        <button
-          className="btn btn-outline-dark btn-sm"
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage((p) => p - 1)}
-        >
-          Previous
-        </button>
-
-        {[...Array(totalPages)].map((_, i) => (
-          <button
-            key={i}
-            className={`btn btn-sm ${
-              currentPage === i + 1
-                ? "btn-dark"
-                : "btn-outline-dark"
-            }`}
-            onClick={() => setCurrentPage(i + 1)}
-          >
-            {i + 1}
-          </button>
-        ))}
-
-        <button
-          className="btn btn-outline-dark btn-sm"
-          disabled={currentPage === totalPages || totalPages === 0}
-          onClick={() => setCurrentPage((p) => p + 1)}
-        >
-          Next
-        </button>
-      </div>
-
     </div>
   );
 };

@@ -365,5 +365,48 @@ medicineApp.get("/all-medicines", async (req, res) => {
     });
   }
 });
+medicineApp.get("/all-medicine", async (req, res) => {
+  try {
+
+    const medicines = await Medicine.find()
+      .select("-Manufacturer_ID")   // ⬅ exclude manufacturer field
+      .sort({ Expiry_Date: 1 });
+
+    const today = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+
+    const medicinesWithStatus = medicines.map(med => {
+      const m = med.toObject();
+
+      const daysUntilExpiry = Math.ceil(
+        (m.Expiry_Date - today) / (1000 * 60 * 60 * 24)
+      );
+
+      if (m.Expiry_Date < today) {
+        m.expiryStatus = "expired";
+      } 
+      else if (m.Expiry_Date <= thirtyDaysFromNow) {
+        m.expiryStatus = "expiring-soon";
+      } 
+      else {
+        m.expiryStatus = "valid";
+      }
+
+      m.daysUntilExpiry = daysUntilExpiry;
+
+      return m;
+    });
+
+    res.json(medicinesWithStatus);
+
+  } catch (err) {
+    console.error("Get all medicines error:", err);
+    res.status(500).json({
+      message: "Failed to fetch medicines",
+      error: err.message
+    });
+  }
+});
 
 module.exports = medicineApp;
