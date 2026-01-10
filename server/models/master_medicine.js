@@ -1,30 +1,52 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const MedicineSchema = new Schema({
+
+  // 🔑 VERY IMPORTANT: institute ownership
+  Institute_ID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Institute",
+    required: true
+  },
+
   Medicine_Code: { type: String, required: true },
-  Manufacturer_ID: { type: Schema.Types.ObjectId, ref: 'Manufacturer', required: true },
   Medicine_Name: { type: String, required: true },
+
   Type: { type: String },
   Category: { type: String },
+
+  // 📦 This is SUBSTORE stock
   Quantity: { type: Number, required: true },
   Threshold_Qty: { type: Number, required: true },
-  Expiry_Date: { 
-    type: Date, 
+
+  Expiry_Date: {
+    type: Date,
     required: true,
     validate: {
-      validator: function(value) {
-        // Expiry date should be in the future
+      validator: function (value) {
         return value > new Date();
       },
-      message: 'Expiry date must be in the future'
+      message: "Expiry date must be in the future"
     }
+  },
+
+  // Stock origin
+  Source: {
+    type: String,
+    enum: ["MAIN_STORE"],
+    default: "MAIN_STORE"
   }
-}, {
-  timestamps: true
-});
 
-// ✅ Make (Manufacturer_ID + Medicine_Code) unique together
-MedicineSchema.index({ Manufacturer_ID: 1, Medicine_Code: 1 }, { unique: true });
+}, { timestamps: true });
 
-module.exports = mongoose.model('Medicine', MedicineSchema);
+/**
+ * ✅ SAME medicine can exist in multiple institutes
+ * ❌ But NOT twice in the same institute
+ */
+MedicineSchema.index(
+  { Institute_ID: 1, Medicine_Code: 1 },
+  { unique: true }
+);
+
+module.exports = mongoose.model("Medicine", MedicineSchema);

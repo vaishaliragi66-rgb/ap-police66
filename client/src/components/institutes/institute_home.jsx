@@ -25,10 +25,7 @@ const Institute_home = () => {
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
     totalEmployees: 0,
-    totalOrdersPlaced: 0,
     registeredEmployees: 0,
-    pendingOrdersCount: 0,
-    deliveredOrdersCount: 0,
     totalMedicinesInInventory: 0,
     lowStockMedicines: 0,
     inventoryItemCount: 0
@@ -77,15 +74,12 @@ const Institute_home = () => {
     localStorage.removeItem("institute");
     navigate("/");
   };
-  const handleOrderClick = () => navigate("/institutes/placeorder");
 
   const navItems = [
-  { icon: <FaShoppingCart />, label: "Orders Medicines", path: "/institutes/manufacturer-orders" },
   { icon: <FaUsers />, label: "Medicines Issued Register", path: "/institutes/medicines-issued-register" },
   { icon: <FaBox />, label: "Inventory", path: "/institutes/inventory" },
   { icon: <FaVials />, label: "Diseases", path: "/institutions/diseases" },
   { icon: <FaPills />, label: "Prescriptions", path: "/institutions/prescriptions" },
-  { icon: <FaFileMedical />, label: "Analytics", path: "/institutions/analytics" },
   { icon: <FaFileMedical />, label: "View Employee Reports", path: "/institutions/reports" },
   { icon: <FaClipboardList />, label: "Diagnosis", path: "/institutions/diagnosis-entry" },
   { icon: <FaClipboardList />, label: "Ledger", path: "/institutes/ledger" },
@@ -253,24 +247,6 @@ const Institute_home = () => {
                     <small className="opacity-75">Click to view details</small>
                   </div>
                 </div>
-
-                <div className="col-md-3 col-sm-6">
-                  <div className="card text-center p-4 shadow-sm rounded-4 border-0 bg-gradient-success text-white"
-                       style={{ background: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)" }}>
-                    <div className="d-flex justify-content-center mb-3">
-                      <div className="bg-white rounded-circle p-3">
-                        <FaShoppingCart size={24} className="text-success" />
-                      </div>
-                    </div>
-                    <h6 className="mb-2">Total Orders</h6>
-                    <h2 className="fw-bold">{dashboardStats.totalOrdersPlaced}</h2>
-                    <div className="d-flex justify-content-center gap-3 mt-2">
-                      <small className="badge bg-warning">Pending: {dashboardStats.pendingOrdersCount}</small>
-                      <small className="badge bg-success">Delivered: {dashboardStats.deliveredOrdersCount}</small>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="col-md-3 col-sm-6">
                   <div className="card text-center p-4 shadow-sm rounded-4 border-0 bg-gradient-info text-white"
                        style={{ background: "linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)" }}>
@@ -311,12 +287,6 @@ const Institute_home = () => {
                       <h5 className="card-title fw-bold mb-4">Quick Actions</h5>
                       <div className="row g-3">
                         <div className="col-md-4">
-                          <button 
-                            className="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2"
-                            onClick={handleOrderClick}
-                          >
-                            <FaShoppingCart /> Place New Order
-                          </button>
                         </div>
                         <div className="col-md-4">
                           <button 

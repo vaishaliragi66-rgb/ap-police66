@@ -8,27 +8,37 @@ const InstituteLedger = require("../models/InstituteLedger");
 // GET LEDGER FOR AN INSTITUTE
 // ------------------------------------------------------------------
 // GET /ledger-api/institute/:instituteId
+//
 // Optional query params:
 //   ?from=YYYY-MM-DD
 //   ?to=YYYY-MM-DD
-//   ?type=ORDER_DELIVERY | PRESCRIPTION_ISSUE
+//   ?type=STORE_TRANSFER | PRESCRIPTION_ISSUE
+//   ?direction=IN | OUT
 // ------------------------------------------------------------------
 
 ledgerApp.get("/institute/:instituteId", async (req, res) => {
   try {
     const { instituteId } = req.params;
-    const { from, to, type } = req.query;
+    const { from, to, type, direction } = req.query;
 
+    // Validate Institute ID
     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
       return res.status(400).json({ message: "Invalid Institute ID" });
     }
 
     const filter = { Institute_ID: instituteId };
 
+    // Filter by transaction type
     if (type) {
       filter.Transaction_Type = type;
     }
 
+    // Filter by direction (IN / OUT)
+    if (direction) {
+      filter.Direction = direction;
+    }
+
+    // Filter by date range
     if (from || to) {
       filter.Timestamp = {};
       if (from) filter.Timestamp.$gte = new Date(from);
@@ -44,6 +54,7 @@ ledgerApp.get("/institute/:instituteId", async (req, res) => {
       count: ledger.length,
       ledger
     });
+
   } catch (err) {
     console.error("Ledger fetch error:", err);
     res.status(500).json({

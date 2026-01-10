@@ -17,7 +17,6 @@ app.use(
 
 
 // import your router here (adjust the path as needed)
-const manufacturerApp = require('./apis/manufacture_api'); 
 const instituteApp = require('./apis/institute_api');
 const medicineApp = require("./apis/medicines_api");
 const employeeApp=require('./apis/employee_api')
@@ -27,7 +26,6 @@ const diagnosisApp=require("./apis/diagnosis_api")
 const diseaseApp=require("./apis/institute_enter_disease");
 const ledgerApp = require("./apis/instituteLedgerApi");
 const indentApp = require("./apis/institute_indent_api");
-const analyticsApi = require("./apis/analytics-api");
 const dailyVisitRoutes = require("./apis/daily_visit_api");
 const medicalActionRoutes = require("./apis/medical_action_api");
 const doctorPrescriptionApi = require("./apis/doctor_prescription_api");
@@ -36,10 +34,8 @@ const mainStoreApp = require("./apis/mainstore_api");
 app.use("/doctor-prescription-api", doctorPrescriptionApi);
 app.use("/api/visits", dailyVisitRoutes);
 app.use("/api/medical-actions", medicalActionRoutes);
-app.use("/analytics-api", analyticsApi);
 app.use("/medicine-api", medicineApp);
 app.use("/institute-api", instituteApp);
-app.use("/manufacturer-api", manufacturerApp);
 app.use("/employee-api",employeeApp);
 app.use("/family-api",FamilyApp);
 app.use("/prescription-api", prescriptionApp);

@@ -1,59 +1,8 @@
 ### get all institutes
 GET http://localhost:6100/institute-api/institutions
 
-
-
-
-###get all manufacturers
-GET http://localhost:6100/manufacturer-api/manufacturers
-
-###post a new manufacturer
-POST http://localhost:6100/manufacturer-api/register_manufacturer
-Content-Type: application/json
-
-{
-  "Manufacturer_Name": "TechForge Industries",
-  "Contact_No": "9876543210",
-  "Email_ID": "support@techforge.com",
-  "password": "Forge@123",
-  "Address": {
-    "Street": "Sector 9, Industrial Area",
-    "District": "Hyderabad",
-    "State": "Telangana",
-    "Pincode": "500072"
-  }
-}
-
-
-
-###get a manufacturer by name
-GET http://localhost:6100/manufacturer-api/manufacturer/name/pramo
-
-###delete a manufacturer by id
-DELETE http://localhost:6100/manufacturer-api/manufacturer_delete/1
-
-
-
-
-
-
-
-###get all medicines
+###
 GET http://localhost:6100/medicine-api/medicines
-
-###post a new medicine  
-post http://localhost:6100/medicine-api/medicine_add
-Content-Type: application/json
-
-{
-  "Medicine_Code": "MED1001",
-  "Manufacturer_ID": "6901b19036b4131de7c94527",
-  "Medicine_Name": "Paracetamol 500mg",
-  "Type": "Tablet",
-  "Category": "Pain Relief",
-  "Quantity": 500,
-  "Threshold_Qty": 100
-}
 
 
 ###get a medicine by name

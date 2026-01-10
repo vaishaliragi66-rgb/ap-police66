@@ -10,17 +10,19 @@ const InstituteLedgerSchema = new Schema(
       index: true
     },
 
+    // What kind of stock movement this entry represents
     Transaction_Type: {
       type: String,
-      enum: ["ORDER_DELIVERY", "PRESCRIPTION_ISSUE"],
+      enum: ["MAINSTORE_ADD","STORE_TRANSFER", "PRESCRIPTION_ISSUE"],
       required: true
     },
 
+    // Reference ID:
+    // - Prescription _id for PRESCRIPTION_ISSUE
+    // - NULL for STORE_TRANSFER
     Reference_ID: {
       type: Schema.Types.ObjectId,
-      // ref: "Prescription",
-      required: true
-      // Order _id OR Prescription _id
+      required: false
     },
 
     Medicine_ID: {
@@ -34,16 +36,13 @@ const InstituteLedgerSchema = new Schema(
       required: true
     },
 
-    Manufacturer_Name: {
-      type: String,
-      default: ""
-    },
-
     Expiry_Date: {
       type: Date,
       required: true
     },
 
+    // IN  -> Stock coming in (Main Store → Sub Store)
+    // OUT -> Stock going out (Pharmacy Prescription)
     Direction: {
       type: String,
       enum: ["IN", "OUT"],
@@ -55,6 +54,7 @@ const InstituteLedgerSchema = new Schema(
       required: true
     },
 
+    // Balance of medicine AFTER this transaction
     Balance_After: {
       type: Number,
       required: true
@@ -65,7 +65,9 @@ const InstituteLedgerSchema = new Schema(
       default: Date.now
     }
   },
-  { timestamps: false }
+  {
+    timestamps: false
+  }
 );
 
 module.exports = mongoose.model("InstituteLedger", InstituteLedgerSchema);

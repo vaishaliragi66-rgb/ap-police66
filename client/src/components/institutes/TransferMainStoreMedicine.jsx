@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaExchangeAlt } from "react-icons/fa";
 
-const BACKEND_URL = "http://localhost:6100";
+const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BACKEND_URL = `http://localhost:${BACKEND_PORT}`;
 
 export default function TransferMainStoreMedicine() {
 
@@ -14,11 +15,18 @@ export default function TransferMainStoreMedicine() {
   const [error, setError]   = useState("");
   const [success, setSuccess] = useState("");
 
+  const CURRENT_INSTITUTE_ID = localStorage.getItem("instituteId");
+
   const [formData, setFormData] = useState({
     Medicine_ID: "",
     Transfer_Qty: "",
-    Institute_ID: "",
-    Transfer_To: "institute"
+    Transfer_To: "institute",
+
+    // for institute → institute
+    To_Institute_ID: "",
+
+    // for substore
+    Institute_ID: CURRENT_INSTITUTE_ID
   });
 
   // ✅ Load Main Store Medicines
@@ -103,51 +111,82 @@ export default function TransferMainStoreMedicine() {
 
   // Submit Transfer
   const handleTransfer = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!formData.Medicine_ID || !formData.Transfer_Qty) {
-      setError("Please select medicine and quantity");
-      return;
+  if (!formData.Medicine_ID || !formData.Transfer_Qty) {
+    setError("Please select medicine and quantity");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    let endpoint = "";
+    let payload = {};
+
+    // ===============================
+    // INSTITUTE → INSTITUTE
+    // ===============================
+    if (formData.Transfer_To === "institute") {
+      if (!formData.To_Institute_ID) {
+        setError("Please select target institute");
+        setLoading(false);
+        return;
+      }
+
+      endpoint = "/mainstore/transfer/institute";
+
+      payload = {
+        Medicine_ID: formData.Medicine_ID,
+        Transfer_Qty: formData.Transfer_Qty,
+
+        // 🔑 BOTH INSTITUTES
+        From_Institute_ID: CURRENT_INSTITUTE_ID,
+        To_Institute_ID: formData.To_Institute_ID
+      };
     }
 
-    if (formData.Transfer_To === "institute" && !formData.Institute_ID) {
-      setError("Please select an institute");
-      return;
+    // ===============================
+    // INSTITUTE → SUBSTORE
+    // ===============================
+    else {
+      endpoint = "/mainstore/transfer/substore";
+
+      payload = {
+        Medicine_ID: formData.Medicine_ID,
+        Transfer_Qty: formData.Transfer_Qty,
+
+        // 🔑 SAME INSTITUTE
+        Institute_ID: CURRENT_INSTITUTE_ID
+      };
     }
 
-    try {
-      setLoading(true);
-      setError("");
-      setSuccess("");
+    console.log("FINAL TRANSFER PAYLOAD:", payload);
 
-      const endpoint =
-        formData.Transfer_To === "institute"
-          ? "/mainstore/transfer/institute"
-          : "/mainstore/transfer/substore";
+    const res = await axios.post(`${BACKEND_URL}${endpoint}`, payload);
 
-      const res = await axios.post(`${BACKEND_URL}${endpoint}`, formData);
+    setSuccess(res.data.message || "Transfer successful");
 
-      setSuccess(res.data.message || "Medicine transferred successfully");
+    setFormData(prev => ({
+      ...prev,
+      Transfer_Qty: "",
+      To_Institute_ID: ""
+    }));
 
-      // reset qty only
-      setFormData(prev => ({
-        ...prev,
-        Transfer_Qty: ""
-      }));
+    loadMedicines();
 
-      loadMedicines();
-
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Transfer failed"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    setError(
+      err.response?.data?.message ||
+      err.message ||
+      "Transfer failed"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="container py-4">
@@ -250,10 +289,9 @@ export default function TransferMainStoreMedicine() {
                 <label className="form-label fw-semibold">
                   Select Institute *
                 </label>
-
                 <select
-                  name="Institute_ID"
-                  value={formData.Institute_ID}
+                  name="To_Institute_ID"
+                  value={formData.To_Institute_ID}
                   onChange={handleChange}
                   disabled={loading}
                   required
@@ -269,7 +307,6 @@ export default function TransferMainStoreMedicine() {
                 </select>
               </div>
             )}
-
             {/* Substore note */}
             {formData.Transfer_To === "substore" && (
               <div className="alert alert-info py-2 small">

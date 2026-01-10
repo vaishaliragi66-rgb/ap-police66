@@ -10,6 +10,7 @@ const AddMainStoreMedicine = () => {
   const [success, setSuccess] = useState("");
 
   const [formData, setFormData] = useState({
+    Institute_ID: localStorage.getItem("instituteId"),
     Medicine_Code: "",
     Medicine_Name: "",
     Type: "",
@@ -83,6 +84,7 @@ const AddMainStoreMedicine = () => {
       setSuccess(res.data.message || "Medicine added to Main Store");
 
       setFormData({
+        Institute_ID: localStorage.getItem("instituteId"),
         Medicine_Code: "",
         Medicine_Name: "",
         Type: "",

@@ -4,11 +4,10 @@ const mongoose = require('mongoose')
 const axios = require('axios');
 const instituteApp = express.Router();
 const Institute = require('../models/master_institute');
-const Manufacturer = require("../models/master_manufacture");
 const Medicine = require("../models/master_medicine");  
-const Order = require("../models/master_order");
 const Employee = require("../models/employee"); 
 const InstituteLedger = require("../models/InstituteLedger");
+const MainStoreMedicine = require("../models/main_store");
 
 instituteApp.get("/institutions", async (req, res) => {
   try {
@@ -85,8 +84,7 @@ instituteApp.post(
       password, // store only password
       Contact_No,
       Address,
-      Medicine_Inventory: [],
-      Orders: []
+      Medicine_Inventory: []
     });
 
     const savedInstitute = await newInstitute.save();
@@ -131,56 +129,11 @@ instituteApp.post(
   })
 );
 
-// POST - Place New Order
-instituteApp.post(
-  "/institute/placeorder/:id",
-  expressAsyncHandler(async (req, res) => {
-    const instituteId = req.params.id;
-    const { Manufacturer_ID, Medicine_ID, Quantity_Requested } = req.body;
-
-    console.log("Received order request:", req.body);
-
-    // ✅ Validate required fields
-    if (!Manufacturer_ID || !Medicine_ID || !Quantity_Requested) {
-      return res.status(400).send({ message: "All fields are required" });
-    }
-
-    // ✅ Find the institute by ID
-    const institute = await Institute.findById(instituteId);
-    if (!institute) {
-      return res.status(404).send({ message: "Institute not found" });
-    }
-
-    // ✅ Create a new order object
-    const newOrder = {
-      Manufacturer_ID,
-      Medicine_ID,
-      Quantity_Requested,
-      Status: "PENDING",
-      Order_Date: new Date(),
-    };
-
-    // ✅ Push the new order to the institute's Orders array
-    institute.Orders.push(newOrder);
-
-    // ✅ Save updated document
-    await institute.save();
-
-    console.log("Order placed successfully for Institute:", institute.Institute_Name);
-
-    res.status(201).send({
-      message: "Order placed successfully",
-      payload: newOrder,
-    });
-  })
-);
 
 instituteApp.get('/profile/:id', async (req, res) => {
   try {
     const institute = await Institute.findById(req.params.id)
       .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty')
-      .populate('Orders.Medicine_ID', 'Medicine_Name Threshold_Qty')
-      .populate('Orders.Manufacturer_ID', 'Manufacturer_Name');
 
     if (!institute) return res.status(404).json({ message: 'Institute not found' });
 
@@ -237,8 +190,6 @@ instituteApp.put('/profile/:id', async (req, res) => {
 
     const institute = await Institute.findByIdAndUpdate(req.params.id, update, { new: true })
       .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty')
-      .populate('Orders.Medicine_ID', 'Medicine_Name Threshold_Qty')
-      .populate('Orders.Manufacturer_ID', 'Manufacturer_Name');
 
     if (!institute) return res.status(404).json({ message: 'Institute not found' });
 
@@ -248,219 +199,73 @@ instituteApp.put('/profile/:id', async (req, res) => {
     return res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
-// ✅ Place order route (final version)
-// POST /institute-api/place_order/:instituteId
-// place_order: create Order doc and link to institute + manufacturer
-instituteApp.post("/place_order/:id", expressAsyncHandler(async (req, res) => {
-  console.log("✅ place_order route hit with:", req.params);
-  const instituteId = req.params.id;
-  const { Manufacturer_ID, Medicine_ID, Quantity_Requested } = req.body;
 
-  if (!Manufacturer_ID || !Medicine_ID || !Quantity_Requested) {
-    return res.status(400).send({ message: "All fields are required" });
-  }
-
-  if (!mongoose.Types.ObjectId.isValid(instituteId)
-      || !mongoose.Types.ObjectId.isValid(Manufacturer_ID)
-      || !mongoose.Types.ObjectId.isValid(Medicine_ID)) {
-    return res.status(400).send({ message: "Invalid IDs provided" });
-  }
-
-  const institute = await Institute.findById(instituteId);
-  if (!institute) return res.status(404).send({ message: "Institute not found" });
-
-  const manufacturer = await Manufacturer.findById(Manufacturer_ID);
-  if (!manufacturer) return res.status(404).send({ message: "Manufacturer not found" });
-
-  const medicine = await Medicine.findById(Medicine_ID);
-  if (!medicine) return res.status(404).send({ message: "Medicine not found" });
-
-  // Create Order document
-  const order = await Order.create({
-    Institute_ID: institute._id,
-    Manufacturer_ID,
-    Medicine_ID,
-    Quantity_Requested,
-    manufacture_Status: "PENDING",
-    institute_Status: "PENDING",
-    Order_Date: new Date()
-  });
-
-  // Link to Institute and Manufacturer
-  institute.Orders.push(order._id);
-  manufacturer.Orders.push(order._id);
-
-  await institute.save();
-  await manufacturer.save();
-
-  return res.status(201).json({ message: "Order placed successfully", orderId: order._id });
-}));
-
-// Example: GET /institute-api/orders/:instituteId?status=PENDING
-instituteApp.get("/orders/:instituteId", expressAsyncHandler(async (req, res) => {
-  try {
-    const { instituteId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(instituteId)) return res.status(400).json({ error: "Invalid institute ID" });
-
-    // Load institute and populate Orders (which are refs to Order docs)
-    const institute = await Institute.findById(instituteId)
-      .populate({
-        path: "Orders",
-        populate: [
-          { path: "Medicine_ID", select: "Medicine_Name Type Category" },
-          { path: "Manufacturer_ID", select: "Manufacturer_Name" }
-        ]
-      })
-      .lean();
-
-    if (!institute) return res.status(404).json({ error: "Institute not found" });
-
-    const orders = (institute.Orders || []).map(o => ({
-      _id: o._id,
-      Medicine_ID: o.Medicine_ID,
-      Manufacturer_ID: o.Manufacturer_ID,
-      Manufacturer_Name: o.Manufacturer_ID?.Manufacturer_Name || "Unknown",
-      Quantity_Requested: o.Quantity_Requested,
-      institute_Status: o.institute_Status,
-      manufacture_Status: o.manufacture_Status,
-      Order_Date: o.Order_Date,
-      Delivery_Date: o.Delivery_Date || null,
-      Remarks: o.Remarks
-    }));
-
-    return res.status(200).json(orders);
-  } catch (err) {
-    console.error("Error fetching institute orders:", err);
-    return res.status(500).json({ error: "Internal Server Error", details: err.message });
-  }
-}));
-
-// PATCH /institute-api/orders/:orderId/status
-// routes/instituteOrders.js
-// institute_api.js
-// server side: put this route in the same file where instituteApp is defined
-// Replace your existing delivered route with this exact code
-// institute marks its side delivered
-instituteApp.put(
-  "/orders/:manufacturerId/:orderId/delivered",
-  async (req, res) => {
-    try {
-      const { manufacturerId, orderId } = req.params;
-
-      const order = await Order.findById(orderId);
-      if (!order)
-        return res.status(404).json({ message: "Order not found" });
-
-      // Institute can deliver only after approval
-      if (order.institute_Status !== "APPROVED") {
-        return res
-          .status(400)
-          .json({ message: "Order must be approved first" });
-      }
-
-      // Mark institute delivered
-      order.institute_Status = "DELIVERED";
-      if (!order.Delivery_Date) order.Delivery_Date = new Date();
-      await order.save();
-
-      // 🔒 IMPORTANT: DO NOTHING ELSE unless manufacturer also delivered
-      if (order.manufacture_Status !== "DELIVERED") {
-        return res.json({
-          message:
-            "Institute delivery recorded. Waiting for manufacturer delivery.",
-          finalDelivered: false
-        });
-      }
-
-      // ✅ BOTH SIDES DELIVERED → NOW update inventory + ledger
-      const institute = await Institute.findById(order.Institute_ID);
-      const medicine = await Medicine.findById(order.Medicine_ID).populate(
-        "Manufacturer_ID",
-        "Manufacturer_Name"
-      );
-
-      const qty = Number(order.Quantity_Requested);
-
-      let invItem = institute.Medicine_Inventory.find(
-        (m) => m.Medicine_ID.toString() === order.Medicine_ID.toString()
-      );
-
-      if (invItem) {
-        invItem.Quantity += qty;
-      } else {
-        institute.Medicine_Inventory.push({
-          Medicine_ID: order.Medicine_ID,
-          Quantity: qty
-        });
-        invItem = institute.Medicine_Inventory.at(-1);
-      }
-
-      await institute.save();
-
-      // ✅ LEDGER ENTRY (IN) — ONLY HERE
-      await InstituteLedger.create({
-        Institute_ID: institute._id,
-        Transaction_Type: "ORDER_DELIVERY",
-        Reference_ID: order._id,
-        Medicine_ID: order.Medicine_ID,
-        Medicine_Name: medicine.Medicine_Name,
-        Manufacturer_Name:
-          medicine.Manufacturer_ID?.Manufacturer_Name || "",
-        Expiry_Date: medicine.Expiry_Date,
-        Direction: "IN",
-        Quantity: qty,
-        Balance_After: invItem.Quantity
-      });
-
-      return res.json({
-        message: "Order fully delivered (both sides confirmed)",
-        finalDelivered: true
-      });
-    } catch (err) {
-      console.error("Institute deliver error:", err);
-      return res.status(500).json({ error: err.message });
-    }
-  }
-);
 instituteApp.get("/inventory/:instituteId", async (req, res) => {
   try {
     const { instituteId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
-      return res.status(400).json({ error: "Invalid Institute ID" });
-    }
+    // 1️⃣ Fetch Main Store medicines
+    const mainStoreMeds = await MainStoreMedicine.find({});
 
-    const institute = await Institute.findById(instituteId)
-      .populate("Medicine_Inventory.Medicine_ID");
+    // 2️⃣ Fetch Sub Store medicines (Pharmacy stock)
+    const subStoreMeds = await Medicine.find({});
 
-    if (!institute) {
-      return res.status(404).json({ error: "Institute not found" });
-    }
+    // 3️⃣ Combine by Medicine_Code
+    const inventoryMap = new Map();
 
-    const rawInventory = Array.isArray(institute.Medicine_Inventory)
-      ? institute.Medicine_Inventory
-      : [];
+    // ---- Main Store ----
+    mainStoreMeds.forEach(m => {
+      if (!m.Medicine_Code) return;
 
-    const inventory = rawInventory
-      .filter(item => item && item.Medicine_ID)   // 🔥 skip broken refs
-      .map(item => ({
-        medicineId: item.Medicine_ID._id,
-        medicineCode: item.Medicine_ID.Medicine_Code,
-        medicineName: item.Medicine_ID.Medicine_Name,
-        quantity: item.Quantity ?? 0,
-        threshold: item.Medicine_ID.Threshold_Qty ?? 0,
-        expiryDate: item.Medicine_ID.Expiry_Date ?? null,
-      }));
+      inventoryMap.set(m.Medicine_Code, {
+        Medicine_Code: m.Medicine_Code,
+        Medicine_Name: m.Medicine_Name,
+        Type: m.Type,
+        Category: m.Category,
+        Expiry_Date: m.Expiry_Date || null,
+        Quantity: m.Quantity || 0,
+        Threshold_Qty: m.Threshold_Qty ?? 0,
+        Source: {
+          mainStore: m.Quantity || 0,
+          subStore: 0
+        }
+      });
+    });
 
-    res.status(200).json(inventory);
+    // ---- Sub Store ----
+    subStoreMeds.forEach(m => {
+      if (!m.Medicine_Code) return;
 
+      if (inventoryMap.has(m.Medicine_Code)) {
+        const item = inventoryMap.get(m.Medicine_Code);
+        item.Quantity += m.Quantity || 0;
+        item.Source.subStore = m.Quantity || 0;
+      } else {
+        inventoryMap.set(m.Medicine_Code, {
+          Medicine_Code: m.Medicine_Code,
+          Medicine_Name: m.Medicine_Name,
+          Type: m.Type,
+          Category: m.Category,
+          Expiry_Date: m.Expiry_Date || null,
+          Quantity: m.Quantity || 0,
+          Source: {
+            mainStore: 0,
+            subStore: m.Quantity || 0
+          }
+        });
+      }
+    });
+
+    // 4️⃣ Send combined inventory
+    res.json([...inventoryMap.values()]);
   } catch (err) {
-    console.error("Inventory fetch error:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Institute inventory error:", err);
+    res.status(500).json({
+      message: "Failed to fetch institute inventory",
+      error: err.message
+    });
   }
 });
-
-
 
 // GET single institute by ID
 instituteApp.get("/institution/:id", async (req, res) => {
@@ -495,20 +300,6 @@ instituteApp.get("/dashboard-stats/:instituteId", async (req, res) => {
       return res.status(404).json({ message: "Institute not found" });
     }
 
-    // Count PENDING orders
-    const pendingOrdersCount = await Order.countDocuments({
-      Institute_ID: instituteId,
-      institute_Status: "PENDING"
-    });
-
-    // Count DELIVERED orders
-    const deliveredOrdersCount = await Order.countDocuments({
-      Institute_ID: instituteId,
-      institute_Status: "DELIVERED"
-    });
-
-    const totalOrdersPlaced = institute.Orders?.length || 0;
-
     // 4️⃣ Total medicines in inventory
     const totalMedicinesInInventory = institute.Medicine_Inventory?.reduce((sum, item) => 
       sum + (item.Quantity || 0), 0) || 0;
@@ -521,10 +312,7 @@ instituteApp.get("/dashboard-stats/:instituteId", async (req, res) => {
 
     return res.json({
       totalEmployees,
-      totalOrdersPlaced,
       registeredEmployees,
-      pendingOrdersCount,
-      deliveredOrdersCount,
       totalMedicinesInInventory,
       lowStockMedicines,
       inventoryItemCount: institute.Medicine_Inventory?.length || 0

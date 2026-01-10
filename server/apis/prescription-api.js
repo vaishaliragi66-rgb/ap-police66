@@ -1,3 +1,4 @@
+
 const express = require("express");
 const mongoose = require("mongoose");
 const prescriptionApp = express.Router();
@@ -6,143 +7,134 @@ const Prescription = require("../models/Prescription");
 const Institute = require("../models/master_institute");
 const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
-const Medicine = require("../models/master_medicine");
 const InstituteLedger = require("../models/InstituteLedger");
 const MedicalAction = require("../models/medical_action");
 
+// 🔴 IMPORTANT: THIS IS NOW SUBSTORE STOCK
+const Medicine = require("../models/master_medicine");
 
 // =======================================================
-// ADD PRESCRIPTION (EMPLOYEE / FAMILY)
+// ADD PRESCRIPTION (SUBSTORE → PATIENT)
 // =======================================================
 prescriptionApp.post("/add", async (req, res) => {
-  console.log("📥 PRESCRIPTION PAYLOAD =", JSON.stringify(req.body, null, 2));
-
   try {
+    console.log("PRESCRIPTION PAYLOAD:", req.body);
+
     const {
       Institute_ID,
       Employee_ID,
-      IsFamilyMember = false,
-      FamilyMember_ID,
       Medicines,
-      Notes
+      visit_id
     } = req.body;
 
-    if (!Institute_ID || !Employee_ID || !Array.isArray(Medicines) || Medicines.length === 0) {
-      return res.status(400).json({ message: "Required fields missing" });
-    }
-
-    const institute = await Institute.findById(Institute_ID);
-    if (!institute)
-      return res.status(404).json({ message: "Institute not found" });
-
-    const employee = await Employee.findById(Employee_ID);
-    if (!employee)
-      return res.status(404).json({ message: "Employee not found" });
-
-    if (IsFamilyMember) {
-      const family = await FamilyMember.findById(FamilyMember_ID);
-      if (!family)
-        return res.status(404).json({ message: "Family member not found" });
-    }
-
-    // ===================================================
-    // INVENTORY DEDUCTION + LEDGER BUFFER
-    // ===================================================
-    const ledgerBuffer = [];
-
-    for (const med of Medicines) {
-
-      const medId = String(
-        med.Medicine_ID || med.medicineId || ""
-      ).trim();
-
-      const medName =
-        med.Medicine_Name || med.medicineName || "Unknown";
-
-      const qty = Number(
-        med.Quantity || med.quantity || 0
-      );
-
-      if (!medId || qty <= 0) {
-        return res.status(400).json({
-          message: "Invalid medicine entry",
-          medicine: med
-        });
-      }
-
-      const invItem = institute.Medicine_Inventory.find(item =>
-        String(item.Medicine_ID) === medId ||
-        String(item.Medicine_ID?._id) === medId
-      );
-
-      if (!invItem) {
-        return res.status(400).json({
-          message: `Medicine not found in inventory`,
-          medicineId: medId,
-          medicineName: medName
-        });
-      }
-
-      if (invItem.Quantity < qty) {
-        return res.status(400).json({
-          message: `Insufficient stock for ${medName}`,
-          available: invItem.Quantity,
-          requested: qty
-        });
-      }
-
-      // Deduct stock
-      invItem.Quantity -= qty;
-
-      const medDoc = await Medicine.findById(medId)
-        .populate("Manufacturer_ID", "Manufacturer_Name");
-
-      ledgerBuffer.push({
-        Institute_ID,
-        Transaction_Type: "PRESCRIPTION_ISSUE",
-        Reference_ID: null, // set after prescription save
-        Medicine_ID: medId,
-        Medicine_Name: medName,
-        Manufacturer_Name: medDoc?.Manufacturer_ID?.Manufacturer_Name || "",
-        Expiry_Date: medDoc?.Expiry_Date || null,
-        Direction: "OUT",
-        Quantity: qty,
-        Balance_After: invItem.Quantity
+    // ------------------------------
+    // BASIC VALIDATION
+    // ------------------------------
+    if (
+      !Institute_ID ||
+      !Employee_ID ||
+      !Array.isArray(Medicines) ||
+      Medicines.length === 0
+    ) {
+      return res.status(400).json({
+        message: "Invalid prescription data"
       });
     }
 
-    await institute.save();
+    // ------------------------------
+    // VERIFY INSTITUTE EXISTS
+    // ------------------------------
+    const institute = await Institute.findById(Institute_ID);
+    if (!institute) {
+      return res.status(400).json({
+        message: "Institute not found"
+      });
+    }
 
-    // ===================================================
-    // SAVE PRESCRIPTION
-    // ===================================================
-    const prescription = await Prescription.create({
-      Institute: Institute_ID,
-      Employee: Employee_ID,
-      IsFamilyMember,
-      FamilyMember: IsFamilyMember ? FamilyMember_ID : null,
-      Medicines,
-      Notes
-    });
+    const ledgerEntries = [];
 
-    // Attach prescription id to ledger entries
-    ledgerBuffer.forEach(l => {
-      l.Reference_ID = prescription._id;
-    });
+    // ------------------------------
+    // PROCESS EACH MEDICINE
+    // ------------------------------
+    for (const med of Medicines) {
+      // Frontend sends Medicine_ID as code
+      const Medicine_Code = med.Medicine_Code || med.Medicine_ID;
+      const Medicine_Name = (med.Medicine_Name || "").trim();
+      const qty = Number(med.Quantity);
 
-    await InstituteLedger.insertMany(ledgerBuffer);
+      if (!Medicine_Code || qty <= 0) {
+        return res.status(400).json({
+          message: "Invalid medicine data"
+        });
+      }
 
-    return res.status(201).json({
-      message: "Prescription saved & ledger updated",
-      prescriptionId: prescription._id
+
+      // ------------------------------
+      // FIND MEDICINE IN SUBSTORE (CORRECT)
+      // ------------------------------
+      const substoreMed = await Medicine.findOne({
+        Institute_ID,
+        Medicine_Code
+      });
+
+      if (!substoreMed) {
+        return res.status(400).json({
+          message: "Medicine not found in substore",
+          medicineCode: Medicine_Code,
+          medicineName: Medicine_Name
+        });
+      }
+
+      if (substoreMed.Quantity < qty) {
+        return res.status(400).json({
+          message: "Insufficient stock in substore",
+          medicineName: Medicine_Name
+        });
+      }
+
+      // ------------------------------
+      // DEDUCT SUBSTORE STOCK
+      // ------------------------------
+      substoreMed.Quantity -= qty;
+      await substoreMed.save();
+
+      // ------------------------------
+      // LEDGER (SUBSTORE OUT)
+      // ------------------------------
+      ledgerEntries.push({
+        Institute_ID,
+        Store_Type: "SUBSTORE",
+        Transaction_Type: "PRESCRIPTION_ISSUE",
+        Reference_ID: visit_id || null,
+        Medicine_ID: substoreMed._id,
+        Medicine_Name: substoreMed.Medicine_Name,
+        Expiry_Date: substoreMed.Expiry_Date,
+        Direction: "OUT",
+        Quantity: qty,
+        Balance_After: substoreMed.Quantity,
+        Remarks: "Issued to patient via prescription"
+      });
+    }
+
+    // ------------------------------
+    // SAVE LEDGER
+    // ------------------------------
+    await InstituteLedger.insertMany(ledgerEntries);
+
+    // ------------------------------
+    // SUCCESS
+    // ------------------------------
+    return res.status(200).json({
+      message: "Prescription issued successfully"
     });
 
   } catch (err) {
-    console.error("Prescription error:", err);
-    return res.status(500).json({ error: err.message });
+    console.error("PRESCRIPTION ERROR:", err);
+    return res.status(500).json({
+      message: err.message
+    });
   }
 });
-
 
 // =======================================================
 // GET PRESCRIPTIONS FOR EMPLOYEE + FAMILY

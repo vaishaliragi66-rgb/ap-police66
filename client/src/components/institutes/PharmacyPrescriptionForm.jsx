@@ -127,14 +127,17 @@ const fetchLastTwoPrescriptions = async (employeeId) => {
   }
 
   const results = inventory
-    .filter((m) =>
-      m.medicineName
-        ?.toLowerCase()
-        .includes(medicineSearch.toLowerCase())
-    )
-    .sort(
-      (a, b) => new Date(a.expiryDate) - new Date(b.expiryDate)
-    );
+  .filter((m) =>
+    m.Medicine_Name
+      ?.toLowerCase()
+      .includes(medicineSearch.toLowerCase())
+  )
+  .sort((a, b) => {
+    // Sub-store medicines first
+    if (a.Source?.subStore > 0 && b.Source?.subStore === 0) return -1;
+    if (a.Source?.subStore === 0 && b.Source?.subStore > 0) return 1;
+    return 0;
+  });
 
   setFilteredMedicines(results);
 }, [medicineSearch, inventory]);
@@ -260,11 +263,24 @@ const fetchLastTwoPrescriptions = async (employeeId) => {
       const updated = [...prev.Medicines];
 
       if (field === "medicineId") {
-        const selected = inventory.find((m) => m.medicineId === value);
+        const selected = inventory.find(
+          (m) => m.Medicine_Code === value
+        );
+
+        if (!selected) return prev;
+
+        // 🚫 Not available in sub-store
+        if (selected.Source?.subStore === 0) {
+          alert(
+            "❌ This medicine is not available in sub-store. Please collect it from the main store."
+          );
+          return prev;
+        }
+
         updated[index] = {
-          medicineId: selected?.medicineId || "",
-          medicineName: selected?.medicineName || "",
-          expiryDate: selected?.expiryDate || "",
+          medicineId: selected.Medicine_Code,
+          medicineName: selected.Medicine_Name,
+          expiryDate: selected.Expiry_Date,
           quantity: 0
         };
 
@@ -519,24 +535,47 @@ const fetchLastTwoPrescriptions = async (employeeId) => {
                          <div className="list-group w-100 mt-1 medicine-dropdown">
                             {filteredMedicines.map((m) => (
                               <button
-                                type="button"
-                                key={m.medicineId}
-                                className="list-group-item list-group-item-action"
-                                onClick={() => {
-                                  handleMedicineChange(i, "medicineId", m.medicineId);
-                                  setMedicineSearch("");
+                              type="button"
+                              key={m.Medicine_Code}
+                              className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
+                                m.Source?.subStore === 0 ? "disabled text-muted" : ""
+                              }`}
+                              onClick={() => {
+                                if (m.Source?.subStore === 0) return;
+
+                                handleMedicineChange(i, "medicineId", m.Medicine_Code);
+                                setMedicineSearch("");
                                 setFilteredMedicines([]);
                                 setActiveMedicineIndex(null);
+                              }}
+                            >
+                              <div>
+                                <strong>{m.Medicine_Name}</strong>
+                                <div className="small text-muted">
+                                  Exp: {formatDateDMY(m.Expiry_Date)}
+                                </div>
+                              </div>
 
-                                }}
-                              >
-                                {m.medicineName} | Exp: {formatDateDMY(m.expiryDate)} | Qty: {m.quantity}
-                              </button>
+                              {m.Source?.subStore > 0 ? (
+                                <span className="badge bg-success">
+                                  Sub-store: {m.Source.subStore}
+                                </span>
+                              ) : (
+                                <span className="badge bg-warning text-dark">
+                                  Not in sub-store
+                                </span>
+                              )}
+                            </button>
                             ))}
                           </div>
                         )}
                       </div>
-
+                      {filteredMedicines.some(m => m.Source?.subStore === 0) && (
+                        <div className="text-warning small mt-1">
+                          ⚠️ Some medicines are available only in the main store.
+                          Please collect from main store before dispensing.
+                        </div>
+                      )}
                       <input
                         type="number"
                         className="form-control"

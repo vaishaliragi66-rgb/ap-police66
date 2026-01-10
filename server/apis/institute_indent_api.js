@@ -3,27 +3,13 @@ const mongoose = require("mongoose");
 const indentApp = express.Router();
 
 const Institute = require("../models/master_institute");
-const Manufacturer = require("../models/master_manufacture");
 const Medicine = require("../models/master_medicine");
-
-/* ---------------------------------------------
-   GET ALL MANUFACTURERS
---------------------------------------------- */
-indentApp.get("/manufacturers", async (req, res) => {
-  try {
-    const manufacturers = await Manufacturer.find({}, "Manufacturer_Name");
-    res.json(manufacturers);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to load manufacturers" });
-  }
-});
 
 /* ---------------------------------------------
    GENERATE INDENT DATA (SALES + BUFFER LOGIC)
 --------------------------------------------- */
-indentApp.get("/generate/:manufacturerId", async (req, res) => {
+indentApp.get("/generate", async (req, res) => {
   try {
-    const { manufacturerId } = req.params;
     const { instituteId } = req.query;
 
     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
@@ -34,10 +20,7 @@ indentApp.get("/generate/:manufacturerId", async (req, res) => {
     if (!institute) {
       return res.status(404).json({ message: "Institute not found" });
     }
-
-    const medicines = await Medicine.find({
-      Manufacturer_ID: manufacturerId
-    });
+    const medicines = await Medicine.find({});
 
     /* ---------- INVENTORY ---------- */
     const inventoryMap = new Map(
@@ -47,21 +30,13 @@ indentApp.get("/generate/:manufacturerId", async (req, res) => {
       ])
     );
 
-    /* ---------- SALES ---------- */
-    const salesMap = new Map();
-    (institute.Medicine_Issues || []).forEach(i => {
-      const key = String(i.Medicine_ID);
-      salesMap.set(key, (salesMap.get(key) || 0) + i.Quantity);
-    });
-
     const items = medicines.map(med => {
       const stockOnHand = inventoryMap.get(String(med._id)) || 0;
-      const totalSales = salesMap.get(String(med._id)) || 0;
-
       const bufferQty = Math.max(
-        Math.ceil(totalSales * 0.10),
-        10 // ✅ minimum buffer
+        med.Threshold_Qty || 10,
+        10
       );
+
 
       const requiredQty = Math.max(bufferQty - stockOnHand, 0);
 

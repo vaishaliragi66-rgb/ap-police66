@@ -56,7 +56,7 @@ function InstituteInventory() {
 
   /* ---------- FILTER LOGIC ---------- */
   const filteredInventory = inventory.filter((item) => {
-    const daysLeft = daysFromToday(item.expiryDate);
+    const daysLeft = daysFromToday(item.Expiry_Date);
 
     /* Medicine search */
     if (
@@ -93,7 +93,7 @@ function InstituteInventory() {
 
         if (
           statusFilter === "LOW_STOCK" &&
-          !(item.quantity < item.threshold)
+          !(item.quantity < item.Threshold_Qty)
         )
           return false;
 
@@ -201,32 +201,60 @@ function InstituteInventory() {
                 </tr>
               </thead>
               <tbody>
-                {currentInventory.map((item, i) => {
-                  const daysLeft = daysFromToday(item.expiryDate);
+                {sortedInventory.map((row, index) => {
+                  const daysLeft = daysFromToday(row.Expiry_Date);
+                  let status = "Normal";
+                  let statusClass = "bg-green-100 text-green-800";
+                  let statusIcon = "✅";
+
+                  if (daysLeft !== null && daysLeft < 0) {
+                    status = "Expired";
+                    statusClass = "bg-red-100 text-red-800";
+                    statusIcon = "⛔";
+                  } else if (daysLeft !== null && daysLeft <= 5) {
+                    status = "Near Expiry";
+                    statusClass = "bg-orange-100 text-orange-800";
+                    statusIcon = "⏰";
+                  } else if (row.Quantity < row.Threshold_Qty) {
+                    status = "Low Stock";
+                    statusClass = "bg-yellow-100 text-yellow-800";
+                    statusIcon = "⚠️";
+                  }
+
                   return (
-                    <tr key={i} className="border-t text-center">
-                      <td className="p-2">{i + 1}</td>
-                      <td className="p-2 text-left">
-                        {item.medicineName}
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+
+                      {/* Medicine Name */}
+                      <td>{row.Medicine_Name}</td>
+
+                      {/* Quantity = Main + Sub */}
+                      <td>{row.Quantity}</td>
+
+                      {/* Threshold (optional) */}
+                      <td>{row.Threshold_Qty}</td>
+
+                      {/* Expiry */}
+                      <td>
+                        {row.Expiry_Date
+                          ? new Date(row.Expiry_Date).toLocaleDateString("en-GB")
+                          : "—"}
                       </td>
-                      <td className="p-2">{item.quantity}</td>
-                      <td className="p-2">{item.threshold}</td>
-                      <td className="p-2">
-                        {formatDateDMY(item.expiryDate)}
-                      </td>
-                      <td className="p-2">
-                        {daysLeft < 0
-                          ? "❌ EXPIRED"
-                          : daysLeft <= 5
-                          ? `⏰ ${daysLeft} days`
-                          : item.quantity < item.threshold
-                          ? "⚠️ Low Stock"
-                          : "✔ Normal"}
+
+                      {/* Status */}
+                      <td>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${statusClass}`}
+                        >
+                          <span>{statusIcon}</span>
+                          <span>{status}</span>
+                        </span>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
+
             </table>
           </div>
 

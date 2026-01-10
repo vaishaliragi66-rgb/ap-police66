@@ -4,11 +4,8 @@ import './index.css'
 import App from './App.jsx'
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-// import ManufactureLoginContext from './components/manufacturer/LoginContext.jsx';
 createRoot(document.getElementById('root')).render(
-  // <ManufactureLoginContext>
     <StrictMode>
       <App />
     </StrictMode>,
-  // </ManufactureLoginContext>
 )

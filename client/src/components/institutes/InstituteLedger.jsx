@@ -96,8 +96,14 @@ const LedgerStore = () => {
         // For Main Store: Fetch only OUT transactions (to Sub Store)
         // For Sub Store: Fetch ALL transactions (IN from Main Store + OUT to patients)
         const [mainRes, subRes, presRes] = await Promise.all([
-          axios.get(`http://localhost:${BACKEND_PORT}/ledger-api/institute/${instituteId}?storeType=MAIN&direction=OUT&type=ORDER_DELIVERY`),
-          axios.get(`http://localhost:${BACKEND_PORT}/ledger-api/institute/${instituteId}?storeType=SUB`),
+          axios.get(
+            `http://localhost:${BACKEND_PORT}/ledger-api/institute/${instituteId}?type=STORE_TRANSFER`
+          ),
+
+          axios.get(
+            `http://localhost:${BACKEND_PORT}/ledger-api/institute/${instituteId}`
+          ),
+
           axios.get(`http://localhost:${BACKEND_PORT}/prescription-api/institute/${instituteId}`)
         ]);
 
@@ -289,7 +295,7 @@ const getEmployeeInfoFromRef = useMemo(() => {
 
       if (storeType === "MAIN") {
         // Main Store only shows ORDER_DELIVERY
-        if (l.Transaction_Type !== "ORDER_DELIVERY") return false;
+        if (l.Transaction_Type !== "STORE_TRANSFER") return false;
       } else if (typeFilter !== "ALL" && l.Transaction_Type !== typeFilter) {
         // Sub Store uses normal filtering
         return false;
@@ -383,7 +389,6 @@ const getEmployeeInfoFromRef = useMemo(() => {
           soldToEmployees: 0,          // New
           otherOut: 0,                 // New
           lastTransaction: item.Timestamp,
-          manufacturer: item.Manufacturer_Name,
           totalTransactions: 0,
           expiryDate: item.Expiry_Date,
           daysUntilExpiry: calculateDaysUntilExpiry(item.Expiry_Date)
@@ -441,7 +446,6 @@ const downloadCSV = () => {
       "Date & Time",
       "Transaction Type",
       "Medicine",
-      "Manufacturer",
       "Expiry Date",
       "Days Until Expiry",
       "Quantity OUT",
@@ -454,12 +458,11 @@ const downloadCSV = () => {
       formatDateTime(l.Timestamp),
       l.Transaction_Type,
       l.Medicine_Name,
-      l.Manufacturer_Name,
       l.Expiry_Date ? formatDateDMY(new Date(l.Expiry_Date)) : "-",
       l.Expiry_Date ? calculateDaysUntilExpiry(l.Expiry_Date) : "-",
       Math.abs(l.Quantity),
       Math.abs(l.Balance_After),
-      l.Destination || "Sub Store",  // Removed Reference ID
+      "Sub Store",  // Removed Reference ID
       l.Remarks || "-"
     ]);
 
@@ -472,7 +475,7 @@ const downloadCSV = () => {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `MAIN_Store_Order_Delivery_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `MAIN_Store_Transfer_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   } else {
@@ -482,7 +485,6 @@ const downloadCSV = () => {
       "Transaction Type",
       "Direction",
       "Medicine",
-      "Manufacturer",
       "Expiry Date",
       "Days Until Expiry",
       "Quantity",
@@ -496,7 +498,6 @@ const downloadCSV = () => {
       l.Transaction_Type,
       l.Direction,
       l.Medicine_Name,
-      l.Manufacturer_Name,
       l.Expiry_Date ? formatDateDMY(new Date(l.Expiry_Date)) : "-",
       l.Expiry_Date ? calculateDaysUntilExpiry(l.Expiry_Date) : "-",
       Math.abs(l.Quantity),
@@ -583,7 +584,7 @@ const downloadCSV = () => {
         <div className="card-header bg-info text-white">
           <h6 className="mb-0">
             {storeType === "MAIN" 
-              ? "📊 Main Store Order Delivery Summary" 
+              ? "📊 Main Store Store Transfer Summary" 
               : "📊 Sub Store Stock Summary"}
           </h6>
         </div>
@@ -593,7 +594,6 @@ const downloadCSV = () => {
               <thead>
                 <tr>
                   <th>Medicine</th>
-                  <th>Manufacturer</th>
                   {storeType === "MAIN" ? (
                     <>
                       <th>Total OUT Quantity</th>
@@ -624,7 +624,6 @@ const downloadCSV = () => {
                     return (
                       <tr key={medicine}>
                         <td><strong>{medicine}</strong></td>
-                        <td>{data.manufacturer}</td>
                         <td>
                           <span className="badge bg-danger">
                             {data.totalOUT} units
@@ -669,7 +668,6 @@ const downloadCSV = () => {
                     return (
                       <tr key={medicine}>
                         <td><strong>{medicine}</strong></td>
-                        <td>{data.manufacturer}</td>
                         <td>
                           <span className="badge bg-success">
                             {data.receivedFromMainStore} units
@@ -739,7 +737,7 @@ const downloadCSV = () => {
           <div>
             <h5 className="mb-0">
               {storeType === "MAIN" 
-                ? "📋 Main Store Order Delivery Ledger" 
+                ? "📋 Main Store Store Transfer Ledger" 
                 : "📋 Sub Store Ledger"}
             </h5>
             <small className="text-light">
@@ -770,13 +768,13 @@ const downloadCSV = () => {
               >
                 <option value="ALL">All Transactions</option>
                 {storeType === "MAIN" ? (
-                  <option value="ORDER_DELIVERY">Order Delivery</option>
+                  <option value="STORE_TRANSFER">Store Transfer</option>
                 ) : (
                   <>
                     <option value="STORE_TRANSFER">Store Transfer</option>
                     <option value="PRESCRIPTION_ISSUE">Prescription Issue</option>
-                    <option value="RETURN">Return</option>
-                    <option value="DAMAGED_WRITE_OFF">Damaged/Write-off</option>
+                    <option value="STORE_TRANSFER">Store Transfer</option>
+                    <option value="PRESCRIPTION_ISSUE">Prescription Issue</option>
                   </>
                 )}
               </select>
@@ -928,7 +926,6 @@ const downloadCSV = () => {
         <th>Transaction Type</th>
         {storeType === "SUB" && <th>Direction</th>}
         <th>Medicine</th>
-        <th>Manufacturer</th>
         <th>Expiry Date</th>
         <th>Days Left</th>
         <th>Quantity</th>
@@ -948,7 +945,7 @@ const downloadCSV = () => {
             {/* Updated colspan */}
             <div className="text-muted">
               {storeType === "MAIN" 
-                ? "📭 No ORDER_DELIVERY transactions found for Main Store" 
+                ? "📭 No STORE_TRANSFER transactions found for Main Store" 
                 : "📭 No transactions found for Sub Store"}
               {(medicineFilter || fromDate || toDate || expiryDateFilter) ? " with current filters" : ""}
             </div>
@@ -980,7 +977,6 @@ const downloadCSV = () => {
                 <span className={`badge ${
                   l.Transaction_Type === 'STORE_TRANSFER' ? 'bg-warning' :
                   l.Transaction_Type === 'PRESCRIPTION_ISSUE' ? 'bg-danger' :
-                  l.Transaction_Type === 'ORDER_DELIVERY' ? 'bg-success' :
                   'bg-info'
                 }`}>
                   {l.Transaction_Type}
@@ -998,7 +994,6 @@ const downloadCSV = () => {
               )}
               
               <td><strong>{l.Medicine_Name}</strong></td>
-              <td>{l.Manufacturer_Name}</td>
               <td>
                 {l.Expiry_Date ? (
                   <div>
