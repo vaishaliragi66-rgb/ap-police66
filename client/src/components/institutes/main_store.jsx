@@ -15,17 +15,29 @@ export default function MainStore() {
   const [showModal, setShowModal] = useState(false);
   const [selectedMed, setSelectedMed] = useState(null);
 
-  const fetchMedicines = async () => {
-    try {
-      const res = await axios.get(`${BACKEND_URL}/mainstore/all-medicines`);
-      setMedicines(res.data || []);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to load medicines");
-    } finally {
-      setLoading(false);
+ const fetchMedicines = async () => {
+  try {
+    const institute = JSON.parse(localStorage.getItem("institute"));
+    const instituteId = institute?._id;
+
+    if (!instituteId) {
+      alert("Institute not found in session");
+      return;
     }
-  };
+
+    const res = await axios.get(
+      `${BACKEND_URL}/mainstore/all-medicines/${instituteId}`
+    );
+
+    setMedicines(res.data || []);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load medicines");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchMedicines();

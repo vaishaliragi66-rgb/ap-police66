@@ -30,6 +30,11 @@ const handleSubmit = async (e) => {
       formData
     );
 
+    // ✅ ADD THIS DEBUG LOG
+    console.log("Login response:", res.data);
+    console.log("Payload:", res.data.payload);
+    console.log("Full response:", res);
+
     // Store the token and institute data
     if (res.data.token) {
       localStorage.setItem('instituteToken', res.data.token);
@@ -38,6 +43,12 @@ const handleSubmit = async (e) => {
     if (res.data.payload) {
       localStorage.setItem("institute", JSON.stringify(res.data.payload));
       localStorage.setItem("instituteId", res.data.payload._id);
+      
+      // ✅ ADD THESE TO VERIFY
+      console.log("Saved to localStorage:", {
+        institute: JSON.parse(localStorage.getItem("institute")),
+        instituteId: localStorage.getItem("instituteId")
+      });
     }
 
     setMessage("✅ " + (res.data.message || "Login successful"));

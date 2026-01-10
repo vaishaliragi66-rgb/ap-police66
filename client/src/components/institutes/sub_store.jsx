@@ -41,19 +41,26 @@ export default function SubStore() {
   };
 
   // ---------- FETCH SUB-STORE STOCK ----------
-  useEffect(() => {
-    axios
-      .get(`http://localhost:${BACKEND_PORT}/medicine-api/all-medicine`)
-      .then(res => {
-        setRows(res.data || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Sub-store load error", err);
-        setRows([]);
-        setLoading(false);
-      });
-  }, []);
+ useEffect(() => {
+  const storedInstitute = localStorage.getItem("institute");
+  if (!storedInstitute) return;
+
+  const institute = JSON.parse(storedInstitute);
+  const instituteId = institute._id;
+
+  axios
+    .get(`http://localhost:${BACKEND_PORT}/medicine-api/substore/${instituteId}`)
+    .then(res => {
+      setRows(res.data || []);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Sub-store load error", err);
+      setRows([]);
+      setLoading(false);
+    });
+}, []);
+
 
   // ---------- UNIQUE DROPDOWN VALUES ----------
   const uniqueMedicines = [...new Set(rows.map(r => r.Medicine_Name).filter(Boolean))];

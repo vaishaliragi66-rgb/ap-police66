@@ -98,14 +98,20 @@ mainStoreApp.post("/add", expressAsyncHandler(async (req, res) => {
   }
 }));
 
-mainStoreApp.get("/all-medicines", async (req, res) => {
+mainStoreApp.get("/all-medicines/:instituteId", async (req, res) => {
   try {
-    const meds = await MainStoreMedicine.find().sort({ Expiry_Date:1 });
-    res.json(meds);
+    const { instituteId } = req.params;
+    console.log("Fetching medicines for institute:", instituteId);
+    const medicines = await MainStoreMedicine.find({
+      Institute_ID: instituteId
+    });
+
+    res.json(medicines);
   } catch (err) {
-    res.status(500).json({ message:"Failed to fetch medicines", error:err.message });
+    res.status(500).json({ message: err.message });
   }
 });
+
 mainStoreApp.get("/medicine/:id", async (req, res) => {
   try {
     const med = await MainStoreMedicine.findById(req.params.id);

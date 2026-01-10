@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const MainStoreMedicineSchema = new Schema({
-
+   Institute_ID: {
+    type: Schema.Types.ObjectId,
+    ref: "Institute",
+    required: true
+  },
   Medicine_Code: { type: String, required: true },
   Medicine_Name: { type: String, required: true },
 

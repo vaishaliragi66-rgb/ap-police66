@@ -14,8 +14,8 @@ export default function TransferMainStoreMedicine() {
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState("");
   const [success, setSuccess] = useState("");
-
-  const CURRENT_INSTITUTE_ID = localStorage.getItem("instituteId");
+ const institute = JSON.parse(localStorage.getItem("institute"));
+  const CURRENT_INSTITUTE_ID = institute?._id;   // ✅ FIXED
 
   const [formData, setFormData] = useState({
     Medicine_ID: "",
@@ -32,30 +32,22 @@ export default function TransferMainStoreMedicine() {
   // ✅ Load Main Store Medicines
   const loadMedicines = async () => {
   try {
-    const res = await axios.get(`${BACKEND_URL}/mainstore/all-medicines`);
-
-    console.log("Medicines API Response →", res.data);
-
-    // backend might return:
-    // []  OR  { medicines: [] } OR {data:[]}
-
-    let list = res.data;
-
-    if (Array.isArray(res.data?.medicines)) {
-      list = res.data.medicines;
+    if (!CURRENT_INSTITUTE_ID) {
+      console.error("Institute ID missing");
+      return;
     }
 
-    if (!Array.isArray(list)) {
-      list = [];
-    }
+    const res = await axios.get(
+      `${BACKEND_URL}/mainstore/all-medicines/${CURRENT_INSTITUTE_ID}`
+    );
 
-    setMedicines(list);
-
+    setMedicines(Array.isArray(res.data) ? res.data : []);
   } catch (err) {
     console.error("Medicine load failed", err);
-    setMedicines([]);   // <-- always keep as array
+    setMedicines([]);
   }
 };
+
 
 
   // ✅ Load Institutes EXCEPT currently opened one

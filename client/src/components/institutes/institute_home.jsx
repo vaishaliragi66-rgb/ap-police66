@@ -299,7 +299,7 @@ const Institute_home = () => {
                         <div className="col-md-4">
                           <button 
                             className="btn btn-info w-100 py-3 d-flex align-items-center justify-content-center gap-2"
-                            onClick={() => navigate("/institutions/analytics")}
+                            onClick={() => navigate("/institutes/analytics")}
                           >
                             <FaFileMedical /> View Reports
                           </button>

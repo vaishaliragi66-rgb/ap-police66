@@ -4,10 +4,21 @@ const medicineApp = express.Router();
 
 const Medicine = require("../models/master_medicine");
 
-/* ================= GET ALL SUB-STORE MEDICINES ================= */
-medicineApp.get("/all-medicine", async (req, res) => {
+//* ================= GET SUB-STORE MEDICINES FOR ONE INSTITUTE ================= */
+medicineApp.get("/substore/:instituteId", async (req, res) => {
   try {
-    const medicines = await Medicine.find().sort({ Expiry_Date: 1 });
+    const { instituteId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Invalid institute ID" });
+    }
+
+    const instituteObjectId = new mongoose.Types.ObjectId(instituteId);
+
+    // ✅ ONLY this institute's sub-store medicines
+    const medicines = await Medicine.find({
+      Institute_ID: instituteObjectId
+    }).sort({ Expiry_Date: 1 });
 
     const today = new Date();
     const thirtyDaysFromNow = new Date();
@@ -17,7 +28,7 @@ medicineApp.get("/all-medicine", async (req, res) => {
       const m = med.toObject();
 
       const daysUntilExpiry = Math.ceil(
-        (m.Expiry_Date - today) / (1000 * 60 * 60 * 24)
+        (new Date(m.Expiry_Date) - today) / (1000 * 60 * 60 * 24)
       );
 
       if (m.Expiry_Date < today) {
@@ -35,8 +46,9 @@ medicineApp.get("/all-medicine", async (req, res) => {
     res.json(medicinesWithStatus);
 
   } catch (err) {
+    console.error("Sub-store fetch error:", err);
     res.status(500).json({
-      message: "Failed to fetch medicines",
+      message: "Failed to fetch sub-store medicines",
       error: err.message
     });
   }

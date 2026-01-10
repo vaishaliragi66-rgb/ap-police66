@@ -29,6 +29,15 @@ import MainStore from "./components/institutes/main_store"
 import SubStore from "./components/institutes/sub_store"
 import AddMainStoreMedicine from "./components/institutes/AddMainStoreMedicine";
 import TransferMainStoreMedicine from "./components/institutes/TransferMainstoreMedicine";
+import InstituteAnalytics from "./components/institutes/institute_analytics";
+import axios from "axios";
+
+const token = localStorage.getItem("instituteToken");
+
+if (token) {
+  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+}
+
 function App() {
   const router = createBrowserRouter([
     {
@@ -137,6 +146,9 @@ function App() {
     },{
       path:"institutes/transfer",
       element:<TransferMainStoreMedicine/>
+    },{
+      path:"/institutes/analytics",
+      element:<InstituteAnalytics/>
     }
   ]);
 

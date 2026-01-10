@@ -11,7 +11,7 @@ const Medicine = require("../models/master_medicine");
 const Employee = require("../models/employee"); 
 const InstituteLedger = require("../models/InstituteLedger");
 const MainStoreMedicine = require("../models/main_store");
-
+const DiagnosisRecord = require("../models/diagnostics_record");
 // Middleware to verify JWT token
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -366,78 +366,54 @@ instituteApp.put('/profile/:id', verifyToken, async (req, res) => {
   }
 });
 
-// GET inventory (protected route)
-instituteApp.get("/inventory/:instituteId", verifyToken, async (req, res) => {
+// GET inventory for ONE institute only
+instituteApp.get("/inventory/:instituteId", async (req, res) => {
   try {
-    // Authorization check
-    if (req.user.id !== req.params.instituteId && req.user.role !== "admin") {
-      return res.status(403).json({ 
-        message: "Access denied. Not authorized to view this inventory." 
-      });
-    }
-
     const { instituteId } = req.params;
 
-    // 1️⃣ Fetch Main Store medicines
-    const mainStoreMeds = await MainStoreMedicine.find({});
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Invalid institute ID" });
+    }
 
-    // 2️⃣ Fetch Sub Store medicines (Pharmacy stock)
-    const subStoreMeds = await Medicine.find({});
+    const instituteObjectId = new mongoose.Types.ObjectId(instituteId);
 
-    // 3️⃣ Combine by Medicine_Code
-    const inventoryMap = new Map();
+    // ✅ MAIN STORE (ONLY this institute)
+    const mainStoreMeds = await MainStoreMedicine.find({
+      Institute_ID: instituteObjectId
+    }).lean();
 
-    // ---- Main Store ----
-    mainStoreMeds.forEach(m => {
-      if (!m.Medicine_Code) return;
+    // ✅ SUB STORE (ONLY this institute)
+    const subStoreMeds = await Medicine.find({
+      Institute_ID: instituteObjectId
+    }).lean();
 
-      inventoryMap.set(m.Medicine_Code, {
+    // ✅ DO NOT MERGE — SHOW BOTH
+    const inventory = [
+      ...mainStoreMeds.map(m => ({
+        _id: m._id,
         Medicine_Code: m.Medicine_Code,
         Medicine_Name: m.Medicine_Name,
-        Type: m.Type,
-        Category: m.Category,
-        Expiry_Date: m.Expiry_Date || null,
-        Quantity: m.Quantity || 0,
-        Threshold_Qty: m.Threshold_Qty ?? 0,
-        Source: {
-          mainStore: m.Quantity || 0,
-          subStore: 0
-        }
-      });
-    });
+        Quantity: m.Quantity,
+        Threshold_Qty: m.Threshold_Qty,
+        Expiry_Date: m.Expiry_Date,
+        Store_Type: "MAIN_STORE"
+      })),
+      ...subStoreMeds.map(m => ({
+        _id: m._id,
+        Medicine_Code: m.Medicine_Code,
+        Medicine_Name: m.Medicine_Name,
+        Quantity: m.Quantity,
+        Threshold_Qty: m.Threshold_Qty,
+        Expiry_Date: m.Expiry_Date,
+        Store_Type: "SUB_STORE"
+      }))
+    ];
 
-    // ---- Sub Store ----
-    subStoreMeds.forEach(m => {
-      if (!m.Medicine_Code) return;
+    res.json(inventory);
 
-      if (inventoryMap.has(m.Medicine_Code)) {
-        const item = inventoryMap.get(m.Medicine_Code);
-        item.Quantity += m.Quantity || 0;
-        item.Source.subStore = m.Quantity || 0;
-      } else {
-        inventoryMap.set(m.Medicine_Code, {
-          Medicine_Code: m.Medicine_Code,
-          Medicine_Name: m.Medicine_Name,
-          Type: m.Type,
-          Category: m.Category,
-          Expiry_Date: m.Expiry_Date || null,
-          Quantity: m.Quantity || 0,
-          Source: {
-            mainStore: 0,
-            subStore: m.Quantity || 0
-          }
-        });
-      }
-    });
-
-    // 4️⃣ Send combined inventory
-    res.json([...inventoryMap.values()]);
   } catch (err) {
     console.error("Institute inventory error:", err);
-    res.status(500).json({
-      message: "Failed to fetch institute inventory",
-      error: err.message
-    });
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -598,6 +574,87 @@ instituteApp.get("/employee/:id", verifyToken, async (req, res) => {
     });
   }
 });
+instituteApp.get("/analytics/:instituteId", async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+    console.log("Analytics request for instituteId:", instituteId);
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Invalid institute ID" });
+    }
+
+    const analytics = await DiagnosisRecord.aggregate([
+      {
+        $match: {
+          Institute: new mongoose.Types.ObjectId(instituteId)
+        }
+      },
+
+      // 🔗 Join Employee
+      {
+        $lookup: {
+          from: "employees",
+          localField: "Employee",
+          foreignField: "_id",
+          as: "employee"
+        }
+      },
+      { $unwind: "$employee" },
+
+      // 🔗 Join Diseases
+      {
+        $lookup: {
+          from: "diseases",
+          localField: "Employee",
+          foreignField: "Employee_ID",
+          as: "diseases"
+        }
+      },
+
+      {
+        $project: {
+          _id: 1,
+          createdAt: 1,
+
+          Employee_Name: "$employee.Name",
+          Employee_ABS: "$employee.ABS_NO",
+          Designation: "$employee.Designation",
+
+          Diseases: {
+            $map: {
+              input: "$diseases",
+              as: "d",
+              in: "$$d.Disease_Name"
+            }
+          },
+
+          Diagnosis_Notes: "$Diagnosis_Notes",
+
+          Tests: "$Tests",
+
+          Medicines_Taken: {
+            $reduce: {
+              input: "$employee.Medical_History",
+              initialValue: [],
+              in: {
+                $concatArrays: ["$$value", "$$this.Medicines"]
+              }
+            }
+          }
+        }
+      },
+
+      { $sort: { createdAt: -1 } }
+    ]);
+    console.log("Analytics data fetched:", analytics.length, "records");
+
+    res.json(analytics);
+
+  } catch (err) {
+    console.error("Analytics error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 // Optional: Token verification endpoint
 instituteApp.get("/verify-token", verifyToken, (req, res) => {
