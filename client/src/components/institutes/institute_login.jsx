@@ -19,34 +19,47 @@ const InstituteLogin = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage("");
-    setLoading(true);
-  
-    try {
-      const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/institute/login`,
-        formData
-      );
-  
-      setMessage("✅ " + res.data.message);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setMessage("");
+  setLoading(true);
+
+  try {
+    const res = await axios.post(
+      `http://localhost:${BACKEND_PORT_NO}/institute-api/institute/login`,
+      formData
+    );
+
+    // Store the token and institute data
+    if (res.data.token) {
+      localStorage.setItem('instituteToken', res.data.token);
+    }
+    
+    if (res.data.payload) {
       localStorage.setItem("institute", JSON.stringify(res.data.payload));
       localStorage.setItem("instituteId", res.data.payload._id);
-  
-      setTimeout(() => {
-        navigate("/institutes/home");
-      }, 1500);
-    } catch (err) {
-      if (err.response) {
-        setMessage("❌ " + (err.response.data.message || "Login failed"));
-      } else {
-        setMessage("❌ Error connecting to server");
-      }
-    } finally {
-      setLoading(false);
     }
-  };
+
+    setMessage("✅ " + (res.data.message || "Login successful"));
+
+    // Set default Authorization header for future requests
+    if (res.data.token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+    }
+
+    setTimeout(() => {
+      navigate("/institutes/home");
+    }, 1500);
+  } catch (err) {
+    if (err.response) {
+      setMessage("❌ " + (err.response.data.message || "Login failed"));
+    } else {
+      setMessage("❌ Error connecting to server");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
   
 
   return (

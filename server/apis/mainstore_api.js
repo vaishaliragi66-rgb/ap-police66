@@ -246,70 +246,94 @@ mainStoreApp.delete("/delete/:id", async (req, res) => {
 
 mainStoreApp.post("/transfer/substore", async (req, res) => {
   try {
-    const { Medicine_ID, Transfer_Qty, Institute_ID } = req.body;
+    const {
+      Medicine_ID,
+      Transfer_Qty,
+      Institute_ID
+    } = req.body;
+
     const qty = Number(Transfer_Qty);
 
+    // 🔍 Basic validation
     if (!Medicine_ID || !Institute_ID || qty <= 0) {
       return res.status(400).json({ message: "Invalid transfer data" });
     }
 
-    const med = await MainStoreMedicine.findById(Medicine_ID);
-    if (!med) {
-      return res.status(404).json({ message: "Medicine not found" });
+    // 🔎 Fetch medicine from MAIN STORE
+    const mainMed = await MainStoreMedicine.findById(Medicine_ID);
+    if (!mainMed) {
+      return res.status(404).json({ message: "Medicine not found in Main Store" });
     }
 
-    if (med.Quantity < qty) {
-      return res.status(400).json({ message: "Insufficient stock" });
+    if (mainMed.Quantity < qty) {
+      return res.status(400).json({ message: "Insufficient stock in Main Store" });
     }
 
-    // MAIN STORE OUT
-    med.Quantity -= qty;
-    await med.save();
+    // 🔻 Deduct from MAIN STORE
+    mainMed.Quantity -= qty;
+    await mainMed.save();
 
-    // SUBSTORE IN
-    let subStoreMed = await Medicine.findOne({ Medicine_Code: med.Medicine_Code });
-    if (subStoreMed) {
-      subStoreMed.Quantity += qty;
+    // 🔎 Check if medicine already exists in SUB STORE
+    const existingSubstoreMed = await Medicine.findOne({
+      Institute_ID,
+      Medicine_Code: mainMed.Medicine_Code
+    });
+
+    let finalSubstoreQty = 0;
+
+    if (existingSubstoreMed) {
+      // ➕ Update existing medicine
+      existingSubstoreMed.Quantity += qty;
+      finalSubstoreQty = existingSubstoreMed.Quantity;
+      await existingSubstoreMed.save();
     } else {
-      subStoreMed = await Medicine.create({
-        Medicine_Code: med.Medicine_Code,
-        Medicine_Name: med.Medicine_Name,
+      // ➕ Create NEW medicine in substore (IMPORTANT FIX)
+      const newMed = await Medicine.create({
+        Institute_ID,                 // ✅ REQUIRED
+        Medicine_Code: mainMed.Medicine_Code,
+        Medicine_Name: mainMed.Medicine_Name,
+        Type: mainMed.Type,
+        Category: mainMed.Category,
         Quantity: qty,
-        Threshold_Qty: med.Threshold_Qty,
-        Expiry_Date: med.Expiry_Date
+        Threshold_Qty: mainMed.Threshold_Qty,
+        Expiry_Date: mainMed.Expiry_Date,
+        Source: "MAIN_STORE"
       });
-    }
-    await subStoreMed.save();
 
-    // 📒 LEDGER — MAIN STORE OUT
+      finalSubstoreQty = newMed.Quantity;
+    }
+
+    // 📒 LEDGER — MAIN STORE (OUT)
     await InstituteLedger.create({
       Institute_ID,
       Store_Type: "MAIN",
-      Transaction_Type: "STORE_TRANSFER",   // ✅ VALID ENUM
+      Transaction_Type: "STORE_TRANSFER",
       Direction: "OUT",
-      Medicine_ID: med._id,
-      Medicine_Name: med.Medicine_Name,
+      Medicine_ID: mainMed._id,
+      Medicine_Name: mainMed.Medicine_Name,
       Quantity: qty,
-      Balance_After: med.Quantity,
-      Expiry_Date: med.Expiry_Date,          // ✅ REQUIRED
-      Remarks: "Transferred to Substore"
+      Balance_After: mainMed.Quantity,
+      Expiry_Date: mainMed.Expiry_Date,
+      Remarks: "Transferred to Sub Store"
     });
 
-    // 📒 LEDGER — SUBSTORE IN
+    // 📒 LEDGER — SUB STORE (IN)
     await InstituteLedger.create({
       Institute_ID,
-      Store_Type: "SUBSTORE",
-      Transaction_Type: "STORE_TRANSFER",   // ✅ VALID ENUM
+      Store_Type: "SUB",
+      Transaction_Type: "STORE_TRANSFER",
       Direction: "IN",
-      Medicine_ID: med._id,
-      Medicine_Name: med.Medicine_Name,
+      Medicine_ID: mainMed._id,
+      Medicine_Name: mainMed.Medicine_Name,
       Quantity: qty,
-      Balance_After: subStoreMed.Quantity, 
-      Expiry_Date: med.Expiry_Date,          // ✅ REQUIRED
+      Balance_After: finalSubstoreQty,
+      Expiry_Date: mainMed.Expiry_Date,
       Remarks: "Received from Main Store"
     });
 
-    res.json({ message: "Substore transfer successful with ledger" });
+    res.json({
+      message: "Sub-Store transfer completed successfully"
+    });
 
   } catch (err) {
     console.error("SUBSTORE TRANSFER ERROR:", err);

@@ -1,7 +1,10 @@
 const express = require('express');
 const expressAsyncHandler = require('express-async-handler');
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const axios = require('axios');
+
 const instituteApp = express.Router();
 const Institute = require('../models/master_institute');
 const Medicine = require("../models/master_medicine");  
@@ -9,6 +12,24 @@ const Employee = require("../models/employee");
 const InstituteLedger = require("../models/InstituteLedger");
 const MainStoreMedicine = require("../models/main_store");
 
+// Middleware to verify JWT token
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: "Access denied. No token provided." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "institutesecret123");
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+
+// GET all institutes
 instituteApp.get("/institutions", async (req, res) => {
   try {
     const institutions = await Institute.find();
@@ -18,17 +39,18 @@ instituteApp.get("/institutions", async (req, res) => {
   }
 });
 
+// GET all institutes except one
 instituteApp.get("/except/:id", async (req, res) => {
   try {
     const { id } = req.params;
     console.log(id)
-    // Validate ObjectId
+    
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid institute ID" });
     }
 
     const institutes = await Institute.find({
-      _id: { $ne: id }   // 👈 exclude given institute
+      _id: { $ne: id }
     })
     .select("Institute_Name Address District Institute_ID")
     .sort({ Institute_Name: 1 });
@@ -44,100 +66,195 @@ instituteApp.get("/except/:id", async (req, res) => {
   }
 });
 
-// POST - Register new institute
+// POST - Register new institute (with password hashing)
 instituteApp.post(
   "/register/institute",
   expressAsyncHandler(async (req, res) => {
-    const instituteData = req.body;
+    try {
+      const instituteData = req.body;
 
-    const {
-      Institute_Name,
-      Email_ID,
-      password,
-      confirm_password,
-      Address,
-      Contact_No
-    } = instituteData;
+      const {
+        Institute_Name,
+        Email_ID,
+        password,
+        confirm_password,
+        Address,
+        Contact_No
+      } = instituteData;
 
-    // 🔒 Required field check
-    if (
-  !Institute_Name ||
-  !Email_ID ||
-  !password ||
-  !Address ||
-  !Address.Street ||
-  !Address.District ||
-  !Address.State ||
-  !Address.Pincode
-) {
-  return res.status(400).send({ message: "All required fields must be provided" });
-}
+      // 🔒 Required field check
+      if (
+        !Institute_Name ||
+        !Email_ID ||
+        !password ||
+        !Address ||
+        !Address.Street ||
+        !Address.District ||
+        !Address.State ||
+        !Address.Pincode
+      ) {
+        return res.status(400).send({ message: "All required fields must be provided" });
+      }
 
-    const existingInstitute = await Institute.findOne({ Institute_Name });
-    if (existingInstitute) {
-      return res.status(409).send({ message: "Institute already exists" });
+      // Check if passwords match
+      if (confirm_password && password !== confirm_password) {
+        return res.status(400).send({ message: "Passwords do not match" });
+      }
+
+      // Check if institute already exists
+      const existingInstitute = await Institute.findOne({ 
+        $or: [
+          { Institute_Name },
+          { Email_ID }
+        ]
+      });
+      
+      if (existingInstitute) {
+        return res.status(409).send({ 
+          message: existingInstitute.Institute_Name === Institute_Name 
+            ? "Institute name already exists" 
+            : "Email already registered"
+        });
+      }
+
+      // Hash password before saving
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      const newInstitute = new Institute({
+        Institute_Name,
+        Email_ID,
+        password: hashedPassword, // Store hashed password
+        Contact_No,
+        Address,
+        Medicine_Inventory: []
+      });
+
+      const savedInstitute = await newInstitute.save();
+
+      // Remove password from response
+      const instituteResponse = savedInstitute.toObject();
+      delete instituteResponse.password;
+
+      res.status(201).send({
+        message: "Institute registered successfully",
+        payload: instituteResponse
+      });
+    } catch (err) {
+      console.error("Institute registration error:", err);
+      
+      if (err.code === 11000) {
+        return res.status(409).json({ 
+          message: "Duplicate entry. Institute name or email already exists." 
+        });
+      }
+      
+      if (err.name === 'ValidationError') {
+        const errors = Object.values(err.errors).map(e => e.message);
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Registration failed", 
+        error: err.message 
+      });
     }
-
-    const newInstitute = new Institute({
-      Institute_Name,
-      Email_ID,
-      password, // store only password
-      Contact_No,
-      Address,
-      Medicine_Inventory: []
-    });
-
-    const savedInstitute = await newInstitute.save();
-
-    res.status(201).send({
-      message: "Institute registered successfully",
-      payload: savedInstitute
-    });
   })
 );
 
-
-// POST - Login Institute
+// POST - Login Institute (with JWT token)
 instituteApp.post(
   '/institute/login',
   expressAsyncHandler(async (req, res) => {
-    const { Email_ID, password } = req.body;
+    try {
+      const { Email_ID, password } = req.body;
 
-    // Validate fields
-    if (!Email_ID || !password) {
-      return res
-        .status(400)
-        .send({ message: "Email and Password are required" });
+      // Validate fields
+      if (!Email_ID || !password) {
+        return res.status(400).json({ 
+          message: "Email and Password are required" 
+        });
+      }
+
+      // Find institute by email
+      const institute = await Institute.findOne({ 
+        Email_ID: Email_ID.trim().toLowerCase() 
+      });
+
+      if (!institute) {
+        return res.status(401).json({ 
+          message: "Invalid email or password" 
+        });
+      }
+
+      // Compare hashed password
+      const isPasswordValid = await bcrypt.compare(password, institute.password);
+      
+      if (!isPasswordValid) {
+        return res.status(401).json({ 
+          message: "Invalid email or password" 
+        });
+      }
+
+      // Create JWT token
+      const token = jwt.sign(
+        { 
+          id: institute._id,
+          instituteId: institute._id,
+          email: institute.Email_ID,
+          name: institute.Institute_Name,
+          role: "institute"
+        },
+        process.env.JWT_SECRET || "institutesecret123",
+        { expiresIn: "24h" }
+      );
+
+      // Remove password from response
+      const instituteResponse = institute.toObject();
+      delete instituteResponse.password;
+
+      res.status(200).json({
+        message: "Login successful",
+        token: token,
+        payload: {
+          ...instituteResponse,
+          token // Include token in payload for convenience
+        }
+      });
+    } catch (err) {
+      console.error("Institute login error:", err);
+      res.status(500).json({ 
+        message: "Login failed", 
+        error: err.message 
+      });
     }
-
-    // Find institute by email
-    const institute = await Institute.findOne({ Email_ID: Email_ID.trim() });
-
-    if (!institute) {
-      return res.status(401).send({ message: "Invalid email or password" });
-    }
-
-    // Match password (plain text version — ideally hash this later)
-    if (institute.password !== password) {
-      return res.status(401).send({ message: "Invalid email or password" });
-    }
-
-    res.status(200).send({
-      message: "Login successful",
-      payload: institute,
-    });
   })
 );
 
-
-instituteApp.get('/profile/:id', async (req, res) => {
+// GET institute profile (protected route)
+instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
   try {
+    // Check if user is authorized to access this profile
+    if (req.user.id !== req.params.id && req.user.role !== "admin") {
+      return res.status(403).json({ 
+        message: "Access denied. Not authorized to view this profile." 
+      });
+    }
+
     const institute = await Institute.findById(req.params.id)
       .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty')
+      .select('-password'); // Exclude password from response
 
-    if (!institute) return res.status(404).json({ message: 'Institute not found' });
+    if (!institute) {
+      return res.status(404).json({ 
+        message: 'Institute not found' 
+      });
+    }
 
-    // compute inventory summary using populated Medicine_Inventory
+    // Compute inventory summary
     const totalDistinct = institute.Medicine_Inventory.length;
     const totalQuantity = institute.Medicine_Inventory.reduce((sum, item) => sum + (item.Quantity || 0), 0);
 
@@ -151,7 +268,7 @@ instituteApp.get('/profile/:id', async (req, res) => {
         threshold: item.Medicine_ID.Threshold_Qty
       }));
 
-    // recent orders (sorted descending by Order_Date), limit to 10
+    // Recent orders
     const recentOrders = (institute.Orders || [])
       .slice()
       .sort((a, b) => new Date(b.Order_Date) - new Date(a.Order_Date))
@@ -169,39 +286,96 @@ instituteApp.get('/profile/:id', async (req, res) => {
     });
   } catch (err) {
     console.error('Error in GET /profile/:id', err);
-    return res.status(500).json({ message: 'Server error', error: err.message });
+    return res.status(500).json({ 
+      message: 'Server error', 
+      error: err.message 
+    });
   }
 });
 
-// PUT /institute-api/profile/:id
-// update some top-level profile fields (only fields from existing schema)
-// Allowed updates: Institute_Name, Address, Email_ID, password, Contact_No
-instituteApp.put('/profile/:id', async (req, res) => {
+// PUT /institute-api/profile/:id (protected route)
+instituteApp.put('/profile/:id', verifyToken, async (req, res) => {
   try {
-    const allowed = ['Institute_Name', 'Address', 'Email_ID', 'password', 'Contact_No'];
+    // Authorization check
+    if (req.user.id !== req.params.id) {
+      return res.status(403).json({ 
+        message: "Access denied. Can only update own profile." 
+      });
+    }
+
+    const allowed = ['Institute_Name', 'Address', 'Email_ID', 'Contact_No'];
     const update = {};
+    
     allowed.forEach(field => {
       if (req.body[field] !== undefined) update[field] = req.body[field];
     });
 
-    if (Object.keys(update).length === 0) {
-      return res.status(400).json({ message: 'No valid fields to update' });
+    // Handle password update separately
+    if (req.body.password && req.body.confirm_password) {
+      if (req.body.password !== req.body.confirm_password) {
+        return res.status(400).json({ 
+          message: 'Passwords do not match' 
+        });
+      }
+      
+      const salt = await bcrypt.genSalt(10);
+      update.password = await bcrypt.hash(req.body.password, salt);
+    } else if (req.body.password && !req.body.confirm_password) {
+      return res.status(400).json({ 
+        message: 'Confirm password is required when changing password' 
+      });
     }
 
-    const institute = await Institute.findByIdAndUpdate(req.params.id, update, { new: true })
-      .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty')
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ 
+        message: 'No valid fields to update' 
+      });
+    }
 
-    if (!institute) return res.status(404).json({ message: 'Institute not found' });
+    const institute = await Institute.findByIdAndUpdate(
+      req.params.id, 
+      update, 
+      { new: true, runValidators: true }
+    )
+    .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty')
+    .select('-password');
 
-    return res.json({ message: 'Updated', profile: institute });
+    if (!institute) {
+      return res.status(404).json({ 
+        message: 'Institute not found' 
+      });
+    }
+
+    return res.json({ 
+      message: 'Profile updated successfully', 
+      profile: institute 
+    });
   } catch (err) {
     console.error('Error in PUT /profile/:id', err);
-    return res.status(500).json({ message: 'Server error', error: err.message });
+    
+    if (err.code === 11000) {
+      return res.status(409).json({ 
+        message: 'Email or Institute Name already exists' 
+      });
+    }
+    
+    return res.status(500).json({ 
+      message: 'Server error', 
+      error: err.message 
+    });
   }
 });
 
-instituteApp.get("/inventory/:instituteId", async (req, res) => {
+// GET inventory (protected route)
+instituteApp.get("/inventory/:instituteId", verifyToken, async (req, res) => {
   try {
+    // Authorization check
+    if (req.user.id !== req.params.instituteId && req.user.role !== "admin") {
+      return res.status(403).json({ 
+        message: "Access denied. Not authorized to view this inventory." 
+      });
+    }
+
     const { instituteId } = req.params;
 
     // 1️⃣ Fetch Main Store medicines
@@ -268,36 +442,52 @@ instituteApp.get("/inventory/:instituteId", async (req, res) => {
 });
 
 // GET single institute by ID
-instituteApp.get("/institution/:id", async (req, res) => {
+instituteApp.get("/institution/:id", verifyToken, async (req, res) => {
   try {
-    console.log(req.params.id)
-    const institute = await Institute.findById(req.params.id);
-    if (!institute) return res.status(404).json({ message: "Institute not found" });
+    const institute = await Institute.findById(req.params.id).select('-password');
+    if (!institute) {
+      return res.status(404).json({ 
+        message: "Institute not found" 
+      });
+    }
     res.json(institute);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ 
+      error: err.message 
+    });
   }
 });
 
-// GET /institute-api/dashboard-stats/:instituteId - UPDATED VERSION
-instituteApp.get("/dashboard-stats/:instituteId", async (req, res) => {
+// GET dashboard stats (protected route)
+instituteApp.get("/dashboard-stats/:instituteId", verifyToken, async (req, res) => {
   try {
     const { instituteId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
-      return res.status(400).json({ message: "Invalid institute ID" });
+    // Authorization check
+    if (req.user.id !== instituteId && req.user.role !== "admin") {
+      return res.status(403).json({ 
+        message: "Access denied. Not authorized to view dashboard." 
+      });
     }
 
-    // 1️⃣ Total Employees (with all new fields)
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ 
+        message: "Invalid institute ID" 
+      });
+    }
+
+    // 1️⃣ Total Employees
     const totalEmployees = await Employee.countDocuments();
 
     // 2️⃣ Registered Employees (same as total employees for now)
     const registeredEmployees = totalEmployees;
 
-    // 3️⃣ Total Orders Placed by this institute
+    // 3️⃣ Fetch institute
     const institute = await Institute.findById(instituteId).lean();
     if (!institute) {
-      return res.status(404).json({ message: "Institute not found" });
+      return res.status(404).json({ 
+        message: "Institute not found" 
+      });
     }
 
     // 4️⃣ Total medicines in inventory
@@ -319,15 +509,19 @@ instituteApp.get("/dashboard-stats/:instituteId", async (req, res) => {
     });
   } catch (err) {
     console.error("Dashboard stats error:", err);
-    return res.status(500).json({ message: "Server error", error: err.message });
+    return res.status(500).json({ 
+      message: "Server error", 
+      error: err.message 
+    });
   }
 });
 
-// GET /institute-api/employees-detailed - Get detailed employee list with all fields
-instituteApp.get("/employees-detailed", async (req, res) => {
+// GET detailed employees (protected route)
+instituteApp.get("/employees-detailed", verifyToken, async (req, res) => {
   try {
     const employees = await Employee.find({})
       .select('ABS_NO Name Email Designation DOB Phone_No Height Weight Address Blood_Group Photo Medical_History')
+      .select('-password') // Ensure password is not included
       .sort({ Name: 1 })
       .lean();
 
@@ -364,13 +558,15 @@ instituteApp.get("/employees-detailed", async (req, res) => {
   }
 });
 
-// GET /institute-api/employee/:id - Get single employee details
-instituteApp.get("/employee/:id", async (req, res) => {
+// GET single employee details (protected route)
+instituteApp.get("/employee/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid employee ID" });
+      return res.status(400).json({ 
+        message: "Invalid employee ID" 
+      });
     }
 
     const employee = await Employee.findById(id)
@@ -378,7 +574,9 @@ instituteApp.get("/employee/:id", async (req, res) => {
       .lean();
 
     if (!employee) {
-      return res.status(404).json({ message: "Employee not found" });
+      return res.status(404).json({ 
+        message: "Employee not found" 
+      });
     }
 
     // Format the response
@@ -399,6 +597,14 @@ instituteApp.get("/employee/:id", async (req, res) => {
       error: err.message 
     });
   }
+});
+
+// Optional: Token verification endpoint
+instituteApp.get("/verify-token", verifyToken, (req, res) => {
+  res.status(200).json({
+    message: "Token is valid",
+    user: req.user
+  });
 });
 
 module.exports = instituteApp;
