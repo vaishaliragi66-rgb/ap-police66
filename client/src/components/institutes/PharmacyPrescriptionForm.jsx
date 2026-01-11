@@ -94,14 +94,15 @@ const PharmacyPrescriptionForm = () => {
   };
 
   /* ================= INITIAL LOAD ================= */
-  useEffect(() => {
-    const instituteId = localStorage.getItem("instituteId");
-    if (!instituteId) return;
+useEffect(() => {
+  const instituteId = localStorage.getItem("instituteId");
+  if (!instituteId) return;
 
-    setFormData((f) => ({ ...f, Institute_ID: instituteId }));
-    fetchInstitute(instituteId);
-    fetchInventory(instituteId);
-  }, []);
+  setFormData((f) => ({ ...f, Institute_ID: instituteId }));
+  fetchInstitute(instituteId);
+  fetchInventory(instituteId);
+}, []);
+
 
   /* ================= API CALLS ================= */
   const fetchInstitute = async (id) => {
@@ -509,24 +510,30 @@ const handleSubmit = async (e) => {
 
                 {/* Patient Selector */}
                 <PatientSelector
-                  onSelect={({ employee, visit_id }) => {
-                    setSelectedEmployee(employee);
-                    setVisitId(visit_id);
+  instituteId={formData.Institute_ID}
+  onSelect={({ employee, visit_id }) => {
+    console.log("PatientSelector returned:", { employee, visit_id });
 
-                    setFormData(prev => ({
-                      ...prev,
-                      Employee_ID: employee._id,
-                      IsFamilyMember: false,
-                      FamilyMember_ID: ""
-                    }));
+    setSelectedEmployee(employee);
+    setVisitId(visit_id);
 
-                    fetchDiseases(employee._id);
-                    if (visit_id) {
-                      fetchDoctorActions(employee._id, visit_id);
-                    }
-                    fetchLastTwoPrescriptions(employee._id);
-                  }}
-                />
+    setFormData(prev => ({
+      ...prev,
+      Employee_ID: employee._id,
+      IsFamilyMember: false,
+      FamilyMember_ID: ""
+    }));
+
+    fetchDiseases(employee._id);
+
+    if (visit_id) {
+      fetchDoctorActions(employee._id, visit_id);
+    }
+
+    fetchLastTwoPrescriptions(employee._id);
+  }}
+/>
+
 
                 {/* Family Member Selection */}
                 <div className="form-check mb-3">

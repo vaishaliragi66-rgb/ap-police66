@@ -17,6 +17,8 @@ const VisitRegister = () => {
   const [symptoms, setSymptoms] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const instituteId = localStorage.getItem("instituteId");
+
 
   /* ================= FETCH EMPLOYEES ================= */
   useEffect(() => {
@@ -98,13 +100,15 @@ const VisitRegister = () => {
     setLoading(true);
     try {
       await axios.post(
-        `http://localhost:${BACKEND_PORT}/api/visits/register`,
-        {
-          employee_id: selectedEmployee._id,
-          abs_no: selectedEmployee.ABS_NO,
-          patient
-        }
-      );
+  `http://localhost:${BACKEND_PORT}/api/visits/register`,
+  {
+    Institute_ID: instituteId,       // ✅ REQUIRED
+    employee_id: selectedEmployee._id,
+    abs_no: selectedEmployee.ABS_NO,
+    patient
+  }
+);
+
   
       alert("✅ Visit Registered Successfully");
   

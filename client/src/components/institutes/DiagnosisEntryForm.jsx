@@ -9,6 +9,7 @@ const DiagnosisEntryForm = () => {
   const [instituteName, setInstituteName] = useState("");
   const [loading, setLoading] = useState(false);
   const [visitId, setVisitId] = useState(null);
+  const [familyMembers, setFamilyMembers] = useState([]);
   const [formData, setFormData] = useState({
     Institute_ID: "",
     Employee_ID: "",
@@ -350,25 +351,26 @@ const fetchVisitDetails = async (visitId) => {
 
         {/* Employee Search */}
         <PatientSelector
-          onSelect={async ({ employee, visit_id }) => {
-            setVisitId(visit_id);
+  instituteId={formData.Institute_ID}
+onSelect={({ employee, visit }) => {
+  setVisitId(visit?._id || null);
 
-            const visit = await fetchVisitDetails(visit_id);
+  setFormData(prev => ({
+    ...prev,
+    Employee_ID: employee._id,
+    IsFamilyMember: Boolean(visit?.IsFamilyMember),
+    FamilyMember_ID: visit?.IsFamilyMember
+      ? visit.FamilyMember
+      : ""
+  }));
 
-            setFormData(prev => ({
-              ...prev,
-              Employee_ID: employee._id,
-              IsFamilyMember: Boolean(visit?.IsFamilyMember),
-              FamilyMember_ID: visit?.IsFamilyMember
-                ? visit.FamilyMember_ID
-                : ""
-            }));
+  if (visit?._id) {
+    fetchDoctorDiagnosis(visit._id);
+  }
+}}
 
-            if (visit_id) {
-              fetchDoctorDiagnosis(visit_id);
-            }
-          }}
-        />
+/>
+
         {formData.IsFamilyMember && (
           <div
             style={{

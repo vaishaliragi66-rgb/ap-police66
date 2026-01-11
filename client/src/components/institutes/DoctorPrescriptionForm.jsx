@@ -356,6 +356,7 @@ const DoctorPrescriptionForm = () => {
     };
 
     await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
+      Institute_ID: formData.Institute_ID,
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
       action_type: "DOCTOR_PRESCRIPTION",
@@ -430,6 +431,7 @@ const DoctorPrescriptionForm = () => {
                   )}
                 </div> */}
                 <PatientSelector
+                instituteId={formData.Institute_ID}
                     onSelect={({ employee, visit_id }) => {
                         setSelectedEmployee(employee);
                         setVisitId(visit_id);

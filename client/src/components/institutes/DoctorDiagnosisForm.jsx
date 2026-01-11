@@ -4,7 +4,7 @@ import PatientSelector from "../institutes/PatientSelector";
 
 const DoctorDiagnosisForm = () => {
 //   const [employees, setEmployees] = useState([]);
-  // const [familyMembers, setFamilyMembers] = useState([]);
+  const [familyMembers, setFamilyMembers] = useState([]);
   const [testsMaster, setTestsMaster] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 //   const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -194,6 +194,7 @@ const DoctorDiagnosisForm = () => {
         action_type: "DOCTOR_DIAGNOSIS",
         source: "DOCTOR",
         data: {
+          Institute_ID: formData.Institute_ID,
           IsFamilyMember: formData.IsFamilyMember,
           FamilyMember_ID: formData.IsFamilyMember
             ? formData.FamilyMember_ID
@@ -228,12 +229,7 @@ const DoctorDiagnosisForm = () => {
     }
   };
 
-  const fetchVisitDetails = async (visitId) => {
-  const res = await axios.get(
-    `http://localhost:${BACKEND_PORT_NO}/visit-api/visit/${visitId}`
-  );
-  return res.data;
-};
+
 
 
   return (
@@ -266,20 +262,22 @@ const DoctorDiagnosisForm = () => {
         </div>
 
         {/* Employee Search */}
-        <PatientSelector
-          onSelect={async ({ employee, visit_id }) => {
-            setVisitId(visit_id);
+<PatientSelector
+  instituteId={formData.Institute_ID}
+  onSelect={({ employee, visit_id }) => {
+    setSelectedEmployee(employee);
+    setVisitId(visit_id || null);
 
-            const visit = await fetchVisitDetails(visit_id);
+    setFormData(prev => ({
+      ...prev,
+      Employee_ID: employee._id,
+      IsFamilyMember: false,
+      FamilyMember_ID: ""
+    }));
+  }}
+/>
 
-            setFormData(prev => ({
-              ...prev,
-              Employee_ID: employee._id,
-              IsFamilyMember: Boolean(visit?.IsFamilyMember),
-              FamilyMember_ID: visit?.FamilyMember_ID || ""
-            }));
-          }}
-        />
+
         {formData.IsFamilyMember && (
           <div
             style={{

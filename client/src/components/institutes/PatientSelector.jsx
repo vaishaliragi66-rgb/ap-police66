@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
-const BACKEND = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 
-export default function PatientSelector({ onSelect }) {
+export default function PatientSelector({ onSelect, instituteId }) {
   const [todayVisits, setTodayVisits] = useState([]);
   const [search, setSearch] = useState("");
   const [options, setOptions] = useState([]);
@@ -11,14 +11,20 @@ export default function PatientSelector({ onSelect }) {
   const wrapperRef = useRef(null);
 
   /* ================= LOAD TODAY VISITS ================= */
-  useEffect(() => {
-    axios
-      .get(`http://localhost:${BACKEND}/api/visits/today`)
-      .then(res => {
-        setTodayVisits(res.data || []);
-        setOptions(res.data || []);
-      });
-  }, []);
+useEffect(() => {
+  if (!instituteId) return;
+
+  axios
+    .get(`http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`)
+    
+    .then(res => {
+      setTodayVisits(res.data || []);
+      setOptions(res.data || []);
+    })
+    
+    .catch(err => console.error(err));
+}, [instituteId]);
+
 
   /* ================= SEARCH ================= */
   useEffect(() => {
@@ -28,7 +34,7 @@ export default function PatientSelector({ onSelect }) {
     }
 
     axios
-      .get(`http://localhost:${BACKEND}/employee-api/all`)
+      .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
       .then(res => {
         const list = res.data?.employees || res.data || [];
         const filtered = list.filter(e =>
@@ -48,7 +54,7 @@ export default function PatientSelector({ onSelect }) {
 
       onSelect({
         employee: item.employee_id,
-        visit_id: item._id
+        visit: item
       });
     } else {
       // searched employee

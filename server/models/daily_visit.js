@@ -24,6 +24,11 @@ const PatientSchema = new mongoose.Schema(
 
 
 const DailyVisitSchema = new mongoose.Schema({
+  Institute_ID: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Institute",
+  required: true
+},
   employee_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
