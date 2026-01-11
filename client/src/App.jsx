@@ -7,7 +7,7 @@ import Institute_home from "./components/institutes/institute_home";
 import EmployeeRegistration from "./components/employee/EmployeeRegistration";
 import FamilyMemberRegistration from "./components/employee/FamilyRegistration";
 import InstituteProfile from "./components/institutes/institute_profile";
-import EmployeeLogin from "./components/employee/EmployeeLogin";
+import EmployeeLogin from "./components/employee/Employeelogin";
 import EmployeeHome from "./components/employee/EmployeeHome";
 import InstituteInventory from "./components/institutes/institute_inventory";
 import PharmacyPrescriptionForm from "./components/institutes/PharmacyPrescriptionForm";
@@ -30,6 +30,10 @@ import SubStore from "./components/institutes/sub_store"
 import AddMainStoreMedicine from "./components/institutes/AddMainStoreMedicine";
 import TransferMainStoreMedicine from "./components/institutes/TransferMainstoreMedicine";
 import InstituteAnalytics from "./components/institutes/institute_analytics";
+import AdminRegister from "./components/admin/admin_register";
+import AdminLogin from "./components/admin/admin_login";
+import AdminDashboard from "./components/admin/admin_home";
+
 import axios from "axios";
 
 const token = localStorage.getItem("instituteToken");
@@ -149,6 +153,15 @@ function App() {
     },{
       path:"/institutes/analytics",
       element:<InstituteAnalytics/>
+    },{
+      path:"/admin/register",
+      element:<AdminRegister/>
+    },{
+      path:"/admin/login",
+      element:<AdminLogin/>
+    },{
+      path:"/admin/dashboard",
+      element:<AdminDashboard/>
     }
   ]);
 

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FaIndustry, FaUniversity, FaUserShield } from "react-icons/fa";
+import { FaIndustry, FaUniversity, FaUserShield, FaUserCog } from "react-icons/fa";
+
 
 function Home_main_page() {
   return (
@@ -82,6 +83,25 @@ function Home_main_page() {
             </h3>
             <p className="text-gray-500 text-sm mb-6 leading-relaxed">
               Register and manage police medical department employees.
+            </p>
+            <div className="bg-black text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-[#1a1a1a] transition-all">
+              Proceed
+            </div>
+          </Link>
+
+          {/* Admin Card */}
+          <Link
+            to="/admin/register"
+            className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center text-center hover:-translate-y-1"
+          >
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+              <FaUserCog className="text-gray-700 text-3xl" />
+            </div>
+            <h3 className="text-lg font-semibold text-black mb-2 hover:text-gray-800 transition-all duration-200">
+              Admin Portal
+            </h3>
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+              Manage system-wide configurations and user roles.
             </p>
             <div className="bg-black text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-[#1a1a1a] transition-all">
               Proceed
