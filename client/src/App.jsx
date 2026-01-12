@@ -34,8 +34,10 @@ import AdminRegister from "./components/admin/admin_register";
 import AdminLogin from "./components/admin/admin_login";
 import AdminDashboard from "./components/admin/admin_home";
 import AIInsights from "./components/institutes/AIInsights";
+import AdminInstituteReports from "./components/admin/institute_reports";
 
 import axios from "axios";
+import EmployeeReports from "./components/admin/employee_reports";
 
 const token = localStorage.getItem("instituteToken");
 
@@ -167,6 +169,12 @@ function App() {
     },{
       path:"/admin/dashboard",
       element:<AdminDashboard/>
+    },{
+      path:"/admin/employee-reports",
+      element:<EmployeeReports/>
+    },{
+      path:"/admin/institute-reports",
+      element:<AdminInstituteReports/>
     }
   ]);
 

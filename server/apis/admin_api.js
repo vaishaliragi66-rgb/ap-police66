@@ -4,7 +4,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const Admin = require("../models/admin");
-
+const Employee = require("../models/employee");
+const FamilyMember = require("../models/family_member");
+const Institute = require("../models/master_institute");
 const adminApp = express.Router();
 
 /* ================= ADMIN REGISTRATION ================= */
@@ -363,6 +365,313 @@ adminApp.put(
   })
 );
 
+adminApp.get("/analytics/all", async (req, res) => {
+  try {
+    /* ================================
+       EMPLOYEE PIPELINE (ALL INSTITUTES)
+    =================================*/
+    const employeePipeline = [
+      {
+        $lookup: {
+          from: "prescriptions",
+          localField: "_id",
+          foreignField: "Employee",
+          as: "prescriptions"
+        }
+      },
+      {
+        $lookup: {
+          from: "diagnosisrecords",
+          localField: "_id",
+          foreignField: "Employee",
+          as: "diagnosis"
+        }
+      },
+      {
+        $lookup: {
+          from: "diseases",
+          localField: "_id",
+          foreignField: "Employee_ID",
+          as: "diseases"
+        }
+      },
+
+      {
+        $addFields: {
+          Age: {
+            $cond: [
+              { $ifNull: ["$DOB", false] },
+              { $dateDiff: { startDate: "$DOB", endDate: "$$NOW", unit: "year" } },
+              null
+            ]
+          }
+        }
+      },
+
+      {
+        $project: {
+          Role: { $literal: "Employee" },
+          Name: "$Name",
+          District: "$Address.District",
+          Age: 1,
+
+          Communicable_Diseases: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$diseases",
+                  as: "d",
+                  cond: { $eq: ["$$d.Category", "Communicable"] }
+                }
+              },
+              as: "d",
+              in: { $concat: ["$$d.Disease_Name", " (", "$$d.Severity_Level", ")"] }
+            }
+          },
+
+          NonCommunicable_Diseases: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$diseases",
+                  as: "d",
+                  cond: { $eq: ["$$d.Category", "Non-Communicable"] }
+                }
+              },
+              as: "d",
+              in: { $concat: ["$$d.Disease_Name", " (", "$$d.Severity_Level", ")"] }
+            }
+          },
+
+          Tests: {
+            $reduce: {
+              input: "$diagnosis",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this.Tests"] }
+            }
+          },
+
+          Medicines: {
+            $reduce: {
+              input: "$prescriptions",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this.Medicines"] }
+            }
+          },
+
+          First_Visit: { $min: "$diagnosis.createdAt" },
+          Last_Visit: { $max: "$diagnosis.createdAt" }
+        }
+      }
+    ];
+
+    /* ================================
+       FAMILY PIPELINE (ALL INSTITUTES)
+    =================================*/
+    const familyPipeline = [
+      {
+        $lookup: {
+          from: "prescriptions",
+          localField: "_id",
+          foreignField: "FamilyMember",
+          as: "prescriptions"
+        }
+      },
+      {
+        $lookup: {
+          from: "diagnosisrecords",
+          localField: "_id",
+          foreignField: "FamilyMember",
+          as: "diagnosis"
+        }
+      },
+      {
+        $lookup: {
+          from: "diseases",
+          localField: "_id",
+          foreignField: "FamilyMember_ID",
+          as: "diseases"
+        }
+      },
+      {
+        $lookup: {
+          from: "employees",
+          localField: "Employee",
+          foreignField: "_id",
+          as: "emp"
+        }
+      },
+      { $unwind: "$emp" },
+
+      {
+        $addFields: {
+          Age: {
+            $cond: [
+              { $ifNull: ["$DOB", false] },
+              { $dateDiff: { startDate: "$DOB", endDate: "$$NOW", unit: "year" } },
+              null
+            ]
+          }
+        }
+      },
+
+      {
+        $project: {
+          Role: { $literal: "Family" },
+          Name: "$Name",
+          District: "$emp.Address.District",
+          Age: 1,
+
+          Communicable_Diseases: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$diseases",
+                  as: "d",
+                  cond: { $eq: ["$$d.Category", "Communicable"] }
+                }
+              },
+              as: "d",
+              in: { $concat: ["$$d.Disease_Name", " (", "$$d.Severity_Level", ")"] }
+            }
+          },
+
+          NonCommunicable_Diseases: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$diseases",
+                  as: "d",
+                  cond: { $eq: ["$$d.Category", "Non-Communicable"] }
+                }
+              },
+              as: "d",
+              in: { $concat: ["$$d.Disease_Name", " (", "$$d.Severity_Level", ")"] }
+            }
+          },
+
+          Tests: [],
+          Medicines: [],
+
+          First_Visit: { $min: "$diagnosis.createdAt" },
+          Last_Visit: { $max: "$diagnosis.createdAt" }
+        }
+      }
+    ];
+
+    const employees = await Employee.aggregate(employeePipeline);
+    const family = await FamilyMember.aggregate(familyPipeline);
+
+    res.json([...employees, ...family]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+});
+adminApp.get("/analytics/institutes", async (req, res) => {
+  try {
+    const institutes = await Institute.aggregate([
+      /* MAIN STORE MEDICINES */
+      {
+        $lookup: {
+          from: "mainstoremedicines",
+          localField: "_id",
+          foreignField: "Institute_ID",
+          as: "mainStore"
+        }
+      },
+
+      /* SUB STORE MEDICINES */
+      {
+        $lookup: {
+          from: "medicines",
+          localField: "_id",
+          foreignField: "Institute_ID",
+          as: "subStore"
+        }
+      },
+
+      {
+        $addFields: {
+          MainStore_Count: { $size: "$mainStore" },
+          SubStore_Count: { $size: "$subStore" },
+
+          MainStore_TotalQty: {
+            $sum: { $ifNull: ["$mainStore.Quantity", []] }
+          },
+          SubStore_TotalQty: {
+            $sum: { $ifNull: ["$subStore.Quantity", []] }
+          },
+
+          LowStock_Count: {
+            $size: {
+              $filter: {
+                input: "$subStore",
+                as: "m",
+                cond: { $lte: ["$$m.Quantity", "$$m.Threshold_Qty"] }
+              }
+            }
+          }
+        }
+      },
+
+      {
+        $project: {
+          Institute_ID: 1,
+          Institute_Name: 1,
+          Email_ID: 1,
+          Contact_No: 1,
+          "Address.District": 1,
+          "Address.State": 1,
+
+          Employees_Count: { $size: "$Employees" },
+          Family_Count: { $size: "$Family_member" },
+
+          MainStore_Count: 1,
+          SubStore_Count: 1,
+          MainStore_TotalQty: 1,
+          SubStore_TotalQty: 1,
+          LowStock_Count: 1,
+
+          mainStore: 1,
+          subStore: 1
+        }
+      }
+    ]);
+
+    res.json(institutes);
+  } catch (err) {
+    console.error("Institute analytics error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+const nodemailer = require("nodemailer");
+
+adminApp.post("/send-mail", async (req, res) => {
+  try {
+    const { to, subject, message } = req.body;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.ADMIN_EMAIL,     // admin@gmail.com
+        pass: process.env.ADMIN_EMAIL_PASS // app password
+      }
+    });
+
+    await transporter.sendMail({
+      from: `"Admin Panel" <${process.env.ADMIN_EMAIL}>`,
+      to,
+      subject,
+      text: message
+    });
+
+    res.json({ message: "Mail sent successfully" });
+  } catch (err) {
+    console.error("Mail error:", err);
+    res.status(500).json({ message: "Mail sending failed" });
+  }
+});
 
 
 module.exports = adminApp;
