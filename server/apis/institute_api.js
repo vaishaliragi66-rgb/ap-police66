@@ -11,7 +11,9 @@ const Medicine = require("../models/master_medicine");
 const Employee = require("../models/employee"); 
 const InstituteLedger = require("../models/InstituteLedger");
 const MainStoreMedicine = require("../models/main_store");
-const DiagnosisRecord = require("../models/diagnostics_record");
+const DiagnosisRecord = require("../models/diagnostics_record"); 
+const FamilyMember = require("../models/family_member");
+const Disease = require("../models/disease");
 // Middleware to verify JWT token
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -574,81 +576,476 @@ instituteApp.get("/employee/:id", verifyToken, async (req, res) => {
     });
   }
 });
+
 instituteApp.get("/analytics/:instituteId", async (req, res) => {
   try {
     const { instituteId } = req.params;
-    console.log("Analytics request for instituteId:", instituteId);
+
     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
       return res.status(400).json({ message: "Invalid institute ID" });
     }
 
-    const analytics = await DiagnosisRecord.aggregate([
+    const instituteObjectId = new mongoose.Types.ObjectId(instituteId);
+
+    /* =====================================================
+       EMPLOYEE PIPELINE
+    ======================================================*/
+    const employeePipeline = [
+      /* 🔹 Prescriptions */
       {
-        $match: {
-          Institute: new mongoose.Types.ObjectId(instituteId)
+        $lookup: {
+          from: "prescriptions",
+          let: { empId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$Employee", "$$empId"] },
+                    { $eq: ["$Institute", instituteObjectId] },
+                    { $eq: ["$IsFamilyMember", false] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "prescriptions"
         }
       },
 
-      // 🔗 Join Employee
+      /* 🔹 Diagnosis Records */
+      {
+        $lookup: {
+          from: "diagnosisrecords",
+          let: { empId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$Employee", "$$empId"] },
+                    { $eq: ["$Institute", instituteObjectId] },
+                    { $eq: ["$IsFamilyMember", false] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "diagnosis"
+        }
+      },
+
+      /* 🔹 Diseases */
+      {
+        $lookup: {
+          from: "diseases",
+          let: { empId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$Employee_ID", "$$empId"] },
+                    { $eq: ["$Institute_ID", instituteObjectId] },
+                    { $eq: ["$IsFamilyMember", false] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "diseases"
+        }
+      },
+
+      /* 🔹 Include ONLY if any record exists */
+      {
+        $match: {
+          $expr: {
+            $or: [
+              { $gt: [{ $size: "$prescriptions" }, 0] },
+              { $gt: [{ $size: "$diagnosis" }, 0] },
+              { $gt: [{ $size: "$diseases" }, 0] }
+            ]
+          }
+        }
+      },
+
+      /* 🔹 Derived Fields */
+      {
+        $addFields: {
+          Age: {
+            $cond: [
+              { $ifNull: ["$DOB", false] },
+              {
+                $dateDiff: {
+                  startDate: "$DOB",
+                  endDate: "$$NOW",
+                  unit: "year"
+                }
+              },
+              null
+            ]
+          }
+        }
+      },
+
+      /* 🔹 Final Shape */
+      {
+        $project: {
+          Role: { $literal: "Employee" },
+          Name: "$Name",
+          Linked_Employee_Name: null,
+
+          District: "$Address.District",
+
+          Age: 1,
+          Gender: { $literal: "—" },
+          Blood_Group: "$Blood_Group",
+          Height: "$Height",
+          Weight: "$Weight",
+
+          Communicable_Diseases: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$diseases",
+                  as: "d",
+                  cond: { $eq: ["$$d.Category", "Communicable"] }
+                }
+              },
+              as: "d",
+              in: {
+                $concat: [
+                  "$$d.Disease_Name",
+                  " (",
+                  "$$d.Severity_Level",
+                  ")"
+                ]
+              }
+            }
+          },
+
+          NonCommunicable_Diseases: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$diseases",
+                  as: "d",
+                  cond: { $eq: ["$$d.Category", "Non-Communicable"] }
+                }
+              },
+              as: "d",
+              in: {
+                $concat: [
+                  "$$d.Disease_Name",
+                  " (",
+                  "$$d.Severity_Level",
+                  ")"
+                ]
+              }
+            }
+          },
+
+          Tests: {
+            $reduce: {
+              input: "$diagnosis",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this.Tests"] }
+            }
+          },
+
+          Medicines: {
+            $reduce: {
+              input: "$prescriptions",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this.Medicines"] }
+            }
+          },
+          First_Visit_Date: {
+            $min: {
+              $concatArrays: [
+                {
+                  $map: {
+                    input: "$diagnosis",
+                    as: "d",
+                    in: "$$d.createdAt"
+                  }
+                },
+                {
+                  $map: {
+                    input: "$prescriptions",
+                    as: "p",
+                    in: "$$p.Timestamp"
+                  }
+                }
+              ]
+            }
+          },
+
+          Last_Visit_Date: {
+            $max: {
+              $concatArrays: [
+                {
+                  $map: {
+                    input: "$diagnosis",
+                    as: "d",
+                    in: "$$d.createdAt"
+                  }
+                },
+                {
+                  $map: {
+                    input: "$prescriptions",
+                    as: "p",
+                    in: "$$p.Timestamp"
+                  }
+                }
+              ]
+            }
+          }
+
+        }
+      }
+    ];
+
+    /* =====================================================
+       FAMILY MEMBER PIPELINE
+    ======================================================*/
+    const familyPipeline = [
+      /* 🔹 Prescriptions */
+      {
+        $lookup: {
+          from: "prescriptions",
+          let: { famId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$FamilyMember", "$$famId"] },
+                    { $eq: ["$Institute", instituteObjectId] },
+                    { $eq: ["$IsFamilyMember", true] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "prescriptions"
+        }
+      },
+
+      /* 🔹 Diagnosis Records */
+      {
+        $lookup: {
+          from: "diagnosisrecords",
+          let: { famId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$FamilyMember", "$$famId"] },
+                    { $eq: ["$Institute", instituteObjectId] },
+                    { $eq: ["$IsFamilyMember", true] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "diagnosis"
+        }
+      },
+
+      /* 🔹 Diseases */
+      {
+        $lookup: {
+          from: "diseases",
+          let: { famId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$FamilyMember_ID", "$$famId"] },
+                    { $eq: ["$Institute_ID", instituteObjectId] },
+                    { $eq: ["$IsFamilyMember", true] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "diseases"
+        }
+      },
+
+      /* 🔹 Include ONLY if any record exists */
+      {
+        $match: {
+          $expr: {
+            $or: [
+              { $gt: [{ $size: "$prescriptions" }, 0] },
+              { $gt: [{ $size: "$diagnosis" }, 0] },
+              { $gt: [{ $size: "$diseases" }, 0] }
+            ]
+          }
+        }
+      },
+
+      /* 🔹 Join Employee (for name & district) */
       {
         $lookup: {
           from: "employees",
           localField: "Employee",
           foreignField: "_id",
-          as: "employee"
+          as: "emp"
         }
       },
-      { $unwind: "$employee" },
+      { $unwind: "$emp" },
 
-      // 🔗 Join Diseases
+      /* 🔹 Derived Fields */
       {
-        $lookup: {
-          from: "diseases",
-          localField: "Employee",
-          foreignField: "Employee_ID",
-          as: "diseases"
-        }
-      },
-
-      {
-        $project: {
-          _id: 1,
-          createdAt: 1,
-
-          Employee_Name: "$employee.Name",
-          Employee_ABS: "$employee.ABS_NO",
-          Designation: "$employee.Designation",
-
-          Diseases: {
-            $map: {
-              input: "$diseases",
-              as: "d",
-              in: "$$d.Disease_Name"
-            }
-          },
-
-          Diagnosis_Notes: "$Diagnosis_Notes",
-
-          Tests: "$Tests",
-
-          Medicines_Taken: {
-            $reduce: {
-              input: "$employee.Medical_History",
-              initialValue: [],
-              in: {
-                $concatArrays: ["$$value", "$$this.Medicines"]
-              }
-            }
+        $addFields: {
+          Age: {
+            $cond: [
+              { $ifNull: ["$DOB", false] },
+              {
+                $dateDiff: {
+                  startDate: "$DOB",
+                  endDate: "$$NOW",
+                  unit: "year"
+                }
+              },
+              null
+            ]
           }
         }
       },
 
-      { $sort: { createdAt: -1 } }
-    ]);
-    console.log("Analytics data fetched:", analytics.length, "records");
+      /* 🔹 Final Shape */
+      {
+        $project: {
+          Role: { $literal: "Family" },
+          Name: "$Name",
+          Linked_Employee_Name: "$emp.Name",
 
-    res.json(analytics);
+          District: "$emp.Address.District",
 
+          Age: 1,
+          Gender: "$Gender",
+          Blood_Group: "$Blood_Group",
+          Height: "$Height",
+          Weight: "$Weight",
+
+          Communicable_Diseases: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$diseases",
+                  as: "d",
+                  cond: { $eq: ["$$d.Category", "Communicable"] }
+                }
+              },
+              as: "d",
+              in: {
+                $concat: [
+                  "$$d.Disease_Name",
+                  " (",
+                  "$$d.Severity_Level",
+                  ")"
+                ]
+              }
+            }
+          },
+
+          NonCommunicable_Diseases: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$diseases",
+                  as: "d",
+                  cond: { $eq: ["$$d.Category", "Non-Communicable"] }
+                }
+              },
+              as: "d",
+              in: {
+                $concat: [
+                  "$$d.Disease_Name",
+                  " (",
+                  "$$d.Severity_Level",
+                  ")"
+                ]
+              }
+            }
+          },
+
+          Tests: {
+            $reduce: {
+              input: "$diagnosis",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this.Tests"] }
+            }
+          },
+
+          Medicines: {
+            $reduce: {
+              input: "$prescriptions",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this.Medicines"] }
+            }
+          },
+
+          First_Visit_Date: {
+            $min: {
+              $concatArrays: [
+                {
+                  $map: {
+                    input: "$diagnosis",
+                    as: "d",
+                    in: "$$d.createdAt"
+                  }
+                },
+                {
+                  $map: {
+                    input: "$prescriptions",
+                    as: "p",
+                    in: "$$p.Timestamp"
+                  }
+                }
+              ]
+            }
+          },
+
+          Last_Visit_Date: {
+            $max: {
+              $concatArrays: [
+                {
+                  $map: {
+                    input: "$diagnosis",
+                    as: "d",
+                    in: "$$d.createdAt"
+                  }
+                },
+                {
+                  $map: {
+                    input: "$prescriptions",
+                    as: "p",
+                    in: "$$p.Timestamp"
+                  }
+                }
+              ]
+            }
+          }
+
+        }
+      }
+    ];
+
+    /* =====================================================
+       EXECUTE & RETURN
+    ======================================================*/
+    const employees = await Employee.aggregate(employeePipeline);
+    const family = await FamilyMember.aggregate(familyPipeline);
+
+    res.json([...employees, ...family]);
   } catch (err) {
     console.error("Analytics error:", err);
     res.status(500).json({ message: err.message });

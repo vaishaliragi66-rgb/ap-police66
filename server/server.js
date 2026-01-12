@@ -31,7 +31,9 @@ const medicalActionRoutes = require("./apis/medical_action_api");
 const doctorPrescriptionApi = require("./apis/doctor_prescription_api");
 const mainStoreApp = require("./apis/mainstore_api");
 const adminApp = require("./apis/admin_api");
+const aiQueryApp = require('./apis/ai_query_api');
 
+app.use("/ai-api", aiQueryApp);
 app.use("/doctor-prescription-api", doctorPrescriptionApi);
 app.use("/api/visits", dailyVisitRoutes);
 app.use("/api/medical-actions", medicalActionRoutes);

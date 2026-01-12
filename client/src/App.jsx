@@ -33,6 +33,7 @@ import InstituteAnalytics from "./components/institutes/institute_analytics";
 import AdminRegister from "./components/admin/admin_register";
 import AdminLogin from "./components/admin/admin_login";
 import AdminDashboard from "./components/admin/admin_home";
+import AIInsights from "./components/institutes/AIInsights";
 
 import axios from "axios";
 
@@ -101,6 +102,10 @@ function App() {
     },
     {path:"/institutes/visit-register",
       element:<VisitRegister/>
+    },
+    {
+      path: "/institutes/ai-insights",
+      element: <AIInsights />
     },
     {
       path:"/employee-register",

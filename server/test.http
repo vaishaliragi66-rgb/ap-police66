@@ -82,3 +82,7 @@ Content-Type: application/json
   "visit_id": null
 }
 
+
+
+###
+http://localhost:6100/institute-api/analytics/696241bed5066b8df470b6b0

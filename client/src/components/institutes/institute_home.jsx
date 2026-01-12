@@ -11,7 +11,8 @@ import {
   FaFileMedical,
   FaClipboardList,
   FaHospital,
-  FaVials
+  FaVials,
+  FaBrain
 } from "react-icons/fa";
 import { IoClose, IoMenu } from "react-icons/io5";
 import axios from "axios";
@@ -89,6 +90,7 @@ const Institute_home = () => {
   { icon: <FaUsers />, label: "Register Visit", path: "/institutes/visit-register" },
   { icon: <FaPills />, label: "Main Store", path: "/institutions/main-store" },
   { icon: <FaClipboardList />, label: "Sub Store", path: "/institutes/sub-store" },
+  { icon: <FaBrain />, label: "AI Insights", path: "/institutes/ai-insights" }
 ];
 
 
