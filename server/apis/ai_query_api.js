@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Groq = require('groq-sdk');
 const { schemaDefinitions } = require('../utils/schemaExtractor');
+const expressAsyncHandler = require("express-async-handler");
 
 // Initialize Groq (works with or without API key)
 const groq = new Groq({
@@ -361,10 +362,250 @@ try {
     });
   }
 });
+function convertObjectIds(obj) {
+  // string ObjectId
+  if (typeof obj === "string" && /^[0-9a-fA-F]{24}$/.test(obj)) {
+    return new mongoose.Types.ObjectId(obj);
+  }
 
-// Health check endpoint
-router.get('/health', (req, res) => {
-  res.json({ status: 'AI Query API is running with Groq' });
+  // array
+  if (Array.isArray(obj)) {
+    return obj.map(convertObjectIds);
+  }
+
+  // object
+  if (obj && typeof obj === "object") {
+    const converted = {};
+    for (const key in obj) {
+      converted[key] = convertObjectIds(obj[key]);
+    }
+    return converted;
+  }
+
+  return obj;
+}
+async function resolveInstituteId(userQuery, instituteId) {
+  // If instituteId already provided, use it
+  if (instituteId) return instituteId;
+
+  // Try extracting institute name from query
+  const words = userQuery.toLowerCase();
+
+  const Institute = mongoose.connection.collection("institutes");
+
+  const institute = await Institute.findOne({
+    Institute_Name: { $regex: words, $options: "i" }
+  });
+
+  return institute ? institute._id : null;
+}
+
+router.post(
+  "/institute-query",
+  expressAsyncHandler(async (req, res) => {
+    const { userQuery, instituteId: bodyInstituteId } = req.body;
+
+    if (!userQuery) {
+      return res.status(400).json({ error: "Query is required" });
+    }
+
+    console.log("📝 User Query:", userQuery);
+
+    // ✅ Resolve institute ID (BY NAME OR ID)
+    const instituteId = await resolveInstituteId(
+      userQuery,
+      bodyInstituteId
+    );
+
+    if (!instituteId) {
+      return res.status(404).json({
+        error: "Institute not found",
+        message: "Could not identify institute from query"
+      });
+    }
+
+    console.log("🏥 Resolved Institute ID:", instituteId.toString());
+
+    /* ---------------- PROMPT ---------------- */
+    const prompt = `
+You are a MongoDB query generator.
+
+Schemas:
+${JSON.stringify(schemaDefinitions, null, 2)}
+
+IMPORTANT INSTITUTE RULES:
+
+1. Institute PROFILE queries (details, address, contact, info):
+   - collection: "Institute"
+   - operation: "find"
+   - project institute fields only
+
+2. Institute MEDICINE queries:
+   - collection: "Institute"
+   - operation: "aggregate"
+   - ALWAYS unwind Medicine_Inventory
+   - ALWAYS $lookup from "medicines"
+   - NEVER return Medicine_ID
+   - project Medicine_Name and Quantity
+
+User Query:
+"${userQuery}"
+
+InstituteId:
+"${instituteId}"
+
+Return ONLY JSON in this format:
+{
+  "collection": "CollectionName",
+  "operation": "find" | "aggregate",
+  "query": {} | [],
+  "projection": {},
+  "chartType": "bar|line|pie|none",
+  "chartConfig": {
+    "xField": "",
+    "yField": "",
+    "title": ""
+  }
+}
+`;
+
+    /* ---------------- AI CALL ---------------- */
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      temperature: 0,
+      max_tokens: 2048,
+      messages: [{ role: "user", content: prompt }]
+    });
+
+    let aiResponse = completion.choices[0].message.content;
+
+    /* ---------------- CLEAN RESPONSE ---------------- */
+    aiResponse = aiResponse
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .replace(/^[^{]*/g, "")
+      .replace(/[^}]*$/g, "")
+      .replace(/ObjectId\("([^"]+)"\)/g, '"$1"')
+      .replace(/new Date\(\)/g, '"$$NOW"')
+      .trim();
+
+    let mongoQuery;
+    try {
+      mongoQuery = JSON.parse(aiResponse);
+    } catch {
+      return res.status(500).json({
+        error: "AI returned invalid JSON",
+        raw: aiResponse
+      });
+    }
+
+    validateQuery(mongoQuery);
+
+    const { collection, operation, query, projection } = mongoQuery;
+    const Collection = mongoose.connection.collection(
+      collection.toLowerCase() + "s"
+    );
+
+    let results = [];
+
+    /* =====================================================
+       ✅ CASE 1: INSTITUTE PROFILE / DETAILS
+    ===================================================== */
+    if (collection === "Institute" && operation === "find") {
+      results = await Collection.find(
+        { _id: new mongoose.Types.ObjectId(instituteId) },
+        {
+          projection: {
+            _id: 0,
+            Institute_ID: 1,
+            Institute_Name: 1,
+            Address: 1,
+            Email_ID: 1,
+            Contact_No: 1
+          }
+        }
+      ).toArray();
+
+      return res.json({
+        success: true,
+        results,
+        chartType: "none",
+        chartConfig: null,
+        metadata: {
+          count: results.length,
+          collection: "Institute"
+        }
+      });
+    }
+
+    /* =====================================================
+       ✅ CASE 2: INSTITUTE MEDICINE / INVENTORY
+    ===================================================== */
+   if (collection === "Institute" && operation === "find") {
+
+  const isAllInstitutesQuery =
+    /all institutes|list institutes|show institutes/i.test(userQuery);
+
+  const filter = isAllInstitutesQuery
+    ? {} // ✅ NO FILTER → returns all institutes
+    : { _id: new mongoose.Types.ObjectId(instituteId) };
+
+  results = await Collection.find(filter, {
+    projection: {
+      _id: 0,
+      Institute_ID: 1,
+      Institute_Name: 1,
+      Address: 1,
+      Email_ID: 1,
+      Contact_No: 1
+    }
+  }).toArray();
+
+  return res.json({
+    success: true,
+    results,
+    chartType: "none",
+    chartConfig: null,
+    metadata: {
+      count: results.length,
+      collection: "Institute"
+    }
+  });
+}
+
+    /* =====================================================
+       ✅ CASE 3: ALL OTHER COLLECTIONS
+    ===================================================== */
+    else {
+      const safeQuery = convertObjectIds(query);
+      if (operation === "aggregate") {
+        results = await Collection.aggregate(safeQuery).toArray();
+      } else {
+        results = await Collection.find(safeQuery, { projection }).toArray();
+      }
+    }
+
+    /* ---------------- FINAL RESPONSE ---------------- */
+    res.json({
+      success: true,
+      results,
+      chartType: mongoQuery.chartType || "none",
+      chartConfig: mongoQuery.chartConfig || null,
+      metadata: {
+        count: results.length,
+        collection
+      }
+    });
+  })
+);
+
+
+
+/* -------------------------------------------------------
+   HEALTH CHECK
+------------------------------------------------------- */
+router.get("/health", (req, res) => {
+  res.json({ status: "AI Query API with Institute support running" });
 });
 
 module.exports = router;

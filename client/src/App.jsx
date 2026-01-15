@@ -35,6 +35,7 @@ import AdminLogin from "./components/admin/admin_login";
 import AdminDashboard from "./components/admin/admin_home";
 import AIInsights from "./components/institutes/AIInsights";
 import AdminInstituteReports from "./components/admin/institute_reports";
+import AIInsights2 from "./components/admin/ai_insights";
 
 import axios from "axios";
 import EmployeeReports from "./components/admin/employee_reports";
@@ -175,6 +176,9 @@ function App() {
     },{
       path:"/admin/institute-reports",
       element:<AdminInstituteReports/>
+    },{
+      path:"/admin/ai-insights",
+      element:<AIInsights2/>
     }
   ]);
 

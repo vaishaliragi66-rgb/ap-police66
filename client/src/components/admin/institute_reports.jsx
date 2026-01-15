@@ -25,6 +25,7 @@ export default function InstituteReports() {
   const [mailSubject, setMailSubject] = useState("");
   const [mailBody, setMailBody] = useState("");
   const [sending, setSending] = useState(false);
+  const adminEmail = localStorage.getItem("adminEmail");
 
   /* ===============================
      FETCH DATA
@@ -76,9 +77,7 @@ export default function InstituteReports() {
 
   return (
     <div className="container-fluid mt-4">
-      <h4 className="text-center mb-3">
-        Institute Reports (Admin)
-      </h4>
+      <h4 className="text-center mb-3">Institute Reports (Admin)</h4>
 
       {/* ===============================
           FILTERS
@@ -137,7 +136,6 @@ export default function InstituteReports() {
                 <td>{r.Institute_ID}</td>
                 <td>{r.Institute_Name}</td>
 
-                {/* CLICKABLE EMAIL */}
                 <td>
                   <button
                     className="btn btn-link p-0"
@@ -190,102 +188,34 @@ export default function InstituteReports() {
 
       {/* ===============================
           MEDICINES MODAL
-     {/* ===============================
-    MEDICINES MODAL
-================================*/}
-{selectedInstitute && (
-  <div
-    className="modal show fade d-block"
-    style={{ background: "#00000080" }}
-  >
-    <div className="modal-dialog modal-xl">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h5>
-            {selectedInstitute.Institute_Name} – Medicines Inventory
-          </h5>
-          <button
-            className="btn-close"
-            onClick={() => setSelectedInstitute(null)}
-          />
-        </div>
+      ================================*/}
+      {selectedInstitute && (
+        <div className="modal show fade d-block" style={{ background: "#00000080" }}>
+          <div className="modal-dialog modal-xl">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5>{selectedInstitute.Institute_Name} – Medicines Inventory</h5>
+                <button
+                  className="btn-close"
+                  onClick={() => setSelectedInstitute(null)}
+                />
+              </div>
 
-        <div className="modal-body">
-          {/* MAIN STORE */}
-          <h6 className="text-primary">Main Store Medicines</h6>
-          <div className="table-responsive mb-4">
-            <table className="table table-bordered table-sm">
-              <thead className="table-secondary">
-                <tr>
-                  <th>Medicine ID</th>
-                  <th>Medicine Name</th>
-                  <th>Type</th>
-                  <th>Quantity</th>
-                  <th>Expiry Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedInstitute.mainStore?.length ? (
-                  selectedInstitute.mainStore.map((m, i) => (
-                    <tr key={i}>
-                      <td>{m.Medicine_Code|| m.Medicine_Code || "—"}</td>
-                      <td>{m.Medicine_Name}</td>
-                      <td>{m.Type || "—"}</td>
-                      <td>{m.Quantity}</td>
-                      <td>{m.Expiry_Date}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="text-center">
-                      No medicines in Main Store
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              <div className="modal-body">
+                <h6 className="text-primary">Main Store Medicines</h6>
+                <pre className="small">
+                  {JSON.stringify(selectedInstitute.mainStore || [], null, 2)}
+                </pre>
 
-          {/* SUB STORE */}
-          <h6 className="text-success">Sub Store Medicines</h6>
-          <div className="table-responsive">
-            <table className="table table-bordered table-sm">
-              <thead className="table-secondary">
-                <tr>
-                  <th>Medicine ID</th>
-                  <th>Medicine Name</th>
-                  <th>Type</th>
-                  <th>Quantity</th>
-                  <th>Expiry Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedInstitute.subStore?.length ? (
-                  selectedInstitute.subStore.map((m, i) => (
-                    <tr key={i}>
-                      <td>{m.Medicine_Code|| m.Medicine_Code || "—"}</td>
-                      <td>{m.Medicine_Name}</td>
-                      <td>{m.Type || "—"}</td>
-                      <td>{m.Quantity}</td>
-                      <td>{m.Expiry_Date}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="text-center">
-                      No medicines in Sub Store
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                <h6 className="text-success">Sub Store Medicines</h6>
+                <pre className="small">
+                  {JSON.stringify(selectedInstitute.subStore || [], null, 2)}
+                </pre>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
 
       {/* ===============================
           COMPOSE MAIL MODAL
@@ -295,9 +225,7 @@ export default function InstituteReports() {
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
-                <h5>
-                  Compose Mail – {mailInstitute.Institute_Name}
-                </h5>
+                <h5>Compose Mail – {mailInstitute.Institute_Name}</h5>
                 <button
                   className="btn-close"
                   onClick={() => {
@@ -310,12 +238,13 @@ export default function InstituteReports() {
 
               <div className="modal-body">
                 <div className="mb-2">
+                  <label className="form-label">From (Admin)</label>
+                  <input className="form-control" value={adminEmail || ""} disabled />
+                </div>
+
+                <div className="mb-2">
                   <label className="form-label">To</label>
-                  <input
-                    className="form-control"
-                    value={mailInstitute.Email_ID}
-                    disabled
-                  />
+                  <input className="form-control" value={mailInstitute.Email_ID} disabled />
                 </div>
 
                 <div className="mb-2">
@@ -348,13 +277,14 @@ export default function InstituteReports() {
 
                 <button
                   className="btn btn-primary"
-                  disabled={sending || !mailSubject || !mailBody}
+                  disabled={sending || !mailSubject || !mailBody || !adminEmail}
                   onClick={async () => {
                     try {
                       setSending(true);
                       await axios.post(
                         `http://localhost:${BACKEND_PORT}/admin-api/send-mail`,
                         {
+                          from: adminEmail,
                           to: mailInstitute.Email_ID,
                           subject: mailSubject,
                           message: mailBody
@@ -364,7 +294,7 @@ export default function InstituteReports() {
                       setMailInstitute(null);
                       setMailSubject("");
                       setMailBody("");
-                    } catch (err) {
+                    } catch {
                       alert("Failed to send mail");
                     } finally {
                       setSending(false);

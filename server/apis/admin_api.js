@@ -649,18 +649,23 @@ const nodemailer = require("nodemailer");
 
 adminApp.post("/send-mail", async (req, res) => {
   try {
-    const { to, subject, message } = req.body;
+    const { from, to, subject, message } = req.body;
+
+    if (!from || !to) {
+      return res.status(400).json({ message: "Missing email fields" });
+    }
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.ADMIN_EMAIL,     // admin@gmail.com
-        pass: process.env.ADMIN_EMAIL_PASS // app password
+        user: process.env.ADMIN_EMAIL,       // Gmail used to SEND
+        pass: process.env.ADMIN_EMAIL_PASS   // App password
       }
     });
 
     await transporter.sendMail({
-      from: `"Admin Panel" <${process.env.ADMIN_EMAIL}>`,
+      from: `"${from}" <${process.env.ADMIN_EMAIL}>`,
+      replyTo: from,        // 👈 replies go to admin
       to,
       subject,
       text: message
@@ -672,6 +677,7 @@ adminApp.post("/send-mail", async (req, res) => {
     res.status(500).json({ message: "Mail sending failed" });
   }
 });
+
 
 
 module.exports = adminApp;

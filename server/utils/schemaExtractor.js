@@ -150,6 +150,19 @@ const schemaDefinitions = {
       createdAt: "Date",
       updatedAt: "Date"
     }
+  },Institute: {
+    _id: "ObjectId",
+    Institute_ID: "Number",
+    Institute_Name: "String",
+    Address: "Object",
+    Medicine_Inventory: [
+      {
+        Medicine_ID: "ObjectId -> Medicine",
+        Quantity: "Number"
+      }
+    ],
+    Employees: ["ObjectId -> Employee"],
+    Orders: ["ObjectId -> Order"]
   }
 };
 
