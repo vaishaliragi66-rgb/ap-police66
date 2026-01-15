@@ -396,7 +396,6 @@ const downloadPrescriptionPDF = (prescription) => {
 
   doc.rect(14, startY, pageWidth - 28, 22);
 
-
   doc.text(`Prescription Ref: ${prescription._id.slice(-6)}`, 18, startY + 7);
   doc.text(`Date: ${new Date(prescription.Timestamp).toLocaleString()}`, 18, startY + 14);
   
@@ -442,7 +441,15 @@ const downloadPrescriptionPDF = (prescription) => {
     { align: "center" }
   );
 
-  doc.save(`Prescription_${prescription._id.slice(-6)}.pdf`);
+  // FIXED: Open in new tab instead of trying to save directly
+  const pdfBlob = doc.output('blob');
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  
+  // Open in new tab
+  window.open(pdfUrl, '_blank');
+  
+  // Clean up
+  setTimeout(() => URL.revokeObjectURL(pdfUrl), 100);
 };
 
 

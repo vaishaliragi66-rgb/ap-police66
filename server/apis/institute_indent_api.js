@@ -20,7 +20,8 @@ indentApp.get("/generate", async (req, res) => {
     if (!institute) {
       return res.status(404).json({ message: "Institute not found" });
     }
-    const medicines = await Medicine.find({});
+  const medicines = await Medicine.find({ Institute_ID: instituteId });
+
 
     /* ---------- INVENTORY ---------- */
     const inventoryMap = new Map(
@@ -31,24 +32,27 @@ indentApp.get("/generate", async (req, res) => {
     );
 
     const items = medicines.map(med => {
-      const stockOnHand = inventoryMap.get(String(med._id)) || 0;
-      const bufferQty = Math.max(
-        med.Threshold_Qty || 10,
-        10
-      );
+  const stockOnHand = med.Quantity || 0;
 
+  const bufferQty = Math.max(
+    med.Threshold_Qty || 10,
+    10
+  );
 
-      const requiredQty = Math.max(bufferQty - stockOnHand, 0);
+  const requiredQty = Math.max(bufferQty - stockOnHand, 0);
 
-      return {
-        Medicine_Name: med.Medicine_Name,
-        Type: med.Type,
-        Category: med.Category,
-        Stock_On_Hand: stockOnHand,
-        Required_Quantity: requiredQty,
-        Remarks: requiredQty > 0 ? "Below buffer stock" : ""
-      };
-    });
+  return {
+    Medicine_Code: med.Medicine_Code,
+    Medicine_Name: med.Medicine_Name,
+    Type: med.Type,
+    Category: med.Category,
+    Stock_On_Hand: stockOnHand,
+    Buffer_Quantity: bufferQty,
+    Required_Quantity: requiredQty,
+    Remarks: requiredQty > 0 ? "Below buffer stock" : "Sufficient stock"
+  };
+});
+
 
     res.json({
       Institute_Name: institute.Institute_Name,
