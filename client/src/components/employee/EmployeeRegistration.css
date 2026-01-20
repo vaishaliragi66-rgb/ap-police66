@@ -1,0 +1,43 @@
+:root {
+    --primary: #4A70A9;
+    --primary-hover: #3E5F8C;
+    --bg-main: #F8FAFC;
+    --bg-soft: #EAF2FF;
+    --card-bg: #FFFFFF;
+    --border: #D6E0F0;
+    --text-main: #1F2933;
+    --text-muted: #6B7280;
+  }
+  
+  /* Page background */
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+  }
+  
+  /* Cards */
+  .card,
+  .custom-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  }
+  
+  /* Buttons */
+  .btn-primary {
+    background-color: var(--primary) !important;
+    border: none !important;
+  }
+  
+  .btn-primary:hover {
+    background-color: var(--primary-hover) !important;
+  }
+  
+  /* Input focus */
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.15rem rgba(74,112,169,0.25);
+  }
+  

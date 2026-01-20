@@ -174,36 +174,98 @@ useEffect(() => {
   );
 };
 
-  return (
-    <div className="container mt-5">
+return (
+  <div
+    style={{
+      backgroundColor: "#F8FAFC",
+      minHeight: "100vh",
+      padding: "40px 0",
+      fontFamily: "'Inter', sans-serif",
+    }}
+  >
+    <div className="container">
+
+      {/* Back Button */}
       <button
-        className="btn btn-outline-dark mb-3"
+        className="btn mb-3"
         onClick={() => navigate(-1)}
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D6E0F0",
+          borderRadius: "8px",
+          padding: "6px 14px",
+          fontSize: "14px",
+          color: "#1F2933",
+        }}
       >
         ← Back
       </button>
 
-      <div className="card shadow-sm">
+      {/* MAIN CARD */}
+      <div
+        className="card border-0"
+        style={{
+          borderRadius: "16px",
+          boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+        }}
+      >
         <div className="card-body">
-          <h4 className="text-center mb-4 fw-bold">
+
+          {/* Header Strip */}
+        <div
+          style={{
+            background: "linear-gradient(90deg, #F8FAFC, #F3F7FF)",
+            padding: "16px 24px",
+            borderBottom: "1px solid #D6E0F0",
+            borderRadius: "16px 16px 0 0",
+          }}
+          className="d-flex justify-content-between align-items-center"
+        >
+          <h4 style={{ fontWeight: 600, color: "#1F2933", margin: 0 }}>
             Diagnosis Reports
           </h4>
-          <div className="text-end mb-3">
-            <button
-              className="btn btn-sm btn-outline-secondary"
-              onClick={() => setRefreshKey(prev => prev + 1)}
-            >
-              Refresh Reports
-            </button>
-          </div>
+
+          <button
+            className="btn btn-sm"
+            style={{
+              backgroundColor: "#4A70A9",
+              color: "#FFFFFF",
+              borderRadius: "999px",
+              padding: "6px 16px",
+              fontWeight: 500,
+              border: "none",
+            }}
+            onClick={() => setRefreshKey((p) => p + 1)}
+          >
+            Refresh
+          </button>
+        </div>
+
+
+          {/* Empty State */}
           {reports.length === 0 ? (
             <p className="text-center text-muted">
               No diagnosis reports found.
             </p>
           ) : (
             <div className="table-responsive">
-              <table className="table table-bordered align-middle">
-                <thead className="table-dark">
+                    <table
+        className="table align-middle"
+        style={{
+          border: "1px solid #D6E0F0",
+          borderRadius: "12px",
+          overflow: "hidden",
+        }}
+            >
+
+            <thead
+              style={{
+                backgroundColor: "#F3F7FF",
+                color: "#1F2933",
+                fontWeight: 600,
+              }}
+            >
+
                   <tr>
                     <th>#</th>
                     <th>Patient</th>
@@ -214,33 +276,44 @@ useEffect(() => {
                     <th>Lab Report</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {splitReportsByDate(reports).map((report, index) => (
                     <tr key={report._id}>
                       <td>{index + 1}</td>
+
                       <td>
-                        {report.Employee?.Name}{" "}
-                        {report.Employee?.ABS_NO
-                          ? `(${report.Employee.ABS_NO})`
-                          : ""}
+                        {report.Employee?.Name}
+                        {report.Employee?.ABS_NO &&
+                          ` (${report.Employee.ABS_NO})`}
                       </td>
+
                       <td>
                         {report.IsFamilyMember
                           ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})`
                           : "Self"}
                       </td>
+
                       <td>
                         {report.Institute?.Institute_Name ||
                           "Medical Institute"}
                       </td>
+
                       <td>{report.Tests.length}</td>
+
                       <td>{formatDate(report)}</td>
+
                       <td>
                         <button
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() =>
-                            downloadLabReport(report)
-                          }
+                          className="btn btn-sm"
+                          style={{
+                            borderRadius: "999px",
+                            border: "1px solid #4A70A9",
+                            backgroundColor: "#FFFFFF",
+                            color: "#4A70A9",
+                            fontWeight: 500,
+                          }}
+                          onClick={() => downloadLabReport(report)}
                         >
                           Download Report
                         </button>
@@ -254,7 +327,9 @@ useEffect(() => {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default DiagnosisReport;

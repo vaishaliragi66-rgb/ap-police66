@@ -206,114 +206,165 @@ const AIInsights2 = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">AI Insights</h1>
-        </div>
-
-        {/* Query Input */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex gap-4">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="e.g., List employees with blood group O+, Show diabetes patients by age..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            />
-            <button
-              onClick={handleQuery}
-              disabled={loading || !query.trim()}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Processing...' : 'Ask AI'}
-            </button>
+    <div
+      style={{
+        backgroundColor: "#F8FAFC",
+        minHeight: "100vh",
+        padding: "30px 0",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <div className="container">
+  
+        {/* HEADER */}
+        <div
+          className="card border-0 mb-4"
+          style={{
+            borderRadius: "14px",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div className="card-body">
+            <h3 className="fw-bold mb-1 text-dark">AI Insights</h3>
+            <p className="text-muted mb-0">
+              Ask questions and visualize medical & inventory data
+            </p>
           </div>
-
-          {/* Sample Queries */}
-          <div className="mt-4">
-            <p className="text-sm text-gray-600 mb-2">Sample queries:</p>
-            <div className="flex flex-wrap gap-2">
-              {[
-                'List all employees with blood group O+',
-                'Show age distribution of diabetes patients',
-                'Count prescriptions by medicine name',
-                'Show family members with hypertension'
-              ].map(sample => (
+        </div>
+  
+        {/* QUERY INPUT */}
+        <div
+          className="card border-0 mb-4"
+          style={{
+            borderRadius: "14px",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div className="card-body">
+            <div className="row g-2 align-items-center">
+              <div className="col-md-9">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  className="form-control"
+                  placeholder="e.g. List employees with blood group O+, Count low stock medicines"
+                  disabled={loading}
+                  style={{ height: "44px" }}
+                />
+              </div>
+  
+              <div className="col-md-3 d-grid">
                 <button
-                  key={sample}
-                  onClick={() => setQuery(sample)}
-                  className="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                  className="btn"
+                  onClick={handleQuery}
+                  disabled={loading || !query.trim()}
+                  style={{
+                    height: "44px",
+                    backgroundColor: "#4A70A9",
+                    color: "#fff",
+                    fontWeight: 500,
+                  }}
                 >
-                  {sample}
+                  {loading ? "Processing..." : "Ask AI"}
                 </button>
-              ))}
+              </div>
+            </div>
+  
+            {/* SAMPLE QUERIES */}
+            <div className="mt-3">
+              <small className="text-muted">Quick examples:</small>
+              <div className="d-flex flex-wrap gap-2 mt-2">
+                {[
+                  "List employees with blood group O+",
+                  "Show diabetes patients by age",
+                  "Count medicines with low stock",
+                  "Family members with hypertension",
+                ].map((q) => (
+                  <button
+                    key={q}
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => setQuery(q)}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Error Display */}
+  
+        {/* ERROR */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800">❌ {error}</p>
+          <div className="alert alert-danger">
+            ❌ {error}
           </div>
         )}
-
-        {/* Results */}
+  
+        {/* RESULTS */}
         {results && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            {/* Controls */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setViewMode('table')}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    viewMode === 'table' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  📊 Table View
-                </button>
-                <button
-                  onClick={() => setViewMode('chart')}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    viewMode === 'chart' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                  disabled={results.chartType === 'none'}
-                >
-                  📈 Chart View
-                </button>
+          <div
+            className="card border-0"
+            style={{
+              borderRadius: "14px",
+              boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+            }}
+          >
+            <div className="card-body">
+  
+              {/* CONTROLS */}
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div className="btn-group">
+                  <button
+                    className={`btn ${
+                      viewMode === "table"
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                    }`}
+                    onClick={() => setViewMode("table")}
+                  >
+                    Table View
+                  </button>
+  
+                  <button
+                    className={`btn ${
+                      viewMode === "chart"
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                    }`}
+                    disabled={results.chartType === "none"}
+                    onClick={() => setViewMode("chart")}
+                  >
+                    Chart View
+                  </button>
+                </div>
+  
+                <div className="d-flex align-items-center gap-2">
+                  <span className="badge bg-success">
+                    {results.metadata.count} Records
+                  </span>
+  
+                  <button
+                    className="btn btn-outline-success btn-sm"
+                    onClick={downloadPDF}
+                  >
+                    Download PDF
+                  </button>
+                </div>
               </div>
-
-              <div className="flex gap-2">
-                <span className="px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm">
-                  ✓ {results.metadata.count} results
-                </span>
-                <button
-                  onClick={downloadPDF}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  📥 Download PDF
-                </button>
+  
+              {/* CONTENT */}
+              <div className="mt-3">
+                {viewMode === "table" ? renderTable() : renderChart()}
               </div>
-            </div>
-
-            {/* Content */}
-            <div className="mt-4">
-              {viewMode === 'table' ? renderTable() : renderChart()}
             </div>
           </div>
         )}
       </div>
     </div>
   );
+  
 };
 
 export default AIInsights2;

@@ -3,7 +3,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUserLock } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-
+import HealthShield from '../../assets/Employee_login.svg'
 const Employeelogin = () => {
   const [absNo, setAbsNo] = useState("");
   const [password, setPassword] = useState("");
@@ -39,120 +39,162 @@ const Employeelogin = () => {
 
   return (
     <div
-      className="d-flex flex-column align-items-center justify-content-center min-vh-100"
-      style={{
-        backgroundColor: "#f5f6f7",
-        fontFamily: "Inter, sans-serif",
-        padding: "30px 20px",
-      }}
+      className="min-vh-100 d-flex"
+      style={{ backgroundColor: "#F8FAFC", fontFamily: "Inter, sans-serif" }}
     >
-      {/* Header */}
-      <div className="text-center mb-4">
-        <FaUserLock size={46} className="text-dark mb-2" />
-        <h2 className="fw-bold text-dark mb-2">Employee Login</h2>
-        <div
-          style={{
-            width: "70px",
-            height: "3px",
-            backgroundColor: "#000",
-            borderRadius: "3px",
-            margin: "0 auto 15px auto",
-          }}
-        ></div>
-        <p className="text-muted" style={{ fontSize: "0.95rem" }}>
-          Welcome back! Please log in to your account
-        </p>
-      </div>
-
-      {/* Login Card */}
+      {/* LEFT SIDE – VISUAL / BRAND */}
       <div
-        className="bg-white p-5 rounded-4 shadow-sm w-100"
+        className="d-none d-md-flex flex-column justify-content-center align-items-center text-center"
         style={{
-          maxWidth: "400px",
-          border: "1px solid #e5e5e5",
-          boxShadow: "0 8px 25px rgba(0, 0, 0, 0.07)",
+          width: "50%",
+          backgroundColor: "#EAF2FF",
+          padding: "60px",
         }}
       >
-        <form onSubmit={handleLogin}>
-          {/* ABS Number */}
-          <div className="mb-3">
-            <label className="form-label text-muted small fw-semibold">
-              ABS Number
-            </label>
-            <input
-              type="text"
-              className="form-control border-0 shadow-sm"
-              placeholder="Enter your ABS Number"
-              value={absNo}
-              onChange={(e) => setAbsNo(e.target.value)}
-              required
-              style={{
-                backgroundColor: "#f8f8f8",
-                borderRadius: "10px",
-                height: "42px",
-              }}
-            />
-          </div>
+       <div
+        className="rounded-circle d-flex align-items-center justify-content-center mb-4"
+        style={{
+          width: "140px",
+          height: "140px",
+          
+        }}
+      >
+        <img
+          src={HealthShield}
+          alt="Health & Safety"
+          style={{
+            width: "400px",
+            height: "400px",
+          }}
+        />
+      </div>
 
-          {/* Password */}
-          <div className="mb-4">
-            <label className="form-label text-muted small fw-semibold">
-              Password
-            </label>
-            <input
-              type="password"
-              className="form-control border-0 shadow-sm"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{
-                backgroundColor: "#f8f8f8",
-                borderRadius: "10px",
-                height: "42px",
-              }}
-            />
-          </div>
-
-          {/* Login Button */}
-          <button
-            type="submit"
-            className="btn w-100 fw-semibold"
+  
+        <h2 style={{ color: "#1F2933", fontWeight: 600 }}>
+          AP Police Medical System
+        </h2>
+  
+        <p
+          style={{
+            color: "#6B7280",
+            fontSize: "15px",
+            maxWidth: "360px",
+            marginTop: "12px",
+          }}
+        >
+          Secure access for employees to manage medical inventory, records,
+          and internal operations.
+        </p>
+      </div>
+  
+      {/* RIGHT SIDE – LOGIN FORM */}
+      <div
+        className="d-flex flex-column justify-content-center align-items-center"
+        style={{
+          width: "100%",
+          maxWidth: "500px",
+          margin: "0 auto",
+          padding: "40px 24px",
+        }}
+      >
+        {/* Header */}
+        <div className="text-center mb-4">
+          <div
+            className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
             style={{
-              background: "linear-gradient(180deg, #1c1c1c, #000)",
-              color: "#fff",
-              borderRadius: "10px",
-              height: "45px",
-              fontSize: "0.95rem",
-              transition: "0.3s ease",
+              width: "60px",
+              height: "60px",
+              backgroundColor: "#EAF2FF",
+              color: "#4A70A9",
             }}
-            onMouseOver={(e) =>
-              (e.target.style.background = "linear-gradient(180deg, #000, #1c1c1c)")
-            }
-            onMouseOut={(e) =>
-              (e.target.style.background = "linear-gradient(180deg, #1c1c1c, #000)")
-            }
           >
-            Login
-          </button>
-
-          {/* Bottom Text */}
-          <div className="text-center mt-3">
-            <p className="text-muted small mb-0">
-              Don’t have an account?{" "}
-              <Link
-                to="/employee-register"
-                className="fw-semibold"
-                style={{ color: "#000", cursor: "pointer" }}
-              >
-                Register here
-              </Link>
-            </p>
+            <FaUserLock size={28} />
           </div>
-        </form>
+  
+          <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
+            Employee Login
+          </h3>
+          <p style={{ color: "#6B7280", fontSize: "14px" }}>
+            Login using your ABS number and password
+          </p>
+        </div>
+  
+        {/* Login Card */}
+        <div
+          className="bg-white w-100"
+          style={{
+            borderRadius: "14px",
+            padding: "32px",
+            border: "1px solid #D6E0F0",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+          }}
+        >
+          <form onSubmit={handleLogin}>
+            {/* ABS Number */}
+            <div className="mb-3">
+              <label className="form-label">ABS Number</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter ABS Number"
+                value={absNo}
+                onChange={(e) => setAbsNo(e.target.value)}
+                required
+              />
+            </div>
+  
+            {/* Password */}
+            <div className="mb-4">
+              <label className="form-label">Password</label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+  
+            {/* Button */}
+            <button
+              type="submit"
+              className="w-100"
+              style={{
+                backgroundColor: "#4A70A9",
+                color: "#fff",
+                border: "none",
+                borderRadius: "999px",
+                padding: "10px",
+                fontSize: "14px",
+                fontWeight: 500,
+              }}
+            >
+              Login
+            </button>
+  
+            {/* Footer */}
+            <div className="text-center mt-3">
+              <p style={{ fontSize: "13px", color: "#6B7280" }}>
+                Don’t have an account?{" "}
+                <Link
+                  to="/employee-register"
+                  style={{
+                    color: "#4A70A9",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Register here
+                </Link>
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
+  
 };
 
 export default Employeelogin;

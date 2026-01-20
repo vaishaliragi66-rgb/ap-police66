@@ -160,240 +160,195 @@ export default function EmployeeReports() {
   if (loading) return <div className="text-center mt-5">Loading…</div>;
 
   return (
-    <div className="container-fluid mt-4">
-      <h4 className="text-center mb-3">
-        Employee Medical Analytics Dashboard (All Institutes)
-      </h4>
-      {/* ===============================
-    FILTER PANEL
-================================*/}
-<div className="card mb-3">
-  <div className="card-body">
-    <div className="row g-2 align-items-center">
-      <div className="col-md-2">
-        <select
-          className="form-control"
-          value={role}
-          onChange={e => setRole(e.target.value)}
-        >
-          <option value="">All Roles</option>
-          <option value="Employee">Employee</option>
-          <option value="Family">Family</option>
-        </select>
-      </div>
-
-      <div className="col-md-2">
-        <input
-          className="form-control"
-          placeholder="Name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-        />
-      </div>
-
-      <div className="col-md-2">
-        <input
-          className="form-control"
-          placeholder="District"
-          value={district}
-          onChange={e => setDistrict(e.target.value)}
-        />
-      </div>
-
-      <div className="col-md-2">
-        <input
-          className="form-control"
-          placeholder="Communicable Disease"
-          value={comm}
-          onChange={e => setComm(e.target.value)}
-        />
-      </div>
-
-      <div className="col-md-2">
-        <input
-          className="form-control"
-          placeholder="Non-Communicable Disease"
-          value={nonComm}
-          onChange={e => setNonComm(e.target.value)}
-        />
-      </div>
-
-      <div className="col-md-2">
-        <input
-          className="form-control"
-          placeholder="Medicine"
-          value={medicine}
-          onChange={e => setMedicine(e.target.value)}
-        />
-      </div>
-
-      <div className="col-md-2 mt-2">
-        <input
-          className="form-control"
-          placeholder="Test"
-          value={test}
-          onChange={e => setTest(e.target.value)}
-        />
-      </div>
-
-      <div className="col-md-1 mt-2">
-        <input
-          className="form-control"
-          placeholder="Age ≥"
-          value={ageMin}
-          onChange={e => setAgeMin(e.target.value)}
-        />
-      </div>
-
-      <div className="col-md-1 mt-2">
-        <input
-          className="form-control"
-          placeholder="Age ≤"
-          value={ageMax}
-          onChange={e => setAgeMax(e.target.value)}
-        />
-      </div>
-
-      <div className="col-md-3 mt-3">
-        <div className="form-check">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            checked={abnormalOnly}
-            onChange={e => setAbnormalOnly(e.target.checked)}
-          />
-          <label className="form-check-label">
-            Show only abnormal test results
-          </label>
+    <div
+      style={{
+        backgroundColor: "#F8FAFC",
+        minHeight: "100vh",
+        padding: "28px",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <div className="container-fluid">
+  
+        {/* ================= HEADER ================= */}
+        <div className="mb-4">
+          <h3 style={{ fontWeight: 600, color: "#111827", marginBottom: 4 }}>
+            Employee Medical Analytics
+          </h3>
+          <p style={{ color: "#6B7280", fontSize: 14, margin: 0 }}>
+            Consolidated health records across all institutes
+          </p>
         </div>
-      </div>
-
-      <div className="col-md-4 mt-3 text-end">
-        <button
-          className="btn btn-success me-2"
-          onClick={() => downloadCSV(filteredRows)}
+  
+        {/* ================= FILTER PANEL ================= */}
+        <div
+          className="card mb-4 border-0"
+          style={{
+            borderRadius: 14,
+            boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+          }}
         >
-          Download CSV
-        </button>
-
-        <button
-          className="btn btn-danger"
-          onClick={() => downloadPDF(filteredRows)}
+          <div className="card-body">
+            <div className="row g-3 align-items-center">
+  
+              {[
+                { el: (
+                  <select className="form-control" value={role} onChange={e => setRole(e.target.value)}>
+                    <option value="">All Roles</option>
+                    <option value="Employee">Employee</option>
+                    <option value="Family">Family</option>
+                  </select>
+                )},
+                { el: <input className="form-control" placeholder="Name" value={name} onChange={e => setName(e.target.value)} /> },
+                { el: <input className="form-control" placeholder="District" value={district} onChange={e => setDistrict(e.target.value)} /> },
+                { el: <input className="form-control" placeholder="Communicable Disease" value={comm} onChange={e => setComm(e.target.value)} /> },
+                { el: <input className="form-control" placeholder="Non-Communicable Disease" value={nonComm} onChange={e => setNonComm(e.target.value)} /> },
+                { el: <input className="form-control" placeholder="Medicine" value={medicine} onChange={e => setMedicine(e.target.value)} /> },
+                { el: <input className="form-control" placeholder="Test" value={test} onChange={e => setTest(e.target.value)} /> },
+              ].map((f, i) => (
+                <div className="col-md-2" key={i}>
+                  {React.cloneElement(f.el, {
+                    style: {
+                      height: 42,
+                      borderRadius: 10,
+                      border: "1px solid #E5E7EB",
+                    }
+                  })}
+                </div>
+              ))}
+  
+              <div className="col-md-1">
+                <input className="form-control" placeholder="Age ≥" value={ageMin}
+                  onChange={e => setAgeMin(e.target.value)}
+                  style={{ height: 42, borderRadius: 10 }} />
+              </div>
+  
+              <div className="col-md-1">
+                <input className="form-control" placeholder="Age ≤" value={ageMax}
+                  onChange={e => setAgeMax(e.target.value)}
+                  style={{ height: 42, borderRadius: 10 }} />
+              </div>
+  
+              <div className="col-md-3">
+                <div className="form-check">
+                  <input className="form-check-input" type="checkbox"
+                    checked={abnormalOnly}
+                    onChange={e => setAbnormalOnly(e.target.checked)} />
+                  <label className="form-check-label text-muted">
+                    Show only abnormal test results
+                  </label>
+                </div>
+              </div>
+  
+              <div className="col-md-4 text-end">
+                <button className="btn btn-success me-2 px-4">Download CSV</button>
+                <button className="btn btn-danger px-4">Download PDF</button>
+              </div>
+  
+            </div>
+          </div>
+        </div>
+  
+        {/* ================= TABLE ================= */}
+        <div
+          className="card border-0"
+          style={{
+            borderRadius: 14,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+          }}
         >
-          Download PDF
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-      {/* TABLE */}
-      <div className="table-responsive">
-        <table className="table table-bordered table-hover align-middle">
-          <thead className="table-dark">
-            <tr>
-              <th>Role</th>
-              <th>Name</th>
-              <th>District</th>
-              <th>Age</th>
-              <th>Communicable</th>
-              <th>Non-Communicable</th>
-              <th>Tests</th>
-              <th>Medicines</th>
-              <th>First Visit</th>
-              <th>Last Visit</th>
-              <th>Details</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {paginatedRows.map((r, i) => {
-              const globalIndex = indexOfFirst + i;
-              const expanded = expandedRow === globalIndex;
-
-              return (
-                <tr key={globalIndex}>
-                  <td>{r.Role}</td>
-                  <td>{r.Name}</td>
-                  <td>{r.District || "—"}</td>
-                  <td>{r.Age ?? "—"}</td>
-
-                  <td>{expanded ? r.Communicable_Diseases?.join(", ") : r.Communicable_Diseases?.[0] || "—"}</td>
-                  <td>{expanded ? r.NonCommunicable_Diseases?.join(", ") : r.NonCommunicable_Diseases?.[0] || "—"}</td>
-
-                  <td>
-                    {expanded
-                      ? r.Tests?.map((t, idx) => (
-                          <div
-                            key={idx}
-                            style={{
-                              color: isAbnormal(t.Result_Value, t.Reference_Range) ? "red" : "inherit",
-                              fontWeight: isAbnormal(t.Result_Value, t.Reference_Range) ? "bold" : "normal"
-                            }}
-                          >
-                            {t.Test_Name}: {t.Result_Value} {t.Units}
-                          </div>
-                        ))
-                      : r.Tests?.[0]
-                      ? `${r.Tests[0].Test_Name}: ${r.Tests[0].Result_Value} ...`
-                      : "—"}
-                  </td>
-
-                  <td>
-                    {expanded
-                      ? r.Medicines?.map((m, idx) => (
-                          <div key={idx}>{m.Medicine_Name} ({m.Quantity})</div>
-                        ))
-                      : r.Medicines?.[0]
-                      ? `${r.Medicines[0].Medicine_Name} (${r.Medicines[0].Quantity}) ...`
-                      : "—"}
-                  </td>
-
-                  <td>{r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "—"}</td>
-                  <td>{r.Last_Visit_Date ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB") : "—"}</td>
-
-                  <td>
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => toggleRow(globalIndex)}
-                    >
-                      {expanded ? "Collapse" : "View More"}
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <table className="table align-middle mb-0">
+              <thead style={{ backgroundColor: "#F3F7FF" }}>
+                <tr style={{ color: "#374151", fontSize: 14 }}>
+                  {["Role","Name","District","Age","Communicable","Non-Communicable","Tests","Medicines","First Visit","Last Visit","Details"]
+                    .map(h => <th key={h}>{h}</th>)}
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+  
+              <tbody>
+                {paginatedRows.map((r, i) => {
+                  const idx = indexOfFirst + i;
+                  const expanded = expandedRow === idx;
+  
+                  return (
+                    <tr key={idx} style={{ borderBottom: "1px solid #E5E7EB" }}>
+                      <td>{r.Role}</td>
+                      <td style={{ fontWeight: 600 }}>{r.Name}</td>
+                      <td>{r.District || "—"}</td>
+                      <td>{r.Age ?? "—"}</td>
+  
+                      <td>{expanded ? r.Communicable_Diseases?.join(", ") : r.Communicable_Diseases?.[0] || "—"}</td>
+                      <td>{expanded ? r.NonCommunicable_Diseases?.join(", ") : r.NonCommunicable_Diseases?.[0] || "—"}</td>
+  
+                      <td>
+                        {expanded
+                          ? r.Tests?.map((t, k) => (
+                            <div key={k} style={{
+                              color: isAbnormal(t.Result_Value, t.Reference_Range) ? "#DC2626" : "#111",
+                              fontWeight: isAbnormal(t.Result_Value, t.Reference_Range) ? 600 : 400
+                            }}>
+                              {t.Test_Name}: {t.Result_Value} {t.Units}
+                            </div>
+                          ))
+                          : r.Tests?.[0]
+                          ? `${r.Tests[0].Test_Name}: ${r.Tests[0].Result_Value} ...`
+                          : "—"}
+                      </td>
+  
+                      <td>
+                        {expanded
+                          ? r.Medicines?.map((m, k) => (
+                            <div key={k}>{m.Medicine_Name} ({m.Quantity})</div>
+                          ))
+                          : r.Medicines?.[0]
+                          ? `${r.Medicines[0].Medicine_Name} (${r.Medicines[0].Quantity}) ...`
+                          : "—"}
+                      </td>
+  
+                      <td>{r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "—"}</td>
+                      <td>{r.Last_Visit_Date ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB") : "—"}</td>
+  
+                      <td>
+                        <button
+                          className="btn btn-sm"
+                          style={{
+                            borderRadius: 999,
+                            padding: "4px 14px",
+                            border: "1px solid #4F6FAF",
+                            background: "#fff",
+                            color: "#4F6FAF",
+                            fontWeight: 500
+                          }}
+                          onClick={() => toggleRow(idx)}
+                        >
+                          {expanded ? "Collapse" : "View"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+  
+        {/* ================= PAGINATION ================= */}
+        <div className="d-flex justify-content-center mt-4">
+          <ul className="pagination">
+            {[...Array(totalPages)].map((_, i) => (
+              <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
+                <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
+                  {i + 1}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+  
       </div>
-
-      {/* PAGINATION */}
-      <nav>
-        <ul className="pagination justify-content-center">
-          <li className={`page-item ${currentPage === 1 && "disabled"}`}>
-            <button className="page-link" onClick={() => setCurrentPage(p => p - 1)}>
-              Prev
-            </button>
-          </li>
-
-          {[...Array(totalPages)].map((_, i) => (
-            <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
-              <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
-                {i + 1}
-              </button>
-            </li>
-          ))}
-
-          <li className={`page-item ${currentPage === totalPages && "disabled"}`}>
-            <button className="page-link" onClick={() => setCurrentPage(p => p + 1)}>
-              Next
-            </button>
-          </li>
-        </ul>
-      </nav>
-
-      
     </div>
   );
+  
+  
 }

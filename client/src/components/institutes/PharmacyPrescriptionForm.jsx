@@ -3,6 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import "./PharmacyPrescriptionForm.css";
+import { useNavigate } from "react-router-dom";
 
 const PharmacyPrescriptionForm = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
@@ -21,6 +22,7 @@ const PharmacyPrescriptionForm = () => {
   const [lastTwoVisits, setLastTwoVisits] = useState([]);
   const [showDoctorPrescription, setShowDoctorPrescription] = useState(true);
   const [filteredDoctorPrescription, setFilteredDoctorPrescription] = useState([]);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     Institute_ID: "",
@@ -495,10 +497,29 @@ const handleSubmit = async (e) => {
       <div className="row justify-content-center">
         {/* FORM - MAIN CONTENT */}
         <div className="col-lg-8">
+          {/* ===== TOP BAR WITH INVENTORY BUTTON ===== */}
+<div className="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 className="fw-bold mb-0">Pharmacy Prescription</h4>
+    <small className="text-muted">
+      Issue medicines to employees
+    </small>
+  </div>
+
+  <button
+    className="btn btn-outline-primary"
+    onClick={() => navigate("/institutes/inventory")}
+  >
+    🏥 Inventory
+  </button>
+</div>
+
           <div className="card shadow border-0 pharmacy-card">
             <div className="card-header bg-dark text-white">
               <h5 className="mb-0">Pharmacy Prescription</h5>
             </div>
+
+            
 
             <div className="card-body">
               <form onSubmit={handleSubmit}>
@@ -727,7 +748,7 @@ value={
         <span className="badge bg-warning text-dark">
           Not in sub-store
         </span>
-      )}
+      )}  
     </button>
   );
 })}

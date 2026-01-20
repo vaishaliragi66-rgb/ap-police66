@@ -99,61 +99,59 @@ const AdminLogin = () => {
     <div
       className="d-flex flex-column align-items-center justify-content-center min-vh-100"
       style={{
-        backgroundColor: "#f5f6f7",
+        background: "linear-gradient(180deg, #F8FAFC, #EEF2F7)",
         fontFamily: "Inter, sans-serif",
         padding: "30px 20px",
       }}
     >
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="mb-3">
-          <div 
-            className="rounded-circle mx-auto d-flex align-items-center justify-content-center"
-            style={{
-              width: "80px",
-              height: "80px",
-              backgroundColor: "#1c1c1c",
-              color: "white"
-            }}
-          >
-            <FaUserShield size={32} />
-          </div>
+        <div
+          className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+          style={{
+            width: "80px",
+            height: "80px",
+            backgroundColor: "#4A70A9",
+            color: "#fff",
+          }}
+        >
+          <FaUserShield size={32} />
         </div>
+  
         <h2 className="fw-bold text-dark mb-2">Admin Login</h2>
+  
         <div
           style={{
             width: "70px",
             height: "3px",
-            backgroundColor: "#1c1c1c",
+            backgroundColor: "#4A70A9",
+            opacity: 0.7,
             borderRadius: "3px",
-            margin: "0 auto 15px auto",
+            margin: "0 auto 14px auto",
           }}
-        ></div>
+        />
+  
         <p className="text-muted" style={{ fontSize: "0.95rem" }}>
-          Access the administrator dashboard
+          Secure access to administrator dashboard
         </p>
       </div>
-
-      {/* Error Message */}
+  
+      {/* Error */}
       {error && (
-        <div className="alert alert-danger alert-dismissible fade show w-100 mb-3" style={{ maxWidth: "400px" }}>
-          <strong>Error:</strong> {error}
-          <button 
-            type="button" 
-            className="btn-close" 
-            onClick={() => setError("")}
-            aria-label="Close"
-          ></button>
+        <div
+          className="alert alert-danger w-100 mb-3"
+          style={{ maxWidth: "400px" }}
+        >
+          {error}
         </div>
       )}
-
+  
       {/* Login Card */}
       <div
         className="bg-white p-5 rounded-4 shadow-sm w-100"
         style={{
           maxWidth: "400px",
-          border: "1px solid #e5e5e5",
-          boxShadow: "0 8px 25px rgba(0, 0, 0, 0.07)",
+          border: "1px solid #E2E8F0",
         }}
       >
         <form onSubmit={handleLogin}>
@@ -168,16 +166,16 @@ const AdminLogin = () => {
               placeholder="admin@example.com"
               value={email}
               onChange={handleEmailChange}
-              required
               disabled={loading}
+              required
               style={{
-                backgroundColor: "#f8f8f8",
+                backgroundColor: "#F8FAFC",
                 borderRadius: "10px",
                 height: "42px",
               }}
             />
           </div>
-
+  
           {/* Password */}
           <div className="mb-4">
             <label className="form-label text-muted small fw-semibold">
@@ -189,84 +187,76 @@ const AdminLogin = () => {
               placeholder="Enter your password"
               value={password}
               onChange={handlePasswordChange}
-              required
               disabled={loading}
+              required
               style={{
-                backgroundColor: "#f8f8f8",
+                backgroundColor: "#F8FAFC",
                 borderRadius: "10px",
                 height: "42px",
               }}
             />
           </div>
-
-          {/* Forgot Password Link (Optional) */}
+  
+          {/* Forgot Password */}
           <div className="text-end mb-4">
             <Link
               to="/admin/forgot-password"
               className="small text-muted text-decoration-none"
-              style={{ fontSize: "0.85rem" }}
             >
               Forgot Password?
             </Link>
           </div>
-
-          {/* Login Button */}
+  
+          {/* Button */}
           <button
             type="submit"
             className="btn w-100 fw-semibold"
             disabled={loading}
             style={{
-              background: "linear-gradient(180deg, #1c1c1c, #000)",
+              background: "linear-gradient(135deg, #4A70A9, #355C8C)",
               color: "#fff",
-              borderRadius: "10px",
-              height: "45px",
+              borderRadius: "12px",
+              height: "46px",
               fontSize: "0.95rem",
-              transition: "0.3s ease",
-              opacity: loading ? 0.7 : 1,
+              letterSpacing: "0.4px",
+              boxShadow: "0 6px 14px rgba(74,112,169,0.35)",
+              border: "none",
+              transition: "all 0.25s ease",
             }}
-            onMouseOver={(e) => {
-              if (!loading) {
-                e.target.style.background = "linear-gradient(180deg, #000, #1c1c1c)";
-              }
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-1px)";
+              e.target.style.boxShadow = "0 10px 20px rgba(74,112,169,0.45)";
             }}
-            onMouseOut={(e) => {
-              if (!loading) {
-                e.target.style.background = "linear-gradient(180deg, #1c1c1c, #000)";
-              }
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 6px 14px rgba(74,112,169,0.35)";
             }}
           >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Logging in...
-              </>
-            ) : (
-              "Login as Admin"
-            )}
+            {loading ? "Logging in..." : "Login as Admin"}
           </button>
 
-          {/* Registration Link */}
+  
+          {/* Links */}
           <div className="text-center mt-3">
             <p className="text-muted small mb-0">
               Need admin access?{" "}
               <Link
                 to="/admin-register"
-                className="fw-semibold"
-                style={{ color: "#1c1c1c", cursor: "pointer" }}
+                className="fw-semibold text-decoration-none"
+                style={{ color: "#4A70A9" }}
               >
                 Register here
               </Link>
             </p>
           </div>
-
-          {/* Employee Login Link */}
+  
           <div className="text-center mt-2">
             <p className="text-muted small mb-0">
               Are you an employee?{" "}
               <Link
                 to="/employee-login"
                 className="text-decoration-none"
-                style={{ color: "#6c757d" }}
+                style={{ color: "#6B7280" }}
               >
                 Employee Login
               </Link>
@@ -274,16 +264,25 @@ const AdminLogin = () => {
           </div>
         </form>
       </div>
-
-      {/* Security Notice */}
-      <div className="text-center mt-4" style={{ maxWidth: "400px" }}>
+  
+      {/* Security Note */}
+      <div
+        className="text-center mt-4"
+        style={{
+          backgroundColor: "#F3F7FF",
+          border: "1px solid #D6E0F0",
+          borderRadius: "10px",
+          padding: "10px",
+          maxWidth: "400px",
+        }}
+      >
         <p className="text-muted small mb-0">
-          <i className="fas fa-shield-alt me-1"></i>
-          This is a secure administrator portal. Unauthorized access is prohibited.
+          🔒 Secure administrator access • All actions are logged
         </p>
       </div>
     </div>
   );
+  
 };
 
 export default AdminLogin;

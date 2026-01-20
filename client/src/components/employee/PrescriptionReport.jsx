@@ -83,79 +83,204 @@ const PrescriptionReport = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <button
-        className="btn btn-secondary mb-3"
-        onClick={() => window.history.back()}
-      >
-        ← Back
-      </button>
-
-      <div className="card shadow p-3">
-        <h4 className="text-center mb-3">All Prescriptions</h4>
-
-        <div className="table-responsive">
-          <table className="table table-bordered table-striped align-middle">
-            <thead className="table-dark">
-              <tr>
-                <th>#</th>
-                <th>Institute</th>
-                <th>Person</th>
-                <th>Medicine</th>
-                <th>Quantity</th>
-                <th>Date Given</th>
-                <th>Receipt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prescriptions.length > 0 ? (
-                prescriptions.map((p, idx) =>
-                  p.Medicines.map((m, i) => (
-                    <tr key={`${p._id}-${i}`}>
-                      {i === 0 && (
-                        <>
-                          <td rowSpan={p.Medicines.length}>
-                            {idx + 1}
-                          </td>
-                          <td rowSpan={p.Medicines.length}>
-                            {p.Institute?.Institute_Name || "—"}
-                          </td>
-                          <td rowSpan={p.Medicines.length}>
-                            {p.IsFamilyMember
-                              ? `${p.FamilyMember?.Name} (${p.FamilyMember?.Relationship})`
-                              : `${p.Employee?.Name} (Employee)`}
-                          </td>
-                        </>
-                      )}
-                      <td>{m.Medicine_Name}</td>
-                      <td>{m.Quantity}</td>
-                      <td>{formatDate(p.Timestamp)}</td>
-                      <td>
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() =>
-                            downloadReceipt(p, m)
+    <div
+      style={{
+        backgroundColor: "#F8FAFC",
+        minHeight: "100vh",
+        padding: "40px 0",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <div className="container">
+  
+        {/* Back */}
+        <button
+          className="btn mb-4"
+          onClick={() => window.history.back()}
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D6E0F0",
+            borderRadius: "8px",
+            padding: "6px 14px",
+            fontSize: "14px",
+            color: "#1F2933",
+          }}
+        >
+          ← Back
+        </button>
+  
+        {/* PAGE HEADER */}
+        <div className="mb-4">
+          <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
+            Prescription Records
+          </h3>
+          <p style={{ color: "#6B7280", marginBottom: 0 }}>
+            All medicines issued to you and your family members
+          </p>
+        </div>
+  
+        {/* SUMMARY BAR */}
+        <div className="d-flex gap-3 mb-4 flex-wrap">
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #D6E0F0",
+              borderRadius: "12px",
+              padding: "14px 20px",
+              fontWeight: 600,
+              color: "#1F2933",
+            }}
+          >
+            Total Prescriptions:{" "}
+            <span style={{ color: "#4A70A9" }}>
+              {prescriptions.length}
+            </span>
+          </div>
+  
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #D6E0F0",
+              borderRadius: "12px",
+              padding: "14px 20px",
+              fontWeight: 600,
+              color: "#1F2933",
+            }}
+          >
+            Total Medicines:{" "}
+            <span style={{ color: "#4A70A9" }}>
+              {prescriptions.reduce(
+                (acc, p) => acc + p.Medicines.length,
+                0
+              )}
+            </span>
+          </div>
+        </div>
+  
+        {/* TABLE CARD */}
+        <div
+          className="card border-0"
+          style={{
+            borderRadius: "16px",
+            boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+          }}
+        >
+          <div className="card-body">
+  
+            {prescriptions.length === 0 ? (
+              <p className="text-center text-muted">
+                No prescriptions found.
+              </p>
+            ) : (
+              <div className="table-responsive">
+                <table
+                  className="table align-middle"
+                  style={{
+                    border: "1px solid #D6E0F0",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                  }}
+                >
+                  <thead
+                    style={{
+                      backgroundColor: "#F3F7FF",
+                      color: "#1F2933",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <tr>
+                      <th>#</th>
+                      <th>Institute</th>
+                      <th>Person</th>
+                      <th>Medicine</th>
+                      <th>Qty</th>
+                      <th>Date</th>
+                      <th>Receipt</th>
+                    </tr>
+                  </thead>
+  
+                  <tbody>
+                    {prescriptions.map((p, idx) =>
+                      p.Medicines.map((m, i) => (
+                        <tr
+                          key={`${p._id}-${i}`}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "#F8FAFC")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "transparent")
                           }
                         >
-                          Download
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center">
-                    No prescriptions found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                          {i === 0 && (
+                            <>
+                              <td rowSpan={p.Medicines.length}>
+                                {idx + 1}
+                              </td>
+  
+                              <td rowSpan={p.Medicines.length}>
+                                {p.Institute?.Institute_Name || "—"}
+                              </td>
+  
+                              <td rowSpan={p.Medicines.length}>
+                                <span
+                                  style={{
+                                    padding: "4px 12px",
+                                    borderRadius: "999px",
+                                    fontSize: "12px",
+                                    fontWeight: 600,
+                                    backgroundColor: p.IsFamilyMember
+                                      ? "#FFF4E5"
+                                      : "#EAF2FF",
+                                    color: p.IsFamilyMember
+                                      ? "#92400E"
+                                      : "#1D4ED8",
+                                  }}
+                                >
+                                  {p.IsFamilyMember
+                                    ? `${p.FamilyMember?.Name} (${p.FamilyMember?.Relationship})`
+                                    : "Self"}
+                                </span>
+                              </td>
+                            </>
+                          )}
+  
+                          <td>{m.Medicine_Name}</td>
+                          <td>{m.Quantity}</td>
+                          <td>{formatDate(p.Timestamp)}</td>
+  
+                          <td>
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                borderRadius: "999px",
+                                backgroundColor: "#EAF2FF",
+                                color: "#4A70A9",
+                                fontWeight: 600,
+                                border: "none",
+                                padding: "6px 14px",
+                              }}
+                              onClick={() => downloadReceipt(p, m)}
+                            >
+                              Download
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+  
+          </div>
         </div>
       </div>
     </div>
   );
+  
+  
 };
 
 export default PrescriptionReport;

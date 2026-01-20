@@ -73,136 +73,141 @@ const handleSubmit = async (e) => {
 };
   
 
-  return (
+return (
+  <div
+    className="d-flex flex-column align-items-center justify-content-center min-vh-100"
+    style={{
+      backgroundColor: "#F8FAFC",
+      fontFamily: "'Inter', sans-serif",
+      padding: "24px",
+    }}
+  >
+    {/* Header */}
+    <div className="text-center mb-4">
+      <div
+        className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+        style={{
+          width: "64px",
+          height: "64px",
+          backgroundColor: "#EAF2FF",
+          color: "#4A70A9",
+        }}
+      >
+        <FaUniversity size={30} />
+      </div>
+
+      <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
+        Institute Login
+      </h3>
+      <p style={{ color: "#6B7280", fontSize: "14px" }}>
+        Access your institute dashboard
+      </p>
+    </div>
+
+    {/* Login Card */}
     <div
-      className="d-flex flex-column align-items-center justify-content-center min-vh-100"
       style={{
-        backgroundColor: "#f5f6f7",
-        fontFamily: "Inter, sans-serif",
+        width: "100%",
+        maxWidth: "420px",
+        backgroundColor: "#FFFFFF",
+        borderRadius: "16px",
+        padding: "32px",
+        border: "1px solid #D6E0F0",
+        boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
       }}
     >
-      {/* Header */}
-      <div className="text-center mb-4">
-        <h2
-          className="fw-bold text-dark mb-2"
-          style={{ fontSize: "2.4rem", letterSpacing: "0.4px" }}
+      <form onSubmit={handleSubmit}>
+        {/* Email */}
+        <div className="mb-3">
+          <label
+            className="form-label"
+            style={{ fontSize: "13px", color: "#6B7280" }}
+          >
+            Email Address
+          </label>
+          <input
+            type="email"
+            className="form-control"
+            name="Email_ID"
+            placeholder="Enter your email"
+            value={formData.Email_ID}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Password */}
+        <div className="mb-4">
+          <label
+            className="form-label"
+            style={{ fontSize: "13px", color: "#6B7280" }}
+          >
+            Password
+          </label>
+          <input
+            type="password"
+            className="form-control"
+            name="password"
+            placeholder="Enter your password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: "100%",
+            backgroundColor: "#4A70A9",
+            color: "#FFFFFF",
+            border: "none",
+            borderRadius: "999px",
+            padding: "10px",
+            fontSize: "14px",
+            fontWeight: 500,
+          }}
         >
-          <FaUniversity className="text-dark" />
-          Institute Login
-        </h2>
-        <p className="text-muted" style={{ fontSize: "0.9rem" }}>
-          Access your institute dashboard and manage medical inventory
+          {loading ? "Logging in..." : "Login"}
+        </button>
+      </form>
+
+      {/* Register Redirect */}
+      <div className="text-center mt-3">
+        <p style={{ fontSize: "14px", color: "#6B7280" }}>
+          Don’t have an account?{" "}
+          <span
+            onClick={() => navigate("/institutes/register")}
+            style={{
+              color: "#4A70A9",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Register here
+          </span>
         </p>
       </div>
 
-      {/* Login Card */}
-      <div
-        className="bg-white rounded-4 shadow-sm p-4"
-        style={{
-          width: "100%",
-          maxWidth: "400px",
-          border: "1px solid #e5e5e5",
-          boxShadow:
-            "0 8px 25px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05)",
-        }}
-      >
-        <form onSubmit={handleSubmit}>
-          {/* Email */}
-          <div className="mb-3">
-            <label className="form-label text-muted small fw-semibold">
-              Email
-            </label>
-            <input
-              type="email"
-              className="form-control border-0 shadow-sm"
-              name="Email_ID"
-              placeholder="Enter your email"
-              value={formData.Email_ID}
-              onChange={handleChange}
-              required
-              style={{
-                backgroundColor: "#f8f8f8",
-                borderRadius: "10px",
-                height: "42px",
-              }}
-            />
-          </div>
-
-          {/* Password */}
-          <div className="mb-4">
-            <label className="form-label text-muted small fw-semibold">
-              Password
-            </label>
-            <input
-              type="password"
-              className="form-control border-0 shadow-sm"
-              name="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              style={{
-                backgroundColor: "#f8f8f8",
-                borderRadius: "10px",
-                height: "42px",
-              }}
-            />
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn w-100 fw-semibold"
-            style={{
-              background: "linear-gradient(180deg, #1c1c1c, #000)",
-              color: "#fff",
-              borderRadius: "10px",
-              height: "42px",
-              fontSize: "0.95rem",
-              letterSpacing: "0.3px",
-              transition: "all 0.3s ease",
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background =
-                "linear-gradient(180deg, #000, #1c1c1c)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background =
-                "linear-gradient(180deg, #1c1c1c, #000)";
-            }}
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-
-        {/* Register Redirect */}
-        <div className="text-center mt-3">
-          <p className="text-muted small mb-0">
-            Don’t have an account?{" "}
-            <a
-              onClick={() => navigate("/institutes/register")}
-              className="fw-semibold"
-              style={{ color: "#000", cursor: "pointer" }}
-            >
-              Register here
-            </a>
-          </p>
+      {/* Message */}
+      {message && (
+        <div
+          className={`alert mt-3 text-center ${
+            message.startsWith("✅")
+              ? "alert-success"
+              : "alert-danger"
+          }`}
+          style={{ fontSize: "14px" }}
+        >
+          {message}
         </div>
-
-        {/* Message */}
-        {message && (
-          <div
-            className={`alert mt-4 text-center ${
-              message.startsWith("✅") ? "alert-success" : "alert-danger"
-            }`}
-          >
-            {message}
-          </div>
-        )}
-      </div>
+      )}
     </div>
-  );
+  </div>
+);
+
 };
 
 export default InstituteLogin;

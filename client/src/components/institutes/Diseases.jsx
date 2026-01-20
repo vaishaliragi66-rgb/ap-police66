@@ -283,322 +283,233 @@ const Diseases = () => {
       ? communicableDiseases
       : nonCommunicableDiseases;
 
-  return (
-    <div
-      style={{
-        maxWidth: 600,
-        margin: "40px auto",
-        padding: 24,
-        background: "#fff",
-        borderRadius: 8,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-      }}
-    >
-      <h2 style={{ textAlign: "center", marginBottom: 24 }}>🧬 Disease Entry Form</h2>
-
-      <form onSubmit={handleSubmit} autoComplete="off">
-        {/* Institute */}
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Institute</label>
-          <input
-            type="text"
-            value={instituteName || "Loading..."}
-            readOnly
-            style={{
-              width: "100%",
-              padding: "8px 12px",
-              borderRadius: 6,
-              border: "1px solid #ccc",
-              backgroundColor: "#f5f5f5",
-            }}
-          />
-        </div>
-
-        {/* Employee Search */}
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Employee ABS_NO</label>
-          <input
-            type="text"
-            placeholder="Type ABS_NO to search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px 12px",
-              borderRadius: 6,
-              border: "1px solid #ccc",
-            }}
-          />
-          {searchTerm && filteredEmployees.length > 0 && (
-            <div
-              style={{
-                border: "1px solid #ddd",
-                borderTop: "none",
-                maxHeight: 150,
-                overflowY: "auto",
-                backgroundColor: "white",
-                borderRadius: "0 0 6px 6px",
-              }}
-            >
-              {filteredEmployees.map((emp) => (
+      return (
+        <div className="container-fluid py-4" style={{ background: "#f5f8fe" }}>
+          <div className="row justify-content-center">
+            <div className="col-lg-8">
+      
+              {/* CARD */}
+              <div
+                className="card border-0 shadow-sm"
+                style={{ borderRadius: 14 }}
+              >
+                {/* HEADER */}
                 <div
-                  key={emp._id}
-                  onClick={() => handleEmployeeSelect(emp)}
+                  className="card-header border-0"
                   style={{
-                    padding: "8px 12px",
-                    cursor: "pointer",
-                    borderBottom: "1px solid #eee",
-                    transition: "background-color 0.2s",
+                    background: "#000",
+                    color: "#fff",
+                    borderRadius: "14px 14px 0 0"
                   }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = "#f5f5f5"}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                 >
-                  <strong>{emp.ABS_NO}</strong> — {emp.Name} {emp.Email ? `(${emp.Email})` : ""}
+                  <h5 className="mb-0 fw-semibold">🧬 Disease Entry</h5>
+                  <small className="opacity-75">
+                    Record employee & family disease information
+                  </small>
                 </div>
-              ))}
-            </div>
-          )}
-          {searchTerm && filteredEmployees.length === 0 && (
-            <div style={{ padding: "8px 12px", color: "#666", fontStyle: "italic" }}>
-              No employees found
-            </div>
-          )}
-        </div>
-
-        {/* Family Member Checkbox */}
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              name="IsFamilyMember"
-              checked={formData.IsFamilyMember}
-              onChange={handleCheckboxChange}
-              style={{ marginRight: 8 }}
-            />
-            <span style={{ fontWeight: "bold" }}>Disease for Family Member?</span>
-          </label>
-        </div>
-
-        {/* Family Member Select */}
-        {formData.IsFamilyMember && (
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Select Family Member</label>
-            <select
-              name="FamilyMember_ID"
-              value={formData.FamilyMember_ID}
-              onChange={handleChange}
-              required={formData.IsFamilyMember}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-                backgroundColor: familyMembers.length === 0 ? "#f9f9f9" : "white",
-              }}
-            >
-              <option value="">Select Family Member</option>
-              {familyMembers.length === 0 ? (
-                <option value="" disabled>No family members found</option>
-              ) : (
-                familyMembers.map((f) => (
-                  <option key={f._id} value={f._id}>
-                    {f.Name} ({f.Relationship || "Unknown"})
-                  </option>
-                ))
-              )}
-            </select>
-            {familyMembers.length === 0 && formData.Employee_ID && (
-              <div style={{ fontSize: "12px", color: "#666", marginTop: 4 }}>
-                This employee has no registered family members.
+      
+                {/* BODY */}
+                <div className="card-body p-4">
+      
+                  {/* Institute */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Institute</label>
+                    <input
+                      className="form-control bg-light"
+                      value={instituteName || "Loading..."}
+                      readOnly
+                    />
+                  </div>
+      
+                  {/* Employee Search */}
+                  <div className="mb-3 position-relative">
+                    <label className="form-label fw-semibold">Employee ABS No</label>
+                    <input
+                      className="form-control"
+                      placeholder="Type ABS No..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+      
+                    {searchTerm && filteredEmployees.length > 0 && (
+                      <div
+                        className="list-group position-absolute w-100 shadow-sm"
+                        style={{ zIndex: 10 }}
+                      >
+                        {filteredEmployees.map(emp => (
+                          <button
+                            type="button"
+                            key={emp._id}
+                            className="list-group-item list-group-item-action"
+                            onClick={() => handleEmployeeSelect(emp)}
+                          >
+                            <strong>{emp.ABS_NO}</strong> — {emp.Name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+      
+                  {/* Family Member */}
+                  <div className="form-check mb-3">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      name="IsFamilyMember"
+                      checked={formData.IsFamilyMember}
+                      onChange={handleCheckboxChange}
+                    />
+                    <label className="form-check-label fw-semibold">
+                      Disease for Family Member
+                    </label>
+                  </div>
+      
+                  {formData.IsFamilyMember && (
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold">Family Member</label>
+                      <select
+                        className="form-select"
+                        name="FamilyMember_ID"
+                        value={formData.FamilyMember_ID}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select Family Member</option>
+                        {familyMembers.map(f => (
+                          <option key={f._id} value={f._id}>
+                            {f.Name} ({f.Relationship})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+      
+                  <hr className="my-4" />
+      
+                  {/* Disease Section */}
+                  <h6 className="fw-bold mb-3 text-primary">
+                    Disease Details
+                  </h6>
+      
+                  <div className="row g-3">
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Category</label>
+                      <select
+                        className="form-select"
+                        name="Category"
+                        value={formData.Category}
+                        onChange={handleCategoryChange}
+                      >
+                        <option value="Communicable">Communicable</option>
+                        <option value="Non-Communicable">Non-Communicable</option>
+                      </select>
+                    </div>
+      
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Disease Name</label>
+                      <select
+                        className="form-select"
+                        value={formData.Disease_Name}
+                        onChange={handleDiseaseNameChange}
+                      >
+                        <option value="">Select Disease</option>
+                        {currentDiseaseList.map((d, i) => (
+                          <option key={i} value={d}>{d}</option>
+                        ))}
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+      
+                  {showOtherDiseaseInput && (
+                    <div className="mt-3">
+                      <input
+                        className="form-control"
+                        placeholder="Enter disease name"
+                        value={formData.Disease_Name}
+                        onChange={(e) =>
+                          setFormData(prev => ({ ...prev, Disease_Name: e.target.value }))
+                        }
+                      />
+                    </div>
+                  )}
+      
+                  <div className="mt-3">
+                    <label className="form-label fw-semibold">Description</label>
+                    <textarea
+                      className="form-control"
+                      rows="3"
+                      name="Description"
+                      value={formData.Description}
+                      onChange={handleChange}
+                    />
+                  </div>
+      
+                  <div className="row g-3 mt-1">
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Symptoms</label>
+                      <input
+                        className="form-control"
+                        name="Symptoms"
+                        value={formData.Symptoms}
+                        onChange={handleChange}
+                        placeholder="Comma separated"
+                      />
+                    </div>
+      
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Common Medicines</label>
+                      <input
+                        className="form-control"
+                        name="Common_Medicines"
+                        value={formData.Common_Medicines}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+      
+                  <div className="mt-3">
+                    <label className="form-label fw-semibold">Severity</label>
+                    <select
+                      className="form-select"
+                      name="Severity_Level"
+                      value={formData.Severity_Level}
+                      onChange={handleChange}
+                    >
+                      <option>Mild</option>
+                      <option>Moderate</option>
+                      <option>Severe</option>
+                      <option>Chronic</option>
+                    </select>
+                  </div>
+      
+                  <div className="mt-3">
+                    <label className="form-label fw-semibold">Notes</label>
+                    <textarea
+                      className="form-control"
+                      rows="2"
+                      name="Notes"
+                      value={formData.Notes}
+                      onChange={handleChange}
+                    />
+                  </div>
+      
+                  {/* SUBMIT */}
+                  <button
+                    type="submit"
+                    onClick={handleSubmit}
+                    className="btn btn-primary w-100 mt-4"
+                    style={{ borderRadius: 10, fontWeight: 600 }}
+                  >
+                    ➕ Submit Disease Record
+                  </button>
+      
+                </div>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Disease Details */}
-        <div style={{ marginTop: 24, marginBottom: 16 }}>
-          <h4 style={{ marginBottom: 16 }}>Disease Details</h4>
-          
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Category</label>
-            <select
-              name="Category"
-              value={formData.Category}
-              onChange={handleCategoryChange}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-              }}
-            >
-              <option value="Communicable">Communicable</option>
-              <option value="Non-Communicable">Non-Communicable</option>
-            </select>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Disease Name</label>
-            <select
-              name="Disease_Name"
-              value={formData.Disease_Name}
-              onChange={handleDiseaseNameChange}
-              required
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-              }}
-            >
-              <option value="">Select Disease</option>
-              {currentDiseaseList.map((disease, idx) => (
-                <option key={idx} value={disease}>
-                  {disease}
-                </option>
-              ))}
-              <option value="Other">Other (specify below)</option>
-            </select>
-          </div>
-
-          {showOtherDiseaseInput && (
-            <div style={{ marginBottom: 16 }}>
-              <input
-                type="text"
-                placeholder="Enter custom disease name"
-                value={formData.Disease_Name}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    Disease_Name: e.target.value,
-                  }))
-                }
-                required
-                style={{
-                  width: "100%",
-                  padding: "8px 12px",
-                  borderRadius: 6,
-                  border: "1px solid #ccc",
-                }}
-              />
             </div>
-          )}
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Description</label>
-            <textarea
-              name="Description"
-              value={formData.Description}
-              onChange={handleChange}
-              placeholder="Brief description of the disease"
-              rows={3}
-              required
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-                resize: "vertical",
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Symptoms (comma-separated)</label>
-            <input
-              type="text"
-              name="Symptoms"
-              value={formData.Symptoms}
-              onChange={handleChange}
-              placeholder="e.g., Fever, Cough, Fatigue"
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Common Medicines (comma-separated)</label>
-            <input
-              type="text"
-              name="Common_Medicines"
-              value={formData.Common_Medicines}
-              onChange={handleChange}
-              placeholder="e.g., Paracetamol, Ibuprofen, Antibiotics"
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Severity Level</label>
-            <select
-              name="Severity_Level"
-              value={formData.Severity_Level}
-              onChange={handleChange}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-              }}
-            >
-              <option value="Mild">Mild</option>
-              <option value="Moderate">Moderate</option>
-              <option value="Severe">Severe</option>
-              <option value="Chronic">Chronic</option>
-            </select>
-          </div>
-
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Notes</label>
-            <textarea
-              name="Notes"
-              value={formData.Notes}
-              onChange={handleChange}
-              placeholder="Additional notes (optional)"
-              rows={3}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-                resize: "vertical",
-              }}
-            />
           </div>
         </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            padding: "12px",
-            background: "#000",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            fontWeight: "bold",
-            fontSize: "16px",
-            cursor: "pointer",
-            transition: "background-color 0.2s",
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = "#333"}
-          onMouseLeave={(e) => e.target.style.backgroundColor = "#000"}
-        >
-          ➕ Submit Disease Record
-        </button>
-      </form>
-    </div>
-  );
+      );
+      
 };
 
 export default Diseases;

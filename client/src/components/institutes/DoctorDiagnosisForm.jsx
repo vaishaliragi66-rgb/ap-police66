@@ -233,305 +233,260 @@ const DoctorDiagnosisForm = () => {
 
 
   return (
-    <div style={{ 
-      maxWidth: 800, 
-      margin: "40px auto", 
-      padding: 30, 
-      background: "#fff", 
-      borderRadius: 12, 
-      boxShadow: "0 4px 12px rgba(0,0,0,0.1)" 
-    }}>
-      <h2 style={{ textAlign: "center", marginBottom: 30, color: "#333" }}>🏥 Diagnosis / Lab Test Entry</h2>
-      
-      <form onSubmit={handleSubmit} autoComplete="off">
-        {/* Institute */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#555" }}>Institute</label>
-          <input 
-            type="text" 
-            value={instituteName || "Loading..."} 
-            readOnly 
-            style={{ 
-              width: "100%", 
-              padding: "10px 12px", 
-              borderRadius: 8, 
-              border: "1px solid #ddd",
-              backgroundColor: "#f9f9f9" 
-            }} 
-          />
-        </div>
-
-        {/* Employee Search */}
-<PatientSelector
-  instituteId={formData.Institute_ID}
-  onSelect={({ employee, visit_id }) => {
-    setSelectedEmployee(employee);
-    setVisitId(visit_id || null);
-
-    setFormData(prev => ({
-      ...prev,
-      Employee_ID: employee._id,
-      IsFamilyMember: false,
-      FamilyMember_ID: ""
-    }));
-  }}
-/>
-
-
-        {formData.IsFamilyMember && (
-          <div
-            style={{
-              marginTop: 10,
-              padding: "10px",
-              backgroundColor: "#f1f3f5",
-              borderRadius: "6px",
-              fontSize: "14px"
-            }}
-          >
-            <strong>Family Member:</strong> {formData.FamilyMember_ID}
-          </div>
-        )}
-        {/* Selected Employee Info */}
-        {formData.Employee_ID && (
-          <div style={{ 
-            marginBottom: 20, 
-            padding: "12px", 
-            backgroundColor: "#e8f5e9", 
-            borderRadius: "8px",
-            border: "1px solid #c8e6c9"
-          }}>
-            <div style={{ fontSize: "13px", color: "#2e7d32" }}>
-              <strong>Selected Employee:</strong> {
-                selectedEmployee?.Name || "Unknown"
-              } (ABS_NO: {
-                selectedEmployee?.ABS_NO || "N/A"
-              })
-            </div>
-          </div>
-        )}
-
-        {/* Family Member Checkbox */}
-        {/* <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-            <input 
-              type="checkbox" 
-              name="IsFamilyMember"
-              checked={formData.IsFamilyMember} 
-              onChange={handleCheckboxChange} 
-              style={{ marginRight: 10, transform: "scale(1.2)" }} 
-            /> 
-            <span style={{ fontWeight: "bold", color: "#555" }}>Diagnosis for Family Member?</span>
-          </label>
-        </div> */}
-
-        {/* Family Member Select */}
-        {/* {formData.IsFamilyMember && (
-          <div style={{ marginBottom: 25 }}>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#555" }}>Select Family Member</label>
-            <select 
-              value={formData.FamilyMember_ID} 
-              onChange={e => setFormData(prev => ({ ...prev, FamilyMember_ID: e.target.value }))} 
-              required={formData.IsFamilyMember}
-              disabled={loading}
-              style={{ 
-                width: "100%", 
-                padding: "10px 12px", 
-                borderRadius: 8, 
-                border: "1px solid #ddd",
-                backgroundColor: loading ? "#f5f5f5" : "white"
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f5f8fe" ,   // ❌ removed blue bg
+        padding: "40px 16px"
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 800,
+          margin: "0 auto",
+          padding: 32,
+          background: "#ffffff",
+          borderRadius: 14,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.08)"
+        }}
+      >
+        {/* HEADER */}
+        <h2
+          style={{
+            textAlign: "center",
+            marginBottom: 32,
+            color: "#000",
+            fontWeight: 700
+          }}
+        >
+          🏥 Diagnosis / Lab Test Entry
+        </h2>
+  
+        <form onSubmit={handleSubmit} autoComplete="off">
+          {/* Institute */}
+          <div style={{ marginBottom: 20 }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: 6,
+                fontWeight: 600,
+                color: "#000"
               }}
             >
-              <option value="">{loading ? "Loading family members..." : "Select Family Member"}</option>
-              {familyMembers.length === 0 && !loading && (
-                <option value="" disabled>No family members registered</option>
-              )}
-              {familyMembers.map(f => (
-                <option key={f._id} value={f._id}>
-                  {f.Name} ({f.Relationship || "Family"}) {f.DOB ? ` - DOB: ${formatDateDMY(new Date(f.DOB))}` : ""}
-                </option>
-              ))}
-            </select>
-            
-            {familyMembers.length === 0 && formData.Employee_ID && !loading && (
-              <div style={{ fontSize: "12px", color: "#666", marginTop: 6 }}>
-                This employee has no registered family members. Register family members first.
-              </div>
-            )}
+              Institute
+            </label>
+            <input
+              type="text"
+              value={instituteName || "Loading..."}
+              readOnly
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                backgroundColor: "#f9fafb"
+              }}
+            />
           </div>
-        )} */}
-
-        {/* Tests Section */}
-        <div style={{ marginBottom: 30 }}>
-          <h4 style={{ 
-            marginBottom: 20, 
-            color: "#333", 
-            borderBottom: "2px solid #eee", 
-            paddingBottom: 10 
-          }}>
+  
+          {/* Patient Selector */}
+          <div style={{ marginBottom: 24 }}>
+            <PatientSelector
+              instituteId={formData.Institute_ID}
+              onSelect={({ employee, visit_id }) => {
+                setSelectedEmployee(employee);
+                setVisitId(visit_id || null);
+                setFormData(prev => ({
+                  ...prev,
+                  Employee_ID: employee._id,
+                  IsFamilyMember: false,
+                  FamilyMember_ID: ""
+                }));
+              }}
+            />
+          </div>
+  
+          {/* Selected Employee */}
+          {formData.Employee_ID && (
+            <div
+              style={{
+                marginBottom: 24,
+                padding: "14px",
+                borderRadius: 8,
+                background: "#f3f4f6",
+                border: "1px solid #e5e7eb",
+                fontSize: 14
+              }}
+            >
+              <strong>Selected Employee:</strong>{" "}
+              {selectedEmployee?.Name} (ABS_NO: {selectedEmployee?.ABS_NO})
+            </div>
+          )}
+  
+          {/* TESTS */}
+          <h4
+            style={{
+              marginBottom: 16,
+              color: "#000",
+              fontWeight: 600,
+              borderBottom: "2px solid #000",
+              paddingBottom: 8
+            }}
+          >
             Tests
           </h4>
-          
-          {testsMaster.length === 0 ? (
-            <div style={{ 
-              padding: "15px", 
-              backgroundColor: "#fff8e1", 
-              borderRadius: "8px", 
-              border: "1px solid #ffecb3", 
-              marginBottom: 20 
-            }}>
-              <div style={{ color: "#ff6f00", fontWeight: "bold" }}>⚠️ No tests available</div>
-              <div style={{ fontSize: "13px", color: "#666", marginTop: 5 }}>
-                Add tests to the master list first.
-              </div>
-            </div>
-          ) : (
-            <>
-              {formData.Tests.map((t, i) => (
-                <div key={i} style={{ 
-                  marginBottom: 20, 
-                  padding: "15px", 
-                  backgroundColor: "#f8f9fa", 
-                  borderRadius: "8px",
-                  border: "1px solid #e9ecef"
-                }}>
-                  <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: "1fr 1fr 1fr auto", 
-                    gap: "10px", 
-                    alignItems: "center" 
-                  }}>
-                    <div>
-                      <div style={{ fontSize: "12px", color: "#666", marginBottom: 4 }}>Test Selection</div>
-                      <select 
-                        value={t.Test_ID || ""} 
-                        onChange={e => handleTestChange(i, "Test_ID", e.target.value)} 
-                        style={{ 
-                          width: "100%", 
-                          padding: "8px 10px", 
-                          borderRadius: "6px", 
-                          border: "1px solid #ddd" 
-                        }}
-                      >
-                        <option value="">Select Test (or type below)</option>
-                        {testsMaster.map(tm => (
-                          <option key={tm._id} value={tm._id}>
-                            {tm.Test_Name} {tm.Group ? `(${tm.Group})` : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <div style={{ fontSize: "12px", color: "#666", marginBottom: 4 }}>Test Name</div>
-                      <input 
-                        type="text" 
-                        placeholder="Test Name" 
-                        value={t.Test_Name} 
-                        onChange={e => handleTestChange(i, "Test_Name", e.target.value)} 
-                        style={{ 
-                          width: "100%", 
-                          padding: "8px 10px", 
-                          borderRadius: "6px", 
-                          border: "1px solid #ddd" 
-                        }} 
-                      />
-                    </div>
-                    
-                    {formData.Tests.length > 1 && (
-                      <div style={{ alignSelf: "flex-end" }}>
-                        <button 
-                          type="button" 
-                          onClick={() => removeTest(i)}
-                          style={{ 
-                            background: "#dc3545", 
-                            color: "#fff", 
-                            border: "none", 
-                            borderRadius: "6px", 
-                            padding: "8px 12px",
-                            cursor: "pointer"
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {(t.Reference_Range || t.Units) && (
-                    <div style={{ 
-                      marginTop: 10, 
-                      padding: "8px", 
-                      backgroundColor: "#e7f3ff", 
-                      borderRadius: "4px",
-                      fontSize: "12px"
-                    }}>
-                      {t.Reference_Range && <span><strong>Ref Range:</strong> {t.Reference_Range} </span>}
-                      {t.Units && <span><strong>Units:</strong> {t.Units}</span>}
-                    </div>
-                  )}
-                </div>
-              ))}
-              
-              <button 
-                type="button" 
-                onClick={addTest} 
-                style={{ 
-                  padding: "10px 16px", 
-                  background: "#007bff", 
-                  color: "#fff", 
-                  border: "none", 
-                  borderRadius: "6px",
-                  cursor: "pointer"
+  
+          {formData.Tests.map((t, i) => (
+            <div
+              key={i}
+              style={{
+                padding: 16,
+                marginBottom: 16,
+                borderRadius: 10,
+                border: "1px solid #e5e7eb",
+                background: "#fafafa"
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr auto",
+                  gap: 12,
+                  alignItems: "end"
                 }}
               >
-                + Add Another Test
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Diagnosis Notes */}
-        <div style={{ marginBottom: 30 }}>
-          <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#555" }}>Diagnosis Notes</label>
-          <textarea 
-            value={formData.Diagnosis_Notes} 
-            onChange={e => setFormData(prev => ({ ...prev, Diagnosis_Notes: e.target.value }))} 
-            placeholder="Enter diagnosis notes, observations, or comments..."
-            rows={4} 
-            style={{ 
-              width: "100%", 
-              padding: "12px", 
-              borderRadius: "8px", 
-              border: "1px solid #ddd",
-              resize: "vertical" 
-            }} 
-          />
-        </div>
-
-        {/* Submit Button */}
-        <button 
-          type="submit" 
-          style={{ 
-            marginTop: 10, 
-            width: "100%", 
-            padding: "14px", 
-            background: "#28a745", 
-            color: "white", 
-            border: "none", 
-            borderRadius: "8px",
-            fontSize: "16px",
-            fontWeight: "bold",
-            cursor: "pointer",
-            transition: "background-color 0.2s"
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = "#218838"}
-          onMouseLeave={(e) => e.target.style.backgroundColor = "#28a745"}
-        >
-          💾 Save Diagnosis Record
-        </button>
-      </form>
+                <div>
+                  <label style={{ fontSize: 12, color: "#000", fontWeight: 600 }}>
+                    Test Selection
+                  </label>
+                  <select
+                    value={t.Test_ID || ""}
+                    onChange={e =>
+                      handleTestChange(i, "Test_ID", e.target.value)
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: 6,
+                      border: "1px solid #ccc"
+                    }}
+                  >
+                    <option value="">Select Test</option>
+                    {testsMaster.map(tm => (
+                      <option key={tm._id} value={tm._id}>
+                        {tm.Test_Name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+  
+                <div>
+                  <label style={{ fontSize: 12, color: "#000", fontWeight: 600 }}>
+                    Test Name
+                  </label>
+                  <input
+                    type="text"
+                    value={t.Test_Name}
+                    onChange={e =>
+                      handleTestChange(i, "Test_Name", e.target.value)
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: 6,
+                      border: "1px solid #ccc"
+                    }}
+                  />
+                </div>
+  
+                {formData.Tests.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeTest(i)}
+                    style={{
+                      padding: "10px 14px",
+                      background: "#000",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 6,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+  
+          <button
+            type="button"
+            onClick={addTest}
+            style={{
+              marginBottom: 28,
+              padding: "12px 18px",
+              background: "#000",
+              color: "#fff",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer"
+            }}
+          >
+            + Add Another Test
+          </button>
+  
+          {/* NOTES */}
+          <div style={{ marginBottom: 28 }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: 6,
+                fontWeight: 600,
+                color: "#000"
+              }}
+            >
+              Diagnosis Notes
+            </label>
+            <textarea
+              rows={4}
+              value={formData.Diagnosis_Notes}
+              onChange={e =>
+                setFormData(prev => ({
+                  ...prev,
+                  Diagnosis_Notes: e.target.value
+                }))
+              }
+              style={{
+                width: "100%",
+                padding: 12,
+                borderRadius: 8,
+                border: "1px solid #ccc"
+              }}
+            />
+          </div>
+  
+          {/* SUBMIT */}
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "16px",
+              background: "#000",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: "pointer"
+            }}
+          >
+            💾 Save Diagnosis Record
+          </button>
+        </form>
+      </div>
     </div>
   );
+  
 };
 
 export default DoctorDiagnosisForm;

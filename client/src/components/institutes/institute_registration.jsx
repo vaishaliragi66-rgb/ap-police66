@@ -88,32 +88,58 @@ const InstituteRegister = () => {
 
   return (
     <div
-      className="d-flex flex-column align-items-center min-vh-100"
       style={{
-        background: "linear-gradient(135deg, #f2f2f2, #e6e6e6)",
-        paddingTop: "30px",
+        backgroundColor: "#F8FAFC",
+        minHeight: "100vh",
+        padding: "40px 16px",
+        fontFamily: "'Inter', sans-serif",
       }}
     >
       {/* Header */}
       <div className="text-center mb-4">
-        <FaUniversity size={42} className="text-dark mb-2" />
-        <h3 className="fw-bold text-dark mb-1">Institute Registration</h3>
-        <p className="text-muted" style={{ fontSize: "14px" }}>
+        <div
+          className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+          style={{
+            width: "64px",
+            height: "64px",
+            backgroundColor: "#EAF2FF",
+            color: "#4A70A9",
+          }}
+        >
+          <FaUniversity size={30} />
+        </div>
+  
+        <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
+          Institute Registration
+        </h3>
+        <p style={{ color: "#6B7280", fontSize: "14px" }}>
           Register your institution securely
         </p>
       </div>
-
+  
       {/* Form Card */}
       <div
-        className="bg-white p-4 rounded shadow"
-        style={{ width: "100%", maxWidth: "600px" }}
+        className="mx-auto"
+        style={{
+          maxWidth: "620px",
+          backgroundColor: "#FFFFFF",
+          borderRadius: "16px",
+          padding: "32px",
+          border: "1px solid #D6E0F0",
+          boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+        }}
       >
-        <div className="border-bottom mb-3 pb-2">
-          <h5 className="fw-semibold text-secondary mb-0">
+        <div
+          className="mb-4 pb-2"
+          style={{
+            borderBottom: "1px solid #D6E0F0",
+          }}
+        >
+          <h5 style={{ fontWeight: 600, color: "#1F2933", marginBottom: 0 }}>
             Institute Details
           </h5>
         </div>
-
+  
         <form onSubmit={handleSubmit}>
           <input
             className="form-control mb-3"
@@ -123,7 +149,7 @@ const InstituteRegister = () => {
             onChange={handleChange}
             required
           />
-
+  
           <input
             className="form-control mb-3"
             name="Email_ID"
@@ -133,7 +159,7 @@ const InstituteRegister = () => {
             onChange={handleChange}
             required
           />
-
+  
           {/* Password */}
           <div className="position-relative mb-3">
             <input
@@ -153,13 +179,13 @@ const InstituteRegister = () => {
                 top: "50%",
                 transform: "translateY(-50%)",
                 cursor: "pointer",
-                color: "#555",
+                color: "#6B7280",
               }}
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
-
+  
           {/* Confirm Password */}
           <div className="position-relative mb-3">
             <input
@@ -172,34 +198,39 @@ const InstituteRegister = () => {
               required
             />
             <span
-              onClick={() =>
-                setShowConfirmPassword(!showConfirmPassword)
-              }
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               style={{
                 position: "absolute",
                 right: "12px",
                 top: "50%",
                 transform: "translateY(-50%)",
                 cursor: "pointer",
-                color: "#555",
+                color: "#6B7280",
               }}
             >
               {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
-
+  
           <input
-            className="form-control mb-3"
+            className="form-control mb-4"
             name="Contact_No"
             placeholder="Contact Number"
             value={formData.Contact_No}
             onChange={handleChange}
             required
           />
-
-          <hr className="text-secondary" />
-          <h6 className="text-muted mb-2">Address Information</h6>
-
+  
+          <h6
+            style={{
+              fontWeight: 600,
+              color: "#1F2933",
+              marginBottom: "12px",
+            }}
+          >
+            Address Information
+          </h6>
+  
           {["Street", "District", "State", "Pincode"].map((field) => (
             <input
               key={field}
@@ -211,20 +242,24 @@ const InstituteRegister = () => {
               required
             />
           ))}
-
+  
           <button
-            className="btn w-100 fw-semibold"
-            style={{
-              backgroundColor: "#111",
-              color: "#fff",
-              letterSpacing: "0.5px",
-            }}
+            className="w-100"
             disabled={loading}
+            style={{
+              backgroundColor: "#4A70A9",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: "999px",
+              padding: "10px",
+              fontWeight: 500,
+              marginTop: "10px",
+            }}
           >
-            {loading ? "Registering..." : "REGISTER"}
+            {loading ? "Registering..." : "Register Institute"}
           </button>
         </form>
-
+  
         {message && (
           <div
             className={`alert mt-3 ${
@@ -237,13 +272,18 @@ const InstituteRegister = () => {
             {message}
           </div>
         )}
-         {/* ✅ Login Link (RESTORED) */}
+  
+        {/* Login Link */}
         <div className="text-center mt-3">
-          <p className="text-muted mb-0" style={{ fontSize: "14px" }}>
+          <p style={{ fontSize: "14px", color: "#6B7280" }}>
             Already registered?{" "}
             <Link
               to="/institutes/login"
-              className="fw-semibold text-decoration-none"
+              style={{
+                color: "#4A70A9",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
             >
               Login here
             </Link>
@@ -252,6 +292,7 @@ const InstituteRegister = () => {
       </div>
     </div>
   );
+  
 };
 
 export default InstituteRegister;

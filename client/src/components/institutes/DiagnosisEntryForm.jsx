@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
+import { useNavigate } from "react-router-dom";
 
 const DiagnosisEntryForm = () => {
   const [testsMaster, setTestsMaster] = useState([]);
@@ -10,6 +11,8 @@ const DiagnosisEntryForm = () => {
   const [loading, setLoading] = useState(false);
   const [visitId, setVisitId] = useState(null);
   const [familyMembers, setFamilyMembers] = useState([]);
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     Institute_ID: "",
     Employee_ID: "",
@@ -131,26 +134,7 @@ const DiagnosisEntryForm = () => {
     }
   };
 
-  // Filter employees
-  // useEffect(() => {
-  //   if (!searchTerm.trim()) return setFilteredEmployees([]);
-  //   const q = searchTerm.toLowerCase();
-  //   setFilteredEmployees(
-  //     employees.filter(e => 
-  //       String(e.ABS_NO || "").toLowerCase().startsWith(q) ||
-  //       String(e.Name || "").toLowerCase().includes(q)
-  //     )
-  //   );
-  // }, [searchTerm, employees]);
 
-  // Fetch family members - FIXED VERSION
-
-  // const handleEmployeeSelect = (emp) => {
-  //   console.log("Selected employee:", emp);
-  //   setFormData(prev => ({ ...prev, Employee_ID: emp._id }));
-  //   // setSearchTerm(emp.ABS_NO || "");
-  //   // setFilteredEmployees([]);
-  // };
 
   const handleTestChange = (index, field, value) => {
     setFormData(prev => {
@@ -325,7 +309,7 @@ const fetchVisitDetails = async (visitId) => {
       maxWidth: 800, 
       margin: "40px auto", 
       padding: 30, 
-      background: "#fff", 
+      background: "#f5f8fe", 
       borderRadius: 12, 
       boxShadow: "0 4px 12px rgba(0,0,0,0.1)" 
     }}>
@@ -370,6 +354,26 @@ onSelect={({ employee, visit }) => {
 }}
 
 />
+
+{/* QUICK ACTIONS */}
+<div style={{ display: "flex", gap: "12px", marginBottom: "20px" ,marginTop: "20px"}}>
+  <button
+    type="button"
+    onClick={() => navigate("/institutions/reports")}
+    style={{
+      padding: "8px 14px",
+      background: "#0d6efd",
+      color: "#fff",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      fontSize: "14px"
+    }}
+  >
+    📊 View Employee Reports
+  </button>
+</div>
+
 
         {formData.IsFamilyMember && (
           <div

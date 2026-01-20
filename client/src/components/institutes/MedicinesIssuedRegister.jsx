@@ -571,44 +571,89 @@ const printPrescription = () => {
 
   if (loading) {
     return (
-      <div className="text-center mt-5">
+      <div className="text-center mt-5" style={{
+        backgroundColor: "#F2F3F5",
+        minHeight: "100vh",
+        paddingBottom: "30px"
+      }}  >
         <strong>Loading issued medicines...</strong>
       </div>
     );
   }
 
+  const COLORS = {
+    primary: "#3B6FB6",   // AP Police Blue
+    light: "#F5F8FE",     // light background
+    border: "#E2E8F0",    // soft border
+    text: "#1E293B",      // dark text
+    muted: "#64748B"
+  };
+  
+
   return (
-    <div className=" mt-4 print-area">
+    <div className=" mt-4 print-area" style={{
+      backgroundColor: "#F2F3F5",
+      minHeight: "100vh",
+      paddingBottom: "30px"
+    }}>
       <div className="card shadow">
 
         {/* ---------- HEADER ---------- */}
-        <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-            
+        <div className="card-header d-flex justify-content-between align-items-center"
+  style={{
+    background: COLORS.primary,
+    color: "#fff",
+    borderBottom: `1px solid ${COLORS.border}`
+  }}
+>
+  <h5 className="mb-0">Medicines Issued</h5>
 
-          <h5 className="mb-0">Medicines Issued</h5>
+  <div className="d-flex gap-2">
+    <button
+      className="btn btn-sm"
+      style={{
+        background: "#fff",
+        color: COLORS.primary,
+        border: `1px solid ${COLORS.primary}`
+      }}
+      onClick={handleDownloadCSV}
+    >
+      ⬇ Download
+    </button>
 
-          <div className="d-flex gap-2">
-            <button className="btn btn-light btn-sm" onClick={handleDownloadCSV}>
-              ⬇ Download
-            </button>
+    <button
+      className="btn btn-sm"
+      style={{
+        background: "#fff",
+        color: COLORS.primary,
+        border: `1px solid ${COLORS.primary}`
+      }}
+      onClick={handlePrint}
+    >
+      🖨 Print
+    </button>
+  </div>
+</div>
 
-            <button className="btn btn-light btn-sm" onClick={handlePrint}>
-              🖨 Print
-            </button>
-            
-          </div>
-        </div>
 
 
         {/* ================= FILTER CARD ================= */}
         {showFilters && (
-<div className="card-body border-bottom">
-  <div className="card shadow-sm">
-    <div className="card-header bg-light fw-semibold">
+          <div className="card-body border-bottom" style={{ background: COLORS.light }}>
+  <div className="card border-0 shadow-sm">
+    <div
+      className="card-header fw-semibold"
+      style={{
+        background: COLORS.light,
+        color: COLORS.text,
+        borderBottom: `1px solid ${COLORS.border}`
+      }}
+    >
       Filters
     </div>
 
-    <div className="card-body">
+    <div className="card-body bg-white">
+
       <div className="d-flex flex-wrap gap-2 align-items-end">
       <select
           className="form-select form-select-sm"
@@ -791,12 +836,17 @@ const printPrescription = () => {
           {/* ---------- ROWS PER PAGE (TOP RIGHT – CONSISTENT) ---------- */}
           <div className="d-flex justify-content-end align-items-center gap-3 mb-3">
 
-              <button
-                className="btn btn-outline-dark btn-sm"
-                onClick={() => setShowFilters(prev => !prev)}
-              >
-                {showFilters ? "Hide Filters ▲" : "Show Filters ▼"}
-              </button>
+                  <button
+          className="btn btn-sm"
+          style={{
+            border: `1px solid ${COLORS.primary}`,
+            color: COLORS.primary
+          }}
+          onClick={() => setShowFilters(prev => !prev)}
+        >
+          {showFilters ? "Hide Filters ▲" : "Show Filters ▼"}
+        </button>
+
 
               <div className="d-flex align-items-center gap-2">
                 <span className="fw-semibold text-muted">Rows per page:</span>
@@ -819,32 +869,38 @@ const printPrescription = () => {
               </div>
 
 
-          <div className="table-responsive">
-            <table className="table table-bordered table-hover align-middle">
-              <thead className="table-dark">
-                <tr>
-                  <th onClick={() => handleSort("timestamp")} style={{ cursor: "pointer" }}>Date & Time {sortIcon("timestamp")}</th>
-                  <th onClick={() => handleSort("employeeABS")} style={{ cursor: "pointer" }}>ABS No {sortIcon("employeeABS")}</th>
-                  <th onClick={() => handleSort("employeeName")} style={{ cursor: "pointer" }}>Employee Name {sortIcon("employeeName")}</th>
-                  <th onClick={() => handleSort("issuedTo")} style={{ cursor: "pointer" }}>Issued To {sortIcon("issuedTo")}</th>
-                  <th onClick={() => handleSort("medicineId")} style={{ cursor: "pointer" }}>Medicine ID {sortIcon("medicineId")}</th>
-                  <th onClick={() => handleSort("medicineName")} style={{ cursor: "pointer" }}>Medicine {sortIcon("medicineName")}</th>
-                  <th onClick={() => handleSort("medicineType")} style={{ cursor: "pointer" }}>Type {sortIcon("medicineType")}</th>
-                  <th onClick={() => handleSort("medicineCategory")} style={{ cursor: "pointer" }}>Category {sortIcon("medicineCategory")}</th>
-                  <th onClick={() => handleSort("expiry")} style={{ cursor: "pointer" }}>Expiry {sortIcon("expiry")}</th>
-                  <th onClick={() => handleSort("quantity")} style={{ cursor: "pointer" }}>Qty {sortIcon("quantity")}</th>
-                  <th onClick={() => handleSort("prescriptionId")} style={{ cursor: "pointer" }}>Prescription Ref {sortIcon("prescriptionId")}</th>
+            {/* TABLE */}
+            <div className="table-responsive">
+            <table
+              className="table table-hover align-middle"
+              style={{ border: "1px solid #E2E8F0" }}
+            >
+              <thead style={{ background: "#F5F8FE" }}>
+                <tr className="small text-muted">
+                  <th>Date & Time</th>
+                  <th>ABS No</th>
+                  <th>Employee Name</th>
+                  <th>Issued To</th>
+                  <th>Medicine ID</th>
+                  <th>Medicine</th>
+                  <th>Type</th>
+                  <th>Category</th>
+                  <th>Expiry</th>
+                  <th>Qty</th>
+                  <th>Prescription Ref</th>
                   <th>Receipt</th>
                 </tr>
               </thead>
-
+  
               <tbody>
                 {currentRows.length === 0 && (
                   <tr>
-                    <td colSpan="13" className="text-center">No matching records</td>
+                    <td colSpan="12" className="text-center py-4 text-muted">
+                      No matching records
+                    </td>
                   </tr>
                 )}
-
+  
                 {currentRows.map((r, i) => (
                   <tr key={i}>
                     <td>{r.timestamp ? new Date(r.timestamp).toLocaleString() : "-"}</td>
@@ -861,21 +917,25 @@ const printPrescription = () => {
                     <td>
                       <div className="d-flex gap-1">
                         <button
-                          className="btn btn-sm btn-outline-success"
+                          className="btn btn-sm"
+                          style={{
+                            border: "1px solid #3B6FB6",
+                            color: "#3B6FB6"
+                          }}
                           onClick={() => viewPrescription(r)}
                         >
                           View
                         </button>
-
+  
                         <button
                           className="btn btn-sm btn-outline-danger"
                           onClick={() => downloadPrescriptionPDF(r.prescription)}
                         >
                           PDF
                         </button>
-
+  
                         <button
-                          className="btn btn-sm btn-outline-dark"
+                          className="btn btn-sm btn-outline-secondary"
                           onClick={() => downloadPrescriptionWord(r.prescription)}
                         >
                           Word
@@ -887,6 +947,7 @@ const printPrescription = () => {
               </tbody>
             </table>
           </div>
+
           {/* ---------- PAGINATION ---------- */}
           <div className="d-flex justify-content-center align-items-center gap-2 mt-4">
 

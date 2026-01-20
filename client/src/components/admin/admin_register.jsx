@@ -180,210 +180,268 @@ const AdminRegister = () => {
   };
 
   return (
-    <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center py-5" 
-         style={{ backgroundColor: "#f8f9fa" }}>
-      
+    <div
+      className="min-vh-100 d-flex flex-column align-items-center justify-content-center"
+      style={{
+        backgroundColor: "#F8FAFC",
+        fontFamily: "'Inter', sans-serif",
+        padding: "32px 16px",
+      }}
+    >
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="d-flex justify-content-center align-items-center mb-3">
-          <div className="bg-dark text-white rounded-circle p-3">
-            <FaUserShield size={28} />
-          </div>
+        <div
+          className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+          style={{
+            width: "64px",
+            height: "64px",
+            backgroundColor: "#EAF2FF",
+            color: "#4A70A9",
+          }}
+        >
+          <FaUserShield size={30} />
         </div>
-        <h2 className="fw-bold text-dark">Admin Registration</h2>
-        <p className="text-muted">Create administrator account</p>
+  
+        <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
+          Admin Registration
+        </h3>
+        <p style={{ color: "#6B7280", fontSize: "14px" }}>
+          Create administrator account
+        </p>
       </div>
-
-      {/* Error Message */}
+  
+      {/* Alerts */}
       {error && (
-        <div className="alert alert-danger alert-dismissible fade show w-100 mb-3" style={{ maxWidth: "600px" }}>
-          <strong>Error:</strong> {error}
-          <button 
-            type="button" 
-            className="btn-close" 
-            onClick={() => setError("")}
-          ></button>
+        <div
+          className="alert alert-danger w-100 mb-3"
+          style={{ maxWidth: "620px", fontSize: "14px" }}
+        >
+          {error}
         </div>
       )}
-
-      {/* Success Message */}
+  
       {success && (
-        <div className="alert alert-success alert-dismissible fade show w-100 mb-3" style={{ maxWidth: "600px" }}>
+        <div
+          className="alert alert-success w-100 mb-3"
+          style={{ maxWidth: "620px", fontSize: "14px" }}
+        >
           {success}
-          <button 
-            type="button" 
-            className="btn-close" 
-            onClick={() => setSuccess("")}
-          ></button>
         </div>
       )}
-
+  
       {/* Form Card */}
-      <div className="bg-white shadow-lg rounded-3 p-4 w-100" style={{ maxWidth: "600px" }}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "620px",
+          backgroundColor: "#FFFFFF",
+          borderRadius: "16px",
+          padding: "32px",
+          border: "1px solid #D6E0F0",
+          boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+        }}
+      >
         <form onSubmit={handleSubmit}>
+          {/* Name */}
+          <div className="mb-3">
+            <label className="form-label small text-muted">
+              Full Name *
+            </label>
+            <input
+              type="text"
+              name="name"
+              className="form-control"
+              placeholder="Enter full name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+  
+          {/* Email */}
+          <div className="mb-3">
+            <label className="form-label small text-muted">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              name="email"
+              className="form-control"
+              placeholder="Enter email address"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+  
+          {/* Passwords */}
           <div className="row">
-            
-            {/* Name Field */}
-            <div className="col-12 mb-3">
-              <label className="form-label fw-semibold">Full Name *</label>
-              <input
-                type="text"
-                name="name"
-                className="form-control"
-                placeholder="Enter full name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            {/* Email Field */}
-            <div className="col-12 mb-3">
-              <label className="form-label fw-semibold">Email Address *</label>
-              <input
-                type="email"
-                name="email"
-                className="form-control"
-                placeholder="Enter email address"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            {/* Password Fields */}
             <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">Password *</label>
-              <div className="input-group">
-                <span className="input-group-text">
-                  <FaLock />
-                </span>
-                <input
-                  type="password"
-                  name="password"
-                  className="form-control"
-                  placeholder="Enter password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </div>
+              <label className="form-label small text-muted">
+                Password *
+              </label>
+              <input
+                type="password"
+                name="password"
+                className="form-control"
+                placeholder="Enter password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
               {passwordStrength && (
-                <div className={`small mt-1 text-${passwordStrength === 'Strong' ? 'success' : passwordStrength === 'Medium' ? 'warning' : 'danger'}`}>
+                <div
+                  className="small mt-1"
+                  style={{
+                    color:
+                      passwordStrength === "Strong"
+                        ? "#198754"
+                        : passwordStrength === "Medium"
+                        ? "#FFC107"
+                        : "#DC3545",
+                  }}
+                >
                   Password strength: {passwordStrength}
                 </div>
               )}
             </div>
-
+  
             <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">Confirm Password *</label>
-              <div className="input-group">
-                <span className="input-group-text">
-                  <FaLock />
-                </span>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  className={`form-control ${!passwordMatch && formData.confirmPassword ? 'is-invalid' : ''}`}
-                  placeholder="Confirm password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              {!passwordMatch && formData.confirmPassword && (
-                <div className="invalid-feedback d-block small">
+              <label className="form-label small text-muted">
+                Confirm Password *
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                className={`form-control ${
+                  !passwordMatch && formData.confirmPassword
+                    ? "is-invalid"
+                    : ""
+                }`}
+                placeholder="Confirm password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+              {!passwordMatch && (
+                <div className="invalid-feedback">
                   Passwords do not match
                 </div>
               )}
             </div>
-
-            {/* Date of Birth */}
-            <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">Date of Birth</label>
-              <input
-                type="date"
-                name="dob"
-                className="form-control"
-                value={formData.dob}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </div>
-
-            {/* Address Field */}
-            <div className="col-12 mb-3">
-              <label className="form-label fw-semibold">Address</label>
-              <textarea
-                name="address"
-                className="form-control"
-                placeholder="Enter complete address"
-                value={formData.address}
-                onChange={handleChange}
-                rows="3"
-                disabled={loading}
-              />
-            </div>
-
-            {/* Password Requirements */}
-            <div className="col-12 mb-4">
-              <div className="card border-light">
-                <div className="card-body p-3">
-                  <h6 className="card-title small fw-semibold">Password Requirements:</h6>
-                  <ul className="small text-muted mb-0">
-                    <li>Minimum 8 characters</li>
-                    <li>Include uppercase and lowercase letters</li>
-                    <li>Include at least one number</li>
-                    <li>Special characters recommended</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+          </div>
+  
+          {/* DOB */}
+          <div className="mb-3">
+            <label className="form-label small text-muted">
+              Date of Birth
+            </label>
+            <input
+              type="date"
+              name="dob"
+              className="form-control"
+              value={formData.dob}
+              onChange={handleChange}
+            />
+          </div>
+  
+          {/* Address */}
+          <div className="mb-4">
+            <label className="form-label small text-muted">
+              Address
+            </label>
+            <textarea
+              name="address"
+              className="form-control"
+              rows="3"
+              placeholder="Enter complete address"
+              value={formData.address}
+              onChange={handleChange}
+            />
           </div>
 
-          {/* Submit Button */}
-          <div className="text-center mt-2">
-            <button
-              type="submit"
-              className="btn btn-dark btn-lg px-5 py-2"
-              disabled={loading}
-              style={{ minWidth: "200px" }}
+          {/* Password Requirements */}
+          <div
+            style={{
+              backgroundColor: "#F3F7FF",
+              border: "1px solid #D6E0F0",
+              borderRadius: "10px",
+              padding: "12px 14px",
+              marginBottom: "24px",
+            }}
+          >
+            <p
+              style={{
+                marginBottom: "6px",
+                fontWeight: 600,
+                fontSize: "13px",
+                color: "#1F2933",
+              }}
             >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Creating Account...
-                </>
-              ) : (
-                "Register as Admin"
-              )}
-            </button>
+              Password Requirements
+            </p>
+
+            <ul
+              style={{
+                paddingLeft: "18px",
+                margin: 0,
+                fontSize: "13px",
+                color: "#6B7280",
+              }}
+            >
+              <li>Minimum 8 characters</li>
+              <li>At least one uppercase letter</li>
+              <li>At least one lowercase letter</li>
+              <li>At least one number</li>
+              <li>Special character recommended</li>
+            </ul>
           </div>
 
+  
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              backgroundColor: "#4A70A9",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: "999px",
+              padding: "10px",
+              fontSize: "14px",
+              fontWeight: 500,
+            }}
+          >
+            {loading ? "Creating account..." : "Register Admin"}
+          </button>
+  
           {/* Login Link */}
           <div className="text-center mt-3">
-            <p className="text-muted">
+            <p style={{ fontSize: "14px", color: "#6B7280" }}>
               Already have an account?{" "}
-              <Link to="/admin/login" className="text-dark fw-semibold text-decoration-none">
+              <Link
+                to="/admin/login"
+                style={{
+                  color: "#4A70A9",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
                 Login here
               </Link>
             </p>
           </div>
         </form>
       </div>
-
-      {/* Footer Note */}
-      <div className="text-center mt-4">
-        <p className="text-muted small">
-          Fields marked with * are required
-        </p>
-      </div>
+  
+      {/* Footer */}
+      <p className="mt-4 small text-muted">
+        Fields marked with * are mandatory
+      </p>
     </div>
   );
+  
 };
 
 export default AdminRegister;

@@ -72,183 +72,279 @@ const InstituteReports = () => {
 
   return (
     <div
-      className="container bg-white shadow-sm rounded-4 p-4 mt-4"
-      style={{ maxWidth: "900px" }}
+      style={{
+        minHeight: "100vh",
+        background: "#f9fafb",
+        padding: "32px 16px"
+      }}
     >
-      <h3 className="fw-bold mb-3">
-        📋 Employee + Family Disease & Diagnosis Report
-      </h3>
-
-      {/* ================= SEARCH EMPLOYEE ================= */}
-      <label className="fw-semibold mb-1">Employee ABS Number</label>
-
-      <input
-        type="text"
-        value={searchTerm}
-        placeholder="Type ABS_NO..."
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="form-control"
-      />
-
-      {/* ================= AUTOCOMPLETE DROPDOWN ================= */}
-      {searchTerm && filteredEmployees.length > 0 && (
-        <div
-          className="border rounded mt-1 bg-light"
-          style={{ maxHeight: 200, overflowY: "auto" }}
+      <div
+        style={{
+          maxWidth: 980,
+          margin: "0 auto",
+          background: "#ffffff",
+          borderRadius: 14,
+          padding: 28,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
+        }}
+      >
+        {/* HEADER */}
+        <h3
+          style={{
+            fontWeight: 700,
+            marginBottom: 20,
+            color: "#000",
+            borderBottom: "2px solid #000",
+            paddingBottom: 10
+          }}
         >
-          {filteredEmployees.map((emp) => (
+          📋 Employee + Family Disease & Diagnosis Report
+        </h3>
+  
+        {/* SEARCH */}
+        <div style={{ marginBottom: 20 }}>
+          <label
+            style={{
+              fontWeight: 600,
+              marginBottom: 6,
+              display: "block",
+              color: "#111"
+            }}
+          >
+            Employee ABS Number
+          </label>
+  
+          <input
+            type="text"
+            value={searchTerm}
+            placeholder="Type ABS_NO..."
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-control"
+            style={{
+              padding: "12px",
+              borderRadius: 8,
+              border: "1px solid #d1d5db"
+            }}
+          />
+  
+          {/* AUTOCOMPLETE */}
+          {searchTerm && filteredEmployees.length > 0 && (
             <div
-              key={emp._id}
-              className="p-2 border-bottom"
-              style={{ cursor: "pointer" }}
-              onClick={() => loadHealthReport(emp.ABS_NO)}
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 8,
+                marginTop: 6,
+                background: "#ffffff",
+                maxHeight: 220,
+                overflowY: "auto"
+              }}
             >
-              <strong>{emp.ABS_NO}</strong> — {emp.Name}
+              {filteredEmployees.map((emp) => (
+                <div
+                  key={emp._id}
+                  onClick={() => loadHealthReport(emp.ABS_NO)}
+                  style={{
+                    padding: "10px 12px",
+                    cursor: "pointer",
+                    borderBottom: "1px solid #f1f5f9"
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#f9fafb")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "#ffffff")
+                  }
+                >
+                  <strong>{emp.ABS_NO}</strong> — {emp.Name}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* =======================================================
-          EMPLOYEE REPORT
-      ======================================================== */}
-      {report && (
-        <div className="mt-4">
-
-          <h5 className="fw-bold">
-            🧑‍💼 Employee: {report.employee.Name} ({report.employee.ABS_NO})
-          </h5>
-
-          {/* EMPLOYEE DISEASES */}
-          <h6 className="mt-3">🦠 Diseases</h6>
-
-          {report.employeeDiseases?.length ? (
-            <table className="table table-bordered">
-              <thead className="table-light">
-                <tr>
-                  <th>Disease</th>
-                  <th>Category</th>
-                  <th>Severity</th>
-                  <th>Diagnosis</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.employeeDiseases.map((d, i) => (
-                  <tr key={i}>
-                    <td>{d.Disease_Name}</td>
-                    <td>{d.Category}</td>
-                    <td>{d.Severity_Level}</td>
-                    <td>{d.Diagnosis || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No employee disease records.</p>
-          )}
-
-          {/* EMPLOYEE DIAGNOSIS TESTS */}
-          <h6 className="mt-3">🩺 Diagnosis Tests</h6>
-
-          {report.employeeDiagnosis?.length ? (
-            <table className="table table-bordered">
-              <thead className="table-light">
-                <tr>
-                  <th>Date</th>
-                  <th>Test</th>
-                  <th>Result</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.employeeDiagnosis.flatMap((rec, i) =>
-                  rec.Tests.map((t, j) => (
-                    <tr key={`${i}-${j}`}>
-                      <td>{new Date(t.Timestamp).toLocaleDateString()}</td>
-                      <td>{t.Test_Name}</td>
-                      <td>{t.Result_Value}</td>
-                      <td>{t.Remarks || "—"}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          ) : (
-            <p>No employee diagnosis records.</p>
-          )}
-
-          {/* =======================================================
-              FAMILY SECTION
-          ======================================================== */}
-          <h5 className="mt-4 fw-bold">👨‍👩‍👧 Family Members</h5>
-
-          {/* FAMILY DISEASES */}
-          <h6 className="mt-2">🦠 Diseases</h6>
-
-          {report.familyDiseases?.length ? (
-            <table className="table table-bordered">
-              <thead className="table-light">
-                <tr>
-                  <th>Member</th>
-                  <th>Disease</th>
-                  <th>Category</th>
-                  <th>Severity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.familyDiseases.map((d, i) => (
-                  <tr key={i}>
-                    <td>
-                      {d.FamilyMember_ID?.Name} (
-                      {d.FamilyMember_ID?.Relationship})
-                    </td>
-                    <td>{d.Disease_Name}</td>
-                    <td>{d.Category}</td>
-                    <td>{d.Severity_Level}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No family disease records.</p>
-          )}
-
-          {/* FAMILY DIAGNOSIS TESTS */}
-          <h6 className="mt-2">🩺 Diagnosis Tests</h6>
-
-          {report.familyDiagnosis?.length ? (
-            <table className="table table-bordered">
-              <thead className="table-light">
-                <tr>
-                  <th>Member</th>
-                  <th>Test</th>
-                  <th>Result</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.familyDiagnosis.flatMap((rec, i) =>
-                  rec.Tests.map((t, j) => (
-                    <tr key={`${i}-${j}`}>
-                      <td>
-                        {rec.FamilyMember?.Name} (
-                        {rec.FamilyMember?.Relationship})
-                      </td>
-                      <td>{t.Test_Name}</td>
-                      <td>{t.Result_Value}</td>
-                      <td>{new Date(t.Timestamp).toLocaleDateString()}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          ) : (
-            <p>No family diagnosis test records.</p>
           )}
         </div>
-      )}
+  
+        {/* ================= REPORT ================= */}
+        {report && (
+          <div style={{ marginTop: 30 }}>
+            {/* EMPLOYEE */}
+            <h5 style={{ fontWeight: 700, color: "#000", marginBottom: 12 }}>
+              🧑‍💼 Employee: {report.employee.Name} ({report.employee.ABS_NO})
+            </h5>
+  
+            {/* EMPLOYEE DISEASES */}
+            <h6 style={{ fontWeight: 600, marginTop: 20 }}>🦠 Diseases</h6>
+  
+            {report.employeeDiseases?.length ? (
+              <div className="table-responsive">
+                <table className="table table-bordered align-middle">
+                  <thead style={{ background: "#f3f4f6" }}>
+                    <tr>
+                      <th>Disease</th>
+                      <th>Category</th>
+                      <th>Severity</th>
+                      <th>Diagnosis</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.employeeDiseases.map((d, i) => (
+                      <tr key={i}>
+                        <td>{d.Disease_Name}</td>
+                        <td>{d.Category}</td>
+                        <td>
+                          <span
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 20,
+                              background: "#e5e7eb",
+                              fontSize: 13
+                            }}
+                          >
+                            {d.Severity_Level}
+                          </span>
+                        </td>
+                        <td>{d.Diagnosis || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: "#6b7280" }}>
+                No employee disease records.
+              </p>
+            )}
+  
+            {/* EMPLOYEE DIAGNOSIS */}
+            <h6 style={{ fontWeight: 600, marginTop: 24 }}>
+              🩺 Diagnosis Tests
+            </h6>
+  
+            {report.employeeDiagnosis?.length ? (
+              <div className="table-responsive">
+                <table className="table table-bordered align-middle">
+                  <thead style={{ background: "#f3f4f6" }}>
+                    <tr>
+                      <th>Date</th>
+                      <th>Test</th>
+                      <th>Result</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.employeeDiagnosis.flatMap((rec, i) =>
+                      rec.Tests.map((t, j) => (
+                        <tr key={`${i}-${j}`}>
+                          <td>
+                            {new Date(t.Timestamp).toLocaleDateString()}
+                          </td>
+                          <td>{t.Test_Name}</td>
+                          <td>{t.Result_Value}</td>
+                          <td>{t.Remarks || "—"}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: "#6b7280" }}>
+                No employee diagnosis records.
+              </p>
+            )}
+  
+            {/* FAMILY */}
+            <h5
+              style={{
+                fontWeight: 700,
+                marginTop: 32,
+                color: "#000"
+              }}
+            >
+              👨‍👩‍👧 Family Members
+            </h5>
+  
+            {/* FAMILY DISEASES */}
+            <h6 style={{ fontWeight: 600, marginTop: 16 }}>
+              🦠 Diseases
+            </h6>
+  
+            {report.familyDiseases?.length ? (
+              <div className="table-responsive">
+                <table className="table table-bordered align-middle">
+                  <thead style={{ background: "#f3f4f6" }}>
+                    <tr>
+                      <th>Member</th>
+                      <th>Disease</th>
+                      <th>Category</th>
+                      <th>Severity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.familyDiseases.map((d, i) => (
+                      <tr key={i}>
+                        <td>
+                          {d.FamilyMember_ID?.Name} (
+                          {d.FamilyMember_ID?.Relationship})
+                        </td>
+                        <td>{d.Disease_Name}</td>
+                        <td>{d.Category}</td>
+                        <td>{d.Severity_Level}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: "#6b7280" }}>
+                No family disease records.
+              </p>
+            )}
+  
+            {/* FAMILY DIAGNOSIS */}
+            <h6 style={{ fontWeight: 600, marginTop: 20 }}>
+              🩺 Diagnosis Tests
+            </h6>
+  
+            {report.familyDiagnosis?.length ? (
+              <div className="table-responsive">
+                <table className="table table-bordered align-middle">
+                  <thead style={{ background: "#f3f4f6" }}>
+                    <tr>
+                      <th>Member</th>
+                      <th>Test</th>
+                      <th>Result</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.familyDiagnosis.flatMap((rec, i) =>
+                      rec.Tests.map((t, j) => (
+                        <tr key={`${i}-${j}`}>
+                          <td>
+                            {rec.FamilyMember?.Name} (
+                            {rec.FamilyMember?.Relationship})
+                          </td>
+                          <td>{t.Test_Name}</td>
+                          <td>{t.Result_Value}</td>
+                          <td>
+                            {new Date(t.Timestamp).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: "#6b7280" }}>
+                No family diagnosis test records.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
+  
 };
 
 export default InstituteReports;

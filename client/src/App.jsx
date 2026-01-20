@@ -36,10 +36,11 @@ import AdminDashboard from "./components/admin/admin_home";
 import AIInsights from "./components/institutes/AIInsights";
 import AdminInstituteReports from "./components/admin/institute_reports";
 import AIInsights2 from "./components/admin/ai_insights";
-
+import DoctorDiagnosis from "./components/institutes/DoctorDiagnosisForm"
 import axios from "axios";
 import EmployeeReports from "./components/admin/employee_reports";
-
+import DoctorLayout from "./components/institutes/DoctorLayout";
+import OthersLayout from "./components/institutes/OthersLayout";
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -66,17 +67,15 @@ function App() {
       element:<InstituteProfile/>
     },
     {
+      path:"/institutes/doctor-diagnosis",
+      element:<DoctorDiagnosis/>
+    },
+
+    {
       path:"/institutes/inventory",
       element:<InstituteInventory/>
     },
-    {
-      path:"/institutes/ledger",
-      element:<InstituteLedger/>
-    },
-    {
-      path:"/institutes/indent",
-      element:<InstituteIndent/>
-    },
+   
     {
       path:"/institutes/medicines-issued-register",
       element:<MedicinesIssuedRegister/>
@@ -100,16 +99,47 @@ function App() {
       element:<DoctorPrescriptionForm/>
     },
     {
-      path:"/institutes/doctor-diagnosis",
-      element:<DoctorDiagnosisForm/>
+      path: "/institutes/doctor-prescription",
+      element: <DoctorLayout />,
+      children: [
+        {
+          index: true,
+          element: <DoctorPrescriptionForm />
+        }
+      ]
     },
+
+    {
+      element: <OthersLayout />,
+      children: [
+        {
+          path: "/institutes/ledger",
+          element: <InstituteLedger />
+        },
+        {
+          path: "/institutes/indent",
+          element: <InstituteIndent />
+        },
+        {
+          path: "institutions/main-store",
+          element: <MainStore />
+        },
+        {
+          path: "institutes/sub-store",
+          element: <SubStore />
+        },
+        {
+          path: "/institutes/ai-insights",
+          element: <AIInsights />
+        }
+      ]
+    },
+    
+    
     {path:"/institutes/visit-register",
       element:<VisitRegister/>
     },
-    {
-      path: "/institutes/ai-insights",
-      element: <AIInsights />
-    },
+  
     {
       path:"/employee-register",
       element:<EmployeeRegistration/>,
@@ -146,12 +176,6 @@ function App() {
     {
       path:"/employee/family/:id",
       element:<FamilyMemberProfile/>
-    },{
-      path:"institutions/main-store",
-      element:<MainStore/>
-    },{
-      path:"institutes/sub-store",
-      element:<SubStore/>
     },{
       path:"/institutes/add",
       element:<AddMainStoreMedicine/>

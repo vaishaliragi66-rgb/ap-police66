@@ -76,238 +76,327 @@ export default function InstituteReports() {
   }
 
   return (
-    <div className="container-fluid mt-4">
-      <h4 className="text-center mb-3">Institute Reports (Admin)</h4>
-
-      {/* ===============================
-          FILTERS
-      ================================*/}
-      <div className="card mb-3">
-        <div className="card-body row g-2">
-          <div className="col-md-3">
-            <input
-              className="form-control"
-              placeholder="Institute Name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-3">
-            <input
-              className="form-control"
-              placeholder="District"
-              value={district}
-              onChange={e => setDistrict(e.target.value)}
-            />
+    <div
+      style={{
+        backgroundColor: "#F8FAFC",
+        minHeight: "100vh",
+        padding: "32px",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <div className="container-fluid">
+  
+        {/* PAGE HEADER */}
+        <div className="mb-4">
+          <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
+            Institute Reports
+          </h3>
+          <p style={{ color: "#6B7280", marginBottom: 0 }}>
+            Monitor institute inventory, stock status and communication
+          </p>
+        </div>
+  
+        {/* FILTER CARD */}
+        <div
+          className="card border-0 mb-4"
+          style={{
+            borderRadius: "14px",
+            boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div className="card-body">
+            <div className="row g-3 align-items-end">
+  
+              <div className="col-md-3">
+                <label className="form-label small text-muted">
+                  Institute Name
+                </label>
+                <input
+                  className="form-control"
+                  placeholder="Search by institute"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                />
+              </div>
+  
+              <div className="col-md-3">
+                <label className="form-label small text-muted">
+                  District
+                </label>
+                <input
+                  className="form-control"
+                  placeholder="Search by district"
+                  value={district}
+                  onChange={e => setDistrict(e.target.value)}
+                />
+              </div>
+  
+            </div>
           </div>
         </div>
-      </div>
+  
+        {/* TABLE CARD */}
+        <div
+          className="card border-0"
+          style={{
+            borderRadius: "16px",
+            boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+          }}
+        >
+          <div className="card-body p-0">
+  
+            <div className="table-responsive">
+              <table className="table align-middle mb-0">
+                <thead
+                  style={{
+                    backgroundColor: "#F3F7FF",
+                    color: "#1F2933",
+                    fontWeight: 600,
+                  }}
+                >
+                  <tr>
+                    <th>ID</th>
+                    <th>Institute</th>
+                    <th>Email</th>
+                    <th>District</th>
+                    <th>Main</th>
+                    <th>Sub</th>
+                    <th>Low Stock</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+  
+                <tbody>
+                  {paginated.length === 0 && (
+                    <tr>
+                      <td colSpan="8" className="text-center py-4 text-muted">
+                        No records found
+                      </td>
+                    </tr>
+                  )}
+  
+                  {paginated.map((r, i) => (
+                    <tr key={i}>
+                      <td>{r.Institute_ID}</td>
+                      <td className="fw-semibold">{r.Institute_Name}</td>
+  
+                      <td>
+                        <button
+                          className="btn btn-link p-0"
+                          style={{ color: "#4A70A9" }}
+                          onClick={() => setMailInstitute(r)}
+                        >
+                          {r.Email_ID}
+                        </button>
+                      </td>
+  
+                      <td>{r.Address?.District || "—"}</td>
+                      <td>{r.MainStore_Count}</td>
+                      <td>{r.SubStore_Count}</td>
+  
+                      <td
+                        style={{
+                          color:
+                            r.LowStock_Count > 0 ? "#D14343" : "#1F2933",
+                          fontWeight:
+                            r.LowStock_Count > 0 ? 600 : 400,
+                        }}
+                      >
+                        {r.LowStock_Count}
+                      </td>
+  
+                      <td>
+                        <button
+                          className="btn btn-sm"
+                          style={{
+                            backgroundColor: "#4A70A9",
+                            color: "#fff",
+                            borderRadius: "999px",
+                            padding: "6px 14px",
+                            border: "none",
+                          }}
+                          onClick={() => setSelectedInstitute(r)}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+  
+          </div>
+        </div>
 
-      {/* ===============================
-          TABLE
-      ================================*/}
-      <div className="table-responsive">
-        <table className="table table-bordered table-hover align-middle">
-          <thead className="table-dark">
-            <tr>
-              <th>ID</th>
-              <th>Institute</th>
-              <th>Email</th>
-              <th>District</th>
-              <th>Main Store</th>
-              <th>Sub Store</th>
-              <th>Low Stock</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+        {selectedInstitute && (
+  <div
+    className="modal show d-block"
+    style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+  >
+    <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div className="modal-content" style={{ borderRadius: "14px" }}>
+        
+        {/* HEADER */}
+        <div
+          className="modal-header"
+          style={{
+            backgroundColor: "#F3F7FF",
+            borderBottom: "1px solid #D6E0F0",
+          }}
+        >
+          <div>
+            <h5 className="mb-0 fw-semibold text-dark">
+              {selectedInstitute.Institute_Name}
+            </h5>
+            <small className="text-muted">
+              Medicines Inventory Overview
+            </small>
+          </div>
 
-          <tbody>
-            {paginated.length === 0 && (
-              <tr>
-                <td colSpan="8" className="text-center">
-                  No records found
-                </td>
-              </tr>
+          <button
+            className="btn-close"
+            onClick={() => setSelectedInstitute(null)}
+          />
+        </div>
+
+        {/* BODY */}
+        <div className="modal-body" style={{ backgroundColor: "#F8FAFC" }}>
+          
+          {/* MAIN STORE */}
+          <div className="mb-4">
+            <h6 className="fw-semibold text-primary mb-2">
+              Main Store Medicines
+            </h6>
+
+            {selectedInstitute.mainStore?.length ? (
+              <div className="table-responsive">
+                <table className="table table-sm align-middle">
+                  <thead style={{ backgroundColor: "#EAF2FF" }}>
+                    <tr>
+                      <th>Medicine</th>
+                      <th>Batch</th>
+                      <th>Quantity</th>
+                      <th>Expiry</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedInstitute.mainStore.map((m, i) => (
+                      <tr key={i}>
+                        <td>{m.Medicine_Name || "-"}</td>
+                        <td>{m.Batch_No || "-"}</td>
+                        <td
+                          className={
+                            m.Quantity < 10
+                              ? "text-danger fw-semibold"
+                              : ""
+                          }
+                        >
+                          {m.Quantity}
+                        </td>
+                        <td>
+                          {m.Expiry_Date
+                            ? new Date(m.Expiry_Date).toLocaleDateString()
+                            : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-muted small">
+                No medicines in main store
+              </p>
             )}
+          </div>
 
-            {paginated.map((r, i) => (
-              <tr key={i}>
-                <td>{r.Institute_ID}</td>
-                <td>{r.Institute_Name}</td>
+          {/* SUB STORE */}
+          <div>
+            <h6 className="fw-semibold text-success mb-2">
+              Sub Store Medicines
+            </h6>
 
-                <td>
-                  <button
-                    className="btn btn-link p-0"
-                    onClick={() => setMailInstitute(r)}
-                  >
-                    {r.Email_ID}
-                  </button>
-                </td>
+            {selectedInstitute.subStore?.length ? (
+              <div className="table-responsive">
+                <table className="table table-sm align-middle">
+                  <thead style={{ backgroundColor: "#EAFBEA" }}>
+                    <tr>
+                      <th>Medicine</th>
+                      <th>Batch</th>
+                      <th>Quantity</th>
+                      <th>Expiry</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedInstitute.subStore.map((m, i) => (
+                      <tr key={i}>
+                        <td>{m.Medicine_Name || "-"}</td>
+                        <td>{m.Batch_No || "-"}</td>
+                        <td
+                          className={
+                            m.Quantity < 10
+                              ? "text-danger fw-semibold"
+                              : ""
+                          }
+                        >
+                          {m.Quantity}
+                        </td>
+                        <td>
+                          {m.Expiry_Date
+                            ? new Date(m.Expiry_Date).toLocaleDateString()
+                            : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-muted small">
+                No medicines in sub store
+              </p>
+            )}
+          </div>
+        </div>
 
-                <td>{r.Address?.District || "—"}</td>
-                <td>{r.MainStore_Count}</td>
-                <td>{r.SubStore_Count}</td>
-
-                <td className={r.LowStock_Count > 0 ? "text-danger fw-bold" : ""}>
-                  {r.LowStock_Count}
-                </td>
-
-                <td>
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => setSelectedInstitute(r)}
-                  >
-                    View Medicines
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ===============================
-          PAGINATION
-      ================================*/}
-      <ul className="pagination justify-content-center mt-3">
-        {[...Array(totalPages)].map((_, i) => (
-          <li
-            key={i}
-            className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
+        {/* FOOTER */}
+        <div
+          className="modal-footer"
+          style={{ borderTop: "1px solid #D6E0F0" }}
+        >
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => setSelectedInstitute(null)}
           >
-            <button
-              className="page-link"
-              onClick={() => setCurrentPage(i + 1)}
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+  
+        {/* PAGINATION */}
+        <ul className="pagination justify-content-center mt-4">
+          {[...Array(totalPages)].map((_, i) => (
+            <li
+              key={i}
+              className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
             >
-              {i + 1}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {/* ===============================
-          MEDICINES MODAL
-      ================================*/}
-      {selectedInstitute && (
-        <div className="modal show fade d-block" style={{ background: "#00000080" }}>
-          <div className="modal-dialog modal-xl">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5>{selectedInstitute.Institute_Name} – Medicines Inventory</h5>
-                <button
-                  className="btn-close"
-                  onClick={() => setSelectedInstitute(null)}
-                />
-              </div>
-
-              <div className="modal-body">
-                <h6 className="text-primary">Main Store Medicines</h6>
-                <pre className="small">
-                  {JSON.stringify(selectedInstitute.mainStore || [], null, 2)}
-                </pre>
-
-                <h6 className="text-success">Sub Store Medicines</h6>
-                <pre className="small">
-                  {JSON.stringify(selectedInstitute.subStore || [], null, 2)}
-                </pre>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===============================
-          COMPOSE MAIL MODAL
-      ================================*/}
-      {mailInstitute && (
-        <div className="modal show fade d-block" style={{ background: "#00000080" }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5>Compose Mail – {mailInstitute.Institute_Name}</h5>
-                <button
-                  className="btn-close"
-                  onClick={() => {
-                    setMailInstitute(null);
-                    setMailSubject("");
-                    setMailBody("");
-                  }}
-                />
-              </div>
-
-              <div className="modal-body">
-                <div className="mb-2">
-                  <label className="form-label">From (Admin)</label>
-                  <input className="form-control" value={adminEmail || ""} disabled />
-                </div>
-
-                <div className="mb-2">
-                  <label className="form-label">To</label>
-                  <input className="form-control" value={mailInstitute.Email_ID} disabled />
-                </div>
-
-                <div className="mb-2">
-                  <label className="form-label">Subject</label>
-                  <input
-                    className="form-control"
-                    value={mailSubject}
-                    onChange={e => setMailSubject(e.target.value)}
-                  />
-                </div>
-
-                <div className="mb-2">
-                  <label className="form-label">Message</label>
-                  <textarea
-                    className="form-control"
-                    rows={6}
-                    value={mailBody}
-                    onChange={e => setMailBody(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setMailInstitute(null)}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  className="btn btn-primary"
-                  disabled={sending || !mailSubject || !mailBody || !adminEmail}
-                  onClick={async () => {
-                    try {
-                      setSending(true);
-                      await axios.post(
-                        `http://localhost:${BACKEND_PORT}/admin-api/send-mail`,
-                        {
-                          from: adminEmail,
-                          to: mailInstitute.Email_ID,
-                          subject: mailSubject,
-                          message: mailBody
-                        }
-                      );
-                      alert("Mail sent successfully");
-                      setMailInstitute(null);
-                      setMailSubject("");
-                      setMailBody("");
-                    } catch {
-                      alert("Failed to send mail");
-                    } finally {
-                      setSending(false);
-                    }
-                  }}
-                >
-                  {sending ? "Sending..." : "Send Mail"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            </li>
+          ))}
+        </ul>
+  
+      </div>
     </div>
   );
+  
 }
