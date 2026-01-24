@@ -432,21 +432,22 @@ const DoctorPrescriptionForm = () => {
                 </div> */}
                 <PatientSelector
                 instituteId={formData.Institute_ID}
-                    onSelect={({ employee, visit_id }) => {
-                        setSelectedEmployee(employee);
-                        setVisitId(visit_id);
+                    onSelect={({ employee, visit, visit_id }) => {
+  setSelectedEmployee(employee);
+  setVisitId(visit?._id || visit_id || null);
 
-                        setFormData(prev => ({
-                        ...prev,
-                        Employee_ID: employee._id,
-                        visit_id: visit_id,
-                        IsFamilyMember: false,
-                        FamilyMember_ID: ""
-                        }));
+  setFormData(prev => ({
+    ...prev,
+    Employee_ID: employee._id,
+    visit_id: visit?._id || visit_id || null,
+    IsFamilyMember: false,
+    FamilyMember_ID: ""
+  }));
 
-                        fetchDiseases(employee._id);
-                        fetchTopTwoPrescriptions(employee._id); // ✅ ADD THIS
-                    }}
+  fetchDiseases(employee._id);
+  fetchTopTwoPrescriptions(employee._id);
+}}
+
                     />
 
 

@@ -53,9 +53,10 @@ useEffect(() => {
       setSearch(item.employee_id.ABS_NO);
 
       onSelect({
-        employee: item.employee_id,
-        visit: item
-      });
+  employee: item.employee_id,
+  visit_id: item._id
+});
+
     } else {
       // searched employee
       setSearch(item.ABS_NO);

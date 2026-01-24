@@ -336,22 +336,21 @@ const fetchVisitDetails = async (visitId) => {
         {/* Employee Search */}
         <PatientSelector
   instituteId={formData.Institute_ID}
-onSelect={({ employee, visit }) => {
-  setVisitId(visit?._id || null);
+onSelect={({ employee, visit_id }) => {
+  setVisitId(visit_id || null);
+
+  if (visit_id) {
+    fetchDoctorDiagnosis(visit_id);
+  }
 
   setFormData(prev => ({
     ...prev,
     Employee_ID: employee._id,
-    IsFamilyMember: Boolean(visit?.IsFamilyMember),
-    FamilyMember_ID: visit?.IsFamilyMember
-      ? visit.FamilyMember
-      : ""
+    IsFamilyMember: false,
+    FamilyMember_ID: ""
   }));
-
-  if (visit?._id) {
-    fetchDoctorDiagnosis(visit._id);
-  }
 }}
+
 
 />
 

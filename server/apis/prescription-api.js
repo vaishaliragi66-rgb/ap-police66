@@ -127,18 +127,18 @@ prescriptionApp.post("/add", async (req, res) => {
       });
 
       // Check stock
-      if (substoreMed.Quantity < qty) {
-        return res.status(400).json({
-          message: "Insufficient stock",
-          medicineName: substoreMed.Medicine_Name,
-          available: substoreMed.Quantity,
-          requested: qty
-        });
-      }
+if (substoreMed.Source.subStore < qty) {
+  return res.status(400).json({
+    message: "Insufficient stock",
+    medicineName: substoreMed.Medicine_Name,
+    available: substoreMed.Source.subStore,
+    requested: qty
+  });
+}
 
-      // Deduct stock
-      substoreMed.Quantity -= qty;
-      await substoreMed.save();
+substoreMed.Source.subStore -= qty;
+await substoreMed.save();
+
 
       // Store for prescription document
       medicineUpdates.push({

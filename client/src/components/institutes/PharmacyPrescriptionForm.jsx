@@ -9,7 +9,7 @@ const PharmacyPrescriptionForm = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [visitId, setVisitId] = useState(null); 
-  const [medicineSearch, setMedicineSearch] = useState("");
+  const [medicineSearch, setMedicineSearch] = useState({});
   const [activeMedicineIndex, setActiveMedicineIndex] = useState(null);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [inventory, setInventory] = useState([]);
@@ -142,25 +142,29 @@ useEffect(() => {
   };
 
   /* ================= MEDICINE SEARCH ================= */
-  useEffect(() => {
-    if (!medicineSearch.trim()) {
-      setFilteredMedicines([]);
-      return;
-    }
+/* ================= MEDICINE SEARCH ================= */
+useEffect(() => {
+  const searchText = medicineSearch[activeMedicineIndex] || "";
 
-    const results = inventory
-      .filter((m) =>
-        m.Medicine_Name?.toLowerCase().includes(medicineSearch.toLowerCase())
-      )
-      .sort((a, b) => {
-        // Sub-store medicines first
-        if (a.Source?.subStore > 0 && b.Source?.subStore === 0) return -1;
-        if (a.Source?.subStore === 0 && b.Source?.subStore > 0) return 1;
-        return 0;
-      });
+  if (!searchText.trim()) {
+    setFilteredMedicines([]);
+    return;
+  }
 
-    setFilteredMedicines(results);
-  }, [medicineSearch, inventory]);
+  const results = inventory
+    .filter(m =>
+      m.Medicine_Name?.toLowerCase().includes(searchText.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (a.Source?.subStore > 0 && b.Source?.subStore === 0) return -1;
+      if (a.Source?.subStore === 0 && b.Source?.subStore > 0) return 1;
+      return 0;
+    });
+
+  setFilteredMedicines(results);
+}, [medicineSearch, activeMedicineIndex, inventory]);
+
+
 
   /* ================= EMPLOYEE PROFILE ================= */
   useEffect(() => {
@@ -232,141 +236,59 @@ useEffect(() => {
   };
 
   /* ================= MEDICINE HANDLERS ================= */
-  const handleMedicineChange = (index, field, value) => {
-    setFormData((prev) => {
-      const updated = [...prev.Medicines];
+const handleMedicineChange = (index, field, value) => {
+  setFormData(prev => {
+    const updated = [...prev.Medicines];
 
-      if (field === "medicineId") {
-        const selected = inventory.find(
-          (m) => m.Medicine_Code === value
-        );
+    if (field === "medicineId") {
+      const selected = inventory.find(m => m.Medicine_Code === value);
+      if (!selected) return prev;
 
-        if (!selected) return prev;
+      updated[index] = {
+        medicineId: selected.Medicine_Code,
+        medicineName: selected.Medicine_Name,
+        expiryDate: selected.Expiry_Date,
+        quantity: 1
+      };
+    }
 
-        if (selected.Source?.subStore === 0) {
-          alert(
-            "❌ This medicine is not available in sub-store. Please collect it from the main store."
-          );
-          return prev;
-        }
+    if (field === "quantity") {
+      updated[index].quantity = Number(value);
+    }
 
-        updated[index] = {
-          medicineId: selected.Medicine_Code,
-          medicineName: selected.Medicine_Name,
-          expiryDate: selected.Expiry_Date,
-          quantity: 0
-        };
+    return { ...prev, Medicines: updated };
+  });
+};
 
-        setMedicineErrors((prevErr) => {
-          const e = { ...prevErr };
-          delete e[index];
-          return e;
-        });
-      }
-
-      if (field === "quantity") {
-        updated[index].quantity = value;
-        const selectedMedicine = inventory.find(
-          (m) => m.Medicine_Code === updated[index].medicineId
-        );
-
-        if (selectedMedicine) {
-          const availableQty = selectedMedicine.Quantity || 0;
-          const threshold = selectedMedicine.Threshold_Qty || 0;
-          const requestedQty = Number(value);
-
-          if (requestedQty > availableQty) {
-            setMedicineErrors((prev) => ({
-              ...prev,
-              [index]: `❌ Only ${availableQty} units available in stock`
-            }));
-            return { ...prev, Medicines: updated };
-          }
-
-          if (availableQty - requestedQty < threshold) {
-            setMedicineErrors((prev) => {
-              if (prev[index]?.startsWith("❌")) return prev;
-              return {
-                ...prev,
-                [index]: `⚠️ Warning: Stock will fall below threshold (${threshold}). Remaining: ${availableQty - requestedQty}`
-              };
-            });
-          } else {
-            setMedicineErrors((prev) => {
-              const copy = { ...prev };
-              delete copy[index];
-              return copy;
-            });
-          }
-        }
-
-        if (updated[index].medicineName && value > 0) {
-          validateMedicineQuantity(
-            index,
-            updated[index].medicineName,
-            value
-          );
-        }
-      }
-
-      return { ...prev, Medicines: updated };
-    });
-  };
 
   /* ================= ADD DOCTOR PRESCRIBED MEDICINE TO FORM ================= */
 /* ================= ADD DOCTOR PRESCRIBED MEDICINE TO FORM (FIXED FOR SPACES) ================= */
 const addDoctorPrescribedMedicine = (medicine) => {
-  console.log("Doctor medicine to add:", medicine);
-  
-  // Normalize the medicine name - trim and clean
-  const doctorMedicineName = medicine.Medicine_Name?.trim();
-  
-  if (!doctorMedicineName) {
-    alert("Doctor prescription has no medicine name");
-    return;
+  // 1️⃣ Try code match (PRIMARY)
+  if (medicine.Medicine_Code) {
+    const byCode = inventory.find(
+      i => i.Medicine_Code === medicine.Medicine_Code
+    );
+    if (byCode) {
+      addMedicineToForm(byCode, medicine.Quantity);
+      return;
+    }
   }
 
-  console.log("Looking for medicine (trimmed):", `"${doctorMedicineName}"`);
-
-  // Find match with trimmed comparison
-  const inventoryItem = inventory.find(
-    (item) => {
-      const itemName = item.Medicine_Name?.trim();
-      return itemName?.toLowerCase() === doctorMedicineName.toLowerCase();
-    }
+  // 2️⃣ Fallback: name match (SECONDARY)
+  const byName = inventory.find(
+    i => i.Medicine_Name?.trim().toLowerCase() ===
+         medicine.Medicine_Name?.trim().toLowerCase()
   );
 
-  if (inventoryItem) {
-    console.log("Match found:", inventoryItem.Medicine_Name);
-    addMedicineToForm(inventoryItem, medicine.Quantity);
+  if (byName) {
+    addMedicineToForm(byName, medicine.Quantity);
     return;
   }
 
-  // Try code matching (also trimmed)
-  const codeMatch = inventory.find(
-    (item) => {
-      const itemCode = item.Medicine_Code?.trim();
-      return itemCode?.toLowerCase() === doctorMedicineName.toLowerCase();
-    }
-  );
-
-  if (codeMatch) {
-    console.log("Code match found:", codeMatch.Medicine_Code);
-    addMedicineToForm(codeMatch, medicine.Quantity);
-    return;
-  }
-
-  // Show error with available medicines (trimmed for display)
-  const availableMedicines = inventory
-    .map(item => {
-      const name = item.Medicine_Name?.trim();
-      const code = item.Medicine_Code?.trim();
-      return `• ${name} (${code})`;
-    })
-    .join('\n');
-    
-  alert(`❌ Medicine "${doctorMedicineName}" not found in inventory.\n\nAvailable medicines:\n${availableMedicines}`);
+  alert(`❌ Medicine "${medicine.Medicine_Name}" not found in inventory`);
 };
+
 
 // Helper function with trimmed logging
 const addMedicineToForm = (inventoryItem, quantity) => {
@@ -704,13 +626,19 @@ const handleSubmit = async (e) => {
                           // When displaying medicine in the input field:
 value={
   activeMedicineIndex === i
-    ? medicineSearch
+    ? medicineSearch[i] || ""
     : med.medicineName
       ? `${med.medicineName.trim()} (Exp: ${formatDateDMY(med.expiryDate)})`
       : ""
 }
                           onFocus={() => setActiveMedicineIndex(i)}
-                          onChange={(e) => setMedicineSearch(e.target.value)}
+                          onChange={(e) =>
+  setMedicineSearch(prev => ({
+    ...prev,
+    [i]: e.target.value
+  }))
+}
+
                         />
 
 // In your medicine dropdown display:
