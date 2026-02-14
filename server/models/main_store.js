@@ -16,7 +16,11 @@ const MainStoreMedicineSchema = new Schema({
   Quantity: { type: Number, required: true },
 
   Threshold_Qty: { type: Number, required: true },
-
+  Source:{
+    type: String,
+    enum: ["institute_transfer","distributer"],
+    required: true
+  },
   Issued_By: {
     type: String,   // example: "DGP Head Office"
     required: true
@@ -36,6 +40,6 @@ const MainStoreMedicineSchema = new Schema({
 }, { timestamps: true });
 
 // Prevent duplicate medicine codes in main store
-MainStoreMedicineSchema.index({ Medicine_Code: 1 }, { unique: true });
+MainStoreMedicineSchema.index({ Medicine_Code: 1, Institute_ID: 1  }, { unique: true });
 
 module.exports = mongoose.model("MainStoreMedicine", MainStoreMedicineSchema);

@@ -11,17 +11,19 @@ const PharmacyPrescriptionForm = () => {
   const [visitId, setVisitId] = useState(null); 
   const [medicineSearch, setMedicineSearch] = useState({});
   const [activeMedicineIndex, setActiveMedicineIndex] = useState(null);
-  const [familyMembers, setFamilyMembers] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [instituteName, setInstituteName] = useState("");
   const [filteredMedicines, setFilteredMedicines] = useState([]);
-  const [employeeProfile, setEmployeeProfile] = useState(null);
   const [diseases, setDiseases] = useState([]);
   const [medicineErrors, setMedicineErrors] = useState({});
   const [doctorPrescription, setDoctorPrescription] = useState([]);
   const [lastTwoVisits, setLastTwoVisits] = useState([]);
   const [showDoctorPrescription, setShowDoctorPrescription] = useState(true);
   const [filteredDoctorPrescription, setFilteredDoctorPrescription] = useState([]);
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [employeeReport, setEmployeeReport] = useState(null);
+  const [showReports, setShowReports] = useState(false);
+
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -70,20 +72,66 @@ const PharmacyPrescriptionForm = () => {
     }
   };
 
-  const fetchLastTwoPrescriptions = async (employeeId) => {
-    try {
-      const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
+  const fetchLastTwoPrescriptions = async (employeeId, familyId = null) => {
+  try {
+    const res = await axios.get(
+      `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
+    );
+
+    let data = res.data || [];
+
+    // 🔥 SAME FILTER AS DOCTOR FORM
+    if (familyId) {
+      data = data.filter(p =>
+        p.IsFamilyMember &&
+        String(p.FamilyMember?._id) === String(familyId)
       );
-      const sorted = [...res.data].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-      setLastTwoVisits(sorted.slice(0, 2));
-    } catch (err) {
-      console.error("Error fetching previous prescriptions:", err);
-      setLastTwoVisits([]);
+    } else {
+      data = data.filter(p => !p.IsFamilyMember);
     }
-  };
+
+    // 🔥 SAME SORT AS DOCTOR FORM
+    data.sort(
+      (a, b) => new Date(b.Timestamp) - new Date(a.Timestamp)
+    );
+
+    setLastTwoVisits(data.slice(0, 2));
+
+  } catch (err) {
+    console.error("Error fetching previous prescriptions:", err);
+    setLastTwoVisits([]);
+  }
+};
+
+const loadEmployeeReports = async () => {
+  if (!selectedEmployee || !selectedEmployee.ABS_NO) {
+    alert("No employee selected");
+    return;
+  }
+
+  try {
+    const reportRes = await axios.get(
+      `http://localhost:${BACKEND_PORT}/employee-api/health-report/${encodeURIComponent(selectedEmployee.ABS_NO)}`
+    );
+
+    const diseaseRes = await axios.get(
+      `http://localhost:${BACKEND_PORT}/disease-api/employee/${selectedEmployee._id}`
+    );
+
+
+    setEmployeeReport({
+      ...reportRes.data,
+      allDiseases: diseaseRes.data || []
+    });
+
+    setShowReports(true);
+
+  } catch (err) {
+    console.error("Report fetch error:", err);
+    alert("Unable to fetch reports");
+  }
+};
+
 
   const formatDateDMY = (value) => {
     if (!value) return "—";
@@ -142,7 +190,6 @@ useEffect(() => {
   };
 
   /* ================= MEDICINE SEARCH ================= */
-/* ================= MEDICINE SEARCH ================= */
 useEffect(() => {
   const searchText = medicineSearch[activeMedicineIndex] || "";
 
@@ -151,47 +198,15 @@ useEffect(() => {
     return;
   }
 
-  const results = inventory
-    .filter(m =>
-      m.Medicine_Name?.toLowerCase().includes(searchText.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (a.Source?.subStore > 0 && b.Source?.subStore === 0) return -1;
-      if (a.Source?.subStore === 0 && b.Source?.subStore > 0) return 1;
-      return 0;
-    });
+  console.log("Inventory sample:", inventory[0]);
+
+  const results = inventory.filter(m =>
+    m.Medicine_Name?.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   setFilteredMedicines(results);
 }, [medicineSearch, activeMedicineIndex, inventory]);
 
-
-
-  /* ================= EMPLOYEE PROFILE ================= */
-  useEffect(() => {
-    if (!formData.Employee_ID) return;
-
-    axios
-      .get(
-        `http://localhost:${BACKEND_PORT}/employee-api/profile/${formData.Employee_ID}`
-      )
-      .then((res) => setEmployeeProfile(res.data))
-      .catch(() => setEmployeeProfile(null));
-  }, [formData.Employee_ID]);
-
-  /* ================= FAMILY MEMBERS ================= */
-  useEffect(() => {
-    if (!formData.Employee_ID) {
-      setFamilyMembers([]);
-      return;
-    }
-
-    axios
-      .get(
-        `http://localhost:${BACKEND_PORT}/family-api/family/${formData.Employee_ID}`
-      )
-      .then((res) => setFamilyMembers(res.data || []))
-      .catch(() => setFamilyMembers([]));
-  }, [formData.Employee_ID]);
 
   /* ================= DISEASE FILTER ================= */
   const twoMonthsAgo = new Date();
@@ -239,16 +254,15 @@ useEffect(() => {
 const handleMedicineChange = (index, field, value) => {
   setFormData(prev => {
     const updated = [...prev.Medicines];
-
     if (field === "medicineId") {
       const selected = inventory.find(m => m.Medicine_Code === value);
       if (!selected) return prev;
 
       updated[index] = {
+        ...updated[index],   // 🔥 keep existing quantity
         medicineId: selected.Medicine_Code,
         medicineName: selected.Medicine_Name,
-        expiryDate: selected.Expiry_Date,
-        quantity: 1
+        expiryDate: selected.Expiry_Date
       };
     }
 
@@ -260,33 +274,69 @@ const handleMedicineChange = (index, field, value) => {
   });
 };
 
+const calculateQuantity = (dosage, duration) => {
+  if (!dosage || !duration) return 1;
+
+  // Example dosage: "1-0-1"
+  const parts = dosage.split("-").map(n => Number(n) || 0);
+  const perDay = parts.reduce((a, b) => a + b, 0);
+
+  // Example duration: "5 days"
+  const daysMatch = duration.match(/\d+/);
+  const days = daysMatch ? Number(daysMatch[0]) : 1;
+
+  return perDay * days;
+};
 
   /* ================= ADD DOCTOR PRESCRIBED MEDICINE TO FORM ================= */
-/* ================= ADD DOCTOR PRESCRIBED MEDICINE TO FORM (FIXED FOR SPACES) ================= */
 const addDoctorPrescribedMedicine = (medicine) => {
-  // 1️⃣ Try code match (PRIMARY)
-  if (medicine.Medicine_Code) {
-    const byCode = inventory.find(
-      i => i.Medicine_Code === medicine.Medicine_Code
+  const baseName = medicine.Medicine_Name?.trim();
+  const calculatedQty = calculateQuantity(medicine.Dosage, medicine.Duration);
+
+  setFormData(prev => {
+    const medicinesCopy = [...prev.Medicines];
+
+    // 🔥 Find first empty row
+    const emptyIndex = medicinesCopy.findIndex(
+      m => !m.medicineName
     );
-    if (byCode) {
-      addMedicineToForm(byCode, medicine.Quantity);
-      return;
+
+    if (emptyIndex !== -1) {
+      // Use existing empty row
+      medicinesCopy[emptyIndex] = {
+        ...medicinesCopy[emptyIndex],
+        medicineName: baseName,
+        quantity: calculatedQty
+      };
+
+      // Pre-fill search for that index
+      setMedicineSearch(prevSearch => ({
+        ...prevSearch,
+        [emptyIndex]: baseName
+      }));
+
+      setActiveMedicineIndex(emptyIndex);
+    } else {
+      // Otherwise add new row
+      medicinesCopy.push({
+        medicineId: "",
+        medicineName: baseName,
+        expiryDate: "",
+        quantity: calculatedQty
+      });
+
+      const newIndex = medicinesCopy.length - 1;
+
+      setMedicineSearch(prevSearch => ({
+        ...prevSearch,
+        [newIndex]: baseName
+      }));
+
+      setActiveMedicineIndex(newIndex);
     }
-  }
 
-  // 2️⃣ Fallback: name match (SECONDARY)
-  const byName = inventory.find(
-    i => i.Medicine_Name?.trim().toLowerCase() ===
-         medicine.Medicine_Name?.trim().toLowerCase()
-  );
-
-  if (byName) {
-    addMedicineToForm(byName, medicine.Quantity);
-    return;
-  }
-
-  alert(`❌ Medicine "${medicine.Medicine_Name}" not found in inventory`);
+    return { ...prev, Medicines: medicinesCopy };
+  });
 };
 
 
@@ -295,7 +345,7 @@ const addMedicineToForm = (inventoryItem, quantity) => {
   const itemName = inventoryItem.Medicine_Name?.trim();
   const itemCode = inventoryItem.Medicine_Code?.trim();
   
-  if (inventoryItem.Source?.subStore === 0) {
+  if (inventoryItem.Quantity === 0) {
     alert(
       `❌ "${itemName}" is not available in sub-store. Please collect from main store.`
     );
@@ -329,7 +379,6 @@ const addMedicineToForm = (inventoryItem, quantity) => {
     ]
   }));
   
-  console.log("Medicine added to form (trimmed):", itemName);
 };
 
   const addMedicine = () =>
@@ -363,10 +412,6 @@ const handleSubmit = async (e) => {
         item.Medicine_Code === m.medicineId
       );
       
-      console.log(`Medicine ${m.medicineId}:`, {
-        found: !!invItem,
-        inventoryItem: invItem  // Log full object
-      });
       
       // Send Medicine_ID as string (ObjectId from inventory)
       return {
@@ -380,8 +425,6 @@ const handleSubmit = async (e) => {
     Notes: formData.Notes,
     visit_id: visitId
   };
-
-  console.log("Final payload with IDs:", payload);
 
   try {
     const response = await axios.post(
@@ -400,8 +443,7 @@ const handleSubmit = async (e) => {
       Medicines: [{ medicineId: "", medicineName: "", expiryDate: "", quantity: 0 }],
       Notes: ""
     });
-    setSelectedEmployee(null);
-    setEmployeeProfile(null);
+    setSelectedEmployee(null);  
     setVisitId(null);
     setDoctorPrescription([]);
     setLastTwoVisits([]);
@@ -416,32 +458,112 @@ const handleSubmit = async (e) => {
   /* ================= UI ================= */
   return (
     <div className="container-fluid mt-4">
-      <div className="row justify-content-center">
-        {/* FORM - MAIN CONTENT */}
-        <div className="col-lg-8">
-          {/* ===== TOP BAR WITH INVENTORY BUTTON ===== */}
-<div className="d-flex justify-content-between align-items-center mb-3">
-  <div>
-    <h4 className="fw-bold mb-0">Pharmacy Prescription</h4>
-    <small className="text-muted">
-      Issue medicines to employees
-    </small>
-  </div>
+      <div className="row">
+        {/* LEFT REPORTS */}
+{showReports && (
+  <div className="col-lg-3 mb-3">
+    <div className="card shadow border-0 h-100">
+      <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <strong>Employee Reports</strong>
 
-  <button
-    className="btn btn-outline-primary"
-    onClick={() => navigate("/institutes/inventory")}
-  >
-    🏥 Inventory
-  </button>
+                <button
+                  className="btn btn-sm btn-light"
+                  onClick={() => setShowReports(false)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div
+  className="card-body"
+  style={{ maxHeight: "70vh", overflowY: "auto" }}
+>
+
+  {!employeeReport ? (
+    <div className="text-muted">No reports available</div>
+  ) : (
+    <>
+      {/* BASIC DETAILS */}
+      <div className="mb-3">
+  <div>
+    <strong>Name:</strong> {employeeReport.employee?.Name}
+  </div>
+  <div>
+    <strong>ABS No:</strong> {employeeReport.employee?.ABS_NO}
+  </div>
+  <div>
+    <strong>Age:</strong> {employeeReport.employee?.Age}
+  </div>
+  <div>
+    <strong>Blood Group:</strong> {employeeReport.employee?.Blood_Group}
+  </div>
 </div>
 
+
+      {/* DISEASE HISTORY */}
+      {employeeReport.allDiseases?.length > 0 && (
+        <div className="mb-3">
+          <h6 className="fw-bold">Disease History</h6>
+          <ul className="small ps-3">
+            {employeeReport.allDiseases.map((d, i) => (
+              <li key={i}>
+                {d.Disease_Name} 
+                {d.Category && ` (${d.Category})`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* LAB TEST REPORTS */}
+      {employeeReport.tests?.length > 0 && (
+        <div>
+          <h6 className="fw-bold">Lab Reports</h6>
+
+          {employeeReport.tests.map((t, idx) => (
+            <div key={idx} className="border rounded p-2 mb-2 small">
+              <div><strong>{t.Test_Name}</strong></div>
+              <div>Result: {t.Result_Value}</div>
+              {t.Reference_Range && (
+                <div>Ref Range: {t.Reference_Range}</div>
+              )}
+              {t.Units && (
+                <div>Units: {t.Units}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )}
+</div>
+
+            </div>
+          </div>
+        )}
+
+        {/* FORM - MAIN CONTENT */}
+        <div className={`${showReports ? "col-lg-6" : "col-lg-9"} mb-3`}>
+          {/* ===== TOP BAR WITH INVENTORY BUTTON ===== */}
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h4 className="fw-bold mb-0">Pharmacy Prescription</h4>
+              <small className="text-muted">
+                Issue medicines to employees
+              </small>
+            </div>
+
+            <button
+              className="btn btn-outline-primary"
+              onClick={() => navigate("/institutes/inventory")}
+            >
+              🏥 Inventory
+            </button>
+          </div>
           <div className="card shadow border-0 pharmacy-card">
             <div className="card-header bg-dark text-white">
               <h5 className="mb-0">Pharmacy Prescription</h5>
             </div>
-
-            
 
             <div className="card-body">
               <form onSubmit={handleSubmit}>
@@ -453,72 +575,50 @@ const handleSubmit = async (e) => {
 
                 {/* Patient Selector */}
                 <PatientSelector
-  instituteId={formData.Institute_ID}
-  onSelect={({ employee, visit_id }) => {
-    console.log("PatientSelector returned:", { employee, visit_id });
+                  instituteId={formData.Institute_ID}
+                  onSelect={({ employee, visit }) => {
+                    setSelectedEmployee(employee);
+                    setSelectedVisit(visit);
+                    setVisitId(visit?._id || null);
+                    const isFamily = visit?.IsFamilyMember || false;
+                    const familyId = visit?.FamilyMember?._id || null;
 
-    setSelectedEmployee(employee);
-    setVisitId(visit_id);
+                    setFormData(prev => ({
+                      ...prev,
+                      Employee_ID: employee._id,
+                      IsFamilyMember: isFamily,
+                      FamilyMember_ID: familyId
+                    }));
 
-    setFormData(prev => ({
-      ...prev,
-      Employee_ID: employee._id,
-      IsFamilyMember: false,
-      FamilyMember_ID: ""
-    }));
+                    fetchDiseases(employee._id);
 
-    fetchDiseases(employee._id);
-
-    if (visit_id) {
-      fetchDoctorActions(employee._id, visit_id);
-    }
-
-    fetchLastTwoPrescriptions(employee._id);
-  }}
-/>
-
-
-                {/* Family Member Selection */}
-                <div className="form-check mb-3">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    checked={formData.IsFamilyMember}
-                    onChange={(e) =>
-                      setFormData((f) => ({
-                        ...f,
-                        IsFamilyMember: e.target.checked,
-                        FamilyMember_ID: ""
-                      }))
+                    if (visit?._id) {
+                      fetchDoctorActions(employee._id, visit._id);
                     }
-                  />
-                  <label className="form-check-label">
-                    Prescription for Family Member
-                  </label>
-                </div>
 
-                {formData.IsFamilyMember && (
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">
-                      Select Family Member
-                    </label>
-                    <select
-                      className="form-select"
-                      value={formData.FamilyMember_ID}
-                      onChange={(e) =>
-                        setFormData((f) => ({
-                          ...f,
-                          FamilyMember_ID: e.target.value
-                        }))
-                      }
+                    fetchLastTwoPrescriptions(employee._id, familyId);
+                  }}
+                />
+
+                {selectedVisit && (
+                  <div className="alert alert-info mt-3 d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>
+                        Token {selectedVisit.token_no} —
+                      </strong>{" "}
+                      {selectedVisit.IsFamilyMember
+                        ? `${selectedVisit.FamilyMember?.Name} (${selectedVisit.FamilyMember?.Relationship})`
+                        : selectedVisit.employee_id?.Name}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-dark"
+                      onClick={()=>{
+                        loadEmployeeReports()}}
                     >
-                      <option value="">Select Family Member</option>
-                      {familyMembers.map((f) => (
-                        <option key={f._id} value={f._id}>
-                          {f.Name} ({f.Relationship})
-                        </option>
-                      ))}
-                    </select>
+                      View Reports
+                    </button>
                   </div>
                 )}
 
@@ -574,7 +674,8 @@ const handleSubmit = async (e) => {
                               <thead>
                                 <tr>
                                   <th>Medicine</th>
-                                  <th>Doctor Prescribed Qty</th>
+                                  <th>Dosage</th>
+                                  <th>Duration</th>
                                   <th>Action</th>
                                 </tr>
                               </thead>
@@ -582,7 +683,8 @@ const handleSubmit = async (e) => {
                                 {prescription.data.medicines.map((medicine, mIdx) => (
                                   <tr key={mIdx}>
                                     <td>{medicine.Medicine_Name}</td>
-                                    <td>{medicine.Quantity}</td>
+                                    <td>{medicine.Dosage || "-"}</td>
+                                    <td>{medicine.Duration || "-"}</td>
                                     <td>
                                       <button
                                         type="button"
@@ -621,65 +723,67 @@ const handleSubmit = async (e) => {
                       <div className="d-flex flex-column w-100">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control ${
+                              med.medicineName ? "medicine-auto-filled" : ""
+                            }`}
                           placeholder="Type medicine name..."
                           // When displaying medicine in the input field:
-value={
-  activeMedicineIndex === i
-    ? medicineSearch[i] || ""
-    : med.medicineName
-      ? `${med.medicineName.trim()} (Exp: ${formatDateDMY(med.expiryDate)})`
-      : ""
-}
+                          value={
+                              activeMedicineIndex === i
+                                ? medicineSearch[i] ?? med.medicineName ?? ""
+                                : med.medicineName
+                                  ? `${med.medicineName.trim()} (Exp: ${formatDateDMY(med.expiryDate)})`
+                                  : ""
+                            }
+
                           onFocus={() => setActiveMedicineIndex(i)}
                           onChange={(e) =>
-  setMedicineSearch(prev => ({
-    ...prev,
-    [i]: e.target.value
-  }))
-}
+                          setMedicineSearch(prev => ({
+                            ...prev,
+                            [i]: e.target.value
+                          }))
+                        }
 
                         />
 
-// In your medicine dropdown display:
-{filteredMedicines.map((m) => {
-  const displayName = m.Medicine_Name?.trim();
-  const displayCode = m.Medicine_Code?.trim();
+                        {activeMedicineIndex === i && filteredMedicines.map((m) => {
+                          const displayName = m.Medicine_Name?.trim();
+                          const displayCode = m.Medicine_Code?.trim();
   
-  return (
-    <button
-      type="button"
-      key={m.Medicine_Code}
-      className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
-        m.Source?.subStore === 0 ? "disabled text-muted" : ""
-      }`}
-      onClick={() => {
-        if (m.Source?.subStore === 0) return;
-        handleMedicineChange(i, "medicineId", displayCode);
-        setMedicineSearch("");
-        setFilteredMedicines([]);
-        setActiveMedicineIndex(null);
-      }}
-    >
-      <div>
-        <strong>{displayName}</strong>
-        <div className="small text-muted">
-          Exp: {formatDateDMY(m.Expiry_Date)}
-        </div>
-      </div>
+                          return (
+                            <button
+                              type="button"
+                              key={m.Medicine_Code}
+                              className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
+                                m.Quantity === 0 ? "disabled text-muted" : ""
+                              }`}
+                              onClick={() => {
+                                if (m.Quantity === 0) return;
+                                handleMedicineChange(i, "medicineId", displayCode);
+                                setMedicineSearch("");
+                                setFilteredMedicines([]);
+                                setActiveMedicineIndex(null);
+                              }}
+                            >
+                              <div>
+                                <strong>{displayName}</strong>
+                                <div className="small text-muted">
+                                  Exp: {formatDateDMY(m.Expiry_Date)}
+                                </div>
+                              </div>
 
-      {m.Source?.subStore > 0 ? (
-        <span className="badge bg-success">
-          Available: {m.Source.subStore}
-        </span>
-      ) : (
-        <span className="badge bg-warning text-dark">
-          Not in sub-store
-        </span>
-      )}  
-    </button>
-  );
-})}
+                              {m.Quantity > 0 ? (
+                                <span className="badge bg-success">
+                                  Available: {m.Quantity}
+                                </span>
+                              ) : (
+                                <span className="badge bg-warning text-dark">
+                                  Not in sub-store
+                                </span>
+                              )}  
+                            </button>
+                          );
+                        })}
                       </div>
 
                       <input
@@ -751,76 +855,59 @@ value={
               </form>
             </div>
           </div>
-
-          {/* Previous Prescriptions */}
-          {lastTwoVisits.length > 0 && (
-            <div className="card shadow-sm border-0 mt-4">
-              <div className="card-header bg-light fw-semibold">
-                📜 Previous 2 Pharmacy Prescriptions
-              </div>
-              <div className="card-body">
-                {lastTwoVisits.map((p, idx) => (
-                  <div key={idx} className="mb-3 pb-2 border-bottom">
-                    <div className="fw-semibold mb-1">
-                      Date: {formatDateDMY(p.createdAt)}
-                    </div>
-                    {p.FamilyMember && (
-                      <div className="text-muted mb-1">
-                        Family Member: {p.FamilyMember.Name} ({p.FamilyMember.Relationship})
-                      </div>
-                    )}
-                    <ul className="mb-1 ps-3">
-                      {p.Medicines.map((m, i) => (
-                        <li key={i}>
-                          {m.Medicine_Name || m.Medicine_ID?.Medicine_Name}
-                          {" — "}
-                          Qty: {m.Quantity}
-                        </li>
-                      ))}
-                    </ul>
-                    {p.Notes && (
-                      <div className="fst-italic text-muted">
-                        Notes: {p.Notes}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* EMPLOYEE PROFILE SIDEBAR */}
-        {employeeProfile && (
-          <div className="col-lg-3 d-none d-lg-block">
-            <div className="card shadow-sm border-0 text-center p-4 employee-card sticky-top" style={{ top: "90px" }}>
-              <img
-  src={`http://localhost:${BACKEND_PORT}${employeeProfile.Photo}`}
-  alt="Employee"
-  className="rounded-circle mx-auto mb-3"
-  style={{
-    width: "120px",
-    height: "120px",
-    objectFit: "cover",
-    border: "2px solid #ddd"
-  }}
-  onError={(e) => {
-    // Use a data URI or local fallback
-    e.target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iNTgiIHN0cm9rZT0iI2RkZCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iNjAiIHk9IjY1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==";
-  }}
-/>
-              <h6 className="fw-bold mb-1">{employeeProfile.Name}</h6>
-              <div className="text-muted">
-                ABS No: {employeeProfile.ABS_NO}
-              </div>
-              <div className="mt-2">
-                <small className="text-muted">
-                  {employeeProfile.Designation || "Employee"}
-                </small>
-              </div>
-            </div>
           </div>
-        )}
+
+          
+          <div className="col-lg-3">
+            {lastTwoVisits.length > 0 && (
+              <div className="card shadow border-0 mb-3">
+                <div className="card-header bg-secondary text-white">
+                  <strong>Previous 2 Pharmacy Prescriptions</strong>
+                </div>
+
+                <div className="card-body">
+                  {lastTwoVisits.map((p, idx) => {
+
+                    const formattedDate = p.Timestamp
+                      ? new Date(p.Timestamp).toLocaleDateString("en-GB")
+                      : "-";
+
+                    return (
+                      <div key={idx} className="mb-3 border-bottom pb-2">
+
+                        <div className="fw-semibold mb-1">
+                          {formattedDate}
+                        </div>
+
+                        {p.FamilyMember && (
+                          <div className="text-muted small mb-1">
+                            {p.FamilyMember.Name} ({p.FamilyMember.Relationship})
+                          </div>
+                        )}
+
+                        <ul className="small mb-2 ps-3">
+                          {p.Medicines?.map((m, i) => (
+                            <li key={i}>
+                              {m.Medicine_Name || m.Medicine_ID?.Medicine_Name}
+                              {" — "}
+                              Qty: {m.Quantity}
+                            </li>
+                          ))}
+                        </ul>
+
+                        {p.Notes && (
+                          <div className="fst-italic small text-muted">
+                            {p.Notes}
+                          </div>
+                        )}
+
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+        </div>
       </div>
     </div>
   );

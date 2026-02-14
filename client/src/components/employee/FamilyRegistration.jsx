@@ -131,7 +131,7 @@ const FamilyMemberRegistration = () => {
           <div className="mb-3">
             <label className="form-label fw-semibold">Gender</label>
             <div className="d-flex gap-4 mt-1">
-              {["Male", "Female"].map((g) => (
+              {["Male", "Female","Other"].map((g) => (
                 <div className="form-check" key={g}>
                   <input
                     className="form-check-input"

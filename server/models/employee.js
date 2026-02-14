@@ -10,12 +10,13 @@ const EmployeeSchema = new Schema(
 
     Designation: { type: String, default: "" },
     DOB: { type: Date, default: null },
-
+    Gender :{type:String,required: true},
     Blood_Group: {
       type: String,
       enum: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", ""],
       default: ""
     },
+    
 
     Height: { type: String, default: "" },
     Weight: { type: String, default: "" },

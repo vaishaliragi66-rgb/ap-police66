@@ -63,7 +63,7 @@ employeeApp.post(
       console.log("Form data received:", data);
 
       // Validate required fields
-      const requiredFields = ["ABS_NO", "Name", "Email", "Password"];
+      const requiredFields = ["ABS_NO", "Name", "Email", "Password","Gender"];
       const missingFields = requiredFields.filter(field => !data[field] || data[field].trim() === "");
       
       if (missingFields.length > 0) {
@@ -88,6 +88,7 @@ employeeApp.post(
         Height: data.Height ? data.Height.trim() : "",
         Weight: data.Weight ? data.Weight.trim() : "",
         Phone_No: data.Phone_No ? data.Phone_No.trim() : "",
+        Gender: data.Gender? data.Gender.trim() : "",
         Address: {
           Street: data.Street ? data.Street.trim() : "",
           District: data.District ? data.District.trim() : "",
@@ -257,7 +258,7 @@ employeeApp.get("/all", async (req, res) => {
   try {
     const employees = await Employee.find({})
       .select(
-        'ABS_NO Name Email DOB Blood_Group Height Weight Phone_No Photo'
+        'ABS_NO Name Email DOB Blood_Group Height Weight Phone_No Gender Photo'
       )
       .sort({ createdAt: -1 });
 
@@ -289,7 +290,10 @@ employeeApp.get(
 
       // 🔹 Fetch Employee
       const employee = await Employee.findOne({ ABS_NO: absNo.trim() })
-        .select("ABS_NO Name Email Photo");
+      .select(
+        "ABS_NO Name Email Photo Gender DOB Height Weight Blood_Group"
+      );
+
 
       if (!employee) {
         return res.status(404).json({
@@ -298,6 +302,22 @@ employeeApp.get(
       }
 
       const employeeId = employee._id;
+
+      let age = null;
+
+  if (employee.DOB) {
+    const today = new Date();
+    const dob = new Date(employee.DOB);
+    age = today.getFullYear() - dob.getFullYear();
+
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < dob.getDate())
+    ) {
+      age--;
+    }
+  }
 
       /* =====================================================
          EMPLOYEE DISEASE RECORDS
@@ -351,7 +371,10 @@ employeeApp.get(
       ===================================================== */
       return res.status(200).json({
         message: "Health report fetched successfully",
-        employee,
+        employee: {
+          ...employee.toObject(),
+          Age: age,
+        },
         employeeDiseases,
         employeeDiagnosis,
         familyDiseases,

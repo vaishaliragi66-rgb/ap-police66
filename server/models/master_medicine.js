@@ -31,12 +31,7 @@ const MedicineSchema = new Schema({
     }
   },
 
-  // Stock origin
-  Source: {
-    type: String,
-    enum: ["MAIN_STORE"],
-    default: "MAIN_STORE"
-  }
+
 
 }, { timestamps: true });
 

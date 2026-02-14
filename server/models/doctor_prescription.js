@@ -20,6 +20,11 @@ const DoctorPrescriptionSchema = new Schema(
       default: false
     },
 
+    InPatient: {
+      type: Boolean,
+      default: false
+    },
+
     FamilyMember: {
       type: Schema.Types.ObjectId,
       ref: "FamilyMember",
@@ -31,7 +36,6 @@ const DoctorPrescriptionSchema = new Schema(
         Medicine_Name: { type: String, required: true },
         Dosage: { type: String },          // optional (1-0-1 etc.)
         Duration: { type: String },        // optional (5 days)
-        Quantity: { type: Number, min: 1 } // advisory quantity
       }
     ],
 

@@ -7,96 +7,107 @@ const MainStoreMedicine = require("../models/main_store");
 const Institute = require("../models/master_institute");
 const Medicine = require("../models/master_medicine");
 const InstituteLedger = require("../models/InstituteLedger");
-mainStoreApp.post("/add", expressAsyncHandler(async (req, res) => {
-  try {
-    const {
-      Institute_ID,           // ✅ FIXED
-      Medicine_Code,
-      Medicine_Name,
-      Type,
-      Category,
-      Quantity,
-      Threshold_Qty,
-      Issued_By,
-      Expiry_Date
-    } = req.body;
+mainStoreApp.post(
+  "/add",
+  expressAsyncHandler(async (req, res) => {
+    try {
+      const {
+        Institute_ID,
+        Medicine_Code,
+        Medicine_Name,
+        Type,
+        Category,
+        Quantity,
+        Threshold_Qty,
+        Issued_By,
+        Expiry_Date
+      } = req.body;
 
-    if (!Institute_ID) {
-      return res.status(400).json({ message: "Institute_ID is required" });
-    }
+      if (!Institute_ID) {
+        return res.status(400).json({ message: "Institute_ID is required" });
+      }
 
-    const required = [
-      "Medicine_Code",
-      "Medicine_Name",
-      "Quantity",
-      "Threshold_Qty",
-      "Issued_By",
-      "Expiry_Date"
-    ];
+      const required = [
+        "Medicine_Code",
+        "Medicine_Name",
+        "Quantity",
+        "Threshold_Qty",
+        "Issued_By",
+        "Expiry_Date"
+      ];
 
-    const missing = required.filter(f => !req.body[f]);
-    if (missing.length) {
-      return res.status(400).json({
-        message: `Missing fields: ${missing.join(", ")}`
+      const missing = required.filter(f => !req.body[f]);
+      if (missing.length) {
+        return res.status(400).json({
+          message: `Missing fields: ${missing.join(", ")}`
+        });
+      }
+
+      const expiry = new Date(Expiry_Date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (expiry <= today) {
+        return res.status(400).json({
+          message: "Expiry date must be in the future"
+        });
+      }
+
+      // ✅ CHECK duplicate per institute (not globally)
+      const exists = await MainStoreMedicine.findOne({
+        Medicine_Code,
+        Institute_ID
+      });
+
+      if (exists) {
+        return res.status(400).json({
+          message: "Medicine already exists in this institute"
+        });
+      }
+
+      // ✅ CREATE with required Source
+      const med = await MainStoreMedicine.create({
+        Institute_ID,
+        Medicine_Code,
+        Medicine_Name,
+        Type,
+        Category,
+        Quantity: Number(Quantity),
+        Threshold_Qty: Number(Threshold_Qty),
+        Source: "distributer",      // ✅ REQUIRED FIELD
+        Issued_By,
+        Expiry_Date: expiry
+      });
+
+      // ✅ LEDGER ENTRY (MAIN STORE IN)
+      await InstituteLedger.create({
+        Institute_ID,
+        Transaction_Type: "MAINSTORE_ADD",
+        Reference_ID: null,
+        Medicine_ID: med._id,
+        Medicine_Name: med.Medicine_Name,
+        Medicine_Model: "MainStoreMedicine",
+        Expiry_Date: med.Expiry_Date,
+        Direction: "IN",
+        Quantity: med.Quantity,
+        Balance_After: med.Quantity
+      });
+
+      res.status(201).json({
+        message: "Medicine added to Main Store",
+        medicine: med
+      });
+
+    } catch (err) {
+      console.error("MAIN STORE ADD ERROR:", err);
+      res.status(500).json({
+        message: "Failed to add medicine",
+        error: err.message
       });
     }
+  })
+);
 
-    const expiry = new Date(Expiry_Date);
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
-    if (expiry <= today) {
-      return res.status(400).json({
-        message: "Expiry date must be in the future"
-      });
-    }
-
-    const exists = await MainStoreMedicine.findOne({ Medicine_Code });
-    if (exists) {
-      return res.status(400).json({
-        message: "Medicine code already exists"
-      });
-    }
-
-    const med = await MainStoreMedicine.create({
-      Institute_ID,
-      Medicine_Code,
-      Medicine_Name,
-      Type,
-      Category,
-      Quantity: Number(Quantity),
-      Threshold_Qty: Number(Threshold_Qty),
-      Issued_By,
-      Expiry_Date: expiry
-    });
-
-    // ✅ LEDGER ENTRY (MAIN STORE IN)
-    await InstituteLedger.create({
-      Institute_ID,
-      Store_Type: "MAIN",
-      Transaction_Type: "MAINSTORE_ADD",
-      Medicine_ID: med._id,
-      Medicine_Name: med.Medicine_Name,
-      Direction: "IN",
-      Quantity: med.Quantity,
-      Balance_After: med.Quantity,
-      Expiry_Date: med.Expiry_Date,
-      Remarks: "Added to Main Store"
-    });
-
-    res.status(201).json({
-      message: "Medicine added to Main Store",
-      medicine: med
-    });
-
-  } catch (err) {
-    console.error("MAIN STORE ADD ERROR:", err);
-    res.status(500).json({
-      message: "Failed to add medicine",
-      error: err.message
-    });
-  }
-}));
 
 mainStoreApp.get("/all-medicines/:instituteId", async (req, res) => {
   try {
@@ -147,6 +158,7 @@ mainStoreApp.put("/update/:id", async (req, res) => {
   }
 });
 
+
 mainStoreApp.post("/transfer/institute", async (req, res) => {
   try {
     const {
@@ -162,76 +174,99 @@ mainStoreApp.post("/transfer/institute", async (req, res) => {
       return res.status(400).json({ message: "Invalid transfer data" });
     }
 
-    const med = await MainStoreMedicine.findById(Medicine_ID);
-    if (!med) {
-      return res.status(404).json({ message: "Medicine not found in Main Store" });
+    if (From_Institute_ID === To_Institute_ID) {
+      return res.status(400).json({ message: "Cannot transfer to same institute" });
     }
 
-    if (med.Quantity < qty) {
-      return res.status(400).json({ message: "Insufficient stock in Main Store" });
+    const sendingMed = await MainStoreMedicine.findById(Medicine_ID);
+    if (!sendingMed) {
+      return res.status(404).json({ message: "Medicine not found" });
     }
 
-    // 🔻 MAIN STORE (SOURCE) OUT
-    med.Quantity -= qty;
-    await med.save();
-
-    // ➕ TARGET INSTITUTE INVENTORY
-    const targetInstitute = await Institute.findById(To_Institute_ID);
-    if (!targetInstitute) {
-      return res.status(404).json({ message: "Target institute not found" });
+    if (sendingMed.Quantity < qty) {
+      return res.status(400).json({ message: "Insufficient stock" });
     }
 
-    const existing = targetInstitute.Medicine_Inventory.find(
-      m => String(m.Medicine_ID) === String(Medicine_ID)
+    // 🔻 Deduct from sender WITHOUT triggering full validation
+    await MainStoreMedicine.updateOne(
+      { _id: sendingMed._id },
+      { $inc: { Quantity: -qty } }
     );
 
-    if (existing) {
-      existing.Quantity += qty;
-    } else {
-      targetInstitute.Medicine_Inventory.push({
-        Medicine_ID,
-        Quantity: qty
-      });
+    const senderBalanceAfter = sendingMed.Quantity - qty;
+
+    const sendingInstitute = await Institute.findById(From_Institute_ID);
+    if (!sendingInstitute) {
+      return res.status(404).json({ message: "Sending institute not found" });
     }
 
-    await targetInstitute.save();
+    // 🔎 Check receiving main store
+    let receivingMed = await MainStoreMedicine.findOne({
+      Institute_ID: To_Institute_ID,
+      Medicine_Code: sendingMed.Medicine_Code
+    });
 
-    // 📒 LEDGER — SOURCE INSTITUTE (OUT)
+    let receiverBalanceAfter = 0;
+
+    if (receivingMed) {
+      await MainStoreMedicine.updateOne(
+        { _id: receivingMed._id },
+        {
+          $inc: { Quantity: qty },
+          $set: { Source: receivingMed.Source || "institute_transfer" }
+        }
+      );
+
+      receiverBalanceAfter = receivingMed.Quantity + qty;
+    } else {
+      receivingMed = await MainStoreMedicine.create({
+        Institute_ID: To_Institute_ID,
+        Medicine_Code: sendingMed.Medicine_Code,
+        Medicine_Name: sendingMed.Medicine_Name,
+        Type: sendingMed.Type,
+        Category: sendingMed.Category,
+        Quantity: qty,
+        Threshold_Qty: sendingMed.Threshold_Qty,
+        Expiry_Date: sendingMed.Expiry_Date,
+        Source: "institute_transfer",
+        Issued_By: sendingInstitute.Institute_Name
+      });
+
+      receiverBalanceAfter = qty;
+    }
+
+    // 📒 Ledger OUT
     await InstituteLedger.create({
       Institute_ID: From_Institute_ID,
-      Store_Type: "MAIN",
-      Transaction_Type: "STORE_TRANSFER", // ✅ VALID ENUM
+      Transaction_Type: "STORE_TRANSFER",
+      Reference_ID: null,
+      Medicine_Model: "MainStoreMedicine",
+      Medicine_ID: sendingMed._id,
+      Medicine_Name: sendingMed.Medicine_Name,
+      Expiry_Date: sendingMed.Expiry_Date,
       Direction: "OUT",
-      Medicine_ID: med._id,
-      Medicine_Name: med.Medicine_Name,
       Quantity: qty,
-      Balance_After: med.Quantity,
-      Expiry_Date: med.Expiry_Date,        // ✅ REQUIRED
-      Remarks: `Transferred to institute ${To_Institute_ID}`
+      Balance_After: senderBalanceAfter
     });
 
-    // 📒 LEDGER — TARGET INSTITUTE (IN)
+    // 📒 Ledger IN
     await InstituteLedger.create({
       Institute_ID: To_Institute_ID,
-      Store_Type: "MAIN",
-      Transaction_Type: "STORE_TRANSFER", // ✅ VALID ENUM
+      Transaction_Type: "STORE_TRANSFER",
+      Medicine_Model: "MainStoreMedicine",
+      Reference_ID: null,
+      Medicine_ID: receivingMed._id,
+      Medicine_Name: receivingMed.Medicine_Name,
+      Expiry_Date: receivingMed.Expiry_Date,
       Direction: "IN",
-      Medicine_ID: med._id,
-      Medicine_Name: med.Medicine_Name,
       Quantity: qty,
-      Balance_After: existing
-        ? existing.Quantity
-        : qty,                             // ✅ REQUIRED
-      Expiry_Date: med.Expiry_Date,        // ✅ REQUIRED
-      Remarks: `Received from institute ${From_Institute_ID}`
+      Balance_After: receiverBalanceAfter
     });
 
-    res.json({
-      message: "Institute transfer completed with ledger entries"
-    });
+    res.json({ message: "Institute to Institute transfer successful" });
 
   } catch (err) {
-    console.error("INSTITUTE TRANSFER ERROR:", err);
+    console.error("TRANSFER ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -252,20 +287,14 @@ mainStoreApp.delete("/delete/:id", async (req, res) => {
 
 mainStoreApp.post("/transfer/substore", async (req, res) => {
   try {
-    const {
-      Medicine_ID,
-      Transfer_Qty,
-      Institute_ID
-    } = req.body;
-
+    const { Medicine_ID, Transfer_Qty, Institute_ID } = req.body;
     const qty = Number(Transfer_Qty);
 
-    // 🔍 Basic validation
     if (!Medicine_ID || !Institute_ID || qty <= 0) {
       return res.status(400).json({ message: "Invalid transfer data" });
     }
 
-    // 🔎 Fetch medicine from MAIN STORE
+    // 🔎 Fetch from Main Store
     const mainMed = await MainStoreMedicine.findById(Medicine_ID);
     if (!mainMed) {
       return res.status(404).json({ message: "Medicine not found in Main Store" });
@@ -275,70 +304,74 @@ mainStoreApp.post("/transfer/substore", async (req, res) => {
       return res.status(400).json({ message: "Insufficient stock in Main Store" });
     }
 
-    // 🔻 Deduct from MAIN STORE
-    mainMed.Quantity -= qty;
-    await mainMed.save();
+    // 🔻 Deduct from Main Store
+    await MainStoreMedicine.updateOne(
+      { _id: mainMed._id },
+      { $inc: { Quantity: -qty } }
+    );
 
-    // 🔎 Check if medicine already exists in SUB STORE
-    const existingSubstoreMed = await Medicine.findOne({
+    const senderBalanceAfter = mainMed.Quantity - qty;
+
+    // 🔎 Check Substore
+    let subMed = await Medicine.findOne({
       Institute_ID,
       Medicine_Code: mainMed.Medicine_Code
     });
 
-    let finalSubstoreQty = 0;
+    let receiverBalanceAfter = 0;
 
-    if (existingSubstoreMed) {
-      // ➕ Update existing medicine
-      existingSubstoreMed.Quantity += qty;
-      finalSubstoreQty = existingSubstoreMed.Quantity;
-      await existingSubstoreMed.save();
+    if (subMed) {
+      await Medicine.updateOne(
+        { _id: subMed._id },
+        { $inc: { Quantity: qty } }
+      );
+
+      receiverBalanceAfter = subMed.Quantity + qty;
     } else {
-      // ➕ Create NEW medicine in substore (IMPORTANT FIX)
-      const newMed = await Medicine.create({
-        Institute_ID,                 // ✅ REQUIRED
+      subMed = await Medicine.create({
+        Institute_ID,
         Medicine_Code: mainMed.Medicine_Code,
         Medicine_Name: mainMed.Medicine_Name,
         Type: mainMed.Type,
         Category: mainMed.Category,
         Quantity: qty,
         Threshold_Qty: mainMed.Threshold_Qty,
-        Expiry_Date: mainMed.Expiry_Date,
-        Source: "MAIN_STORE"
+        Expiry_Date: mainMed.Expiry_Date
       });
 
-      finalSubstoreQty = newMed.Quantity;
+      receiverBalanceAfter = qty;
     }
 
-    // 📒 LEDGER — MAIN STORE (OUT)
+    // 📒 Ledger — MAIN STORE OUT
     await InstituteLedger.create({
-      Institute_ID,
-      Store_Type: "MAIN",
-      Transaction_Type: "STORE_TRANSFER",
-      Direction: "OUT",
+      Institute_ID: mainMed.Institute_ID,
+      Transaction_Type: "SUBSTORE_ADD",
+      Reference_ID: null,
       Medicine_ID: mainMed._id,
+      Medicine_Model: "MainStoreMedicine",
       Medicine_Name: mainMed.Medicine_Name,
-      Quantity: qty,
-      Balance_After: mainMed.Quantity,
       Expiry_Date: mainMed.Expiry_Date,
-      Remarks: "Transferred to Sub Store"
+      Direction: "OUT",
+      Quantity: qty,
+      Balance_After: senderBalanceAfter
     });
 
-    // 📒 LEDGER — SUB STORE (IN)
+    // 📒 Ledger — SUBSTORE IN
     await InstituteLedger.create({
       Institute_ID,
-      Store_Type: "SUB",
-      Transaction_Type: "STORE_TRANSFER",
+      Transaction_Type: "SUBSTORE_ADD",
+      Reference_ID: null,
+      Medicine_ID: subMed._id,
+      Medicine_Model: "Medicine",
+      Medicine_Name: subMed.Medicine_Name,
+      Expiry_Date: subMed.Expiry_Date,
       Direction: "IN",
-      Medicine_ID: mainMed._id,
-      Medicine_Name: mainMed.Medicine_Name,
       Quantity: qty,
-      Balance_After: finalSubstoreQty,
-      Expiry_Date: mainMed.Expiry_Date,
-      Remarks: "Received from Main Store"
+      Balance_After: receiverBalanceAfter
     });
 
     res.json({
-      message: "Sub-Store transfer completed successfully"
+      message: "Main Store → Substore transfer successful"
     });
 
   } catch (err) {
@@ -346,5 +379,6 @@ mainStoreApp.post("/transfer/substore", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 module.exports = mainStoreApp

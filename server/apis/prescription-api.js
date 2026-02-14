@@ -42,168 +42,133 @@ prescriptionApp.post("/add", async (req, res) => {
   try {
     console.log("📦 PRESCRIPTION PAYLOAD:", JSON.stringify(req.body, null, 2));
 
-    const { Institute_ID, Employee_ID, Medicines, visit_id } = req.body;
+    const {
+      Institute_ID,
+      Employee_ID,
+      Medicines,
+      visit_id,
+      IsFamilyMember,
+      FamilyMember_ID,
+      Notes
+    } = req.body;
 
-    // Basic validation
+    // ================================
+    // BASIC VALIDATION
+    // ================================
     if (!Institute_ID || !Employee_ID || !Array.isArray(Medicines) || Medicines.length === 0) {
       return res.status(400).json({ message: "Invalid prescription data" });
     }
 
-    // Verify institute exists
     const institute = await Institute.findById(Institute_ID);
     if (!institute) {
       return res.status(400).json({ message: "Institute not found" });
     }
 
     const ledgerEntries = [];
-    const medicineUpdates = [];
+    const prescriptionMedicines = [];
 
-    // Process each medicine
+    // ================================
+    // PROCESS EACH MEDICINE
+    // ================================
     for (const med of Medicines) {
+
       const Medicine_Code = med.Medicine_Code || med.Medicine_ID;
       const Medicine_Name = (med.Medicine_Name || "").trim();
       const qty = Number(med.Quantity);
 
-      console.log(`🔍 Processing: ${Medicine_Code} - ${Medicine_Name} - Qty: ${qty}`);
-
       if (!Medicine_Code || qty <= 0) {
-        return res.status(400).json({
-          message: "Invalid medicine data"
-        });
+        return res.status(400).json({ message: "Invalid medicine data" });
       }
 
-      // ============================================
-      // FIND OR CREATE MEDICINE
-      // ============================================
-      let substoreMed;
-
-      // Try exact match with institute
-      substoreMed = await Medicine.findOne({
+      // 🔍 Find substore medicine for this institute
+      const substoreMed = await Medicine.findOne({
         Medicine_Code: Medicine_Code,
         Institute_ID: Institute_ID
       });
 
-      // Try without institute filter
       if (!substoreMed) {
-        substoreMed = await Medicine.findOne({
-          Medicine_Code: Medicine_Code
-        });
-        
-        if (substoreMed && String(substoreMed.Institute_ID) !== String(Institute_ID)) {
-          substoreMed.Institute_ID = Institute_ID;
-          await substoreMed.save();
-        }
-      }
-
-      // Try by name
-      if (!substoreMed && Medicine_Name) {
-        substoreMed = await Medicine.findOne({
-          Medicine_Name: { $regex: new RegExp(Medicine_Name, 'i') }
+        return res.status(404).json({
+          message: `Medicine ${Medicine_Code} not found in Substore`
         });
       }
 
-      // CREATE IF NOT FOUND
-      if (!substoreMed) {
-        substoreMed = new Medicine({
-          Medicine_Code: Medicine_Code,
-          Medicine_Name: Medicine_Name || Medicine_Code,
-          Institute_ID: Institute_ID,
-          Quantity: 1000,
-          Expiry_Date: new Date("2025-12-31"),
-          Source: { subStore: 500, mainStore: 500 },
-          Threshold_Qty: 10,
-          Type: "Tablet",
-          Category: "General"
-        });
-        
-        await substoreMed.save();
-      }
-
-      console.log(`📊 Medicine details:`, {
+      console.log("📊 Stock Check:", {
         Code: substoreMed.Medicine_Code,
-        Name: substoreMed.Medicine_Name,
-        Stock: substoreMed.Quantity,
+        Available: substoreMed.Quantity,
         Requested: qty
       });
 
-      // Check stock
-if (substoreMed.Source.subStore < qty) {
-  return res.status(400).json({
-    message: "Insufficient stock",
-    medicineName: substoreMed.Medicine_Name,
-    available: substoreMed.Source.subStore,
-    requested: qty
-  });
-}
+      // ================================
+      // STOCK VALIDATION
+      // ================================
+      if (substoreMed.Quantity < qty) {
+        return res.status(400).json({
+          message: "Insufficient stock",
+          medicineName: substoreMed.Medicine_Name,
+          available: substoreMed.Quantity,
+          requested: qty
+        });
+      }
 
-substoreMed.Source.subStore -= qty;
-await substoreMed.save();
+      // 🔻 Deduct stock
+      substoreMed.Quantity -= qty;
+      await substoreMed.save();
 
-
-      // Store for prescription document
-      medicineUpdates.push({
-        medicineId: substoreMed._id,
-        medicineCode: substoreMed.Medicine_Code,
-        medicineName: substoreMed.Medicine_Name,
-        quantity: qty
+      // ================================
+      // PREPARE PRESCRIPTION ENTRY
+      // ================================
+      prescriptionMedicines.push({
+        Medicine_ID: substoreMed._id,
+        Medicine_Name: substoreMed.Medicine_Name,
+        Quantity: qty
       });
 
-      // Add to ledger
+      // ================================
+      // PREPARE LEDGER ENTRY
+      // ================================
       ledgerEntries.push({
         Institute_ID,
-        Store_Type: "SUBSTORE",
         Transaction_Type: "PRESCRIPTION_ISSUE",
         Reference_ID: visit_id || null,
         Medicine_ID: substoreMed._id,
+        Medicine_Model: "Medicine",   // IMPORTANT
         Medicine_Name: substoreMed.Medicine_Name,
         Expiry_Date: substoreMed.Expiry_Date,
         Direction: "OUT",
         Quantity: qty,
-        Balance_After: substoreMed.Quantity,
-        Remarks: "Issued to patient via prescription"
+        Balance_After: substoreMed.Quantity
       });
     }
 
-    // ================================================
-    // SAVE LEDGER ENTRIES
-    // ================================================
+    // ================================
+    // SAVE LEDGER
+    // ================================
     if (ledgerEntries.length > 0) {
       await InstituteLedger.insertMany(ledgerEntries);
-      console.log(`📚 Saved ${ledgerEntries.length} ledger entries`);
+      console.log(`📚 ${ledgerEntries.length} ledger entries created`);
     }
 
-    // ================================================
+    // ================================
     // CREATE PRESCRIPTION DOCUMENT
-    // ================================================
+    // ================================
     const prescriptionDoc = new Prescription({
       Institute: Institute_ID,
       Employee: Employee_ID,
-      IsFamilyMember: req.body.IsFamilyMember || false,
-      FamilyMember: req.body.FamilyMember_ID || null,
-      Medicines: medicineUpdates.map(med => ({
-        Medicine_ID: med.medicineId,
-        Medicine_Code: med.medicineCode,
-        Medicine_Name: med.medicineName,
-        Quantity: med.quantity,
-        source: "PHARMACY"
-      })),
-      Notes: req.body.Notes || "",
-      visit_id: visit_id || null,
+      IsFamilyMember: IsFamilyMember || false,
+      FamilyMember: FamilyMember_ID || null,
+      Medicines: prescriptionMedicines,
+      Notes: Notes || "",
       Timestamp: new Date()
     });
 
     await prescriptionDoc.save();
-    console.log("✅ Prescription saved to database with ID:", prescriptionDoc._id);
 
-    // ================================================
-    // RETURN SUCCESS
-    // ================================================
+    console.log("✅ Prescription saved:", prescriptionDoc._id);
+
     return res.status(200).json({
       success: true,
-      message: "✅ Prescription saved successfully!",
-      prescriptionId: prescriptionDoc._id,
-      medicinesProcessed: Medicines.length,
-      ledgerEntries: ledgerEntries.length
+      message: "Prescription saved successfully",
+      prescriptionId: prescriptionDoc._id
     });
 
   } catch (err) {
@@ -214,6 +179,7 @@ await substoreMed.save();
     });
   }
 });
+
 
 // =======================================================
 // GET PRESCRIPTIONS FOR EMPLOYEE + FAMILY

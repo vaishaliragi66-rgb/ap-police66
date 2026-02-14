@@ -1,402 +1,405 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import "bootstrap/dist/css/bootstrap.min.css";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const InstituteReports = () => {
 
-export default function InstituteReports() {
-  const [rows, setRows] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 
-  /* Filters */
-  const [name, setName] = useState("");
-  const [district, setDistrict] = useState("");
+  const [employees, setEmployees] = useState([]);
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
 
-  /* Pagination */
-  const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 8;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [report, setReport] = useState(null);
 
-  /* Modals */
-  const [selectedInstitute, setSelectedInstitute] = useState(null);
-  const [mailInstitute, setMailInstitute] = useState(null);
+  /* --------------------------------------------------
+      FETCH ALL EMPLOYEES (ABS + NAME)
+  -------------------------------------------------- */
+ useEffect(() => {
+  axios
+    .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
+    .then(res => {
+      const list =
+        Array.isArray(res.data?.employees)
+          ? res.data.employees
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
 
-  /* Mail */
-  const [mailSubject, setMailSubject] = useState("");
-  const [mailBody, setMailBody] = useState("");
-  const [sending, setSending] = useState(false);
-  const adminEmail = localStorage.getItem("adminEmail");
+      setEmployees(list);
+    })
+    .catch(err => console.error("Employee fetch error:", err));
+}, []);
 
-  /* ===============================
-     FETCH DATA
-  ================================*/
+
+  /* --------------------------------------------------
+      LIVE AUTO-SUGGEST SEARCH  (supports 1 digit)
+  -------------------------------------------------- */
   useEffect(() => {
-    axios
-      .get(`http://localhost:${BACKEND_PORT}/admin-api/analytics/institutes`)
-      .then(res => {
-        setRows(res.data || []);
-        setFiltered(res.data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  /* ===============================
-     FILTERING
-  ================================*/
-  useEffect(() => {
-    let temp = [...rows];
-
-    if (name) {
-      temp = temp.filter(i =>
-        i.Institute_Name.toLowerCase().includes(name.toLowerCase())
-      );
+    if (!searchTerm.trim()) {
+      setFilteredEmployees([]);
+      return;
     }
 
-    if (district) {
-      temp = temp.filter(i =>
-        i.Address?.District?.toLowerCase().includes(district.toLowerCase())
+    const filtered = employees.filter((emp) =>
+      String(emp.ABS_NO || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())   // 👈 partial match
+    );
+
+    // show only first 10 suggestions
+    setFilteredEmployees(filtered.slice(0, 10));
+
+  }, [searchTerm, employees]);
+
+  /* --------------------------------------------------
+      LOAD EMPLOYEE + FAMILY HEALTH REPORT
+  -------------------------------------------------- */
+  const loadHealthReport = async (absNo) => {
+    try {
+      const res = await axios.get(
+        `http://localhost:${BACKEND_PORT}/employee-api/health-report/${encodeURIComponent(absNo)}`
       );
+      console.log(res.data);
+      setReport(res.data);
+      setSearchTerm(absNo);     // update textbox to selected ABS_NO
+      setFilteredEmployees([]); // close dropdown
+
+    } catch (err) {
+      console.error("Health report fetch failed:", err);
+      alert("❌ Unable to fetch health report");
     }
-
-    setFiltered(temp);
-    setCurrentPage(1);
-  }, [name, district, rows]);
-
-  /* ===============================
-     PAGINATION
-  ================================*/
-  const last = currentPage * rowsPerPage;
-  const first = last - rowsPerPage;
-  const paginated = filtered.slice(first, last);
-  const totalPages = Math.ceil(filtered.length / rowsPerPage);
-
-  if (loading) {
-    return <div className="text-center mt-5">Loading…</div>;
-  }
+  };
 
   return (
     <div
       style={{
-        backgroundColor: "#F8FAFC",
         minHeight: "100vh",
-        padding: "32px",
-        fontFamily: "'Inter', sans-serif",
+        background: "#f9fafb",
+        padding: "32px 16px"
       }}
     >
-      <div className="container-fluid">
-  
-        {/* PAGE HEADER */}
-        <div className="mb-4">
-          <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
-            Institute Reports
-          </h3>
-          <p style={{ color: "#6B7280", marginBottom: 0 }}>
-            Monitor institute inventory, stock status and communication
-          </p>
-        </div>
-  
-        {/* FILTER CARD */}
-        <div
-          className="card border-0 mb-4"
-          style={{
-            borderRadius: "14px",
-            boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
-          }}
-        >
-          <div className="card-body">
-            <div className="row g-3 align-items-end">
-  
-              <div className="col-md-3">
-                <label className="form-label small text-muted">
-                  Institute Name
-                </label>
-                <input
-                  className="form-control"
-                  placeholder="Search by institute"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                />
-              </div>
-  
-              <div className="col-md-3">
-                <label className="form-label small text-muted">
-                  District
-                </label>
-                <input
-                  className="form-control"
-                  placeholder="Search by district"
-                  value={district}
-                  onChange={e => setDistrict(e.target.value)}
-                />
-              </div>
-  
-            </div>
-          </div>
-        </div>
-  
-        {/* TABLE CARD */}
-        <div
-          className="card border-0"
-          style={{
-            borderRadius: "16px",
-            boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
-          }}
-        >
-          <div className="card-body p-0">
-  
-            <div className="table-responsive">
-              <table className="table align-middle mb-0">
-                <thead
-                  style={{
-                    backgroundColor: "#F3F7FF",
-                    color: "#1F2933",
-                    fontWeight: 600,
-                  }}
-                >
-                  <tr>
-                    <th>ID</th>
-                    <th>Institute</th>
-                    <th>Email</th>
-                    <th>District</th>
-                    <th>Main</th>
-                    <th>Sub</th>
-                    <th>Low Stock</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-  
-                <tbody>
-                  {paginated.length === 0 && (
-                    <tr>
-                      <td colSpan="8" className="text-center py-4 text-muted">
-                        No records found
-                      </td>
-                    </tr>
-                  )}
-  
-                  {paginated.map((r, i) => (
-                    <tr key={i}>
-                      <td>{r.Institute_ID}</td>
-                      <td className="fw-semibold">{r.Institute_Name}</td>
-  
-                      <td>
-                        <button
-                          className="btn btn-link p-0"
-                          style={{ color: "#4A70A9" }}
-                          onClick={() => setMailInstitute(r)}
-                        >
-                          {r.Email_ID}
-                        </button>
-                      </td>
-  
-                      <td>{r.Address?.District || "—"}</td>
-                      <td>{r.MainStore_Count}</td>
-                      <td>{r.SubStore_Count}</td>
-  
-                      <td
-                        style={{
-                          color:
-                            r.LowStock_Count > 0 ? "#D14343" : "#1F2933",
-                          fontWeight:
-                            r.LowStock_Count > 0 ? 600 : 400,
-                        }}
-                      >
-                        {r.LowStock_Count}
-                      </td>
-  
-                      <td>
-                        <button
-                          className="btn btn-sm"
-                          style={{
-                            backgroundColor: "#4A70A9",
-                            color: "#fff",
-                            borderRadius: "999px",
-                            padding: "6px 14px",
-                            border: "none",
-                          }}
-                          onClick={() => setSelectedInstitute(r)}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-  
-          </div>
-        </div>
-
-        {selectedInstitute && (
-  <div
-    className="modal show d-block"
-    style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
-  >
-    <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-      <div className="modal-content" style={{ borderRadius: "14px" }}>
-        
+      <div
+        style={{
+          maxWidth: 980,
+          margin: "0 auto",
+          background: "#ffffff",
+          borderRadius: 14,
+          padding: 28,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
+        }}
+      >
         {/* HEADER */}
-        <div
-          className="modal-header"
+        <h3
           style={{
-            backgroundColor: "#F3F7FF",
-            borderBottom: "1px solid #D6E0F0",
+            fontWeight: 700,
+            marginBottom: 20,
+            color: "#000",
+            borderBottom: "2px solid #000",
+            paddingBottom: 10
           }}
         >
-          <div>
-            <h5 className="mb-0 fw-semibold text-dark">
-              {selectedInstitute.Institute_Name}
-            </h5>
-            <small className="text-muted">
-              Medicines Inventory Overview
-            </small>
-          </div>
-
-          <button
-            className="btn-close"
-            onClick={() => setSelectedInstitute(null)}
-          />
-        </div>
-
-        {/* BODY */}
-        <div className="modal-body" style={{ backgroundColor: "#F8FAFC" }}>
-          
-          {/* MAIN STORE */}
-          <div className="mb-4">
-            <h6 className="fw-semibold text-primary mb-2">
-              Main Store Medicines
-            </h6>
-
-            {selectedInstitute.mainStore?.length ? (
-              <div className="table-responsive">
-                <table className="table table-sm align-middle">
-                  <thead style={{ backgroundColor: "#EAF2FF" }}>
-                    <tr>
-                      <th>Medicine</th>
-                      <th>Batch</th>
-                      <th>Quantity</th>
-                      <th>Expiry</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedInstitute.mainStore.map((m, i) => (
-                      <tr key={i}>
-                        <td>{m.Medicine_Name || "-"}</td>
-                        <td>{m.Batch_No || "-"}</td>
-                        <td
-                          className={
-                            m.Quantity < 10
-                              ? "text-danger fw-semibold"
-                              : ""
-                          }
-                        >
-                          {m.Quantity}
-                        </td>
-                        <td>
-                          {m.Expiry_Date
-                            ? new Date(m.Expiry_Date).toLocaleDateString()
-                            : "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-muted small">
-                No medicines in main store
-              </p>
-            )}
-          </div>
-
-          {/* SUB STORE */}
-          <div>
-            <h6 className="fw-semibold text-success mb-2">
-              Sub Store Medicines
-            </h6>
-
-            {selectedInstitute.subStore?.length ? (
-              <div className="table-responsive">
-                <table className="table table-sm align-middle">
-                  <thead style={{ backgroundColor: "#EAFBEA" }}>
-                    <tr>
-                      <th>Medicine</th>
-                      <th>Batch</th>
-                      <th>Quantity</th>
-                      <th>Expiry</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedInstitute.subStore.map((m, i) => (
-                      <tr key={i}>
-                        <td>{m.Medicine_Name || "-"}</td>
-                        <td>{m.Batch_No || "-"}</td>
-                        <td
-                          className={
-                            m.Quantity < 10
-                              ? "text-danger fw-semibold"
-                              : ""
-                          }
-                        >
-                          {m.Quantity}
-                        </td>
-                        <td>
-                          {m.Expiry_Date
-                            ? new Date(m.Expiry_Date).toLocaleDateString()
-                            : "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-muted small">
-                No medicines in sub store
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* FOOTER */}
-        <div
-          className="modal-footer"
-          style={{ borderTop: "1px solid #D6E0F0" }}
-        >
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => setSelectedInstitute(null)}
+          📋 Employee + Family Disease & Diagnosis Report
+        </h3>
+  
+        {/* SEARCH */}
+        <div style={{ marginBottom: 20 }}>
+          <label
+            style={{
+              fontWeight: 600,
+              marginBottom: 6,
+              display: "block",
+              color: "#111"
+            }}
           >
-            Close
-          </button>
+            Employee ABS Number
+          </label>
+  
+          <input
+            type="text"
+            value={searchTerm}
+            placeholder="Type ABS_NO..."
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-control"
+            style={{
+              padding: "12px",
+              borderRadius: 8,
+              border: "1px solid #d1d5db"
+            }}
+          />
+  
+          {/* AUTOCOMPLETE */}
+          {searchTerm && filteredEmployees.length > 0 && (
+            <div
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 8,
+                marginTop: 6,
+                background: "#ffffff",
+                maxHeight: 220,
+                overflowY: "auto"
+              }}
+            >
+              {filteredEmployees.map((emp) => (
+                <div
+                  key={emp._id}
+                  onClick={() => loadHealthReport(emp.ABS_NO)}
+                  style={{
+                    padding: "10px 12px",
+                    cursor: "pointer",
+                    borderBottom: "1px solid #f1f5f9"
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#f9fafb")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "#ffffff")
+                  }
+                >
+                  <strong>{emp.ABS_NO}</strong> — {emp.Name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+  
+        {/* ================= REPORT ================= */}
+        {report && (
+          <div style={{ marginTop: 30 }}>
+            {/* EMPLOYEE */}
+            <h5 style={{ fontWeight: 700, color: "#000", marginBottom: 12 }}>
+              🧑‍💼 Employee: {report.employee.Name} ({report.employee.ABS_NO})
+            </h5>
+
+            {/* EMPLOYEE BASIC INFO CARD */}
+<div
+  style={{
+    background: "#f8fafc",
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 20
+  }}
+>
+  <div className="row">
+    <div className="col-md-4 mb-2">
+      <strong>Gender:</strong>{" "}
+      <span style={{ color: "#374151" }}>
+        {report.employee.Gender || "—"}
+      </span>
+    </div>
+
+    <div className="col-md-4 mb-2">
+      <strong>Age:</strong>{" "}
+      <span style={{ color: "#374151" }}>
+        {report.employee.DOB
+          ? new Date().getFullYear() -
+            new Date(report.employee.DOB).getFullYear()
+          : "—"}
+      </span>
+    </div>
+
+    <div className="col-md-4 mb-2">
+      <strong>Blood Group:</strong>{" "}
+      <span style={{ color: "#374151" }}>
+        {report.employee.Blood_Group || "—"}
+      </span>
+    </div>
+
+    <div className="col-md-4 mb-2">
+      <strong>Height:</strong>{" "}
+      <span style={{ color: "#374151" }}>
+        {report.employee.Height
+          ? `${report.employee.Height} cm`
+          : "—"}
+      </span>
+    </div>
+
+    <div className="col-md-4 mb-2">
+      <strong>Weight:</strong>{" "}
+      <span style={{ color: "#374151" }}>
+        {report.employee.Weight
+          ? `${report.employee.Weight} kg`
+          : "—"}
+      </span>
     </div>
   </div>
-)}
-
+</div>
   
-        {/* PAGINATION */}
-        <ul className="pagination justify-content-center mt-4">
-          {[...Array(totalPages)].map((_, i) => (
-            <li
-              key={i}
-              className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
+            {/* EMPLOYEE DISEASES */}
+            <h6 style={{ fontWeight: 600, marginTop: 20 }}>🦠 Diseases</h6>
+  
+            {report.employeeDiseases?.length ? (
+              <div className="table-responsive">
+                <table className="table table-bordered align-middle">
+                  <thead style={{ background: "#f3f4f6" }}>
+                    <tr>
+                      <th>Disease</th>
+                      <th>Category</th>
+                      <th>Severity</th>
+                      <th>Diagnosis</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.employeeDiseases.map((d, i) => (
+                      <tr key={i}>
+                        <td>{d.Disease_Name}</td>
+                        <td>{d.Category}</td>
+                        <td>
+                          <span
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 20,
+                              background: "#e5e7eb",
+                              fontSize: 13
+                            }}
+                          >
+                            {d.Severity_Level}
+                          </span>
+                        </td>
+                        <td>{d.Diagnosis || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: "#6b7280" }}>
+                No employee disease records.
+              </p>
+            )}
+  
+            {/* EMPLOYEE DIAGNOSIS */}
+            <h6 style={{ fontWeight: 600, marginTop: 24 }}>
+              🩺 Diagnosis Tests
+            </h6>
+  
+            {report.employeeDiagnosis?.length ? (
+              <div className="table-responsive">
+                <table className="table table-bordered align-middle">
+                  <thead style={{ background: "#f3f4f6" }}>
+                    <tr>
+                      <th>Date</th>
+                      <th>Test</th>
+                      <th>Result</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.employeeDiagnosis.flatMap((rec, i) =>
+                      rec.Tests.map((t, j) => (
+                        <tr key={`${i}-${j}`}>
+                          <td>
+                            {new Date(t.Timestamp).toLocaleDateString()}
+                          </td>
+                          <td>{t.Test_Name}</td>
+                          <td>{t.Result_Value}</td>
+                          <td>{t.Remarks || "—"}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: "#6b7280" }}>
+                No employee diagnosis records.
+              </p>
+            )}
+  
+            {/* FAMILY */}
+            <h5
+              style={{
+                fontWeight: 700,
+                marginTop: 32,
+                color: "#000"
+              }}
             >
-              <button
-                className="page-link"
-                onClick={() => setCurrentPage(i + 1)}
-              >
-                {i + 1}
-              </button>
-            </li>
-          ))}
-        </ul>
+              👨‍👩‍👧 Family Members
+            </h5>
   
+            {/* FAMILY DISEASES */}
+            <h6 style={{ fontWeight: 600, marginTop: 16 }}>
+              🦠 Diseases
+            </h6>
+  
+            {report.familyDiseases?.length ? (
+              <div className="table-responsive">
+                <table className="table table-bordered align-middle">
+                  <thead style={{ background: "#f3f4f6" }}>
+                    <tr>
+                      <th>Member</th>
+                      <th>Disease</th>
+                      <th>Category</th>
+                      <th>Severity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.familyDiseases.map((d, i) => (
+                      <tr key={i}>
+                        <td>
+                          {d.FamilyMember_ID?.Name} (
+                          {d.FamilyMember_ID?.Relationship})
+                        </td>
+                        <td>{d.Disease_Name}</td>
+                        <td>{d.Category}</td>
+                        <td>{d.Severity_Level}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: "#6b7280" }}>
+                No family disease records.
+              </p>
+            )}
+  
+            {/* FAMILY DIAGNOSIS */}
+            <h6 style={{ fontWeight: 600, marginTop: 20 }}>
+              🩺 Diagnosis Tests
+            </h6>
+  
+            {report.familyDiagnosis?.length ? (
+              <div className="table-responsive">
+                <table className="table table-bordered align-middle">
+                  <thead style={{ background: "#f3f4f6" }}>
+                    <tr>
+                      <th>Member</th>
+                      <th>Test</th>
+                      <th>Result</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.familyDiagnosis.flatMap((rec, i) =>
+                      rec.Tests.map((t, j) => (
+                        <tr key={`${i}-${j}`}>
+                          <td>
+                            {rec.FamilyMember?.Name} (
+                            {rec.FamilyMember?.Relationship})
+                          </td>
+                          <td>{t.Test_Name}</td>
+                          <td>{t.Result_Value}</td>
+                          <td>
+                            {new Date(t.Timestamp).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: "#6b7280" }}>
+                No family diagnosis test records.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
   
-}
+};
+
+export default InstituteReports;

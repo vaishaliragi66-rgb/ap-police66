@@ -14,11 +14,21 @@ const VisitRegister = () => {
   const [familyMembers, setFamilyMembers] = useState([]);
   const [selectedFamily, setSelectedFamily] = useState(null);
 
+  const [previewToken, setPreviewToken] = useState(null);
+  const [previewOP, setPreviewOP] = useState(null);
   const [symptoms, setSymptoms] = useState("");
 
   const [loading, setLoading] = useState(false);
   const instituteId = localStorage.getItem("instituteId");
 
+  const [vitals, setVitals] = useState({
+    Temperature: "",
+    Sugar: "",
+    Blood_Pressure: "",
+    Oxygen: "",
+    Pulse: "",
+    GRBS: ""
+  });
 
   /* ================= FETCH EMPLOYEES ================= */
   useEffect(() => {
@@ -61,6 +71,23 @@ const VisitRegister = () => {
     }
   }, [isFamily, selectedEmployee]);
 
+  useEffect(() => {
+    if (selectedEmployee) {
+      axios
+        .get(
+          `http://localhost:${BACKEND_PORT}/api/visits/next-numbers/${instituteId}`
+        )
+        .then(res => {
+          setPreviewToken(res.data.nextToken);
+          setPreviewOP(res.data.nextOP);
+        })
+        .catch(() => {
+          setPreviewToken(null);
+          setPreviewOP(null);
+        });
+    }
+  }, [selectedEmployee]);
+
   
   /* ================= REGISTER VISIT ================= */
   const registerVisit = async () => {
@@ -74,42 +101,22 @@ const VisitRegister = () => {
       return;
     }
   
-    const finalSymptoms = symptoms.trim(); // string
-  
-    const patient = isFamily
-      ? {
-          type: "FAMILY",
-          name: selectedFamily.Name,
-          relation: selectedFamily.Relationship,
-          age: selectedFamily.DOB
-            ? new Date().getFullYear() -
-              new Date(selectedFamily.DOB).getFullYear()
-            : null,
-          symptoms: finalSymptoms || ""
-        }
-      : {
-          type: "EMPLOYEE",
-          name: selectedEmployee.Name,
-          age: selectedEmployee.DOB
-            ? new Date().getFullYear() -
-              new Date(selectedEmployee.DOB).getFullYear()
-            : null,
-          symptoms: finalSymptoms || ""
-        };
-  
     setLoading(true);
+  
     try {
       await axios.post(
-  `http://localhost:${BACKEND_PORT}/api/visits/register`,
-  {
-    Institute_ID: instituteId,       // ✅ REQUIRED
-    employee_id: selectedEmployee._id,
-    abs_no: selectedEmployee.ABS_NO,
-    patient
-  }
-);
-
-  
+        `http://localhost:${BACKEND_PORT}/api/visits/register`,
+        {
+          Institute_ID: instituteId,
+          employee_id: selectedEmployee._id,
+          abs_no: selectedEmployee.ABS_NO,
+          IsFamilyMember: isFamily,
+          FamilyMember: isFamily ? selectedFamily._id : null,
+          name: isFamily ? selectedFamily.Name : selectedEmployee.Name,
+          symptoms: symptoms,
+          Vitals: vitals
+        }
+      );
       alert("✅ Visit Registered Successfully");
   
       setSearch("");
@@ -118,6 +125,7 @@ const VisitRegister = () => {
       setFamilyMembers([]);
       setSelectedFamily(null);
       setSymptoms("");
+  
     } catch (err) {
       alert("❌ Failed to register visit");
     } finally {
@@ -144,10 +152,29 @@ const VisitRegister = () => {
     <div className="container mt-5">
       <div className="col-md-6 mx-auto">
         <div className="card shadow">
-          <div className="card-header bg-dark text-white">
-            Register Visit
-          </div>
+        <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
 
+          {/* LEFT - TOKEN */}
+            <div>
+              {previewToken && (
+                <strong>Token No: {previewToken}</strong>
+              )}
+            </div>
+
+            {/* CENTER */}
+            <div style={{ fontWeight: 600 }}>
+              Register Visit
+            </div>
+
+            {/* RIGHT - OP */}
+            <div>
+              {previewOP && (
+                <strong>OP No: {previewOP}</strong>
+              )}
+            </div>
+
+          </div>
+  
           <div className="card-body">
             {/* EMPLOYEE SEARCH */}
             <label className="fw-semibold">Employee ABS / Name</label>
@@ -238,6 +265,86 @@ const VisitRegister = () => {
             onChange={e => setSymptoms(e.target.value)}
           />
         </div>
+
+          {/* ================= VITALS ================= */}
+  <div className="mt-4">
+    <h6 className="fw-bold">Vitals</h6>
+
+    <div className="row">
+      <div className="col-md-6 mb-2">
+        <label>Temperature (°C)</label>
+        <input
+          type="number"
+          className="form-control"
+          value={vitals.Temperature}
+          onChange={(e) =>
+            setVitals({ ...vitals, Temperature: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="col-md-6 mb-2">
+        <label>Blood Pressure (mmHg)</label>
+        <input
+          type="text"
+          className="form-control"
+          placeholder="120/80"
+          value={vitals.Blood_Pressure}
+          onChange={(e) =>
+            setVitals({ ...vitals, Blood_Pressure: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="col-md-6 mb-2">
+        <label>Pulse</label>
+        <input
+          type="number"
+          className="form-control"
+          value={vitals.Pulse}
+          onChange={(e) =>
+            setVitals({ ...vitals, Pulse: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="col-md-6 mb-2">
+        <label>Oxygen (%)</label>
+        <input
+          type="number"
+          className="form-control"
+          value={vitals.Oxygen}
+          onChange={(e) =>
+            setVitals({ ...vitals, Oxygen: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="col-md-6 mb-2">
+        <label>Sugar</label>
+        <input
+          type="number"
+          className="form-control"
+          value={vitals.Sugar}
+          onChange={(e) =>
+            setVitals({ ...vitals, Sugar: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="col-md-6 mb-2">
+        <label>GRBS</label>
+        <input
+          type="number"
+          className="form-control"
+          value={vitals.GRBS}
+          onChange={(e) =>
+            setVitals({ ...vitals, GRBS: e.target.value })
+          }
+        />
+      </div>
+    </div>
+  </div>
 
             {/* SUBMIT */}
             <button

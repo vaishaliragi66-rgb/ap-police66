@@ -13,7 +13,7 @@ const InstituteLedgerSchema = new Schema(
     // What kind of stock movement this entry represents
     Transaction_Type: {
       type: String,
-      enum: ["MAINSTORE_ADD","STORE_TRANSFER", "PRESCRIPTION_ISSUE"],
+      enum: ["MAINSTORE_ADD","STORE_TRANSFER", "PRESCRIPTION_ISSUE","SUBSTORE_ADD"],
       required: true
     },
 
@@ -25,11 +25,18 @@ const InstituteLedgerSchema = new Schema(
       required: false
     },
 
-    Medicine_ID: {
-      type: Schema.Types.ObjectId,
-      ref: "Medicine",
-      required: true
-    },
+Medicine_ID: {
+  type: Schema.Types.ObjectId,
+  required: true,
+  refPath: "Medicine_Model"
+},
+
+Medicine_Model: {
+  type: String,
+  required: true,
+  enum: ["MainStoreMedicine", "Medicine"]
+},
+
 
     Medicine_Name: {
       type: String,

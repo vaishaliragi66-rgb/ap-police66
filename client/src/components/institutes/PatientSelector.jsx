@@ -47,28 +47,33 @@ useEffect(() => {
   }, [search, todayVisits]);
 
   /* ================= SELECT ================= */
-  const handleSelect = (item) => {
-    if (item.employee_id) {
-      // today visit
-      setSearch(item.employee_id.ABS_NO);
+const handleSelect = (item) => {
+  let employeeData = null;
+  let visitData = null;
 
-      onSelect({
-  employee: item.employee_id,
-  visit_id: item._id
-});
+  if (item.employee_id) {
+    // Today visit record
+    employeeData = item.employee_id;
+    visitData = item;
 
-    } else {
-      // searched employee
-      setSearch(item.ABS_NO);
+    setSearch(item.employee_id.ABS_NO);
+  } else {
+    // Manual searched employee (no visit)
+    employeeData = item;
+    visitData = null;
 
-      onSelect({
-        employee: item,
-        visit_id: null
-      });
-    }
+    setSearch(item.ABS_NO);
+  }
 
-    setShowDropdown(false);
-  };
+  onSelect({
+    employee: employeeData,
+    visit: visitData,
+    visit_id: visitData?._id || null   // 👈 ADD THIS (no removal)
+  });
+
+  setShowDropdown(false);
+};
+
 
   /* ================= CLICK OUTSIDE ================= */
   useEffect(() => {
@@ -117,9 +122,26 @@ useEffect(() => {
               }}
             >
               {o.token_no && (
-                <strong className="me-1">Token {o.token_no} -</strong>
-              )}
-              {o.employee_id ? o.employee_id.ABS_NO : o.ABS_NO}
+  <strong className="me-1">Token {o.token_no} -</strong>
+)}
+
+{o.employee_id && !o.IsFamilyMember && (
+  <>
+    {o.employee_id.ABS_NO} - {o.employee_id.Name}
+  </>
+)}
+
+{o.employee_id && o.IsFamilyMember && o.FamilyMember && (
+  <>
+    {o.employee_id.ABS_NO} - {o.FamilyMember.Name} ({o.FamilyMember.Relationship})
+  </>
+)}
+
+{!o.employee_id && (
+  <>
+    {o.ABS_NO} - {o.Name}
+  </>
+)}
             </div>
           ))}
         </div>
