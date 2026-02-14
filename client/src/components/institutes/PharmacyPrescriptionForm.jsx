@@ -102,6 +102,28 @@ const PharmacyPrescriptionForm = () => {
     setLastTwoVisits([]);
   }
 };
+const checkStockAvailability = (medicineCode, requestedQty) => {
+  const subStore = inventory.find(
+    m => m.Medicine_Code === medicineCode && m.Store_Type === "SUB_STORE"
+  );
+
+  const mainStore = inventory.find(
+    m => m.Medicine_Code === medicineCode && m.Store_Type === "MAIN_STORE"
+  );
+
+  const subQty = subStore?.Quantity || 0;
+  const mainQty = mainStore?.Quantity || 0;
+
+  if (requestedQty <= subQty) {
+    return { status: "SUB_STORE", maxQty: subQty };
+  }
+
+  if (requestedQty <= mainQty) {
+    return { status: "MAIN_STORE", maxQty: mainQty };
+  }
+
+  return { status: "EXCEEDS_MAIN", maxQty: mainQty };
+};
 
 const loadEmployeeReports = async () => {
   if (!selectedEmployee || !selectedEmployee.ABS_NO) {
@@ -200,11 +222,15 @@ useEffect(() => {
 
   console.log("Inventory sample:", inventory[0]);
 
-  const results = inventory.filter(m =>
-    m.Medicine_Name?.toLowerCase().includes(searchText.toLowerCase())
-  );
+const results = inventory.filter(m =>
+  m.Store_Type === "SUB_STORE" &&
+  m.Medicine_Name?.toLowerCase().includes(searchText.toLowerCase())
+);
 
   setFilteredMedicines(results);
+  console.log("Search text:", searchText);
+console.log("Results:", results);
+
 }, [medicineSearch, activeMedicineIndex, inventory]);
 
 
@@ -266,9 +292,46 @@ const handleMedicineChange = (index, field, value) => {
       };
     }
 
-    if (field === "quantity") {
-      updated[index].quantity = Number(value);
-    }
+if (field === "quantity") {
+  const requestedQty = Number(value);
+  const medicineCode = updated[index].medicineId;
+
+  if (!medicineCode) {
+    updated[index].quantity = requestedQty;
+    return { ...prev, Medicines: updated };
+  }
+
+  const stockCheck = checkStockAvailability(medicineCode, requestedQty);
+
+  if (stockCheck.status === "SUB_STORE") {
+    updated[index].quantity = requestedQty;
+
+    setMedicineErrors(prev => {
+      const copy = { ...prev };
+      delete copy[index];
+      return copy;
+    });
+  }
+
+  else if (stockCheck.status === "MAIN_STORE") {
+    updated[index].quantity = requestedQty;
+
+    setMedicineErrors(prev => ({
+      ...prev,
+      [index]: "⚠️ Not available in sub-store. Will issue from main store."
+    }));
+  }
+
+  else {
+    updated[index].quantity = stockCheck.maxQty;
+
+    setMedicineErrors(prev => ({
+      ...prev,
+      [index]: `❌ Only ${stockCheck.maxQty} available in main store`
+    }));
+  }
+}
+
 
     return { ...prev, Medicines: updated };
   });
@@ -300,6 +363,7 @@ const addDoctorPrescribedMedicine = (medicine) => {
     const emptyIndex = medicinesCopy.findIndex(
       m => !m.medicineName
     );
+
 
     if (emptyIndex !== -1) {
       // Use existing empty row
@@ -753,14 +817,18 @@ const handleSubmit = async (e) => {
                           return (
                             <button
                               type="button"
-                              key={m.Medicine_Code}
+                              key={m._id}
                               className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
                                 m.Quantity === 0 ? "disabled text-muted" : ""
                               }`}
                               onClick={() => {
                                 if (m.Quantity === 0) return;
                                 handleMedicineChange(i, "medicineId", displayCode);
-                                setMedicineSearch("");
+                                setMedicineSearch(prev => ({
+                                  ...prev,
+                                  [i]: ""
+                                }));
+
                                 setFilteredMedicines([]);
                                 setActiveMedicineIndex(null);
                               }}

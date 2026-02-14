@@ -57,9 +57,6 @@ const res = await axios.get(
  
 );
 
-
-
-
 setInventory(res.data || []);
 
         
