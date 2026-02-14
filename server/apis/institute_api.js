@@ -379,39 +379,50 @@ instituteApp.get("/inventory/:instituteId", async (req, res) => {
 
     const instituteObjectId = new mongoose.Types.ObjectId(instituteId);
 
-    // ✅ MAIN STORE (ONLY this institute)
-    const mainStoreMeds = await MainStoreMedicine.find({
-      Institute_ID: instituteObjectId
-    }).lean();
+    const [mainStoreMeds, subStoreMeds] = await Promise.all([
+      MainStoreMedicine.find({ Institute_ID: instituteObjectId }).lean(),
+      Medicine.find({ Institute_ID: instituteObjectId }).lean()
+    ]);
 
-    // ✅ SUB STORE (ONLY this institute)
-    const subStoreMeds = await Medicine.find({
-      Institute_ID: instituteObjectId
-    }).lean();
+    const inventoryMap = {};
 
-    // ✅ DO NOT MERGE — SHOW BOTH
-    const inventory = [
-      ...mainStoreMeds.map(m => ({
-        _id: m._id,
-        Medicine_Code: m.Medicine_Code,
-        Medicine_Name: m.Medicine_Name,
-        Quantity: m.Quantity,
-        Threshold_Qty: m.Threshold_Qty,
-        Expiry_Date: m.Expiry_Date,
-        Store_Type: "MAIN_STORE"
-      })),
-      ...subStoreMeds.map(m => ({
-        _id: m._id,
-        Medicine_Code: m.Medicine_Code,
-        Medicine_Name: m.Medicine_Name,
-        Quantity: m.Quantity,
-        Threshold_Qty: m.Threshold_Qty,
-        Expiry_Date: m.Expiry_Date,
-        Store_Type: "SUB_STORE"
-      }))
-    ];
+    // 🔹 MAIN STORE
+    for (const m of mainStoreMeds) {
+      const key = m.Medicine_Code;
 
-    res.json(inventory);
+      if (!inventoryMap[key]) {
+        inventoryMap[key] = {
+          Medicine_Code: m.Medicine_Code,
+          Medicine_Name: m.Medicine_Name,
+          Quantity: 0,
+          Threshold_Qty: m.Threshold_Qty,
+          Expiry_Date: m.Expiry_Date
+        };
+      }
+
+      inventoryMap[key].Quantity += m.Quantity;
+    }
+
+    // 🔹 SUB STORE
+    for (const m of subStoreMeds) {
+      const key = m.Medicine_Code;
+
+      if (!inventoryMap[key]) {
+        inventoryMap[key] = {
+          Medicine_Code: m.Medicine_Code,
+          Medicine_Name: m.Medicine_Name,
+          Quantity: 0,
+          Threshold_Qty: m.Threshold_Qty,
+          Expiry_Date: m.Expiry_Date
+        };
+      }
+
+      inventoryMap[key].Quantity += m.Quantity;
+    }
+
+    const inventory = Object.values(inventoryMap);
+
+    res.status(200).json(inventory);
 
   } catch (err) {
     console.error("Institute inventory error:", err);

@@ -21,24 +21,22 @@ ledgerApp.get("/institute/:instituteId", async (req, res) => {
     const { instituteId } = req.params;
     const { from, to, type, direction } = req.query;
 
-    // Validate Institute ID
     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
       return res.status(400).json({ message: "Invalid Institute ID" });
     }
 
-    const filter = { Institute_ID: instituteId };
+    const filter = {
+      Institute_ID: new mongoose.Types.ObjectId(instituteId)
+    };
 
-    // Filter by transaction type
     if (type) {
       filter.Transaction_Type = type;
     }
 
-    // Filter by direction (IN / OUT)
     if (direction) {
       filter.Direction = direction;
     }
 
-    // Filter by date range
     if (from || to) {
       filter.Timestamp = {};
       if (from) filter.Timestamp.$gte = new Date(from);
@@ -63,5 +61,6 @@ ledgerApp.get("/institute/:instituteId", async (req, res) => {
     });
   }
 });
+
 
 module.exports = ledgerApp;
