@@ -19,6 +19,7 @@ const EmployeeRegister = () => {
     Height: "",
     Weight: "",
     Phone_No: "",
+    Gender:"",
     Address: {
       Street: "",
       District: "",
@@ -89,8 +90,8 @@ const EmployeeRegister = () => {
 
     try {
       // Validate required fields
-      if (!formData.ABS_NO || !formData.Name || !formData.Email || !formData.Password) {
-        setError("ABS Number, Name, Email, and Password are required");
+      if (!formData.ABS_NO || !formData.Name || !formData.Email || !formData.Password || !formData.Gender) {
+        setError("ABS Number, Name, Email, Password and Gender are required");
         setLoading(false);
         return;
       }
@@ -110,6 +111,7 @@ const EmployeeRegister = () => {
       formPayload.append("Weight", formData.Weight || "");
       formPayload.append("Phone_No", formData.Phone_No || "");
       formPayload.append("Street", formData.Address.Street || "");
+      formPayload.append("Gender", formData.Gender);
       formPayload.append("District", formData.Address.District || "");
       formPayload.append("State", formData.Address.State || "");
       formPayload.append("Pincode", formData.Address.Pincode || "");
@@ -368,19 +370,6 @@ const EmployeeRegister = () => {
 
 
               {/* Required Fields */}
-              <div className="mb-3">
-                <label className="form-label fw-semibold">ABS Number *</label>
-                <input
-                  type="text"
-                  name="ABS_NO"
-                  className="form-control"
-                  placeholder="Enter ABS Number"
-                  value={formData.ABS_NO}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </div>
 
               <div className="mb-3">
                 <label className="form-label fw-semibold">Full Name *</label>
@@ -395,6 +384,68 @@ const EmployeeRegister = () => {
                   disabled={loading}
                 />
               </div>
+              <div className="row">
+  {/* ABS Number */}
+  <div className="col-md-6 mb-3">
+    <label className="form-label fw-semibold">ABS Number *</label>
+    <input
+      type="text"
+      name="ABS_NO"
+      className="form-control"
+      placeholder="Enter ABS Number"
+      value={formData.ABS_NO}
+      onChange={handleChange}
+      required
+      disabled={loading}
+    />
+  </div>
+
+  {/* Gender */}
+  <div className="col-md-6 mb-3">
+    <label className="form-label fw-semibold d-block">Gender *</label>
+
+    <div className="form-check form-check-inline">
+      <input
+        className="form-check-input"
+        type="radio"
+        name="Gender"
+        value="Male"
+        checked={formData.Gender === "Male"}
+        onChange={handleChange}
+        disabled={loading}
+        required
+      />
+      <label className="form-check-label">Male</label>
+    </div>
+
+    <div className="form-check form-check-inline">
+      <input
+        className="form-check-input"
+        type="radio"
+        name="Gender"
+        value="Female"
+        checked={formData.Gender === "Female"}
+        onChange={handleChange}
+        disabled={loading}
+      />
+      <label className="form-check-label">Female</label>
+    </div>
+
+    <div className="form-check form-check-inline">
+      <input
+        className="form-check-input"
+        type="radio"
+        name="Gender"
+        value="Other"
+        checked={formData.Gender === "Other"}
+        onChange={handleChange}
+        disabled={loading}
+      />
+      <label className="form-check-label">Other</label>
+    </div>
+  </div>
+</div>
+             
 
               <div className="row">
                 <div className="col-md-6 mb-3">

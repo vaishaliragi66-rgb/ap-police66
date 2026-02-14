@@ -26,7 +26,7 @@ const FamilyMemberSchema = new Schema({
   Gender: { 
     type: String, 
     required: true, 
-    enum: ["Male", "Female"] 
+    enum: ["Male", "Female","Other"] 
   },
 
   // Newly Added Similar To Employee Schema

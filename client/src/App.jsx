@@ -139,6 +139,7 @@ function App() {
     {path:"/institutes/visit-register",
       element:<VisitRegister/>
     },
+    
   
     {
       path:"/employee-register",

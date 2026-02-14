@@ -3,11 +3,11 @@ import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 
 const DoctorDiagnosisForm = () => {
-//   const [employees, setEmployees] = useState([]);
+
   const [familyMembers, setFamilyMembers] = useState([]);
   const [testsMaster, setTestsMaster] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-//   const [filteredEmployees, setFilteredEmployees] = useState([]);
+
   const [instituteName, setInstituteName] = useState("");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -57,23 +57,7 @@ const DoctorDiagnosisForm = () => {
     }
   };
 
-//   const fetchEmployees = async () => {
-//     try {
-//       const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/all`);
-//       const employeesData = res.data?.employees || res.data || [];
-//       setEmployees(employeesData);
-//       console.log("Employees fetched:", employeesData.length);
-//     } catch (err) {
-//       console.error("Error fetching employees:", err);
-//       // Try alternative endpoint
-//       try {
-//         const altRes = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/employees`);
-//         setEmployees(altRes.data || []);
-//       } catch (altErr) {
-//         console.error("Alternative endpoint also failed:", altErr);
-//       }
-//     }
-//   };
+
 
   const fetchTests = async () => {
     try {
@@ -85,17 +69,6 @@ const DoctorDiagnosisForm = () => {
     }
   };
 
-  // Filter employees
-//   useEffect(() => {
-//     if (!searchTerm.trim()) return setFilteredEmployees([]);
-//     const q = searchTerm.toLowerCase();
-//     setFilteredEmployees(
-//       employees.filter(e => 
-//         String(e.ABS_NO || "").toLowerCase().startsWith(q) ||
-//         String(e.Name || "").toLowerCase().includes(q)
-//       )
-//     );
-//   }, [searchTerm, employees]);
 
   const handleTestChange = (index, field, value) => {
     setFormData(prev => {

@@ -20,6 +20,25 @@ diagnosisApp.get("/tests", async (req, res) => {
   }
 });
 
+diagnosisApp.get("/visit/:visitId/doctor", async (req, res) => {
+  try {
+    const action = await MedicalAction.findOne({
+      visit_id: req.params.visitId,
+      action_type: "DOCTOR_DIAGNOSIS",
+      source: "DOCTOR"
+    })
+    .sort({ created_at: -1 });
+
+    if (!action) return res.status(200).json(null);
+
+    res.status(200).json(action);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch doctor diagnosis" });
+  }
+});
+
+
+
 // ✅ Add a new master test
 diagnosisApp.post("/tests/add", async (req, res) => {
   try {
@@ -48,39 +67,74 @@ diagnosisApp.post("/add", async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const recordQuery = { Institute: Institute_ID, Employee: Employee_ID, IsFamilyMember: !!IsFamilyMember };
+const recordQuery = {
+  Institute: Institute_ID,
+  Employee: Employee_ID
+};
+
+if (IsFamilyMember) {
+  recordQuery.FamilyMember = FamilyMember_ID;
+}
+
+
+
     if (IsFamilyMember) recordQuery.FamilyMember = FamilyMember_ID;
 
     let record = await DiagnosisRecord.findOne(recordQuery);
 
     if (!record) {
-      record = new DiagnosisRecord({
-        Institute: Institute_ID,
-        Employee: Employee_ID,
-        IsFamilyMember,
-        FamilyMember: FamilyMember_ID || null,
-        Tests: Tests.map(t => ({
-          Test_Name: t.Test_Name,
-          Group: t.Group || "",
-          Result_Value: t.Result_Value,
-          Reference_Range: t.Reference_Range || "",
-          Units: t.Units || "",
-          Remarks: t.Remarks || Diagnosis_Notes || "",
-        })),
-        Diagnosis_Notes: Diagnosis_Notes || "",
-      });
+  record = new DiagnosisRecord({
+    Institute: Institute_ID,
+    Employee: Employee_ID,
+    Visit: req.body.visit_id,
+    IsFamilyMember,
+    FamilyMember: FamilyMember_ID || null,
+    Tests: Tests.map(t => ({
+      Test_ID: t.Test_ID || null,   // 👈 ADD THIS LINE
+      Test_Name: t.Test_Name,
+      Group: t.Group || "",
+      Result_Value: t.Result_Value,
+      Reference_Range: t.Reference_Range || "",
+      Units: t.Units || "",
+      Remarks: t.Remarks || Diagnosis_Notes || "",
+    })),
+    Diagnosis_Notes: Diagnosis_Notes || "",
+  });
+}
+ else {
+  Tests.forEach(t => {
+
+   const existingTest = record.Tests.find(
+  rt => rt.Test_ID && t.Test_ID &&
+  rt.Test_ID.toString() === t.Test_ID.toString()
+);
+
+
+    if (existingTest) {
+      // UPDATE result
+      existingTest.Result_Value = t.Result_Value;
+      existingTest.Reference_Range = t.Reference_Range || existingTest.Reference_Range;
+      existingTest.Units = t.Units || existingTest.Units;
+      existingTest.Remarks = t.Remarks || Diagnosis_Notes || existingTest.Remarks;
+      existingTest.Timestamp = new Date();
     } else {
-      Tests.forEach(t => {
-        record.Tests.push({
-          Test_Name: t.Test_Name,
-          Group: t.Group || "",
-          Result_Value: t.Result_Value,
-          Reference_Range: t.Reference_Range || "",
-          Units: t.Units || "",
-          Remarks: t.Remarks || Diagnosis_Notes || "",
-        });
+      // ADD NEW test
+      record.Tests.push({
+        Test_ID: t.Test_ID || null,
+        Test_Name: t.Test_Name,
+        Group: t.Group || "",
+        Result_Value: t.Result_Value,
+        Reference_Range: t.Reference_Range || "",
+        Units: t.Units || "",
+        Remarks: t.Remarks || Diagnosis_Notes || "",
       });
     }
+
+  });
+}
+  
+console.log("Incoming Tests:", Tests);
+console.log("Existing Record Tests:", record?.Tests);
 
     await record.save();
     // ===================================================
@@ -91,7 +145,7 @@ diagnosisApp.post("/add", async (req, res) => {
         employee_id: Employee_ID,
         visit_id: req.body.visit_id || null, // optional
         action_type: "DIAGNOSIS_TEST",
-        source: "DIAGNOSIS",
+        source: "LAB",
         data: {
           diagnosis_record_id: record._id,
           tests: Tests
@@ -125,36 +179,32 @@ diagnosisApp.post("/add", async (req, res) => {
 // ✅ Get all diagnosis records for a person
 diagnosisApp.get("/records/:personId", async (req, res) => {
   try {
-    console.log("Incoming ID:", req.params.personId);
-
     const { personId } = req.params;
+    const { isFamily, familyId } = req.query;
 
     if (!mongoose.Types.ObjectId.isValid(personId))
       return res.status(400).json({ message: "Invalid ID" });
 
-    const personObjectId = new mongoose.Types.ObjectId(personId);
+    const filter = { Employee: personId };
 
-    const records = await DiagnosisRecord.find({
-      $or: [
-        { Employee: personObjectId },
-        { Employee: personId },        // 👈 support old string IDs
-        { FamilyMember: personObjectId },
-        { FamilyMember: personId }     // 👈 support old string IDs
-      ]
-    })
+    if (isFamily === "true" && familyId) {
+      filter.IsFamilyMember = true;
+      filter.FamilyMember = familyId;
+    } else {
+      filter.IsFamilyMember = false;
+    }
+
+    const records = await DiagnosisRecord.find(filter)
       .populate("Employee", "Name")
       .populate("FamilyMember", "Name Relationship")
-      .populate("Institute", "Institute_Name")
       .sort({ createdAt: -1 });
 
-    if (!records.length)
-      return res.status(404).json({ message: "No records found" });
-
     res.status(200).json(records);
+
   } catch (err) {
-    console.error("Error fetching diagnosis records:", err);
     res.status(500).json({ error: "Failed to fetch records" });
   }
 });
+
 
 module.exports = diagnosisApp;

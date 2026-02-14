@@ -12,6 +12,12 @@ const DiagnosisEntryForm = () => {
   const [visitId, setVisitId] = useState(null);
   const [familyMembers, setFamilyMembers] = useState([]);
   const navigate = useNavigate();
+  const [selectedFamilyMember, setSelectedFamilyMember] = useState(null);
+const [selectedEmployee, setSelectedEmployee] = useState(null);
+const [pastRecords, setPastRecords] = useState([]);
+const [showHistory, setShowHistory] = useState(false);
+const [tokenNumber, setTokenNumber] = useState(null);
+
 
   const [formData, setFormData] = useState({
     Institute_ID: "",
@@ -37,23 +43,13 @@ const DiagnosisEntryForm = () => {
   return `${day}-${month}-${year}`; // ✅ DD-MM-YYYY
 };
 
- const fetchDoctorDiagnosis = async (visitId) => {
+const fetchDoctorDiagnosis = async (visitId) => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT_NO}/api/medical-actions/visit/${visitId}`
+      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/visit/${visitId}/doctor`
     );
 
-    const actions = res.data || [];
-
-    // store all doctor diagnosis (raw)
-    setDoctorDiagnosis(
-      actions.filter(
-        a =>
-          a.action_type === "DOCTOR_DIAGNOSIS" &&
-          a.source === "DOCTOR"
-      )
-
-    );
+    setDoctorDiagnosis(res.data ? [res.data] : []);
   } catch (err) {
     console.error("Failed to fetch doctor diagnosis", err);
     setDoctorDiagnosis([]);
@@ -61,28 +57,47 @@ const DiagnosisEntryForm = () => {
 };
 
 
-  useEffect(() => {
-  if (doctorDiagnosis.length === 0) return;
-
-  // collect ALL tests from doctor diagnosis
-  const allDoctorTests = doctorDiagnosis.flatMap(d =>
-    (d.data?.tests || []).map(t => ({
-      Test_ID: t.Test_ID || "",
-      Test_Name: t.Test_Name || "",
-      Result_Value: "",              // lab will fill
-      Reference_Range: t.Reference_Range || "",
-      Units: t.Units || "",
-      Remarks: ""
-    }))
-  );
-
-  if (allDoctorTests.length > 0) {
+useEffect(() => {
+  if (doctorDiagnosis.length === 0) {
+    // reset to single empty row
     setFormData(prev => ({
       ...prev,
-      Tests: allDoctorTests   // 👈 replaces single default row
+      Tests: [{
+        Test_ID: "",
+        Test_Name: "",
+        Result_Value: "",
+        Reference_Range: "",
+        Units: ""
+      }]
     }));
+    return;
   }
+
+  // 🧠 get latest doctor prescription
+  const latestPrescription = doctorDiagnosis[0]; 
+
+  const latestTests = (latestPrescription.data?.tests || []).map(t => ({
+    Test_ID: t.Test_ID || "",
+    Test_Name: t.Test_Name || "",
+    Result_Value: "",
+    Reference_Range: t.Reference_Range || "",
+    Units: t.Units || "",
+    Remarks: ""
+  }));
+
+  setFormData(prev => ({
+    ...prev,
+    Tests: latestTests.length > 0 ? latestTests : [{
+      Test_ID: "",
+      Test_Name: "",
+      Result_Value: "",
+      Reference_Range: "",
+      Units: ""
+    }]
+  }));
+
 }, [doctorDiagnosis]);
+
 
 
   useEffect(() => {
@@ -106,33 +121,21 @@ const DiagnosisEntryForm = () => {
     }
   };
 
-  // const fetchEmployees = async () => {
-  //   try {
-  //     const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/all`);
-  //     const employeesData = res.data?.employees || res.data || [];
-  //     setEmployees(employeesData);
-  //     console.log("Employees fetched:", employeesData.length);
-  //   } catch (err) {
-  //     console.error("Error fetching employees:", err);
-  //     // Try alternative endpoint
-  //     try {
-  //       const altRes = await axios.get(`http://localhost:${BACKEND_PORT_NO}/employee-api/employees`);
-  //       setEmployees(altRes.data || []);
-  //     } catch (altErr) {
-  //       console.error("Alternative endpoint also failed:", altErr);
-  //     }
-  //   }
-  // };
 
-  const fetchTests = async () => {
-    try {
-      const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/diagnosis-api/tests`);
-      setTestsMaster(res.data || []);
-      console.log("Tests fetched:", res.data?.length);
-    } catch (err) {
-      console.error("Error fetching tests:", err);
-    }
-  };
+
+const fetchTests = async () => {
+  try {
+    const res = await axios.get(
+      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/tests`
+    );
+
+    setTestsMaster(res.data || []);
+    console.log("Tests fetched:", res.data?.length);
+  } catch (err) {
+    console.error("Error fetching tests:", err);
+  }
+};
+
 
 
 
@@ -302,17 +305,35 @@ const fetchVisitDetails = async (visitId) => {
   );
   return res.data;
 };
+const fetchPastRecords = async () => {
+  if (!formData.Employee_ID) return;
+
+  try {
+    const res = await axios.get(
+      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
+    );
+
+    setPastRecords(res.data || []);
+    setShowHistory(true);   // 👈 open modal
+  } catch (err) {
+    console.error("Error fetching past records:", err);
+  }
+};
+
+
 
 
   return (
-    <div style={{ 
-      maxWidth: 800, 
-      margin: "40px auto", 
-      padding: 30, 
-      background: "#f5f8fe", 
-      borderRadius: 12, 
-      boxShadow: "0 4px 12px rgba(0,0,0,0.1)" 
-    }}>
+<div style={{ display: "flex", position: "relative" }}>
+
+    {/* FORM SIDE */}
+    <div
+      style={{
+        width: showHistory ? "65%" : "100%",
+        transition: "0.3s ease",
+        padding: "40px",
+      }}
+    >
       <h2 style={{ textAlign: "center", marginBottom: 30, color: "#333" }}>🏥 Diagnosis / Lab Test Entry</h2>
       
       <form onSubmit={handleSubmit} autoComplete="off">
@@ -334,59 +355,101 @@ const fetchVisitDetails = async (visitId) => {
         </div>
 
         {/* Employee Search */}
-        <PatientSelector
+<PatientSelector
   instituteId={formData.Institute_ID}
-onSelect={({ employee, visit_id }) => {
-  setVisitId(visit_id || null);
+  onSelect={({ employee, visit }) => {
+console.log("VISIT OBJECT:", visit);
 
-  if (visit_id) {
-    fetchDoctorDiagnosis(visit_id);
-  }
+    const vId = visit?._id || null;
+const token = visit?.token_no || visit?.Token_Number || null;
+    setVisitId(vId);
+    setTokenNumber(token);
 
-  setFormData(prev => ({
-    ...prev,
-    Employee_ID: employee._id,
-    IsFamilyMember: false,
-    FamilyMember_ID: ""
-  }));
-}}
+    setSelectedFamilyMember(
+      visit?.IsFamilyMember ? visit.FamilyMember : null
+    );
 
+    setSelectedEmployee(employee);
 
+    setFormData(prev => ({
+      ...prev,
+      Employee_ID: employee._id,
+      IsFamilyMember: Boolean(visit?.IsFamilyMember),
+      FamilyMember_ID: visit?.IsFamilyMember
+        ? visit.FamilyMember?._id
+        : ""
+    }));
+
+    // 🔥 THIS IS THE IMPORTANT PART
+    if (vId) {
+      fetchDoctorDiagnosis(vId);
+    }
+
+  }}
 />
 
-{/* QUICK ACTIONS */}
-<div style={{ display: "flex", gap: "12px", marginBottom: "20px" ,marginTop: "20px"}}>
-  <button
-    type="button"
-    onClick={() => navigate("/institutions/reports")}
+{selectedEmployee && (
+  <div
     style={{
-      padding: "8px 14px",
-      background: "#0d6efd",
-      color: "#fff",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontSize: "14px"
+      marginBottom: 20,
+      padding: "14px",
+      backgroundColor: "#eef6ff",
+      borderRadius: "8px",
+      border: "1px solid #cfe2ff"
     }}
   >
-    📊 View Employee Reports
-  </button>
-</div>
+    <div><strong>Employee Name:</strong> {selectedEmployee.Name}</div>
+    <div><strong>ABS No:</strong> {selectedEmployee.ABS_NO}</div>
+    {tokenNumber && (
+  <div><strong>Token Number:</strong> {tokenNumber}</div>
+)}
+
+    {formData.IsFamilyMember && selectedFamilyMember && (
+      <>
+        <div><strong>Family Member:</strong> {selectedFamilyMember.Name}</div>
+        <div><strong>Relationship:</strong> {selectedFamilyMember.Relationship}</div>
+      </>
+    )}
+<button
+  type="button"
+  onClick={fetchPastRecords}
+  style={{
+    marginTop: "10px",
+    padding: "8px 16px",
+    background: "linear-gradient(135deg, #2563eb, #1e40af)",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600",
+    fontSize: "14px",
+    boxShadow: "0 4px 10px rgba(37, 99, 235, 0.3)",
+    transition: "0.2s ease"
+  }}
+  onMouseEnter={(e) =>
+    (e.target.style.transform = "translateY(-2px)")
+  }
+  onMouseLeave={(e) =>
+    (e.target.style.transform = "translateY(0)")
+  }
+>
+  📄 View History
+</button>
 
 
-        {formData.IsFamilyMember && (
-          <div
-            style={{
-              marginTop: 10,
-              padding: "10px",
-              backgroundColor: "#f1f3f5",
-              borderRadius: "6px",
-              fontSize: "14px"
-            }}
-          >
-            <strong>Family Member:</strong> {formData.FamilyMember_ID}
-          </div>
-        )}
+  </div>
+)}
+
+
+
+
+
+{formData.IsFamilyMember && selectedFamilyMember && (
+  <div style={{ marginTop: 10 }}>
+    <strong>Family Member:</strong> {selectedFamilyMember.Name} ({selectedFamilyMember.Relationship})
+  </div>
+)}
+
 
         {filteredDoctorDiagnosis.length > 0 && (
           <div style={{
@@ -622,6 +685,84 @@ onSelect={({ employee, visit_id }) => {
           💾 Save Diagnosis Record
         </button>
       </form>
+          </div>
+
+
+      {showHistory && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      right: 0,
+      height: "100vh",
+      width: "40%",
+      background: "#ffffff",
+      boxShadow: "-4px 0 20px rgba(0,0,0,0.15)",
+      padding: "25px",
+      overflowY: "auto",
+      zIndex: 2000,
+      transition: "0.3s ease-in-out"
+    }}
+  >
+    {/* Header */}
+    <div style={{ 
+      display: "flex", 
+      justifyContent: "space-between", 
+      alignItems: "center",
+      marginBottom: 20 
+    }}>
+      <h3 style={{ margin: 0 }}>📊 Test History</h3>
+      <button
+        onClick={() => setShowHistory(false)}
+        style={{
+          background: "#dc3545",
+          color: "#fff",
+          border: "none",
+          padding: "6px 10px",
+          borderRadius: "6px",
+          cursor: "pointer"
+        }}
+      >
+        Close ✖
+      </button>
+    </div>
+
+    {pastRecords.length === 0 ? (
+      <div style={{ color: "#777" }}>No previous records found.</div>
+    ) : (
+      pastRecords.map((record, index) => (
+        <div
+          key={index}
+          style={{
+            marginBottom: 20,
+            padding: 15,
+            borderRadius: 10,
+            background: "#f8f9fa",
+            border: "1px solid #e0e0e0"
+          }}
+        >
+          <div style={{ fontSize: 13, color: "#555", marginBottom: 8 }}>
+            Date: {formatDateDMY(record.createdAt)}
+          </div>
+
+          {record.Tests.map((t, i) => (
+            <div key={i} style={{ marginBottom: 6 }}>
+              <strong>{t.Test_Name}</strong> — {t.Result_Value}
+              {t.Units && ` ${t.Units}`}
+            </div>
+          ))}
+
+          {record.Diagnosis_Notes && (
+            <div style={{ marginTop: 8, fontSize: 13, color: "#444" }}>
+              Notes: {record.Diagnosis_Notes}
+            </div>
+          )}
+        </div>
+      ))
+    )}
+  </div>
+)}
+
     </div>
   );
 };

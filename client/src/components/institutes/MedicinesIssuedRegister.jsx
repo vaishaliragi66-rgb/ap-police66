@@ -10,11 +10,6 @@ const MedicinesIssuedRegister = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
- 
-  
-
-
-
   // ---------- FILTER STATES ----------
   const [medicineFilter, setMedicineFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -328,48 +323,63 @@ const uniqueMedicineIds = [
 
   // ---------- RECEIPT GENERATOR ----------
   const downloadReceipt = (row) => {
-    const doc = new jsPDF();
-
+    const doc = new jsPDF("p", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+  
     const billDate = row.timestamp
       ? new Date(row.timestamp).toLocaleString()
       : "-";
-
-    doc.setFontSize(14);
-    doc.text("OUT-PATIENT PHARMACY", 105, 15, { align: "center" });
-    doc.text("PHARMACY ISSUE RECEIPT", 105, 22, { align: "center" });
-
-    doc.setFontSize(10);
-    doc.text(`Receipt No: ${row.prescriptionId.slice(-6)}`, 14, 35);
-    doc.text(`Bill Date: ${billDate}`, 14, 42);
-
-    doc.text("Institute: AP Police Health Institute", 14, 52);
-    doc.text(`Issued To: ${row.issuedTo}`, 14, 59);
-    doc.text(`Employee ABS No: ${row.employeeABS}`, 14, 66);
-
+  
+    // HEADER
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("AP POLICE HEALTH INSTITUTE", pageWidth / 2, 15, { align: "center" });
+  
+    doc.setFontSize(12);
+    doc.text("OUT-PATIENT PHARMACY RECEIPT", pageWidth / 2, 23, { align: "center" });
+  
+    doc.line(14, 28, pageWidth - 14, 28);
+  
+    // DETAILS BOX
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+  
+    doc.text(`Receipt No: ${row.prescriptionId.slice(-6)}`, 14, 38);
+    doc.text(`Bill Date: ${billDate}`, pageWidth - 14, 38, { align: "right" });
+  
+    doc.text(`Issued To: ${row.issuedTo}`, 14, 46);
+    doc.text(`Employee ABS No: ${row.employeeABS}`, pageWidth - 14, 46, { align: "right" });
+  
+    // TABLE
     autoTable(doc, {
-      startY: 75,
-      head: [["Medicine ID","Medicine","Type","Category","Quantity","Expiry","Status"]],
+      startY: 55,
+      head: [["Medicine Code", "Medicine Name", "Category", "Qty", "Expiry"]],
       body: [[
         row.medicineId,
         row.medicineName,
-        row.medicineType,
         row.medicineCategory,
         row.quantity,
-        row.expiry ? formatDateDMY(new Date(row.expiry)) : "-",
-        "ISSUED"
-      ]]
+        row.expiry ? formatDateDMY(new Date(row.expiry)) : "-"
+      ]],
+      theme: "grid",
+      headStyles: {
+        fillColor: [0, 51, 102],
+        textColor: 255,
+        halign: "center"
+      },
+      bodyStyles: {
+        halign: "center"
+      }
     });
-
+  
     doc.text(
-      "System Generated Receipt",
-      105,
+      "This is a system generated receipt. No signature required.",
+      pageWidth / 2,
       doc.lastAutoTable.finalY + 15,
       { align: "center" }
     );
-
-    doc.save(
-      `Medicine_Issue_Receipt_${row.prescriptionId.slice(-6)}.pdf`
-    );
+  
+    doc.save(`Pharmacy_Receipt_${row.prescriptionId.slice(-6)}.pdf`);
   };
   // ---------- VIEW PRESCRIPTION ----------
 const viewPrescription = (row) => {
@@ -384,54 +394,41 @@ const downloadPrescriptionPDF = (prescription) => {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("AP POLICE HEALTH INSTITUTE", pageWidth / 2, 20, { align: "center" });
+  doc.text("AP POLICE HEALTH INSTITUTE", pageWidth / 2, 18, { align: "center" });
 
   doc.setFontSize(12);
-  doc.text("ONLINE MEDICAL PRESCRIPTION", pageWidth / 2, 28, { align: "center" });
+  doc.text("MEDICAL PRESCRIPTION", pageWidth / 2, 26, { align: "center" });
 
-  doc.line(14, 32, pageWidth - 14, 32);
+  doc.line(14, 30, pageWidth - 14, 30);
 
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  const startY = 40;
 
-  doc.rect(14, startY, pageWidth - 28, 22);
+  doc.text(`Prescription Ref: ${prescription._id.slice(-6)}`, 14, 40);
+  doc.text(`Date: ${new Date(prescription.Timestamp).toLocaleString()}`, pageWidth - 14, 40, { align: "right" });
 
-  doc.text(`Prescription Ref: ${prescription._id.slice(-6)}`, 18, startY + 7);
-  doc.text(`Date: ${new Date(prescription.Timestamp).toLocaleString()}`, 18, startY + 14);
-  
-  doc.text(
-    `Employee: ${prescription.Employee?.Name || "-"}`,
-    pageWidth / 2 + 5,
-    startY + 7
-  );
-  doc.text(
-    `ABS No: ${prescription.Employee?.ABS_NO || "-"}`,
-    pageWidth / 2 + 5,
-    startY + 14
-  );
-  
-  const tableBody = prescription.Medicines.map((m, i) => [
-    i + 1,
-    m.Medicine_ID?.Medicine_Name || "-",
-    m.Medicine_ID?.Type || "-",
-    m.Medicine_ID?.Category || "-",
-    m.Quantity,
-    m.Medicine_ID?.Expiry_Date
-      ? formatDateDMY(new Date(m.Medicine_ID.Expiry_Date))
-      : "-"
-  ]);
+  doc.text(`Employee: ${prescription.Employee?.Name}`, 14, 48);
+  doc.text(`ABS No: ${prescription.Employee?.ABS_NO}`, pageWidth - 14, 48, { align: "right" });
 
   autoTable(doc, {
-    startY: startY + 42,
-    head: [["S.No", "Medicine", "Type", "Category", "Qty", "Expiry"]],
-    body: tableBody,
+    startY: 60,
+    head: [["S.No", "Medicine", "Type", "Category", "Quantity"]],
+    body: prescription.Medicines.map((m, i) => [
+      i + 1,
+      m.Medicine_ID?.Medicine_Name,
+      m.Medicine_ID?.Type,
+      m.Medicine_ID?.Category,
+      m.Quantity
+    ]),
     theme: "grid",
     headStyles: {
-      fillColor: [33, 150, 243],
+      fillColor: [0, 51, 102],
       textColor: 255,
       halign: "center"
     },
-    bodyStyles: { halign: "center" }
+    bodyStyles: {
+      halign: "center"
+    }
   });
 
   doc.text(
@@ -441,15 +438,7 @@ const downloadPrescriptionPDF = (prescription) => {
     { align: "center" }
   );
 
-  // FIXED: Open in new tab instead of trying to save directly
-  const pdfBlob = doc.output('blob');
-  const pdfUrl = URL.createObjectURL(pdfBlob);
-  
-  // Open in new tab
-  window.open(pdfUrl, '_blank');
-  
-  // Clean up
-  setTimeout(() => URL.revokeObjectURL(pdfUrl), 100);
+  doc.save(`Prescription_${prescription._id.slice(-6)}.pdf`);
 };
 
 
@@ -1016,71 +1005,60 @@ const printPrescription = () => {
         {/* BODY */}
         <div className="modal-body" id="prescription-print">
 
-          <h5 className="text-center mb-4">
-            AP POLICE HEALTH INSTITUTE<br />
-            <small className="text-muted">ONLINE MEDICAL PRESCRIPTION</small>
-          </h5>
+  <div className="text-center mb-3">
+    <h4 className="fw-bold">AP POLICE HEALTH INSTITUTE</h4>
+    <small className="text-muted">MEDICAL PRESCRIPTION</small>
+  </div>
 
-          <table className="table table-borderless mb-3">
-          <tbody>
-            <tr>
-              <td style={{ width: "50%" }}>
-                <strong>Employee:</strong> {selectedPrescription.Employee?.Name}
-              </td>
-              <td style={{ width: "50%", textAlign: "right" }}>
-                <strong>Prescription Ref:</strong> {selectedPrescription._id.slice(-6)}
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <strong>ABS No:</strong> {selectedPrescription.Employee?.ABS_NO}
-              </td>
-              <td style={{ textAlign: "right" }}>
-                <strong>Date:</strong>{" "}
-                {new Date(selectedPrescription.Timestamp).toLocaleString()}
-              </td>
-            </tr>
-          </tbody>
-         
-        </table>
-        <hr
-        style={{
-              borderTop: "1px solid #000",
-              margin: "12px 0 20px 0"
-            }}
-          />
+  <hr />
 
+  <div className="row mb-3">
+    <div className="col-md-6">
+      <strong>Employee:</strong> {selectedPrescription.Employee?.Name}
+    </div>
+    <div className="col-md-6 text-end">
+      <strong>Prescription Ref:</strong> {selectedPrescription._id.slice(-6)}
+    </div>
+  </div>
 
-              <table
-                  className="table table-bordered mt-3"
-                  style={{ borderTop: "2px solid #000" }}
-                >
-            <thead className="table-dark">
-              <tr>
-                <th>S.No</th>
-                <th>Medicine</th>
-                <th>Type</th>
-                <th>Category</th>
-                <th>Qty</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedPrescription.Medicines.map((m, i) => (
-                <tr key={i}>
-                  <td>{i + 1}</td>
-                  <td>{m.Medicine_ID?.Medicine_Name}</td>
-                  <td>{m.Medicine_ID?.Type}</td>
-                  <td>{m.Medicine_ID?.Category}</td>
-                  <td>{m.Quantity}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  <div className="row mb-3">
+    <div className="col-md-6">
+      <strong>ABS No:</strong> {selectedPrescription.Employee?.ABS_NO}
+    </div>
+    <div className="col-md-6 text-end">
+      <strong>Date:</strong>{" "}
+      {new Date(selectedPrescription.Timestamp).toLocaleString()}
+    </div>
+  </div>
 
-          <p className="text-center mt-4">
-            <em>System Generated Prescription – No Signature Required</em>
-          </p>
-        </div>
+  <table className="table table-bordered mt-3">
+    <thead style={{ backgroundColor: "#003366", color: "#fff" }}>
+      <tr>
+        <th style={{ width: "8%" }}>S.No</th>
+        <th>Medicine</th>
+        <th>Type</th>
+        <th>Category</th>
+        <th style={{ width: "10%" }}>Qty</th>
+      </tr>
+    </thead>
+    <tbody>
+      {selectedPrescription.Medicines.map((m, i) => (
+        <tr key={i}>
+          <td className="text-center">{i + 1}</td>
+          <td>{m.Medicine_ID?.Medicine_Name}</td>
+          <td className="text-center">{m.Medicine_ID?.Type}</td>
+          <td className="text-center">{m.Medicine_ID?.Category}</td>
+          <td className="text-center">{m.Quantity}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <p className="text-center mt-4 text-muted">
+    System Generated Prescription – No Signature Required
+  </p>
+
+</div>
 
         {/* FOOTER */}
         <div className="modal-footer">
