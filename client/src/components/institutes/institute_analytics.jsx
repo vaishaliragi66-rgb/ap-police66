@@ -8,39 +8,36 @@ const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 
 /* ===============================
    Utility: Abnormal Test Checker
-================================*/
+=================================*/
 const isAbnormal = (value, range) => {
   if (!value || !range) return false;
-
   const num = parseFloat(value);
   if (isNaN(num)) return false;
-
+  
   if (range.includes("–")) {
     const [min, max] = range.split("–").map(parseFloat);
     return num < min || num > max;
   }
-
-  if (range.startsWith("<")) {
-    return num >= parseFloat(range.substring(1));
-  }
-
-  if (range.startsWith(">")) {
-    return num <= parseFloat(range.substring(1));
-  }
-
+  if (range.startsWith("<")) return num >= parseFloat(range.slice(1));
+  if (range.startsWith(">")) return num <= parseFloat(range.slice(1));
+  
   return false;
 };
 
+/* ===============================
+   Export Utilities
+=================================*/
 const downloadCSV = (data) => {
   if (!data.length) return;
 
   const headers = [
     "Role",
     "Name",
+    "Gender",
     "District",
     "Age",
-    "Communicable Diseases",
-    "Non-Communicable Diseases",
+    "Blood Group",
+    "Diseases",
     "Tests",
     "Medicines",
     "First Visit",
@@ -50,164 +47,130 @@ const downloadCSV = (data) => {
   const rows = data.map(r => [
     r.Role,
     r.Name,
+    r.Gender || "",
     r.District || "",
     r.Age ?? "",
-    (r.Communicable_Diseases || []).join("; "),
-    (r.NonCommunicable_Diseases || []).join("; "),
-    (r.Tests || [])
-      .map(t => `${t.Test_Name}:${t.Result_Value}`)
-      .join("; "),
-    (r.Medicines || [])
-      .map(m => `${m.Medicine_Name}(${m.Quantity})`)
-      .join("; "),
-    r.First_Visit_Date
-      ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB")
-      : "",
-    r.Last_Visit_Date
-      ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB")
-      : ""
+    r.Blood_Group || "",
+    (r.Diseases || []).join("; "),
+    (r.Tests || []).map(t => `${t.Test_Name}: ${t.Result_Value} ${t.Units || ""}`).join("; "),
+    (r.Medicines || []).map(m => `${m.Medicine_Name} (${m.Quantity})`).join("; "),
+    r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "",
+    r.Last_Visit_Date ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB") : ""
   ]);
 
-  let csvContent =
-    headers.join(",") +
-    "\n" +
-    rows.map(e => e.map(v => `"${v}"`).join(",")).join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
+  const csv = headers.join(",") + "\n" + rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", "Institute_Analytics.csv");
-  document.body.appendChild(link);
+  link.href = URL.createObjectURL(blob);
+  link.download = "Institute_Analytics.csv";
   link.click();
-  document.body.removeChild(link);
 };
 
 const downloadPDF = (data) => {
   if (!data.length) return;
 
   const doc = new jsPDF("l", "mm", "a4");
-
   doc.setFontSize(14);
   doc.text("Institute Medical Analytics Report", 14, 15);
 
-  const tableColumn = [
-    "Role",
-    "Name",
-    "District",
-    "Age",
-    "Communicable Diseases",
-    "Non-Communicable Diseases",
-    "Tests",
-    "Medicines",
-    "First Visit",
-    "Last Visit"
-  ];
-
-  const tableRows = data.map(r => [
-    r.Role,
-    r.Name,
-    r.District || "",
-    r.Age ?? "",
-    (r.Communicable_Diseases || []).join(", "),
-    (r.NonCommunicable_Diseases || []).join(", "),
-    (r.Tests || [])
-      .map(t => `${t.Test_Name}: ${t.Result_Value}`)
-      .join("; "),
-    (r.Medicines || [])
-      .map(m => `${m.Medicine_Name} (${m.Quantity})`)
-      .join("; "),
-    r.First_Visit_Date
-      ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB")
-      : "",
-    r.Last_Visit_Date
-      ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB")
-      : ""
-  ]);
-
   autoTable(doc, {
-    head: [tableColumn],
-    body: tableRows,
     startY: 22,
-    styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      overflow: "linebreak"
-    },
-    headStyles: {
-      fillColor: [33, 37, 41]
-    }
+    head: [[
+      "Role",
+      "Name",
+      "Gender",
+      "District",
+      "Age",
+      "Blood Group",
+      "Diseases",
+      "Tests",
+      "Medicines",
+      "First Visit",
+      "Last Visit"
+    ]],
+    body: data.map(r => [
+      r.Role,
+      r.Name,
+      r.Gender || "—",
+      r.District || "—",
+      r.Age ?? "—",
+      r.Blood_Group || "—",
+      (r.Diseases || []).join(", "),
+      (r.Tests || []).map(t => `${t.Test_Name}: ${t.Result_Value}`).join("; "),
+      (r.Medicines || []).map(m => `${m.Medicine_Name} (${m.Quantity})`).join("; "),
+      r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "—",
+      r.Last_Visit_Date ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB") : "—"
+    ]),
+    styles: { fontSize: 7, cellPadding: 1.5 },
+    headStyles: { fillColor: [33, 37, 41] }
   });
 
   doc.save("Institute_Analytics_Report.pdf");
 };
 
+/* ===============================
+   MAIN COMPONENT
+=================================*/
 export default function InstituteAnalytics() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  /* ===============================
-     Filters
-  ================================*/
+  /* -------- Filters -------- */
   const [roleFilter, setRoleFilter] = useState("");
+  const [genderFilter, setGenderFilter] = useState("");
   const [nameFilter, setNameFilter] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
-  const [commDiseaseFilter, setCommDiseaseFilter] = useState("");
-  const [nonCommDiseaseFilter, setNonCommDiseaseFilter] = useState("");
+  const [diseaseFilter, setDiseaseFilter] = useState("");
   const [medicineFilter, setMedicineFilter] = useState("");
   const [testFilter, setTestFilter] = useState("");
+  const [bloodGroupFilter, setBloodGroupFilter] = useState("");
   const [abnormalOnly, setAbnormalOnly] = useState(false);
   const [ageMin, setAgeMin] = useState("");
   const [ageMax, setAgeMax] = useState("");
 
   useEffect(() => {
     const institute = JSON.parse(localStorage.getItem("institute"));
-    if (!institute) return;
+    if (!institute) {
+      setError("Institute not found in local storage");
+      setLoading(false);
+      return;
+    }
 
     axios
-      .get(
-        `http://localhost:${BACKEND_PORT}/institute-api/analytics/${institute._id}`
-      )
+      .get(`http://localhost:${BACKEND_PORT}/institute-api/analytics/${institute._id}`)
       .then(res => {
         setRows(res.data || []);
         setLoading(false);
       })
       .catch(err => {
-        console.error("Analytics load error", err);
-        setRows([]);
+        console.error("Analytics load error:", err);
+        setError("Failed to load analytics data");
         setLoading(false);
       });
   }, []);
 
-  /* ===============================
-     Filtering Logic
-  ================================*/
+  /* -------- Filtering Logic -------- */
   const filteredRows = rows.filter(r => {
-    const match = (value, filter) =>
-      !filter ||
-      (value &&
-        value.toString().toLowerCase().includes(filter.toLowerCase()));
-
-    const ageOk =
-      (!ageMin || (r.Age !== null && r.Age >= Number(ageMin))) &&
+    const match = (v, f) => !f || (v && v.toString().toLowerCase().includes(f.toLowerCase()));
+    
+    const ageOk = 
+      (!ageMin || (r.Age !== null && r.Age >= Number(ageMin))) && 
       (!ageMax || (r.Age !== null && r.Age <= Number(ageMax)));
-
-    const commText = (r.Communicable_Diseases || []).join(" ");
-    const nonCommText = (r.NonCommunicable_Diseases || []).join(" ");
+    
+    const diseasesText = (r.Diseases || []).join(" ");
     const medsText = (r.Medicines || []).map(m => m.Medicine_Name).join(" ");
     const testsText = (r.Tests || []).map(t => t.Test_Name).join(" ");
-
-    const hasAbnormal =
-      r.Tests &&
-      r.Tests.some(t => isAbnormal(t.Result_Value, t.Reference_Range));
+    
+    const hasAbnormal = r.Tests?.some(t => isAbnormal(t.Result_Value, t.Reference_Range));
 
     return (
       (!roleFilter || r.Role === roleFilter) &&
+      (!genderFilter || r.Gender === genderFilter) &&
+      (!bloodGroupFilter || r.Blood_Group === bloodGroupFilter) &&
       match(r.Name, nameFilter) &&
       match(r.District, districtFilter) &&
-      match(commText, commDiseaseFilter) &&
-      match(nonCommText, nonCommDiseaseFilter) &&
+      match(diseasesText, diseaseFilter) &&
       match(medsText, medicineFilter) &&
       match(testsText, testFilter) &&
       ageOk &&
@@ -216,26 +179,42 @@ export default function InstituteAnalytics() {
   });
 
   if (loading) {
-    return <div className="text-center mt-5">Loading analytics…</div>;
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading analytics…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-danger m-4" role="alert">
+        <strong>Error:</strong> {error}
+      </div>
+    );
   }
 
   return (
-    <div className="container-fluid mt-4">
-      <h4 className="text-center mb-3">
-        Institute Medical Analytics Dashboard
-      </h4>
+    <div className="container-fluid py-4">
+      <div className="mb-4">
+        <h2 className="fw-bold">Institute Medical Analytics Dashboard</h2>
+        <p className="text-muted">Comprehensive health records and medical data analysis</p>
+      </div>
 
-      {/* ===============================
-          FILTER PANEL
-      ================================*/}
-      <div className="card mb-3">
+      {/* =============================== FILTER PANEL ================================*/}
+      <div className="card shadow-sm mb-4">
         <div className="card-body">
-          <div className="row g-2 align-items-center">
-            <div className="col-md-2">
-              <select
-                className="form-control"
-                value={roleFilter}
-                onChange={e => setRoleFilter(e.target.value)}
+          <h5 className="card-title mb-3">Filters</h5>
+          <div className="row g-3">
+            {/* Role Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Role</label>
+              <select 
+                className="form-select" 
+                value={roleFilter} 
+                onChange={(e) => setRoleFilter(e.target.value)}
               >
                 <option value="">All Roles</option>
                 <option value="Employee">Employee</option>
@@ -243,205 +222,267 @@ export default function InstituteAnalytics() {
               </select>
             </div>
 
-            <div className="col-md-2">
+            {/* Gender Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Gender</label>
+              <select 
+                className="form-select" 
+                value={genderFilter} 
+                onChange={(e) => setGenderFilter(e.target.value)}
+              >
+                <option value="">All Genders</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            {/* Blood Group Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Blood Group</label>
+              <select 
+                className="form-select" 
+                value={bloodGroupFilter} 
+                onChange={(e) => setBloodGroupFilter(e.target.value)}
+              >
+                <option value="">All Blood Groups</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+              </select>
+            </div>
+
+            {/* Name Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Name</label>
               <input
+                type="text"
                 className="form-control"
-                placeholder="Name"
+                placeholder="Search by name"
                 value={nameFilter}
-                onChange={e => setNameFilter(e.target.value)}
+                onChange={(e) => setNameFilter(e.target.value)}
               />
             </div>
 
-            <div className="col-md-2">
+            {/* District Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">District</label>
               <input
+                type="text"
                 className="form-control"
-                placeholder="District"
+                placeholder="Search by district"
                 value={districtFilter}
-                onChange={e => setDistrictFilter(e.target.value)}
+                onChange={(e) => setDistrictFilter(e.target.value)}
               />
             </div>
 
-            <div className="col-md-2">
+            {/* Disease Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Disease</label>
               <input
+                type="text"
                 className="form-control"
-                placeholder="Communicable Disease"
-                value={commDiseaseFilter}
-                onChange={e => setCommDiseaseFilter(e.target.value)}
+                placeholder="Search by disease"
+                value={diseaseFilter}
+                onChange={(e) => setDiseaseFilter(e.target.value)}
               />
             </div>
 
-            <div className="col-md-2">
+            {/* Medicine Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Medicine</label>
               <input
+                type="text"
                 className="form-control"
-                placeholder="Non-Communicable Disease"
-                value={nonCommDiseaseFilter}
-                onChange={e => setNonCommDiseaseFilter(e.target.value)}
-              />
-            </div>
-
-            <div className="col-md-2">
-              <input
-                className="form-control"
-                placeholder="Medicine"
+                placeholder="Search by medicine"
                 value={medicineFilter}
-                onChange={e => setMedicineFilter(e.target.value)}
+                onChange={(e) => setMedicineFilter(e.target.value)}
               />
             </div>
 
-            <div className="col-md-2 mt-2">
+            {/* Test Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Test</label>
               <input
+                type="text"
                 className="form-control"
-                placeholder="Test"
+                placeholder="Search by test name"
                 value={testFilter}
-                onChange={e => setTestFilter(e.target.value)}
+                onChange={(e) => setTestFilter(e.target.value)}
               />
             </div>
 
-            <div className="col-md-1 mt-2">
+            {/* Age Min */}
+            <div className="col-md-2">
+              <label className="form-label fw-semibold">Age Min</label>
               <input
+                type="number"
                 className="form-control"
-                placeholder="Age ≥"
+                placeholder="Min"
                 value={ageMin}
-                onChange={e => setAgeMin(e.target.value)}
+                onChange={(e) => setAgeMin(e.target.value)}
               />
             </div>
 
-            <div className="col-md-1 mt-2">
+            {/* Age Max */}
+            <div className="col-md-2">
+              <label className="form-label fw-semibold">Age Max</label>
               <input
+                type="number"
                 className="form-control"
-                placeholder="Age ≤"
+                placeholder="Max"
                 value={ageMax}
-                onChange={e => setAgeMax(e.target.value)}
+                onChange={(e) => setAgeMax(e.target.value)}
               />
             </div>
 
-            <div className="col-md-3 mt-3">
+            {/* Abnormal Tests Checkbox */}
+            <div className="col-md-8 d-flex align-items-end">
               <div className="form-check">
                 <input
-                  className="form-check-input"
                   type="checkbox"
+                  className="form-check-input"
+                  id="abnormalCheckbox"
                   checked={abnormalOnly}
-                  onChange={e => setAbnormalOnly(e.target.checked)}
+                  onChange={(e) => setAbnormalOnly(e.target.checked)}
                 />
-                <label className="form-check-label">
-                  Show only abnormal test results
+                <label className="form-check-label" htmlFor="abnormalCheckbox">
+                  Show only patients with abnormal test results
                 </label>
               </div>
             </div>
-            <div className="col-md-4 mt-3 text-end">
-              <button
-                className="btn btn-success me-2"
-                onClick={() => downloadCSV(filteredRows)}
-              >
-                Download CSV
-              </button>
+          </div>
 
-              <button
-                className="btn btn-danger"
-                onClick={() => downloadPDF(filteredRows)}
-              >
-                Download PDF
-              </button>
-            </div>
+          {/* Export Buttons */}
+          <div className="mt-3 d-flex gap-2">
+            <button 
+              className="btn btn-success btn-sm"
+              onClick={() => downloadCSV(filteredRows)}
+              disabled={filteredRows.length === 0}
+            >
+              📥 Download CSV
+            </button>
+            <button 
+              className="btn btn-danger btn-sm"
+              onClick={() => downloadPDF(filteredRows)}
+              disabled={filteredRows.length === 0}
+            >
+              📄 Download PDF
+            </button>
+            <span className="ms-auto text-muted align-self-center">
+              Showing {filteredRows.length} of {rows.length} records
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ===============================
-          TABLE
-      ================================*/}
-      <div className="table-responsive">
-        <table className="table table-bordered table-hover align-middle">
-          <thead className="table-dark">
-            <tr>
-              <th>Role</th>
-              <th>Name</th>
-              <th>District</th>
-              <th>Age</th>
-              <th>Communicable Diseases</th>
-              <th>Non-Communicable Diseases</th>
-              <th>Tests</th>
-              <th>Medicines</th>
-              <th>First Visit</th>
-              <th>Last Visit</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredRows.length === 0 && (
-              <tr>
-                <td colSpan="10" className="text-center">
-                  No records found
-                </td>
-              </tr>
-            )}
-
-            {filteredRows.map((r, i) => (
-              <tr key={i}>
-                <td>{r.Role}</td>
-                <td>{r.Name}</td>
-                <td>{r.District || "—"}</td>
-                <td>{r.Age ?? "—"}</td>
-
-                <td>
-                  {r.Communicable_Diseases?.length
-                    ? r.Communicable_Diseases.join(", ")
-                    : "—"}
-                </td>
-
-                <td>
-                  {r.NonCommunicable_Diseases?.length
-                    ? r.NonCommunicable_Diseases.join(", ")
-                    : "—"}
-                </td>
-
-                <td>
-                  {r.Tests?.length
-                    ? r.Tests.map((t, idx) => {
-                        const abnormal = isAbnormal(
-                          t.Result_Value,
-                          t.Reference_Range
-                        );
-                        return (
-                          <div
-                            key={idx}
-                            style={{
-                              color: abnormal ? "red" : "inherit",
-                              fontWeight: abnormal ? "bold" : "normal"
-                            }}
-                          >
-                            {t.Test_Name}: {t.Result_Value} {t.Units}
-                          </div>
-                        );
-                      })
-                    : "—"}
-                </td>
-
-                <td>
-                  {r.Medicines?.length
-                    ? r.Medicines.map((m, idx) => (
-                        <div key={idx}>
-                          {m.Medicine_Name} ({m.Quantity})
+      {/* =============================== TABLE ================================*/}
+      <div className="card shadow-sm">
+        <div className="card-body p-0">
+          <div className="table-responsive">
+            <table className="table table-hover table-striped mb-0">
+              <thead className="table-dark">
+                <tr>
+                  <th>Role</th>
+                  <th>Name</th>
+                  <th>Gender</th>
+                  <th>Blood Group</th>
+                  <th>District</th>
+                  <th>Age</th>
+                  <th>Diseases</th>
+                  <th>Tests</th>
+                  <th>Medicines</th>
+                  <th>First Visit</th>
+                  <th>Last Visit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.length === 0 && (
+                  <tr>
+                    <td colSpan="11" className="text-center py-4 text-muted">
+                      No records found matching the current filters
+                    </td>
+                  </tr>
+                )}
+                {filteredRows.map((r, i) => (
+                  <tr key={i}>
+                    <td>
+                      <span className={`badge ${r.Role === "Employee" ? "bg-primary" : "bg-info"}`}>
+                        {r.Role}
+                      </span>
+                    </td>
+                    <td className="fw-semibold">{r.Name}</td>
+                    <td>{r.Gender || "—"}</td>
+                    <td>{r.Blood_Group || "—"}</td>
+                    <td>{r.District || "—"}</td>
+                    <td>{r.Age ?? "—"}</td>
+                    <td>
+                      {r.Diseases?.length ? (
+                        <div className="d-flex flex-column gap-1">
+                          {r.Diseases.map((disease, idx) => (
+                            <span key={idx} className="badge bg-warning text-dark">
+                              {disease}
+                            </span>
+                          ))}
                         </div>
-                      ))
-                    : "—"}
-                </td>
-
-                <td>
-                  {r.First_Visit_Date
-                    ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB")
-                    : "—"}
-                </td>
-
-                <td>
-                  {r.Last_Visit_Date
-                    ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB")
-                    : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>
+                      {r.Tests?.length ? (
+                        <div className="d-flex flex-column gap-1">
+                          {r.Tests.map((t, idx) => {
+                            const abnormal = isAbnormal(t.Result_Value, t.Reference_Range);
+                            return (
+                              <small 
+                                key={idx} 
+                                className={abnormal ? "text-danger fw-bold" : ""}
+                              >
+                                {t.Test_Name}: {t.Result_Value} {t.Units || ""}
+                                {abnormal && " ⚠️"}
+                              </small>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>
+                      {r.Medicines?.length ? (
+                        <div className="d-flex flex-column gap-1">
+                          {r.Medicines.map((m, idx) => (
+                            <small key={idx}>
+                              {m.Medicine_Name} ({m.Quantity})
+                            </small>
+                          ))}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>
+                      {r.First_Visit_Date
+                        ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB")
+                        : "—"}
+                    </td>
+                    <td>
+                      {r.Last_Visit_Date
+                        ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB")
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -126,6 +126,11 @@ function App() {
         {
           path:"institutions/reports",
           element:<InstituteReports/>
+        },
+        {
+          path: "/institutes/analytics",
+          element: <InstituteAnalytics/>
+
         }
       ]
     },
