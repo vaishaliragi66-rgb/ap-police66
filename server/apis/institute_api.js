@@ -710,7 +710,7 @@ instituteApp.get("/analytics/:instituteId", async (req, res) => {
           District: "$Address.District",
 
           Age: 1,
-          Gender: { $literal: "—" },
+          Gender: "$Gender",
           Blood_Group: "$Blood_Group",
           Height: "$Height",
           Weight: "$Weight",
