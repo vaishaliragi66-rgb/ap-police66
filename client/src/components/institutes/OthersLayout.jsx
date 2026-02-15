@@ -28,7 +28,8 @@ const OthersLayout = () => {
     { label: "Indent", path: "/institutes/indent", icon: <FaClipboardList /> },
     { label: "Main Store", path: "/institutions/main-store", icon: <FaWarehouse /> },
     { label: "Sub Store", path: "/institutes/sub-store", icon: <FaWarehouse /> },
-    { label: "AI Insights", path: "/institutes/ai-insights", icon: <FaRobot /> }
+    { label: "AI Insights", path: "/institutes/ai-insights", icon: <FaRobot /> },
+    { label: "Analytics", path: "/institutes/analytics", icon: <FaRobot />}
   ];
 
   return (
