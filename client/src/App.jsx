@@ -70,16 +70,6 @@ function App() {
       path:"/institutes/doctor-diagnosis",
       element:<DoctorDiagnosis/>
     },
-
-    {
-      path:"/institutes/inventory",
-      element:<InstituteInventory/>
-    },
-   
-    {
-      path:"/institutes/medicines-issued-register",
-      element:<MedicinesIssuedRegister/>
-    },
     {
       path:"institutions/diagnosis-entry",
       element:<DiagnosisEntryForm/>
@@ -90,13 +80,6 @@ function App() {
     },{
       path:"institutions/diseases",
       element:<Diseases/>
-    },{
-      path:"institutions/reports",
-      element:<InstituteReports/>
-    },
-    {
-      path:"/institutes/doctor-prescription",
-      element:<DoctorPrescriptionForm/>
     },
     {
       path: "/institutes/doctor-prescription",
@@ -131,15 +114,25 @@ function App() {
         {
           path: "/institutes/ai-insights",
           element: <AIInsights />
+        },
+        {
+          path:"/institutes/medicines-issued-register",
+          element:<MedicinesIssuedRegister/>
+        },
+        {
+          path:"/institutes/inventory",
+          element:<InstituteInventory/>
+        },
+        {
+          path:"institutions/reports",
+          element:<InstituteReports/>
         }
       ]
     },
     
-    
     {path:"/institutes/visit-register",
       element:<VisitRegister/>
     },
-    
   
     {
       path:"/employee-register",

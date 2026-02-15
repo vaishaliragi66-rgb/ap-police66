@@ -113,6 +113,16 @@ const Institute_home = () => {
       alert("Failed to load employees");
     }
   };
+  useEffect(() => {
+  const token = localStorage.getItem("instituteToken");
+
+  if (!token) {
+    navigate("/", { replace: true });
+  } else {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }
+}, []);
+
 
   useEffect(() => {
     fetchDashboardStats();
@@ -120,10 +130,18 @@ const Institute_home = () => {
 
   const handleProfileClick = () => navigate("/institutes/profile");
   const handleSignout = () => {
-    localStorage.removeItem("institute");
-    navigate("/");
-  };
+  // Remove token
+  localStorage.removeItem("instituteToken");
 
+  // Remove institute data
+  localStorage.removeItem("institute");
+
+  // Clear axios auth header
+  delete axios.defaults.headers.common["Authorization"];
+
+  // Redirect to login
+  navigate("/", { replace: true });
+};
   const navItems = [
   { icon: <FaUsers />, label: "Medicines Issued Register", path: "/institutes/medicines-issued-register" },
   { icon: <FaBox />, label: "Inventory", path: "/institutes/inventory" },
@@ -143,52 +161,102 @@ const Institute_home = () => {
 
 return (
   <div
-    className="min-vh-100"
-    style={{
-      fontFamily: "Inter, sans-serif",
-      backgroundColor: "#F5F8FE",
-    }}
-  >
+  className="min-vh-100"
+  style={{
+    fontFamily: "Inter, sans-serif",
+    background: "linear-gradient(135deg, #f4f7ff 0%, #eef2ff 100%)"
+  }}
+>
+
     {/* ================= HEADER ================= */}
-    <div
-      className="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center"
-      style={{ borderColor: "#E3EAF4" }}
-    >
-      <div>
-        <h5 className="fw-bold mb-0" style={{ color: "#1F2937" }}>
-          Institute Dashboard
-        </h5>
-        <small className="text-muted">
-          Welcome back, {institute?.Institute_Name}
-        </small>
+      <div
+        className="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center position-relative"
+        style={{ borderColor: "#E3EAF4" }}
+      >
+        <div>
+          <h3 className="fw-bold mb-2" style={{ color: "#1F2937" }}>
+            Institute Dashboard
+          </h3>
+          <small className="text-muted">
+            Welcome back, {institute?.Institute_Name}
+          </small>
+        </div>
+
+        {/* USER ICON */}
+        <div style={{ position: "relative" }}>
+          <FaUserCircle
+            size={36}
+            style={{ color: "#3B6FB6", cursor: "pointer" }}
+            onClick={() => setShowDropdown((prev) => !prev)}
+          />
+
+          {/* DROPDOWN */}
+          {showDropdown && (
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: "45px",
+                width: "180px",
+                backgroundColor: "#fff",
+                borderRadius: "10px",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+                zIndex: 9999,
+              }}
+            >
+              <button
+                onClick={() => {
+                  setShowDropdown(false);
+                  navigate("/institutes/profile");
+                }}
+                className="btn btn-light w-100 text-start"
+              >
+                👤 View Profile
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowDropdown(false);
+                  handleSignout();
+                }}
+                className="btn btn-light w-100 text-start text-danger"
+              >
+                🚪 Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <FaUserCircle
-        size={36}
-        style={{ color: "#3B6FB6", cursor: "pointer" }}
-        onClick={() => setShowDropdown(!showDropdown)}
-      />
-    </div>
 
     {/* ================= DASHBOARD ================= */}
     <div className="container-fluid p-4">
 
       {/* ================= WELCOME / TODAY ACTION ================= */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body d-flex justify-content-between align-items-center flex-wrap">
-          
+      <div className="card border-0 shadow-lg mb-5 mx-auto"
+          style={{
+            borderRadius: "20px",
+            background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)"
+          }}>
+        <div className="card-body d-flex justify-content-between align-items-center flex-wrap p-4">
+
           <div>
-            <h5 className="fw-bold mb-1">
+            <h4 className="fw-bold mb-2" style={{ color: "#1F2937" }}>
               👋 Welcome, {institute?.Institute_Name}
-            </h5>
-            <p className="text-muted mb-0">
+            </h4>
+            <p className="text-muted mb-0" style={{ fontSize: "15px" }}>
               Manage today’s patient visits, prescriptions, diagnosis and inventory from here.
             </p>
           </div>
 
           <button
-            className="btn btn-primary px-4 py-2 mt-3 mt-md-0"
-            style={{ borderRadius: "8px" }}
+            className="btn px-4 py-2 mt-4 mt-md-0"
+            style={{
+              backgroundColor: "#3B6FB6",
+              color: "#fff",
+              borderRadius: "10px",
+              fontWeight: "500"
+            }}
             onClick={() => navigate("/institutes/visit-register")}
           >
             + Register Today’s Visit
@@ -197,78 +265,133 @@ return (
         </div>
       </div>
 
-
       {/* ================= QUICK ACCESS CARDS ================= */}
-      <div className="row g-4 mb-4">
+      <div className="d-flex justify-content-center">
+        <div
+          className="row g-4"
+          style={{
+            maxWidth: "900px",
+            width: "100%"
+          }}
+        >
 
-        {/* DOCTOR PRESCRIPTION */}
-        <div className="col-md-3">
-          <div
-            className="card border shadow-sm h-100"
-            style={{ borderColor: "#E3EAF4", cursor: "pointer" }}
-            onClick={() => navigate("/institutes/doctor-prescription")}
-          >
-            <div className="card-body">
-              <FaHistory size={28} style={{ color: "#3B6FB6" }} />
-              <h6 className="fw-semibold mt-3 mb-1">Doctor Prescription</h6>
-              <small className="text-muted">
-                View & manage doctor prescriptions
-              </small>
+          {/* DOCTOR PRESCRIPTION */}
+          <div className="col-md-6">
+            <div
+              className="card h-100 text-center border-0 shadow-sm"
+              style={{
+                borderRadius: "20px",
+                cursor: "pointer",
+                transition: "all 0.3s ease"
+              }}
+              onClick={() => navigate("/institutes/doctor-prescription")}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0px)";
+                e.currentTarget.style.boxShadow = "";
+              }}
+            >
+              <div className="card-body p-5">
+                <FaHistory size={35} style={{ color: "#3B6FB6" }} />
+                <h5 className="fw-semibold mt-4">Doctor Prescription</h5>
+                <p className="text-muted mb-0">
+                  View & manage doctor prescriptions
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* PHARMACY PRESCRIPTIONS */}
-        <div className="col-md-3">
-          <div
-            className="card border shadow-sm h-100"
-            style={{ borderColor: "#E3EAF4", cursor: "pointer" }}
-            onClick={() => navigate("/institutions/prescriptions")}
-          >
-            <div className="card-body">
-              <FaPills size={28} style={{ color: "#3B6FB6" }} />
-              <h6 className="fw-semibold mt-3 mb-1">Pharmacy</h6>
-              <small className="text-muted">
-                Issue medicines to employees
-              </small>
+          {/* PHARMACY */}
+          <div className="col-md-6">
+            <div
+              className="card h-100 text-center border-0 shadow-sm"
+              style={{
+                borderRadius: "20px",
+                cursor: "pointer",
+                transition: "all 0.3s ease"
+              }}
+              onClick={() => navigate("/institutions/prescriptions")}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0px)";
+                e.currentTarget.style.boxShadow = "";
+              }}
+            >
+              <div className="card-body p-5">
+                <FaPills size={35} style={{ color: "#3B6FB6" }} />
+                <h5 className="fw-semibold mt-4">Pharmacy</h5>
+                <p className="text-muted mb-0">
+                  Issue medicines to employees
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* DIAGNOSIS */}
-        <div className="col-md-3">
-          <div
-            className="card border shadow-sm h-100"
-            style={{ borderColor: "#E3EAF4", cursor: "pointer" }}
-            onClick={() => navigate("/institutions/diagnosis-entry")}
-          >
-            <div className="card-body">
-              <FaClipboardList size={28} style={{ color: "#3B6FB6" }} />
-              <h6 className="fw-semibold mt-3 mb-1">Diagnosis</h6>
-              <small className="text-muted">
-                Enter & view diagnoses
-              </small>
+          {/* DIAGNOSIS */}
+          <div className="col-md-6">
+            <div
+              className="card h-100 text-center border-0 shadow-sm"
+              style={{
+                borderRadius: "20px",
+                cursor: "pointer",
+                transition: "all 0.3s ease"
+              }}
+              onClick={() => navigate("/institutions/diagnosis-entry")}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0px)";
+                e.currentTarget.style.boxShadow = "";
+              }}
+            >
+              <div className="card-body p-5">
+                <FaClipboardList size={35} style={{ color: "#3B6FB6" }} />
+                <h5 className="fw-semibold mt-4">Diagnosis</h5>
+                <p className="text-muted mb-0">
+                  Enter & view diagnoses
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* OTHERS */}
-        <div className="col-md-3">
-          <div
-            className="card border shadow-sm h-100"
-            style={{ borderColor: "#E3EAF4", cursor: "pointer" }}
-            onClick={() => navigate("/institutes/ledger")}
-          >
-            <div className="card-body">
-              <FaFileMedical size={28} style={{ color: "#3B6FB6" }} />
-              <h6 className="fw-semibold mt-3 mb-1">Others</h6>
-              <small className="text-muted">
-                Ledger, Indent, Stores, AI Insights
-              </small>
+          {/* OTHERS */}
+          <div className="col-md-6">
+            <div
+              className="card h-100 text-center border-0 shadow-sm"
+              style={{
+                borderRadius: "20px",
+                cursor: "pointer",
+                transition: "all 0.3s ease"
+              }}
+              onClick={() => navigate("/institutes/ledger")}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0px)";
+                e.currentTarget.style.boxShadow = "";
+              }}
+            >
+              <div className="card-body p-5">
+                <FaFileMedical size={35} style={{ color: "#3B6FB6" }} />
+                <h5 className="fw-semibold mt-4">Others</h5>
+                <p className="text-muted mb-0">
+                  Ledger, Indent, Stores, AI Insights
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
+        </div>
       </div>
 
       {/* Nested routes (if any) */}
