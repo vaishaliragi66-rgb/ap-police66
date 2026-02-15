@@ -15,6 +15,10 @@ const LedgerStore = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const [summaryPage, setSummaryPage] = useState(1);
+  const SUMMARY_ROWS = 5;
+
+
   // Filters
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [medicineFilter, setMedicineFilter] = useState("");
@@ -109,20 +113,6 @@ const LedgerStore = () => {
 
       setMainStoreLedger(mainLedger);
       setSubStoreLedger(subLedger);
-      setPrescriptionsData(presRes.data || []);
-
-      // Fetch employees (unchanged)
-      try {
-        const employeesRes = await axios.get(
-          `http://localhost:${BACKEND_PORT}/employee-api/all`
-        );
-        if (employeesRes.data?.employees) {
-          setAllEmployees(employeesRes.data.employees);
-        }
-      } catch (e) {
-        setAllEmployees([]);
-      }
-
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -240,6 +230,20 @@ const LedgerStore = () => {
   return summary;
 }, [currentStoreLedger]);
 
+  // -------- STOCK SUMMARY PAGINATION (ONLY FOR SUMMARY) --------
+const summaryEntries = Object.entries(stockSummary);
+
+const summaryStartIndex = (summaryPage - 1) * SUMMARY_ROWS;
+const summaryEndIndex = summaryStartIndex + SUMMARY_ROWS;
+
+const paginatedSummary = summaryEntries.slice(
+  summaryStartIndex,
+  summaryEndIndex
+);
+
+const summaryTotalPages = Math.ceil(summaryEntries.length / SUMMARY_ROWS);
+
+
   // Pagination calculations
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -356,13 +360,20 @@ const downloadCSV = () => {
           <div className="d-flex justify-content-center gap-3 mb-3">
             <button
               className={`btn ${storeType === "MAIN" ? "btn-dark" : "btn-outline-dark"} btn-lg`}
-              onClick={() => setStoreType("MAIN")}
+              onClick={() => {
+                setStoreType("MAIN");
+                setSummaryPage(1);
+              }}
+
             >
               📦 Main Store
             </button>
             <button
               className={`btn ${storeType === "SUB" ? "btn-dark" : "btn-outline-dark"} btn-lg`}
-              onClick={() => setStoreType("SUB")}
+              onClick={() => {
+                setStoreType("SUB");
+                setSummaryPage(1);
+              }}
             >
               🏪 Sub Store
             </button>
@@ -414,141 +425,107 @@ const downloadCSV = () => {
               <thead>
                 <tr>
                   <th>Medicine</th>
-                  {storeType === "MAIN" ? (
-                    <>
-                      <th>Total OUT Quantity</th>
-                      <th>Total Transactions</th>
-                      <th>Expiry Date</th>
-                      <th>Days Left</th>
-                      <th>Last Transaction</th>
-                      <th>Status</th>
-                    </>
-                  ) : (
-                    <>
-                      <th>Received from Main Store</th>
-                      <th>Sold to Employees</th>
-                      <th>Other OUT</th>
-                      <th>Net Quantity</th>
-                      <th>Expiry Date</th>
-                      <th>Days Left</th>
-                      <th>Status</th>
-                      <th>Last Transaction</th>
-                    </>
-                  )}
+                  <th>Current Quantity</th>
+                  <th>Expiry Date</th>
+                  <th>Days Left</th>
+                  <th>Status</th>
+                  <th>Last Transaction</th>
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(stockSummary).map(([medicine, data]) => {
-                  if (storeType === "MAIN") {
-                    const daysLeft = calculateDaysUntilExpiry(data.expiryDate);
-                    return (
-                      <tr key={medicine}>
-                        <td><strong>{medicine}</strong></td>
-                        <td>
-                          <span className="badge bg-danger">
-                            {data.totalOUT} units
-                          </span>
-                        </td>
-                        <td>
-                          <span className="badge bg-secondary">
-                            {data.totalTransactions}
-                          </span>
-                        </td>
-                        <td>
-                          {data.expiryDate ? (
-                            <span className={`badge ${
-                              daysLeft < 0 ? 'bg-danger' :
-                              daysLeft <= 30 ? 'bg-warning' :
-                              'bg-success'
-                            }`}>
-                              {formatDateDMY(data.expiryDate)}
-                            </span>
-                          ) : "-"}
-                        </td>
-                        <td>
-                          {data.expiryDate && daysLeft !== null ? (
-                            <span className={`badge ${
-                              daysLeft < 0 ? 'bg-danger' :
-                              daysLeft <= 7 ? 'bg-warning' :
-                              'bg-success'
-                            }`}>
-                              {daysLeft < 0 ? `${Math.abs(daysLeft)} days expired` : `${daysLeft} days left`}
-                            </span>
-                          ) : "-"}
-                        </td>
-                        <td>{formatDateTime(data.lastTransaction)}</td>
-                        <td>
-                          📤 Transferred to Sub Store
-                        </td>
-                      </tr>
-                    );
-                  } else {
-                    const netQty = data.totalIN - data.totalOUT;
-                    const daysLeft = calculateDaysUntilExpiry(data.expiryDate);
-                    return (
-                      <tr key={medicine}>
-                        <td><strong>{medicine}</strong></td>
-                        <td>
-                          <span className="badge bg-success">
-                            {data.receivedFromMainStore} units
-                          </span>
-                        </td>
-                        <td>
-                          <span className="badge bg-danger">
-                            {data.soldToEmployees} units
-                            {data.soldToEmployees > 0 && (
-                              <small className="ms-1">
-                                ({Math.round((data.soldToEmployees / data.receivedFromMainStore) * 100)}%)
-                              </small>
-                            )}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="badge bg-warning">
-                            {data.otherOut} units
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge ${netQty >= 0 ? 'bg-primary' : 'bg-warning'}`}>
-                            {netQty} units
-                          </span>
-                        </td>
-                        <td>
-                          {data.expiryDate ? (
-                            <span className={`badge ${
-                              daysLeft < 0 ? 'bg-danger' :
-                              daysLeft <= 30 ? 'bg-warning' :
-                              'bg-success'
-                            }`}>
-                              {formatDateDMY(data.expiryDate)}
-                            </span>
-                          ) : "-"}
-                        </td>
-                        <td>
-                          {data.expiryDate && daysLeft !== null ? (
-                            <span className={`badge ${
-                              daysLeft < 0 ? 'bg-danger' :
-                              daysLeft <= 7 ? 'bg-warning' :
-                              'bg-success'
-                            }`}>
-                              {daysLeft < 0 ? `${Math.abs(daysLeft)} days expired` : `${daysLeft} days left`}
-                            </span>
-                          ) : "-"}
-                        </td>
-                        <td>
-                          {netQty > 0 
-                            ? `📦 In Stock (${Math.round((netQty / data.receivedFromMainStore) * 100)}% remaining)` 
-                            : "⚠️ Stock Out"}
-                        </td>
-                        <td>{formatDateTime(data.lastTransaction)}</td>
-                      </tr>
-                    );
+                {paginatedSummary.map(([medicine, data]) => {
+                  const netQty = data.totalIN - data.totalOUT;
+                  const daysLeft = calculateDaysUntilExpiry(data.expiryDate);
+
+                  let status = "In Stock";
+                  let statusClass = "bg-success";
+
+                  if (netQty <= 0) {
+                    status = "Out of Stock";
+                    statusClass = "bg-danger";
                   }
+
+                  if (daysLeft !== null && daysLeft < 0) {
+                    status = "Expired";
+                    statusClass = "bg-danger";
+                  } else if (daysLeft !== null && daysLeft <= 7) {
+                    status = "Near Expiry";
+                    statusClass = "bg-warning";
+                  }
+
+                  return (
+                    <tr key={medicine}>
+                      <td><strong>{medicine}</strong></td>
+
+                      <td>
+                        <span className={`badge ${netQty > 0 ? "bg-primary" : "bg-danger"}`}>
+                          {netQty} units
+                        </span>
+                      </td>
+
+                      <td>
+                        {data.expiryDate ? (
+                          <span className="badge bg-info">
+                            {formatDateDMY(data.expiryDate)}
+                          </span>
+                        ) : "—"}
+                      </td>
+
+                      <td>
+                        {data.expiryDate && daysLeft !== null ? (
+                          <span className={`badge ${
+                            daysLeft < 0
+                              ? "bg-danger"
+                              : daysLeft <= 7
+                              ? "bg-warning"
+                              : "bg-success"
+                          }`}>
+                            {daysLeft < 0
+                              ? `${Math.abs(daysLeft)} days expired`
+                              : `${daysLeft} days left`}
+                          </span>
+                        ) : "—"}
+                      </td>
+
+                      <td>
+                        <span className={`badge ${statusClass}`}>
+                          {status}
+                        </span>
+                      </td>
+
+                      <td>{formatDateTime(data.lastTransaction)}</td>
+                    </tr>
+                  );
                 })}
               </tbody>
+
             </table>
           </div>
         </div>
+      {/* Stock Summary Pagination */}
+<div className="d-flex justify-content-center mt-1 mb-3">
+  <button
+    className="btn btn-sm btn-outline-dark me-2"
+    disabled={summaryPage === 1}
+    onClick={() => setSummaryPage(prev => prev - 1)}
+  >
+    Previous
+  </button>
+
+  <span className="align-self-center">
+    Page {summaryPage} of {summaryTotalPages || 1}
+  </span>
+
+  <button
+    className="btn btn-sm btn-outline-dark ms-2"
+    disabled={
+      summaryPage === summaryTotalPages || summaryTotalPages === 0
+    }
+    onClick={() => setSummaryPage(prev => prev + 1)}
+  >
+    Next
+  </button>
+</div>
       </div>
 
       {/* Ledger Card */}
@@ -557,7 +534,7 @@ const downloadCSV = () => {
           <div>
             <h5 className="mb-0">
               {storeType === "MAIN" 
-                ? "📋 Main Store Store Transfer Ledger" 
+                ? "📋 Main Store Ledger" 
                 : "📋 Sub Store Ledger"}
             </h5>
             <small className="text-light">

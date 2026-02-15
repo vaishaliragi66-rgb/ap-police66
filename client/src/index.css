@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+.sidebar-item:hover {
+  background-color: #eff6ff !important;
+  transform: translateX(4px);
+}

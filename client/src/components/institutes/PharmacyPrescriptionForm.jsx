@@ -103,27 +103,19 @@ const PharmacyPrescriptionForm = () => {
   }
 };
 const checkStockAvailability = (medicineCode, requestedQty) => {
-  const subStore = inventory.find(
-    m => m.Medicine_Code === medicineCode && m.Store_Type === "SUB_STORE"
+  const item = inventory.find(
+    m => m.Medicine_Code === medicineCode
   );
 
-  const mainStore = inventory.find(
-    m => m.Medicine_Code === medicineCode && m.Store_Type === "MAIN_STORE"
-  );
+  const availableQty = item?.Quantity || 0;
 
-  const subQty = subStore?.Quantity || 0;
-  const mainQty = mainStore?.Quantity || 0;
-
-  if (requestedQty <= subQty) {
-    return { status: "SUB_STORE", maxQty: subQty };
+  if (requestedQty <= availableQty) {
+    return { status: "AVAILABLE", maxQty: availableQty };
   }
 
-  if (requestedQty <= mainQty) {
-    return { status: "MAIN_STORE", maxQty: mainQty };
-  }
-
-  return { status: "EXCEEDS_MAIN", maxQty: mainQty };
+  return { status: "EXCEEDS", maxQty: availableQty };
 };
+
 
 const loadEmployeeReports = async () => {
   if (!selectedEmployee || !selectedEmployee.ABS_NO) {
@@ -223,9 +215,9 @@ useEffect(() => {
   console.log("Inventory sample:", inventory[0]);
 
 const results = inventory.filter(m =>
-  m.Store_Type === "SUB_STORE" &&
   m.Medicine_Name?.toLowerCase().includes(searchText.toLowerCase())
 );
+
 
   setFilteredMedicines(results);
   console.log("Search text:", searchText);
@@ -303,7 +295,8 @@ if (field === "quantity") {
 
   const stockCheck = checkStockAvailability(medicineCode, requestedQty);
 
-  if (stockCheck.status === "SUB_STORE") {
+if (stockCheck.status === "AVAILABLE")
+{
     updated[index].quantity = requestedQty;
 
     setMedicineErrors(prev => {
@@ -313,23 +306,16 @@ if (field === "quantity") {
     });
   }
 
-  else if (stockCheck.status === "MAIN_STORE") {
-    updated[index].quantity = requestedQty;
 
-    setMedicineErrors(prev => ({
-      ...prev,
-      [index]: "⚠️ Not available in sub-store. Will issue from main store."
-    }));
-  }
+else {
+  updated[index].quantity = stockCheck.maxQty;
 
-  else {
-    updated[index].quantity = stockCheck.maxQty;
+  setMedicineErrors(prev => ({
+    ...prev,
+    [index]: `❌ Only ${stockCheck.maxQty} available`
+  }));
+}
 
-    setMedicineErrors(prev => ({
-      ...prev,
-      [index]: `❌ Only ${stockCheck.maxQty} available in main store`
-    }));
-  }
 }
 
 
@@ -619,7 +605,7 @@ const handleSubmit = async (e) => {
 
             <button
               className="btn btn-outline-primary"
-              onClick={() => navigate("/institutes/inventory")}
+              onClick={() => navigate("/institutes/inventory?mode=embedded")}
             >
               🏥 Inventory
             </button>

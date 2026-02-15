@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
 import { FaUniversity } from "react-icons/fa";
 
 const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
@@ -9,6 +11,7 @@ export default function InstituteProfile() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const formatDateDMY = (dateValue) => {
   if (!dateValue) return "—";
@@ -22,6 +25,16 @@ export default function InstituteProfile() {
 
   return `${day}-${month}-${year}`; // ✅ DD-MM-YYYY
 };
+useEffect(() => {
+  const token = localStorage.getItem("instituteToken");
+
+  if (!token) {
+    navigate("/", { replace: true });
+  } else {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }
+}, []);
+  
 
   // Fetch profile
   useEffect(() => {
