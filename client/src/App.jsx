@@ -41,6 +41,7 @@ import axios from "axios";
 import EmployeeReports from "./components/admin/employee_reports";
 import DoctorLayout from "./components/institutes/DoctorLayout";
 import OthersLayout from "./components/institutes/OthersLayout";
+import XrayEntryForm from "./components/institutes/XrayEntryForm";
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -90,6 +91,9 @@ function App() {
           element: <DoctorPrescriptionForm />
         }
       ]
+    },{
+      path:"/institutions/xray-entry",
+      element:<XrayEntryForm/>
     },
 
     {
