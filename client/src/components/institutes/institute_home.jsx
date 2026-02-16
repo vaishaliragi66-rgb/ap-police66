@@ -361,6 +361,35 @@ return (
               </div>
             </div>
           </div>
+          {/* X-RAY */}
+<div className="col-md-6">
+  <div
+    className="card h-100 text-center border-0 shadow-sm"
+    style={{
+      borderRadius: "20px",
+      cursor: "pointer",
+      transition: "all 0.3s ease"
+    }}
+    onClick={() => navigate("/institutions/xray-entry")}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = "translateY(-5px)";
+      e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = "translateY(0px)";
+      e.currentTarget.style.boxShadow = "";
+    }}
+  >
+    <div className="card-body p-5">
+      <FaVials size={35} style={{ color: "#3B6FB6" }} />
+      <h5 className="fw-semibold mt-4">X-Ray</h5>
+      <p className="text-muted mb-0">
+        Record and view X-ray details
+      </p>
+    </div>
+  </div>
+</div>
+
 
           {/* OTHERS */}
           <div className="col-md-6">

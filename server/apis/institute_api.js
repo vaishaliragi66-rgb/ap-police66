@@ -369,6 +369,138 @@ instituteApp.put('/profile/:id', verifyToken, async (req, res) => {
 });
 
 // GET inventory for ONE institute only
+// instituteApp.get("/inventory/:instituteId", async (req, res) => {
+//   try {
+//     const { instituteId } = req.params;
+
+//     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+//       return res.status(400).json({ message: "Invalid institute ID" });
+//     }
+
+//     const instituteObjectId = new mongoose.Types.ObjectId(instituteId);
+
+//     const [mainStoreMeds, subStoreMeds] = await Promise.all([
+//       MainStoreMedicine.find({ Institute_ID: instituteObjectId }).lean(),
+//       Medicine.find({ Institute_ID: instituteObjectId }).lean()
+//     ]);
+
+//     const inventoryMap = {};
+
+//     // 🔹 MAIN STORE
+//     for (const m of mainStoreMeds) {
+//       const key = m.Medicine_Code;
+
+//       if (!inventoryMap[key]) {
+//         inventoryMap[key] = {
+//           Medicine_Code: m.Medicine_Code,
+//           Medicine_Name: m.Medicine_Name,
+//           Quantity: 0,
+//           Threshold_Qty: m.Threshold_Qty,
+//           Expiry_Date: m.Expiry_Date
+//         };
+//       }
+
+//       inventoryMap[key].Quantity += m.Quantity;
+//     }
+
+//     // 🔹 SUB STORE
+//     for (const m of subStoreMeds) {
+//       const key = m.Medicine_Code;
+
+//       if (!inventoryMap[key]) {
+//         inventoryMap[key] = {
+//           Medicine_Code: m.Medicine_Code,
+//           Medicine_Name: m.Medicine_Name,
+//           Quantity: 0,
+//           Threshold_Qty: m.Threshold_Qty,
+//           Expiry_Date: m.Expiry_Date
+//         };
+//       }
+
+//       inventoryMap[key].Quantity += m.Quantity;
+//     }
+
+//     const inventory = Object.values(inventoryMap);
+
+//     res.status(200).json(inventory);
+
+//   } catch (err) {
+//     console.error("Institute inventory error:", err);
+//     res.status(500).json({ message: err.message });
+//   }
+// });
+// instituteApp.get("/inventory/:instituteId", async (req, res) => {
+//   try {
+//     const { instituteId } = req.params;
+
+//     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+//       return res.status(400).json({ message: "Invalid institute ID" });
+//     }
+
+//     const instituteObjectId = new mongoose.Types.ObjectId(instituteId);
+
+//     const [mainStoreMeds, subStoreMeds] = await Promise.all([
+//       MainStoreMedicine.find({ Institute_ID: instituteObjectId }).lean(),
+//       Medicine.find({ Institute_ID: instituteObjectId }).lean()
+//     ]);
+
+//     const inventoryMap = {};
+
+//     // Step 1: Add main store medicines
+//     for (const m of mainStoreMeds) {
+//       inventoryMap[m.Medicine_Code] = {
+//         Medicine_Code: m.Medicine_Code,
+//         Medicine_Name: m.Medicine_Name,
+//         mainQty: m.Quantity,
+//         subQty: 0
+//       };
+//     }
+
+//     // Step 2: Add substore medicines (priority)
+//     for (const m of subStoreMeds) {
+//       if (!inventoryMap[m.Medicine_Code]) {
+//         inventoryMap[m.Medicine_Code] = {
+//           Medicine_Code: m.Medicine_Code,
+//           Medicine_Name: m.Medicine_Name,
+//           mainQty: 0,
+//           subQty: m.Quantity
+//         };
+//       } else {
+//         inventoryMap[m.Medicine_Code].subQty = m.Quantity;
+//       }
+//     }
+
+//     // Step 3: Decide final output
+//     const inventory = Object.values(inventoryMap).map((item) => {
+//       let status = "";
+//       let quantity = 0;
+
+//       if (item.subQty > 0) {
+//         quantity = item.subQty;
+//         status = "Available in substore";
+//       } else if (item.mainQty > 0) {
+//         quantity = 0;
+//         status = "Not available in substore";
+//       } else {
+//         quantity = 0;
+//         status = "Not available in both";
+//       }
+
+//       return {
+//         Medicine_Code: item.Medicine_Code,
+//         Medicine_Name: item.Medicine_Name,
+//         Quantity: quantity,
+//         Status: status
+//       };
+//     });
+
+//     res.status(200).json(inventory);
+
+//   } catch (err) {
+//     console.error("Institute inventory error:", err);
+//     res.status(500).json({ message: err.message });
+//   }
+// });
 instituteApp.get("/inventory/:instituteId", async (req, res) => {
   try {
     const { instituteId } = req.params;
@@ -386,41 +518,62 @@ instituteApp.get("/inventory/:instituteId", async (req, res) => {
 
     const inventoryMap = {};
 
-    // 🔹 MAIN STORE
+    // MAIN STORE
     for (const m of mainStoreMeds) {
-      const key = m.Medicine_Code;
-
-      if (!inventoryMap[key]) {
-        inventoryMap[key] = {
-          Medicine_Code: m.Medicine_Code,
-          Medicine_Name: m.Medicine_Name,
-          Quantity: 0,
-          Threshold_Qty: m.Threshold_Qty,
-          Expiry_Date: m.Expiry_Date
-        };
-      }
-
-      inventoryMap[key].Quantity += m.Quantity;
+      inventoryMap[m.Medicine_Code] = {
+        Medicine_Code: m.Medicine_Code,
+        Medicine_Name: m.Medicine_Name,
+        mainQty: m.Quantity,
+        subQty: 0,
+        mainExpiry: m.Expiry_Date,
+        subExpiry: null
+      };
     }
 
-    // 🔹 SUB STORE
+    // SUB STORE
     for (const m of subStoreMeds) {
-      const key = m.Medicine_Code;
-
-      if (!inventoryMap[key]) {
-        inventoryMap[key] = {
+      if (!inventoryMap[m.Medicine_Code]) {
+        inventoryMap[m.Medicine_Code] = {
           Medicine_Code: m.Medicine_Code,
           Medicine_Name: m.Medicine_Name,
-          Quantity: 0,
-          Threshold_Qty: m.Threshold_Qty,
-          Expiry_Date: m.Expiry_Date
+          mainQty: 0,
+          subQty: m.Quantity,
+          mainExpiry: null,
+          subExpiry: m.Expiry_Date
         };
+      } else {
+        inventoryMap[m.Medicine_Code].subQty = m.Quantity;
+        inventoryMap[m.Medicine_Code].subExpiry = m.Expiry_Date;
       }
-
-      inventoryMap[key].Quantity += m.Quantity;
     }
 
-    const inventory = Object.values(inventoryMap);
+    // FINAL RESPONSE
+    const inventory = Object.values(inventoryMap).map((item) => {
+      let status = "";
+      let quantity = 0;
+      let expiry = null;
+
+      if (item.subQty > 0) {
+        quantity = item.subQty;
+        status = "Available in substore";
+        expiry = item.subExpiry;
+      } else if (item.mainQty > 0) {
+        quantity = 0;
+        status = "Not available in substore";
+        expiry = item.mainExpiry;
+      } else {
+        quantity = 0;
+        status = "Not available in both";
+      }
+
+      return {
+        Medicine_Code: item.Medicine_Code,
+        Medicine_Name: item.Medicine_Name,
+        Quantity: quantity,
+        Status: status,
+        Expiry_Date: expiry
+      };
+    });
 
     res.status(200).json(inventory);
 
@@ -429,6 +582,7 @@ instituteApp.get("/inventory/:instituteId", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // GET single institute by ID
 instituteApp.get("/institution/:id", verifyToken, async (req, res) => {
