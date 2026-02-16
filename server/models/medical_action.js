@@ -21,6 +21,7 @@ const MedicalActionSchema = new mongoose.Schema({
       "DIAGNOSIS_TEST",
       "DOCTOR_DIAGNOSIS",     
       "DIAGNOSIS_REPORT", 
+      "DOCTOR_XRAY",
     ],
     required: true
   },

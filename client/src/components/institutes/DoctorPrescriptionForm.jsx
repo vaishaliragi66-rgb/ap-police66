@@ -19,6 +19,10 @@ const DoctorPrescriptionForm = () => {
   const [employeeReport, setEmployeeReport] = useState(null);
   const [showReports, setShowReports] = useState(false);
   const [uniqueMedicines, setUniqueMedicines] = useState([]);
+const [xrayMaster, setXrayMaster] = useState([]);
+const [xrayData, setXrayData] = useState({
+  Xrays: [{ Xray_ID: "", Xray_Type: "" }]
+});
 
   
   
@@ -115,6 +119,12 @@ const DoctorPrescriptionForm = () => {
       .catch(() => setTestsMaster([]));
   }, []);
   
+useEffect(() => {
+  axios
+    .get(`http://localhost:${BACKEND_PORT}/xray-api/types`)
+    .then(res => setXrayMaster(res.data || []))
+    .catch(() => setXrayMaster([]));
+}, []);
 
 
   /* ================= INITIAL LOAD ================= */
@@ -372,6 +382,42 @@ const DoctorPrescriptionForm = () => {
     });
   };
   
+const handleXraySubmit = async () => {
+  if (!formData.Employee_ID) {
+    alert("Please select employee first");
+    return;
+  }
+
+  if (xrayData.Xrays.length === 0) {
+    alert("Please add at least one X-ray");
+    return;
+  }
+
+  await axios.post(
+    `http://localhost:${BACKEND_PORT}/api/medical-actions`,
+    {
+      employee_id: formData.Employee_ID,
+      visit_id: formData.visit_id || null,
+      action_type: "DOCTOR_XRAY",
+      source: "DOCTOR",
+      data: {
+        Institute_ID: formData.Institute_ID,
+        IsFamilyMember: formData.IsFamilyMember,
+        FamilyMember_ID: formData.IsFamilyMember
+          ? formData.FamilyMember_ID
+          : null,
+        xrays: xrayData.Xrays,
+        notes: formData.Notes
+      }
+    }
+  );
+
+  alert("✅ X-ray order saved");
+
+  setXrayData({
+    Xrays: [{ Xray_ID: "", Xray_Type: "" }]
+  });
+};
 
 
   /* ================= UI ================= */
@@ -904,6 +950,92 @@ const DoctorPrescriptionForm = () => {
 
     </div>
   </div>
+  {/* ADD AN XRAY CARD */}
+<div className="card shadow border-0 mt-3">
+  <div className="card-header bg-dark text-white">
+    <strong>Add an X-ray</strong>
+  </div>
+
+  <div className="card-body">
+
+    {xrayData.Xrays.map((x, i) => (
+      <div key={i} className="mb-2">
+
+        <select
+          className="form-select mb-2"
+          value={x.Xray_ID}
+          onChange={(e) => {
+            const selected = xrayMaster.find(
+              xr => xr._id === e.target.value
+            );
+
+            const copy = [...xrayData.Xrays];
+            copy[i] = {
+              Xray_ID: selected?._id || "",
+              Xray_Type: selected?.Xray_Type || ""
+            };
+
+            setXrayData(prev => ({
+              ...prev,
+              Xrays: copy
+            }));
+          }}
+        >
+          <option value="">Select X-ray</option>
+          {xrayMaster.map(xr => (
+            <option key={xr._id} value={xr._id}>
+              {xr.Xray_Type} ({xr.Body_Part})
+            </option>
+          ))}
+        </select>
+
+        {xrayData.Xrays.length > 1 && (
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger w-100"
+            onClick={() => {
+              const copy = xrayData.Xrays.filter(
+                (_, idx) => idx !== i
+              );
+              setXrayData(prev => ({
+                ...prev,
+                Xrays: copy
+              }));
+            }}
+          >
+            Remove
+          </button>
+        )}
+      </div>
+    ))}
+
+    <button
+      type="button"
+      className="btn btn-outline-primary w-100 mt-2"
+      onClick={() =>
+        setXrayData(prev => ({
+          ...prev,
+          Xrays: [
+            ...prev.Xrays,
+            { Xray_ID: "", Xray_Type: "" }
+          ]
+        }))
+      }
+    >
+      + Add X-ray
+    </button>
+
+    <button
+      type="button"
+      className="btn btn-success w-100 mt-3"
+      onClick={handleXraySubmit}
+    >
+      Submit X-ray
+    </button>
+
+  </div>
+</div>
+
 </div>
 
       </div>
