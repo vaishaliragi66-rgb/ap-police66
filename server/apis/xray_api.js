@@ -318,7 +318,16 @@ xrayApp.get("/tests", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch tests" });
   }
 });
-
+// GET all X-ray types
+xrayApp.get("/types", async (req, res) => {
+  try {
+    const xrays = await Xray.find().sort({ Xray_Type: 1 });
+    res.json(xrays);
+  } catch (err) {
+    console.error("Error fetching X-ray types:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 xrayApp.get("/visit/:visitId/doctor", async (req, res) => {
   try {
     const action = await MedicalAction.findOne({

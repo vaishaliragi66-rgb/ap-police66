@@ -10,6 +10,10 @@ const XrayEntryForm = () => {
   const [pastRecords, setPastRecords] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [tokenNumber, setTokenNumber] = useState(null);
+  const [xrayTypes, setXrayTypes] = useState([]);
+  const [xrayMaster, setXrayMaster] = useState([]);
+
+
 
   const BACKEND_PORT_NO =
     import.meta.env.VITE_BACKEND_PORT || "6100";
@@ -43,6 +47,8 @@ const XrayEntryForm = () => {
         Institute_ID: localInstituteId,
       }));
       fetchInstituteName(localInstituteId);
+        // ADD THIS
+  fetchXrayTypes();
     }
   }, []);
 
@@ -56,17 +62,57 @@ const XrayEntryForm = () => {
       console.error("Error fetching institute name:", err);
     }
   };
+const fetchXrayTypes = async () => {
+  try {
+    const res = await axios.get(
+      `http://localhost:${BACKEND_PORT_NO}/xray-api/types`
+    );
 
-  const handleXrayChange = (index, field, value) => {
-    setFormData((prev) => {
-      const updated = [...prev.Xrays];
+    setXrayMaster(res.data || []);
+    console.log("X-ray types fetched:", res.data?.length);
+  } catch (err) {
+    console.error("Error fetching X-ray types:", err);
+  }
+};
+
+
+ const handleXrayChange = (index, field, value) => {
+  setFormData(prev => {
+    const updated = [...prev.Xrays];
+
+    if (field === "Xray_ID") {
+      const sel = xrayMaster.find(x => x._id === value);
+
+      if (sel) {
+        updated[index] = {
+          ...updated[index],
+          Xray_ID: sel._id,
+          Xray_Type: sel.Xray_Type,
+          Body_Part: sel.Body_Part,
+          Side: sel.Side || "NA",
+          View: sel.View || "",
+          Film_Size: sel.Film_Size || ""
+        };
+      } else {
+        updated[index] = {
+          ...updated[index],
+          Xray_ID: value || "",
+          Xray_Type: value
+            ? updated[index].Xray_Type
+            : ""
+        };
+      }
+    } else {
       updated[index] = {
         ...updated[index],
-        [field]: value,
+        [field]: value
       };
-      return { ...prev, Xrays: updated };
-    });
-  };
+    }
+
+    return { ...prev, Xrays: updated };
+  });
+};
+
 
   const addXray = () => {
     setFormData((prev) => ({
@@ -381,23 +427,81 @@ const XrayEntryForm = () => {
                     alignItems: "center",
                   }}
                 >
-                  <input
-                    type="text"
-                    placeholder="X-ray Type"
-                    value={x.Xray_Type}
-                    onChange={(e) =>
-                      handleXrayChange(
-                        i,
-                        "Xray_Type",
-                        e.target.value
-                      )
-                    }
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      border: "1px solid #ddd",
-                    }}
-                  />
+                  {/* <select
+  value={x.Xray_Type}
+  onChange={(e) =>
+    handleXrayChange(i, "Xray_Type", e.target.value)
+  }
+  style={{
+    padding: "8px 10px",
+    borderRadius: "6px",
+    border: "1px solid #ddd",
+  }}
+>
+  <option value="">Select X-ray Type</option>
+  {xrayTypes.map((type) => (
+    <option
+      key={type._id}
+      value={type.Xray_Type}
+    >
+      {type.Xray_Type} — {type.Body_Part}
+    </option>
+  ))}
+</select> */}
+<div>
+  <div style={{ fontSize: "12px", marginBottom: 4 }}>
+    X-ray Selection
+  </div>
+
+  <select
+    value={x.Xray_ID || ""}
+    onChange={(e) =>
+      handleXrayChange(i, "Xray_ID", e.target.value)
+    }
+    style={{
+      width: "100%",
+      padding: "8px 10px",
+      borderRadius: "6px",
+      border: "1px solid #ddd",
+    }}
+  >
+    <option value="">
+      Select X-ray (or type below)
+    </option>
+
+    {xrayMaster.map((xm) => (
+      <option key={xm._id} value={xm._id}>
+        {xm.Xray_Type} ({xm.Body_Part})
+      </option>
+    ))}
+  </select>
+</div>
+
+<div>
+  <div style={{ fontSize: "12px", marginBottom: 4 }}>
+    X-ray Type
+  </div>
+  <input
+    type="text"
+    placeholder="X-ray Type"
+    value={x.Xray_Type}
+    onChange={(e) =>
+      handleXrayChange(
+        i,
+        "Xray_Type",
+        e.target.value
+      )
+    }
+    style={{
+      width: "100%",
+      padding: "8px 10px",
+      borderRadius: "6px",
+      border: "1px solid #ddd",
+    }}
+  />
+</div>
+
+
 
                   <input
                     type="text"

@@ -217,67 +217,82 @@ setInventory(res.data || []);
     return filters;
   };
 
-  /* ---------- FILTER LOGIC ---------- */
-  const filteredInventory = inventory.filter((item) => {
-    const daysLeft = daysFromToday(item.Expiry_Date);
+ const filteredInventory = inventory.filter((item) => {
+  // Hide zero stock medicines
+  if (!item.Quantity || item.Quantity <= 0) {
+    return false;
+  }
 
-    if (searchMedicine &&
-        !item.Medicine_Name?.toLowerCase().includes(searchMedicine.toLowerCase())) {
-      return false;
+  const daysLeft = daysFromToday(item.Expiry_Date);
+
+  // Search filter
+  if (
+    searchMedicine &&
+    !item.Medicine_Name
+      ?.toLowerCase()
+      .includes(searchMedicine.toLowerCase())
+  ) {
+    return false;
+  }
+
+  // Quantity filter
+  if (quantityFilter !== "") {
+    const limit = Number(quantityFilter);
+    if (!Number.isFinite(limit)) return true;
+    if (Number(item.Quantity) > limit) return false;
+  }
+
+  // Expiry filter
+  if (expiryFilter) {
+    const limitDate = new Date(expiryFilter);
+    limitDate.setHours(23, 59, 59, 999);
+    if (new Date(item.Expiry_Date) > limitDate) return false;
+  }
+
+  // Status filter
+  if (statusFilter) {
+    if (statusFilter === "EXPIRED" && !(daysLeft < 0)) return false;
+    if (statusFilter === "NEAR_EXPIRY" && !(daysLeft >= 0 && daysLeft <= 5)) return false;
+    if (statusFilter === "LOW_STOCK" && !(item.Quantity < (item.Threshold_Qty || 0))) return false;
+
+    if (statusFilter === "NORMAL") {
+      const isNormal =
+        daysLeft >= 0 &&
+        daysLeft > 5 &&
+        item.Quantity >= (item.Threshold_Qty || 0);
+
+      if (!isNormal) return false;
     }
+  }
 
-    if (quantityFilter !== "") {
-      const limit = Number(quantityFilter);
-      if (!Number.isFinite(limit)) return true;
-      if (Number(item.Quantity) > limit) return false;
+  // Threshold filter
+  if (thresholdFilter) {
+    const threshold = item.Threshold_Qty || 0;
+    const currentStock = item.Quantity || 0;
+
+    switch (thresholdFilter) {
+      case "BELOW_THRESHOLD":
+        if (currentStock >= threshold) return false;
+        break;
+      case "AT_THRESHOLD":
+        if (currentStock !== threshold) return false;
+        break;
+      case "ABOVE_THRESHOLD":
+        if (currentStock <= threshold) return false;
+        break;
+      case "VERY_LOW":
+        if (currentStock >= threshold * 0.25) return false;
+        break;
+      case "CRITICAL":
+        if (currentStock >= threshold * 0.10) return false;
+        break;
+      default:
+        break;
     }
+  }
 
-    if (expiryFilter) {
-      const limitDate = new Date(expiryFilter);
-      limitDate.setHours(23, 59, 59, 999);
-      if (new Date(item.Expiry_Date) > limitDate) return false;
-    }
-
-    if (statusFilter) {
-      if (statusFilter === "EXPIRED" && !(daysLeft < 0)) return false;
-      if (statusFilter === "NEAR_EXPIRY" && !(daysLeft >= 0 && daysLeft <= 5)) return false;
-      if (statusFilter === "LOW_STOCK" && !(item.Quantity < (item.Threshold_Qty || 0))) return false;
-      
-      if (statusFilter === "NORMAL") {
-        const isNormal = daysLeft >= 0 && 
-                        daysLeft > 5 && 
-                        item.Quantity >= (item.Threshold_Qty || 0);
-        if (!isNormal) return false;
-      }
-    }
-
-    if (thresholdFilter) {
-      const threshold = item.Threshold_Qty || 0;
-      const currentStock = item.Quantity || 0;
-      
-      switch (thresholdFilter) {
-        case "BELOW_THRESHOLD":
-          if (currentStock >= threshold) return false;
-          break;
-        case "AT_THRESHOLD":
-          if (currentStock !== threshold) return false;
-          break;
-        case "ABOVE_THRESHOLD":
-          if (currentStock <= threshold) return false;
-          break;
-        case "VERY_LOW":
-          if (currentStock >= (threshold * 0.25)) return false;
-          break;
-        case "CRITICAL":
-          if (currentStock >= (threshold * 0.10)) return false;
-          break;
-        default:
-          break;
-      }
-    }
-
-    return true;
-  });
+  return true;
+});
 
   /* ---------- SORT ---------- */
   const sortedInventory = [...filteredInventory].sort((a, b) => {
