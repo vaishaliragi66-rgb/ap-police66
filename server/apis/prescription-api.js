@@ -199,15 +199,16 @@ prescriptionApp.get("/employee/:employeeId", async (req, res) => {
     const familyIds = familyMembers.map(f => f._id);
 
     const prescriptions = await Prescription.find({
-      $or: [
-        { Employee: employeeId },
-        { FamilyMember: { $in: familyIds } }
-      ]
-    })
-      .populate("Institute", "Institute_Name")
-      .populate("Employee", "Name ABS_NO")
-      .populate("FamilyMember", "Name Relationship")
-      .sort({ Timestamp: -1 });
+  $or: [
+    { Employee: employeeId },
+    { FamilyMember: { $in: familyIds } }
+  ]
+})
+  .populate("Institute", "Institute_Name")
+  .populate("Employee", "Name ABS_NO")
+  .populate("FamilyMember", "Name Relationship")
+  .populate("Medicines.Medicine_ID", "Medicine_Code Expiry_Date")  // 🔥 ADD THIS
+  .sort({ Timestamp: -1 });
 
     return res.status(200).json(prescriptions);
 

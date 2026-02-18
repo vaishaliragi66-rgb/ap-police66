@@ -180,28 +180,24 @@ console.log("Existing Record Tests:", record?.Tests);
 diagnosisApp.get("/records/:personId", async (req, res) => {
   try {
     const { personId } = req.params;
-    const { isFamily, familyId } = req.query;
 
-    if (!mongoose.Types.ObjectId.isValid(personId))
+    if (!mongoose.Types.ObjectId.isValid(personId)) {
       return res.status(400).json({ message: "Invalid ID" });
-
-    const filter = { Employee: personId };
-
-    if (isFamily === "true" && familyId) {
-      filter.IsFamilyMember = true;
-      filter.FamilyMember = familyId;
-    } else {
-      filter.IsFamilyMember = false;
     }
 
-    const records = await DiagnosisRecord.find(filter)
-      .populate("Employee", "Name")
-      .populate("FamilyMember", "Name Relationship")
+    const records = await DiagnosisRecord.find({
+      Employee: personId
+    })
+      .populate("Employee", "Name ABS_NO Sex DOB")
+      .populate("FamilyMember", "Name Relationship Sex DOB")
+      .populate("Institute", "Institute_Name")
+      .populate("Tests.Test_ID")   // 🔥 THIS IS THE FIX
       .sort({ createdAt: -1 });
 
     res.status(200).json(records);
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to fetch records" });
   }
 });

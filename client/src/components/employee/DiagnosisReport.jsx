@@ -12,6 +12,9 @@ const DiagnosisReport = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
   const employeeObjectId = localStorage.getItem("employeeObjectId")
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
 
 useEffect(() => {
   if (!employeeObjectId) return;
@@ -55,18 +58,41 @@ useEffect(() => {
 
   /* ================= STATUS ================= */
   const getStatus = (result, range) => {
-    try {
-      const value = parseFloat(result);
-      const match = range?.match(/(\d+\.?\d*)-(\d+\.?\d*)/);
-      if (!match || isNaN(value)) return "N/A";
+  try {
+    const value = parseFloat(result);
+    if (isNaN(value) || !range) return "N/A";
 
-      const low = parseFloat(match[1]);
-      const high = parseFloat(match[2]);
+    // Normalize dash (– or — to -)
+    const normalizedRange = range.replace(/[–—]/g, "-").trim();
+
+    // Case 1: range like 7-56
+    const rangeMatch = normalizedRange.match(/^(\d+\.?\d*)-(\d+\.?\d*)$/);
+    if (rangeMatch) {
+      const low = parseFloat(rangeMatch[1]);
+      const high = parseFloat(rangeMatch[2]);
       return value >= low && value <= high ? "Normal" : "Risk";
-    } catch {
-      return "N/A";
     }
-  };
+
+    // Case 2: less than <5.7
+    const lessMatch = normalizedRange.match(/^<\s*(\d+\.?\d*)$/);
+    if (lessMatch) {
+      const limit = parseFloat(lessMatch[1]);
+      return value < limit ? "Normal" : "Risk";
+    }
+
+    // Case 3: greater than >10
+    const greaterMatch = normalizedRange.match(/^>\s*(\d+\.?\d*)$/);
+    if (greaterMatch) {
+      const limit = parseFloat(greaterMatch[1]);
+      return value > limit ? "Normal" : "Risk";
+    }
+
+    return "N/A"; // for "Varies by age and sex"
+  } catch {
+    return "N/A";
+  }
+};
+
 
   /* ================= LAB REPORT PDF ================= */
   const downloadLabReport = (report) => {
@@ -113,8 +139,8 @@ useEffect(() => {
     const tableData = report.Tests.map((t) => [
       t.Test_Name,
       `${t.Result_Value} ${t.Units || ""}`,
-      t.Reference_Range || "-",
-      getStatus(t.Result_Value, t.Reference_Range)
+      t.Test_ID?.Reference_Range || t.Reference_Range || "-",
+      getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range)
     ]);
 
     autoTable(doc, {
@@ -279,7 +305,7 @@ return (
 
                 <tbody>
                   {splitReportsByDate(reports).map((report, index) => (
-                    <tr key={report._id}>
+                    <tr key={report._id + report.Tests[0]?.Timestamp}>
                       <td>{index + 1}</td>
 
                       <td>
@@ -304,19 +330,45 @@ return (
                       <td>{formatDate(report)}</td>
 
                       <td>
-                        <button
-                          className="btn btn-sm"
-                          style={{
-                            borderRadius: "999px",
-                            border: "1px solid #4A70A9",
-                            backgroundColor: "#FFFFFF",
-                            color: "#4A70A9",
-                            fontWeight: 500,
-                          }}
-                          onClick={() => downloadLabReport(report)}
-                        >
-                          Download Report
-                        </button>
+                        <td>
+                          <div className="d-flex gap-2">
+
+                            {/* VIEW BUTTON */}
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                borderRadius: "999px",
+                                border: "1px solid #4A70A9",
+                                backgroundColor: "#4A70A9",
+                                color: "#FFFFFF",
+                                fontWeight: 500,
+                              }}
+                              onClick={() => {
+                                setSelectedReport(report);
+                                setShowModal(true);
+                              }}
+                            >
+                              View
+                            </button>
+
+                            {/* DOWNLOAD BUTTON */}
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                borderRadius: "999px",
+                                border: "1px solid #4A70A9",
+                                backgroundColor: "#FFFFFF",
+                                color: "#4A70A9",
+                                fontWeight: 500,
+                              }}
+                              onClick={() => downloadLabReport(report)}
+                            >
+                              Download
+                            </button>
+
+                          </div>
+                        </td>
+
                       </td>
                     </tr>
                   ))}
@@ -327,6 +379,87 @@ return (
         </div>
       </div>
     </div>
+    {showModal && selectedReport && (
+  <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+    <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div className="modal-content">
+
+        <div className="modal-header bg-primary text-white">
+          <h5 className="modal-title">
+            Diagnosis Report Details
+          </h5>
+          <button
+            className="btn-close btn-close-white"
+            onClick={() => setShowModal(false)}
+          />
+        </div>
+
+        <div className="modal-body">
+
+          <p><strong>Employee:</strong> {selectedReport.Employee?.Name}</p>
+          <p>
+            <strong>Report For:</strong>{" "}
+            {selectedReport.IsFamilyMember
+              ? `${selectedReport.FamilyMember?.Name} (${selectedReport.FamilyMember?.Relationship})`
+              : "Self"}
+          </p>
+          <p><strong>Institute:</strong> {selectedReport.Institute?.Institute_Name}</p>
+          <p><strong>Date:</strong> {formatDate(selectedReport)}</p>
+
+          <hr />
+
+          <table className="table table-bordered">
+            <thead className="table-light">
+              <tr>
+                <th>Test Name</th>
+                <th>Result</th>
+                <th>Reference</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedReport.Tests.map((t, i) => (
+                <tr key={i}>
+                  <td>{t.Test_Name}</td>
+                  <td>{t.Result_Value} {t.Units}</td>
+                  <td>{t.Test_ID?.Reference_Range || t.Reference_Range}</td>
+                  <td>
+                    <span className={`badge ${
+                      getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range) === "Normal"
+                        ? "bg-success"
+                        : "bg-danger"
+                    }`}>
+                      {getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+        </div>
+
+        <div className="modal-footer">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowModal(false)}
+          >
+            Close
+          </button>
+
+          <button
+            className="btn btn-primary"
+            onClick={() => downloadLabReport(selectedReport)}
+          >
+            Download PDF
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
+
   </div>
 );
 

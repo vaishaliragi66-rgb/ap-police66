@@ -67,6 +67,29 @@ const EmployeeDiseaseReport = () => {
     );
   }
 
+  const extractSymptomsFromNotes = (notes) => {
+  if (!notes) return [];
+
+  const match = notes.match(/Symptoms\s*:\s*(.*)/i);
+  if (!match) return [];
+
+  // take only first line after Symptoms:
+  const line = match[1].split("\n")[0];
+
+  return line.split(",").map(s => s.trim()).filter(Boolean);
+};
+
+
+const cleanNotesWithoutSymptoms = (notes) => {
+  if (!notes) return "-";
+
+  // Remove the Symptoms line completely
+  const cleaned = notes.replace(/Symptoms\s*:\s*.*(\r?\n)?/i, "").trim();
+
+  return cleaned || "-";
+};
+
+
   return (
     <div
       style={{
@@ -217,14 +240,6 @@ const EmployeeDiseaseReport = () => {
                   {filteredDiseases.map((d, i) => (
                     <tr
                       key={i}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "#F8FAFC")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "transparent")
-                      }
                     >
                       <td>
                         {new Date(d.createdAt).toLocaleDateString()}
@@ -253,9 +268,33 @@ const EmployeeDiseaseReport = () => {
   
                       <td>{d.Disease_Name}</td>
                       <td>{d.Category}</td>
-                      <td>{d.Severity_Level}</td>
-                      <td>{d.Symptoms.join(", ")}</td>
-                      <td>{d.Notes || "-"}</td>
+                      <td>
+                        <span
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "999px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            backgroundColor:
+                              d.Severity_Level === "Mild"
+                                ? "#D1FAE5"
+                                : d.Severity_Level === "Moderate"
+                                ? "#FEF08A"
+                                : d.Severity_Level === "Severe"
+                                ? "#FECACA"
+                                : "#DDD6FE",
+                            color: "#1F2933",
+                          }}
+                        >
+                          {d.Severity_Level}
+                        </span>
+                      </td>
+                      <td>
+                        {d.Symptoms.length > 0
+                          ? d.Symptoms.join(", ")
+                          : extractSymptomsFromNotes(d.Notes).join(", ") || "-"}
+                      </td>
+                      <td>{cleanNotesWithoutSymptoms(d.Notes)}</td>
                     </tr>
                   ))}
                 </tbody>

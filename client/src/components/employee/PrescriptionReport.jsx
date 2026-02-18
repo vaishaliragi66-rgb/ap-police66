@@ -8,6 +8,8 @@ const PrescriptionReport = () => {
   const [prescriptions, setPrescriptions] = useState([]);
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || "6100";
   const employeeId = localStorage.getItem("employeeId");
+  const [selectedPrescription, setSelectedPrescription] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (employeeId) fetchPrescriptions();
@@ -24,6 +26,35 @@ const PrescriptionReport = () => {
     }
   };
 
+  const groupPrescriptionsByDate = (records) => {
+  const grouped = {};
+
+  records.forEach((p) => {
+    const dateKey = new Date(p.Timestamp)
+      .toISOString()
+      .split("T")[0];
+
+    const personKey = p.IsFamilyMember
+      ? `family-${p.FamilyMember?._id}`
+      : `self-${p.Employee?._id}`;
+
+    const finalKey = `${dateKey}-${personKey}`;
+
+    if (!grouped[finalKey]) {
+      grouped[finalKey] = {
+        ...p,
+        Medicines: []
+      };
+    }
+
+    grouped[finalKey].Medicines.push(...p.Medicines);
+  });
+
+  return Object.values(grouped).sort(
+    (a, b) => new Date(b.Timestamp) - new Date(a.Timestamp)
+  );
+};
+
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
     const d = new Date(dateStr);
@@ -34,53 +65,55 @@ const PrescriptionReport = () => {
   };
 
   // ================= RECEIPT GENERATOR =================
-  const downloadReceipt = (prescription, medicine) => {
-    const doc = new jsPDF();
+  const downloadReceipt = (prescription) => {
+  const doc = new jsPDF();
 
-    const billDate = prescription.Timestamp
-      ? new Date(prescription.Timestamp).toLocaleString()
-      : "-";
+  const billDate = prescription.Timestamp
+    ? new Date(prescription.Timestamp).toLocaleString()
+    : "-";
 
-    const issuedTo = prescription.IsFamilyMember
-      ? `${prescription.FamilyMember?.Name} (${prescription.FamilyMember?.Relationship})`
-      : `${prescription.Employee?.Name} (Employee)`;
+  const issuedTo = prescription.IsFamilyMember
+    ? `${prescription.FamilyMember?.Name} (${prescription.FamilyMember?.Relationship})`
+    : `${prescription.Employee?.Name} (Employee)`;
 
-    doc.setFontSize(14);
-    doc.text("OUT-PATIENT PHARMACY", 105, 15, { align: "center" });
-    doc.text("PHARMACY ISSUE RECEIPT", 105, 22, { align: "center" });
+  doc.setFontSize(14);
+  doc.text("OUT-PATIENT PHARMACY", 105, 15, { align: "center" });
+  doc.text("PHARMACY ISSUE RECEIPT", 105, 22, { align: "center" });
 
-    doc.setFontSize(10);
-    doc.text(
-      `Receipt No: ${prescription._id.slice(-6)}`,
-      14,
-      35
-    );
-    doc.text(`Bill Date: ${billDate}`, 14, 42);
+  doc.setFontSize(10);
+  doc.text(`Receipt No: ${prescription._id.slice(-6)}`, 14, 35);
+  doc.text(`Bill Date: ${billDate}`, 14, 42);
 
-    doc.text(
-      `Institute: ${prescription.Institute?.Institute_Name || "-"}`,
-      14,
-      52
-    );
-    doc.text(`Issued To: ${issuedTo}`, 14, 59);
+  doc.text(
+    `Institute: ${prescription.Institute?.Institute_Name || "-"}`,
+    14,
+    52
+  );
+  doc.text(`Issued To: ${issuedTo}`, 14, 59);
 
-    autoTable(doc, {
-      startY: 70,
-      head: [["Medicine", "Quantity", "Status"]],
-      body: [[medicine.Medicine_Name, medicine.Quantity, "ISSUED"]]
-    });
+  // 🔥 FULL MEDICINES TABLE
+  const tableData = prescription.Medicines.map((m) => [
+    m.Medicine_Name,
+    m.Medicine_ID?.Medicine_Code || "N/A",
+    m.Quantity,
+    "ISSUED"
+  ]);
 
-    doc.text(
-      "System Generated Receipt",
-      105,
-      doc.lastAutoTable.finalY + 15,
-      { align: "center" }
-    );
+  autoTable(doc, {
+    startY: 70,
+    head: [["Medicine", "Code", "Quantity", "Status"]],
+    body: tableData
+  });
 
-    doc.save(
-      `Prescription_Receipt_${prescription._id.slice(-6)}.pdf`
-    );
-  };
+  doc.text(
+    "System Generated Receipt",
+    105,
+    doc.lastAutoTable.finalY + 15,
+    { align: "center" }
+  );
+
+  doc.save(`Prescription_Receipt_${prescription._id.slice(-6)}.pdf`);
+};
 
   return (
     <div
@@ -194,82 +227,74 @@ const PrescriptionReport = () => {
                       <th>Person</th>
                       <th>Medicine</th>
                       <th>Qty</th>
+                      
                       <th>Date</th>
                       <th>Receipt</th>
                     </tr>
                   </thead>
   
                   <tbody>
-                    {prescriptions.map((p, idx) =>
-                      p.Medicines.map((m, i) => (
-                        <tr
-                          key={`${p._id}-${i}`}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor =
-                              "#F8FAFC")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor =
-                              "transparent")
-                          }
-                        >
-                          {i === 0 && (
-                            <>
-                              <td rowSpan={p.Medicines.length}>
-                                {idx + 1}
-                              </td>
-  
-                              <td rowSpan={p.Medicines.length}>
-                                {p.Institute?.Institute_Name || "—"}
-                              </td>
-  
-                              <td rowSpan={p.Medicines.length}>
-                                <span
-                                  style={{
-                                    padding: "4px 12px",
-                                    borderRadius: "999px",
-                                    fontSize: "12px",
-                                    fontWeight: 600,
-                                    backgroundColor: p.IsFamilyMember
-                                      ? "#FFF4E5"
-                                      : "#EAF2FF",
-                                    color: p.IsFamilyMember
-                                      ? "#92400E"
-                                      : "#1D4ED8",
-                                  }}
-                                >
-                                  {p.IsFamilyMember
-                                    ? `${p.FamilyMember?.Name} (${p.FamilyMember?.Relationship})`
-                                    : "Self"}
-                                </span>
-                              </td>
-                            </>
-                          )}
-  
-                          <td>{m.Medicine_Name}</td>
-                          <td>{m.Quantity}</td>
-                          <td>{formatDate(p.Timestamp)}</td>
-  
-                          <td>
+                    {groupPrescriptionsByDate(prescriptions).map((p, idx) => (
+                      <tr key={p._id + idx}>
+                        <td>{idx + 1}</td>
+
+                        <td>{p.Institute?.Institute_Name || "—"}</td>
+
+                        <td>
+                          <span
+                            style={{
+                              padding: "4px 12px",
+                              borderRadius: "999px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              backgroundColor: p.IsFamilyMember
+                                ? "#FFF4E5"
+                                : "#EAF2FF",
+                              color: p.IsFamilyMember
+                                ? "#92400E"
+                                : "#1D4ED8",
+                            }}
+                          >
+                            {p.IsFamilyMember
+                              ? `${p.FamilyMember?.Name} (${p.FamilyMember?.Relationship})`
+                              : "Self"}
+                          </span>
+                        </td>
+
+                        <td>
+                          {p.Medicines.map((m) => m.Medicine_Name).join(", ")}
+                        </td>
+
+                        <td>
+                          {p.Medicines.reduce((acc, m) => acc + m.Quantity, 0)}
+                        </td>
+
+                        <td>{formatDate(p.Timestamp)}</td>
+
+                        <td>
+                          <div className="d-flex gap-2">
                             <button
-                              className="btn btn-sm"
-                              style={{
-                                borderRadius: "999px",
-                                backgroundColor: "#EAF2FF",
-                                color: "#4A70A9",
-                                fontWeight: 600,
-                                border: "none",
-                                padding: "6px 14px",
+                              className="btn btn-sm btn-primary"
+                              onClick={() => {
+                                setSelectedPrescription(p);
+                                setShowModal(true);
                               }}
-                              onClick={() => downloadReceipt(p, m)}
+                            >
+                              View
+                            </button>
+
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => downloadReceipt(p)}
                             >
                               Download
                             </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
+
                 </table>
               </div>
             )}
@@ -277,6 +302,95 @@ const PrescriptionReport = () => {
           </div>
         </div>
       </div>
+      {showModal && selectedPrescription && (
+  <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+    <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div className="modal-content">
+
+        <div className="modal-header bg-primary text-white">
+          <h5 className="modal-title">Prescription Details</h5>
+          <button
+            className="btn-close btn-close-white"
+            onClick={() => setShowModal(false)}
+          />
+        </div>
+
+        <div className="modal-body">
+
+          <p><strong>Institute:</strong> {selectedPrescription.Institute?.Institute_Name}</p>
+
+          <p>
+            <strong>Issued To:</strong>{" "}
+            {selectedPrescription.IsFamilyMember
+              ? `${selectedPrescription.FamilyMember?.Name} (${selectedPrescription.FamilyMember?.Relationship})`
+              : "Self"}
+          </p>
+
+          <p><strong>Date:</strong> {formatDate(selectedPrescription.Timestamp)}</p>
+
+          <hr />
+
+          <table className="table table-bordered">
+            <thead className="table-light">
+              <tr>
+                <th>Medicine</th>
+                <th>Code</th>
+                <th>Expiry Date</th>
+                <th>Quantity</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {selectedPrescription.Medicines.map((m, i) => {
+                const expiry = m.Medicine_ID?.Expiry_Date
+                  ? new Date(m.Medicine_ID.Expiry_Date).toLocaleDateString()
+                  : "N/A";
+
+                const isExpired =
+                  m.Medicine_ID?.Expiry_Date &&
+                  new Date(m.Medicine_ID.Expiry_Date) < new Date();
+
+                return (
+                  <tr key={i}>
+                    <td>{m.Medicine_Name}</td>
+
+                    <td>{m.Medicine_ID?.Medicine_Code || "N/A"}</td>
+
+                    <td style={{ color: isExpired ? "red" : "inherit", fontWeight: isExpired ? "600" : "normal" }}>
+                      {expiry}
+                    </td>
+
+                    <td>{m.Quantity}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+
+        </div>
+
+        <div className="modal-footer">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowModal(false)}
+          >
+            Close
+          </button>
+
+          <button
+            className="btn btn-primary"
+           onClick={() => downloadReceipt(selectedPrescription)}
+          >
+            Download Receipt
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
   
