@@ -42,6 +42,7 @@ import EmployeeReports from "./components/admin/employee_reports";
 import DoctorLayout from "./components/institutes/DoctorLayout";
 import OthersLayout from "./components/institutes/OthersLayout";
 import XrayEntryForm from "./components/institutes/XrayEntryForm";
+import HealthSummary from "./components/institutes/HealthSummary";
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -206,7 +207,9 @@ function App() {
     },{
       path:"/admin/ai-insights",
       element:<AIInsights2/>
-    }
+    },{path:"/institutes/health-summary" ,
+      element:<HealthSummary />}
+
   ]);
 
     return (

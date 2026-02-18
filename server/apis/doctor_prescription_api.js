@@ -34,6 +34,7 @@ router.post("/add", async (req, res) => {
       Institute: Institute_ID,
       Employee: Employee_ID,
       IsFamilyMember,
+      
       FamilyMember: IsFamilyMember ? FamilyMember_ID : null,
       Medicines,
       Notes

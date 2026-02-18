@@ -42,4 +42,62 @@ diseaseApp.get("/employee/:employeeId", async (req, res) => {
   }
 });
 
+
+
+diseaseApp.post("/diseases", async (req, res) => {
+  try {
+    const {
+      Institute_ID,
+      Employee_ID,
+      IsFamilyMember,
+      FamilyMember_ID,
+      Disease_Name,
+      Category,
+      Severity_Level,
+      Notes
+    } = req.body;
+
+    // 1️⃣ Create Disease Document
+    const newDisease = await Disease.create({
+      Institute_ID,
+      Employee_ID,
+      IsFamilyMember,
+      FamilyMember_ID: IsFamilyMember ? FamilyMember_ID : null,
+      Disease_Name,
+      Category,
+      Severity_Level,
+      Notes
+    });
+
+    // 2️⃣ Push into Employee Medical_History
+    await Employee.findByIdAndUpdate(
+      Employee_ID,
+      {
+        $push: {
+          Medical_History: {
+            Date: new Date(),
+            Diseases: [newDisease._id],
+            Diagnosis: Disease_Name,
+            Medicines: [],
+            Notes: Notes || ""
+          }
+        }
+      }
+    );
+
+    res.status(201).json({
+      message: "Disease added and linked to medical history",
+      disease: newDisease
+    });
+
+  } catch (err) {
+    console.error("Disease creation error:", err);
+    res.status(500).json({
+      message: "Failed to add disease",
+      error: err.message
+    });
+  }
+});
+
+
 module.exports = diseaseApp;

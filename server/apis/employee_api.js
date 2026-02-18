@@ -360,6 +360,7 @@ employeeApp.get("/health-report", expressAsyncHandler(async (req, res) => {
         .select("Tests FamilyMember Timestamp Diagnosis_Notes")
         .sort({ Timestamp: -1 });
 
+        console.log("Health report generated for employee:", employee.Name);
       /* =====================================================
          RESPONSE OBJECT
       ===================================================== */
