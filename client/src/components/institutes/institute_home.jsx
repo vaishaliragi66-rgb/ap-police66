@@ -159,6 +159,35 @@ const Institute_home = () => {
   { icon: <FaBrain />, label: "AI Insights", path: "/institutes/ai-insights" }
 ];
 
+const QuickCard = ({ icon, title, desc, onClick }) => {
+  return (
+    <div
+      className="card h-100 text-center border-0 shadow-sm"
+      style={{
+        borderRadius: "20px",
+        cursor: "pointer",
+        transition: "all 0.3s ease"
+      }}
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-6px)";
+        e.currentTarget.style.boxShadow = "0 15px 30px rgba(0,0,0,0.15)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0px)";
+        e.currentTarget.style.boxShadow = "";
+      }}
+    >
+      <div className="card-body p-5">
+        {icon}
+        <h5 className="fw-semibold mt-4">{title}</h5>
+        <p className="text-muted mb-0">{desc}</p>
+      </div>
+    </div>
+  );
+};
+
+
 return (
   <div
   className="min-vh-100"
@@ -270,154 +299,69 @@ return (
         <div
           className="row g-4"
           style={{
-            maxWidth: "900px",
+            maxWidth: "1100px",
             width: "100%"
           }}
         >
 
           {/* DOCTOR PRESCRIPTION */}
-          <div className="col-md-6">
-            <div
-              className="card h-100 text-center border-0 shadow-sm"
-              style={{
-                borderRadius: "20px",
-                cursor: "pointer",
-                transition: "all 0.3s ease"
-              }}
+          <div className="col-lg-4 col-md-6">
+            <QuickCard
+              icon={<FaHistory size={35} style={{ color: "#3B6FB6" }} />}
+              title="Doctor Prescription"
+              desc="View & manage doctor prescriptions"
               onClick={() => navigate("/institutes/doctor-prescription")}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-5px)";
-                e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0px)";
-                e.currentTarget.style.boxShadow = "";
-              }}
-            >
-              <div className="card-body p-5">
-                <FaHistory size={35} style={{ color: "#3B6FB6" }} />
-                <h5 className="fw-semibold mt-4">Doctor Prescription</h5>
-                <p className="text-muted mb-0">
-                  View & manage doctor prescriptions
-                </p>
-              </div>
-            </div>
+            />
           </div>
 
           {/* PHARMACY */}
-          <div className="col-md-6">
-            <div
-              className="card h-100 text-center border-0 shadow-sm"
-              style={{
-                borderRadius: "20px",
-                cursor: "pointer",
-                transition: "all 0.3s ease"
-              }}
+          <div className="col-lg-4 col-md-6">
+            <QuickCard
+              icon={<FaPills size={35} style={{ color: "#3B6FB6" }} />}
+              title="Pharmacy"
+              desc="Issue medicines to employees"
               onClick={() => navigate("/institutions/prescriptions")}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-5px)";
-                e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0px)";
-                e.currentTarget.style.boxShadow = "";
-              }}
-            >
-              <div className="card-body p-5">
-                <FaPills size={35} style={{ color: "#3B6FB6" }} />
-                <h5 className="fw-semibold mt-4">Pharmacy</h5>
-                <p className="text-muted mb-0">
-                  Issue medicines to employees
-                </p>
-              </div>
-            </div>
+            />
           </div>
 
           {/* DIAGNOSIS */}
-          <div className="col-md-6">
-            <div
-              className="card h-100 text-center border-0 shadow-sm"
-              style={{
-                borderRadius: "20px",
-                cursor: "pointer",
-                transition: "all 0.3s ease"
-              }}
+          <div className="col-lg-4 col-md-6">
+            <QuickCard
+              icon={<FaClipboardList size={35} style={{ color: "#3B6FB6" }} />}
+              title="Diagnosis"
+              desc="Enter & view diagnoses"
               onClick={() => navigate("/institutions/diagnosis-entry")}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-5px)";
-                e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0px)";
-                e.currentTarget.style.boxShadow = "";
-              }}
-            >
-              <div className="card-body p-5">
-                <FaClipboardList size={35} style={{ color: "#3B6FB6" }} />
-                <h5 className="fw-semibold mt-4">Diagnosis</h5>
-                <p className="text-muted mb-0">
-                  Enter & view diagnoses
-                </p>
-              </div>
-            </div>
+            />
           </div>
-          {/* X-RAY */}
-<div className="col-md-6">
-  <div
-    className="card h-100 text-center border-0 shadow-sm"
-    style={{
-      borderRadius: "20px",
-      cursor: "pointer",
-      transition: "all 0.3s ease"
-    }}
-    onClick={() => navigate("/institutions/xray-entry")}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = "translateY(-5px)";
-      e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = "translateY(0px)";
-      e.currentTarget.style.boxShadow = "";
-    }}
-  >
-    <div className="card-body p-5">
-      <FaVials size={35} style={{ color: "#3B6FB6" }} />
-      <h5 className="fw-semibold mt-4">X-Ray</h5>
-      <p className="text-muted mb-0">
-        Record and view X-ray details
-      </p>
-    </div>
-  </div>
-</div>
 
+          {/* X-RAY */}
+          <div className="col-lg-4 col-md-6">
+            <QuickCard
+              icon={<FaVials size={35} style={{ color: "#3B6FB6" }} />}
+              title="X-Ray"
+              desc="Record and view X-ray details"
+              onClick={() => navigate("/institutions/xray-entry")}
+            />
+          </div>
+
+          {/* HEALTH SUMMARY (NEW CARD) */}
+          <div className="col-lg-4 col-md-6">
+            <QuickCard
+              icon={<FaChartLine size={35} style={{ color: "#3B6FB6" }} />}
+              title="Health Summary"
+              desc="Daily & Monthly health analytics"
+              onClick={() => navigate("/institutes/health-summary")}
+            />
+          </div>
 
           {/* OTHERS */}
-          <div className="col-md-6">
-            <div
-              className="card h-100 text-center border-0 shadow-sm"
-              style={{
-                borderRadius: "20px",
-                cursor: "pointer",
-                transition: "all 0.3s ease"
-              }}
+          <div className="col-lg-4 col-md-6">
+            <QuickCard
+              icon={<FaFileMedical size={35} style={{ color: "#3B6FB6" }} />}
+              title="Others"
+              desc="Ledger, Indent, Stores, AI Insights"
               onClick={() => navigate("/institutes/ledger")}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-5px)";
-                e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0px)";
-                e.currentTarget.style.boxShadow = "";
-              }}
-            >
-              <div className="card-body p-5">
-                <FaFileMedical size={35} style={{ color: "#3B6FB6" }} />
-                <h5 className="fw-semibold mt-4">Others</h5>
-                <p className="text-muted mb-0">
-                  Ledger, Indent, Stores, AI Insights
-                </p>
-              </div>
-            </div>
+            />
           </div>
 
         </div>

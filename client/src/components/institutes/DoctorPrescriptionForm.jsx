@@ -91,8 +91,10 @@ const [xrayData, setXrayData] = useState({
     try {
       // Fetch Diagnosis Reports
       const reportRes = await axios.get(
-        `http://localhost:${BACKEND_PORT}/employee-api/health-report/${encodeURIComponent(selectedEmployee.ABS_NO)}`
-      );
+  `http://localhost:${BACKEND_PORT}/employee-api/health-report`,
+  { params: { absNo: selectedEmployee.ABS_NO } }
+);
+
   
       // 🔥 Fetch ALL Diseases separately
       const diseaseRes = await axios.get(
