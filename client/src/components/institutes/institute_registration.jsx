@@ -274,21 +274,23 @@ const InstituteRegister = () => {
         )}
   
         {/* Login Link */}
-        <div className="text-center mt-3">
-          <p style={{ fontSize: "14px", color: "#6B7280" }}>
-            Already registered?{" "}
-            <Link
-              to="/institutes/login"
-              style={{
-                color: "#4A70A9",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Login here
-            </Link>
-          </p>
-        </div>
+{/* Login Redirect */}
+<div className="text-center mt-3">
+  <p style={{ fontSize: "14px", color: "#6B7280" }}>
+    Already have an account?{" "}
+    <Link
+      to="/institutes/login"
+      style={{
+        color: "#4A70A9",
+        fontWeight: 600,
+        textDecoration: "none",
+      }}
+    >
+      Login here
+    </Link>
+  </p>
+</div>
+
       </div>
     </div>
   );

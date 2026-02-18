@@ -19,7 +19,7 @@ const employeeApp = express.Router();
 const uploadDir = path.join(__dirname, '..', 'uploads', 'profile-pics');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
-  console.log("Created upload directory:", uploadDir);
+  
 }
 
 const storage = multer.diskStorage({
@@ -56,11 +56,9 @@ employeeApp.post(
   upload.single("Photo"), // Changed from Profile_Pic to Photo
   expressAsyncHandler(async (req, res) => {
     try {
-      console.log("Registration request received");
       
       // Parse the form data
       const data = req.body;
-      console.log("Form data received:", data);
 
       // Validate required fields
       const requiredFields = ["ABS_NO", "Name", "Email", "Password","Gender"];
@@ -101,7 +99,6 @@ employeeApp.post(
       if (req.file) {
         // Store relative path
         employeeData.Photo = `/uploads/profile-pics/${req.file.filename}`;
-        console.log("Profile photo saved:", employeeData.Photo);
       }
 
       // Check for duplicate email
@@ -276,11 +273,9 @@ employeeApp.get("/all", async (req, res) => {
 
 /* ================= EMPLOYEE + FAMILY HEALTH REPORT ================= */
 
-employeeApp.get(
-  "/health-report/:absNo",
-  expressAsyncHandler(async (req, res) => {
+employeeApp.get("/health-report", expressAsyncHandler(async (req, res) => {
     try {
-      const { absNo } = req.params;
+      const absNo = req.query.absNo;
 
       if (!absNo || absNo.trim() === "") {
         return res.status(400).json({
@@ -289,10 +284,9 @@ employeeApp.get(
       }
 
       // 🔹 Fetch Employee
-      const employee = await Employee.findOne({ ABS_NO: absNo.trim() })
-      .select(
-        "ABS_NO Name Email Photo Gender DOB Height Weight Blood_Group"
-      );
+ const employee = await Employee.findOne({ ABS_NO: absNo.trim() })
+.select("ABS_NO Name Email Photo Gender DOB Height Weight Blood_Group Medical_History");
+
 
 
       if (!employee) {

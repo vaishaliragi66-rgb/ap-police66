@@ -241,7 +241,7 @@ const AdminLogin = () => {
             <p className="text-muted small mb-0">
               Need admin access?{" "}
               <Link
-                to="/admin-register"
+                to="/admin/register"
                 className="fw-semibold text-decoration-none"
                 style={{ color: "#4A70A9" }}
               >
@@ -255,8 +255,8 @@ const AdminLogin = () => {
               Are you an employee?{" "}
               <Link
                 to="/employee-login"
-                className="text-decoration-none"
-                style={{ color: "#6B7280" }}
+                className="fw-semibold text-decoration-none"
+                style={{ color: "#4A70A9" }}
               >
                 Employee Login
               </Link>

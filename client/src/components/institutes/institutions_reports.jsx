@@ -57,9 +57,10 @@ const InstituteReports = () => {
   const loadHealthReport = async (absNo) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/employee-api/health-report/${absNo}`
-      );
-      console.log(res.data);
+  `http://localhost:${BACKEND_PORT}/employee-api/health-report`,
+  { params: { absNo } }
+);
+
       setReport(res.data);
       setSearchTerm(absNo);     // update textbox to selected ABS_NO
       setFilteredEmployees([]); // close dropdown
@@ -250,6 +251,54 @@ const InstituteReports = () => {
                 No employee diagnosis records.
               </p>
             )}
+
+{/* FULL MEDICAL HISTORY */}
+<h6 style={{ fontWeight: 600, marginTop: 24 }}>
+  📜 Full Medical History
+</h6>
+
+{report.employee.Medical_History?.length ? (
+  <div className="table-responsive">
+    <table className="table table-bordered align-middle">
+      <thead style={{ background: "#f3f4f6" }}>
+        <tr>
+          <th>Date</th>
+          <th>Diseases</th>
+          <th>Diagnosis</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {report.employee.Medical_History.map((h, i) => (
+          <tr key={i}>
+            <td>
+              {h.Date
+                ? new Date(h.Date).toLocaleDateString()
+                : "—"}
+            </td>
+
+            <td>
+              {h.Diseases?.length
+                ? h.Diseases.map((d, idx) => (
+                    <div key={idx}>{d}</div>
+                  ))
+                : "—"}
+            </td>
+
+            <td>{h.Diagnosis || "—"}</td>
+
+            <td>{h.Notes || "—"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+) : (
+  <p style={{ color: "#6b7280" }}>
+    No medical history records.
+  </p>
+)}
+
   
             {/* FAMILY */}
             <h5

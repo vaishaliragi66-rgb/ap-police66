@@ -56,19 +56,19 @@ function Home_main_page() {
               title: "Institute Portal",
               desc: "Manage hospitals, clinics, or health institute registrations.",
               icon: <FaUniversity />,
-              link: "/institutes/register",
+              link: "/institutes/login",
             },
             {
               title: "Employee Portal",
               desc: "Register and manage police medical department employees.",
               icon: <FaUserShield />,
-              link: "/employee-register",
+              link: "/employee-login",
             },
             {
               title: "Admin Portal",
               desc: "Manage system-wide configurations and user roles.",
               icon: <FaUserCog />,
-              link: "/admin/register",
+              link: "/admin/login",
             },
           ].map((card, i) => (
             <Link
