@@ -2,10 +2,11 @@ const express = require("express");
 const router = express.Router();
 const MedicalAction = require("../models/medical_action");
 const Diagnosis = require("../models/diagnostics_record");
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 
 // CREATE MEDICAL ACTION (Doctor / Pharmacy / Diagnosis)
-router.post("/", async (req, res) => {
+router.post("/",verifyToken,
+  allowInstituteRoles("doctor"), async (req, res) => {
   try {
     const {
       employee_id,

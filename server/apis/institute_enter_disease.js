@@ -4,6 +4,7 @@ const diseaseApp = express.Router();
 const Disease = require("../models/disease");
 const FamilyMember = require("../models/family_member");
 const Employee = require("../models/employee");
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 
 // ➕ Add a new disease record
 diseaseApp.post("/diseases", async (req, res) => {

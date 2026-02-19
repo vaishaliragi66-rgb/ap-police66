@@ -2,13 +2,16 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaUniversity } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const InstituteLogin = () => {
   const [formData, setFormData] = useState({
     Email_ID: "",
     password: "",
+    role: "institute",
   });
+
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -19,195 +22,202 @@ const InstituteLogin = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setMessage("");
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage("");
+    setLoading(true);
 
-  try {
-    const res = await axios.post(
-      `http://localhost:${BACKEND_PORT_NO}/institute-api/institute/login`,
-      formData
-    );
+    try {
+      let endpoint = "";
 
-    // ✅ ADD THIS DEBUG LOG
-    console.log("Login response:", res.data);
-    console.log("Payload:", res.data.payload);
-    console.log("Full response:", res);
+      if (formData.role === "institute") {
+        endpoint = `/institute-auth/login`;
+      } else {
+        endpoint = `/institute-auth/role-login`;
+      }
 
-    // Store the token and institute data
-    if (res.data.token) {
-      localStorage.setItem('instituteToken', res.data.token);
+      const res = await axios.post(
+        `http://localhost:${BACKEND_PORT_NO}${endpoint}`,
+        formData
+      );
+
+      /* ================= STORE TOKEN ================= */
+      if (res.data.token) {
+        localStorage.setItem("instituteToken", res.data.token);
+        localStorage.setItem("role", formData.role);
+        axios.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${res.data.token}`;
+      }
+
+      /* ================= STORE INSTITUTE DATA ================= */
+      // Backend must return instituteId & instituteName in response
+      if (res.data.instituteId) {
+        const instituteData = {
+          _id: res.data.instituteId,
+          Institute_Name: res.data.instituteName || "Institute"
+        };
+
+        localStorage.setItem("institute", JSON.stringify(instituteData));
+        localStorage.setItem("instituteId", res.data.instituteId);
+      }
+
+      setMessage("✅ Login successful");
+
+      setTimeout(() => {
+        navigate("/institutes/home");
+      }, 1000);
+
+    } catch (err) {
+      setMessage(
+        "❌ " + (err.response?.data?.message || "Login failed")
+      );
+    } finally {
+      setLoading(false);
     }
-    
-    if (res.data.payload) {
-      localStorage.setItem("institute", JSON.stringify(res.data.payload));
-      localStorage.setItem("instituteId", res.data.payload._id);
-      
-      // ✅ ADD THESE TO VERIFY
-      console.log("Saved to localStorage:", {
-        institute: JSON.parse(localStorage.getItem("institute")),
-        instituteId: localStorage.getItem("instituteId")
-      });
-    }
+  };
 
-    setMessage("✅ " + (res.data.message || "Login successful"));
-
-    // Set default Authorization header for future requests
-    if (res.data.token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
-    }
-
-    setTimeout(() => {
-      navigate("/institutes/home");
-    }, 1500);
-  } catch (err) {
-    if (err.response) {
-      setMessage("❌ " + (err.response.data.message || "Login failed"));
-    } else {
-      setMessage("❌ Error connecting to server");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-  
-
-return (
-  <div
-    className="d-flex flex-column align-items-center justify-content-center min-vh-100"
-    style={{
-      backgroundColor: "#F8FAFC",
-      fontFamily: "'Inter', sans-serif",
-      padding: "24px",
-    }}
-  >
-    {/* Header */}
-    <div className="text-center mb-4">
-      <div
-        className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
-        style={{
-          width: "64px",
-          height: "64px",
-          backgroundColor: "#EAF2FF",
-          color: "#4A70A9",
-        }}
-      >
-        <FaUniversity size={30} />
-      </div>
-
-      <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
-        Institute Login
-      </h3>
-      <p style={{ color: "#6B7280", fontSize: "14px" }}>
-        Access your institute dashboard
-      </p>
-    </div>
-
-    {/* Login Card */}
+  return (
     <div
+      className="d-flex flex-column align-items-center justify-content-center min-vh-100"
       style={{
-        width: "100%",
-        maxWidth: "420px",
-        backgroundColor: "#FFFFFF",
-        borderRadius: "16px",
-        padding: "32px",
-        border: "1px solid #D6E0F0",
-        boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+        backgroundColor: "#F8FAFC",
+        fontFamily: "'Inter', sans-serif",
+        padding: "24px",
       }}
     >
-      <form onSubmit={handleSubmit}>
-        {/* Email */}
-        <div className="mb-3">
-          <label
-            className="form-label"
-            style={{ fontSize: "13px", color: "#6B7280" }}
-          >
-            Email Address
-          </label>
-          <input
-            type="email"
-            className="form-control"
-            name="Email_ID"
-            placeholder="Enter your email"
-            value={formData.Email_ID}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        {/* Password */}
-        <div className="mb-4">
-          <label
-            className="form-label"
-            style={{ fontSize: "13px", color: "#6B7280" }}
-          >
-            Password
-          </label>
-          <input
-            type="password"
-            className="form-control"
-            name="password"
-            placeholder="Enter your password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={loading}
+      <div className="text-center mb-4">
+        <div
+          className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
           style={{
-            width: "100%",
-            backgroundColor: "#4A70A9",
-            color: "#FFFFFF",
-            border: "none",
-            borderRadius: "999px",
-            padding: "10px",
-            fontSize: "14px",
-            fontWeight: 500,
+            width: "64px",
+            height: "64px",
+            backgroundColor: "#EAF2FF",
+            color: "#4A70A9",
           }}
         >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+          <FaUniversity size={30} />
+        </div>
 
-      {/* Register Redirect */}
-      <div className="text-center mt-3">
-        <p style={{ fontSize: "14px", color: "#6B7280" }}>
-          Don’t have an account?{" "}
-          <span
-            onClick={() => navigate("/institutes/register")}
-            style={{
-              color: "#4A70A9",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Register here
-          </span>
+        <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
+          Institute Login
+        </h3>
+        <p style={{ color: "#6B7280", fontSize: "14px" }}>
+          Access your institute dashboard
         </p>
       </div>
 
-      {/* Message */}
-      {message && (
-        <div
-          className={`alert mt-3 text-center ${
-            message.startsWith("✅")
-              ? "alert-success"
-              : "alert-danger"
-          }`}
-          style={{ fontSize: "14px" }}
-        >
-          {message}
-        </div>
-      )}
-    </div>
-  </div>
-);
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "420px",
+          backgroundColor: "#FFFFFF",
+          borderRadius: "16px",
+          padding: "32px",
+          border: "1px solid #D6E0F0",
+          boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+        }}
+      >
+        <form onSubmit={handleSubmit}>
 
+          {/* ROLE */}
+          <div className="mb-3">
+            <label className="form-label" style={{ fontSize: "13px" }}>
+              Login As
+            </label>
+            <select
+              name="role"
+              className="form-control"
+              value={formData.role}
+              onChange={handleChange}
+              required
+            >
+              <option value="institute">Institute</option>
+              <option value="doctor">Doctor</option>
+              <option value="pharmacist">Pharmacist</option>
+              <option value="diagnosis">Diagnosis</option>
+              <option value="xray">Xray</option>
+              <option value="frontdesk">Front Desk</option>
+            </select>
+          </div>
+
+          {/* EMAIL */}
+          <div className="mb-3">
+            <label className="form-label" style={{ fontSize: "13px" }}>
+              Email Address
+            </label>
+            <input
+              type="email"
+              className="form-control"
+              name="Email_ID"
+              value={formData.Email_ID}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* PASSWORD */}
+          <div className="mb-4">
+            <label className="form-label" style={{ fontSize: "13px" }}>
+              Password
+            </label>
+            <input
+              type="password"
+              className="form-control"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              backgroundColor: "#4A70A9",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: "999px",
+              padding: "10px",
+              fontSize: "14px",
+              fontWeight: 500,
+            }}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+
+        {message && (
+          <div
+            className={`alert mt-3 text-center ${
+              message.startsWith("✅")
+                ? "alert-success"
+                : "alert-danger"
+            }`}
+          >
+            {message}
+          </div>
+        )}
+      </div>
+      <div className="text-center mt-3">
+  <p style={{ fontSize: "14px", color: "#6B7280" }}>
+    Don't have an account?{" "}
+    <Link
+      to="/institutes/register"
+      style={{
+        color: "#4A70A9",
+        fontWeight: 600,
+        textDecoration: "none",
+      }}
+    >
+      Register here
+    </Link>
+  </p>
+</div>
+    </div>
+  );
 };
 
 export default InstituteLogin;

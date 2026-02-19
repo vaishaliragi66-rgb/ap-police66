@@ -43,6 +43,7 @@ import DoctorLayout from "./components/institutes/DoctorLayout";
 import OthersLayout from "./components/institutes/OthersLayout";
 import XrayEntryForm from "./components/institutes/XrayEntryForm";
 import HealthSummary from "./components/institutes/HealthSummary";
+import AddPasswords from "./components/institutes/AddPasswords ";
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -143,6 +144,11 @@ function App() {
     {path:"/institutes/visit-register",
       element:<VisitRegister/>
     },
+    {
+          path: "/institutes/add-password",
+          element: <AddPasswords/>
+
+        },
   
     {
       path:"/employee-register",

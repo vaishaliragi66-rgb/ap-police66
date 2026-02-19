@@ -2,7 +2,7 @@ const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
 const FamilyMember = require("../models/family_member");
 const Employee = require("../models/employee");
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const FamilyApp = express.Router();
 
 

@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const medicineApp = express.Router();
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Medicine = require("../models/master_medicine");
 
 //* ================= GET SUB-STORE MEDICINES FOR ONE INSTITUTE ================= */

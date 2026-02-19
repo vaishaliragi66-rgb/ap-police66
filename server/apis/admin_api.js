@@ -2,7 +2,7 @@ const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Admin = require("../models/admin");
 const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");

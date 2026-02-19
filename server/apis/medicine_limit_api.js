@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const MedicineLimit = require("../models/medicine_limits");
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 // validate before saving prescription
 router.post("/validate-medicine-quantity", async (req, res) => {
   try {
