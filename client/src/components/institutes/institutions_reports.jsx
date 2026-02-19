@@ -253,7 +253,7 @@ const InstituteReports = () => {
             )}
 
 {/* FULL MEDICAL HISTORY */}
-<h6 style={{ fontWeight: 600, marginTop: 24 }}>
+{/* <h6 style={{ fontWeight: 600, marginTop: 24 }}>
   📜 Full Medical History
 </h6>
 
@@ -297,7 +297,7 @@ const InstituteReports = () => {
   <p style={{ color: "#6b7280" }}>
     No medical history records.
   </p>
-)}
+)} */}
 
   
             {/* FAMILY */}

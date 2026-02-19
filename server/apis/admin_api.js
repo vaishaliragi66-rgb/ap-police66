@@ -568,10 +568,27 @@ adminApp.get("/analytics/all", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 adminApp.get("/analytics/institutes", async (req, res) => {
   try {
     const institutes = await Institute.aggregate([
-      /* MAIN STORE MEDICINES */
+
+      /* ================= VISITS LOOKUP ================= */
+      {
+        $lookup: {
+          from: "dailyvisits",
+          localField: "_id",
+          foreignField: "Institute_ID",
+          as: "visits"
+        }
+      },
+      {
+        $addFields: {
+          Total_Visits: { $size: "$visits" }
+        }
+      },
+
+      /* ================= MEDICINE LOOKUPS ================= */
       {
         $lookup: {
           from: "mainstoremedicines",
@@ -580,8 +597,6 @@ adminApp.get("/analytics/institutes", async (req, res) => {
           as: "mainStore"
         }
       },
-
-      /* SUB STORE MEDICINES */
       {
         $lookup: {
           from: "medicines",
@@ -590,61 +605,145 @@ adminApp.get("/analytics/institutes", async (req, res) => {
           as: "subStore"
         }
       },
-
       {
         $addFields: {
-          MainStore_Count: { $size: "$mainStore" },
-          SubStore_Count: { $size: "$subStore" },
+          allMedicines: {
+            $concatArrays: ["$mainStore", "$subStore"]
+          }
+        }
+      },
 
-          MainStore_TotalQty: {
-            $sum: { $ifNull: ["$mainStore.Quantity", []] }
-          },
-          SubStore_TotalQty: {
-            $sum: { $ifNull: ["$subStore.Quantity", []] }
-          },
+      /* ================= GROUP MEDICINES ================= */
+      {
+        $addFields: {
+          medicines: {
+            $map: {
+              input: {
+                $setUnion: [
+                  {
+                    $map: {
+                      input: "$allMedicines",
+                      as: "m",
+                      in: "$$m.Medicine_Name"
+                    }
+                  }
+                ]
+              },
+              as: "medName",
+              in: {
+                Medicine_Name: "$$medName",
 
-          LowStock_Count: {
-            $size: {
-              $filter: {
-                input: "$subStore",
-                as: "m",
-                cond: { $lte: ["$$m.Quantity", "$$m.Threshold_Qty"] }
+                Total_Qty: {
+                  $sum: {
+                    $map: {
+                      input: {
+                        $filter: {
+                          input: "$allMedicines",
+                          as: "m",
+                          cond: { $eq: ["$$m.Medicine_Name", "$$medName"] }
+                        }
+                      },
+                      as: "m",
+                      in: "$$m.Quantity"
+                    }
+                  }
+                },
+
+                Threshold: {
+                  $max: {
+                    $map: {
+                      input: {
+                        $filter: {
+                          input: "$allMedicines",
+                          as: "m",
+                          cond: { $eq: ["$$m.Medicine_Name", "$$medName"] }
+                        }
+                      },
+                      as: "m",
+                      in: "$$m.Threshold_Qty"
+                    }
+                  }
+                }
               }
             }
           }
         }
       },
 
+      /* ================= LOW STOCK CHECK ================= */
+      {
+        $addFields: {
+          medicines: {
+            $map: {
+              input: "$medicines",
+              as: "m",
+              in: {
+                Medicine_Name: "$$m.Medicine_Name",
+                Total_Qty: "$$m.Total_Qty",
+                isLowStock: {
+                  $lte: ["$$m.Total_Qty", "$$m.Threshold"]
+                }
+              }
+            }
+          }
+        }
+      },
+
+      /* ================= TOTALS ================= */
+      {
+        $addFields: {
+          Total_Medicine_Types: { $size: "$medicines" },
+
+          Total_Quantity: {
+            $sum: {
+              $map: {
+                input: "$medicines",
+                as: "m",
+                in: "$$m.Total_Qty"
+              }
+            }
+          },
+
+          LowStock_Count: {
+            $size: {
+              $filter: {
+                input: "$medicines",
+                as: "m",
+                cond: { $eq: ["$$m.isLowStock", true] }
+              }
+            }
+          }
+        }
+      },
+
+      /* ================= FINAL OUTPUT ================= */
       {
         $project: {
           Institute_ID: 1,
           Institute_Name: 1,
           Email_ID: 1,
-          Contact_No: 1,
           "Address.District": 1,
-          "Address.State": 1,
 
-          Employees_Count: { $size: "$Employees" },
-          Family_Count: { $size: "$Family_member" },
+          Total_Visits: 1,
 
-          MainStore_Count: 1,
-          SubStore_Count: 1,
-          MainStore_TotalQty: 1,
-          SubStore_TotalQty: 1,
+          Total_Medicine_Types: 1,
+          Total_Quantity: 1,
           LowStock_Count: 1,
-
-          mainStore: 1,
-          subStore: 1
+          medicines: 1
         }
       }
+
     ]);
 
     res.json(institutes);
+
   } catch (err) {
     console.error("Institute analytics error:", err);
     res.status(500).json({ message: err.message });
   }
 });
+
+
 const nodemailer = require("nodemailer");
 
 adminApp.post("/send-mail", async (req, res) => {
@@ -677,6 +776,8 @@ adminApp.post("/send-mail", async (req, res) => {
     res.status(500).json({ message: "Mail sending failed" });
   }
 });
+
+
 
 
 

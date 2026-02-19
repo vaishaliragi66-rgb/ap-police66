@@ -324,23 +324,24 @@ useEffect(() => {
     // ✅ Save Disease (if selected)
     if (diseaseData.Disease_Name?.trim()) {
       await axios.post(
-        `http://localhost:${BACKEND_PORT}/disease-api/diseases`,
-        {
-          Institute_ID: formData.Institute_ID,
-          Employee_ID: formData.Employee_ID,
-          IsFamilyMember: formData.IsFamilyMember,
-          FamilyMember_ID: formData.IsFamilyMember
-            ? formData.FamilyMember_ID
-            : null,
-          Disease_Name: diseaseData.Disease_Name,
-          Category: diseaseData.Category,
-          Description: "",
-          Symptoms: [],
-          Common_Medicines: [],
-          Severity_Level: diseaseData.Severity_Level,
-          Notes: formData.Notes   // 🔥 SAME NOTES FIELD
-        }
-      );
+  `http://localhost:${BACKEND_PORT}/disease-api/diseases`,
+  {
+    Institute_ID: formData.Institute_ID,
+    Employee_ID: formData.Employee_ID,
+    IsFamilyMember: formData.IsFamilyMember,
+    FamilyMember_ID: formData.IsFamilyMember
+      ? formData.FamilyMember_ID
+      : null,
+    Disease_Name: diseaseData.Disease_Name,
+    Category: diseaseData.Category,
+    Description: "",
+    Symptoms: [],
+    Common_Medicines: [],
+    Severity_Level: diseaseData.Severity_Level,
+    Notes: formData.Notes
+  }
+);
+
     }
 
 

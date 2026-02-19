@@ -19,7 +19,7 @@ diseaseApp.get("/employee/:employeeId", async (req, res) => {
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
     const diseases = await Disease.find({
-      Employee_ID: employeeId,
+      Employee_ID: new mongoose.Types.ObjectId(employeeId),
       $or: [
         { Category: "Non-Communicable" },
         {
@@ -33,6 +33,7 @@ diseaseApp.get("/employee/:employeeId", async (req, res) => {
       .sort({ createdAt: -1 });
 
     res.status(200).json(diseases);
+
   } catch (err) {
     console.error("Disease fetch error:", err);
     res.status(500).json({
@@ -57,21 +58,25 @@ diseaseApp.post("/diseases", async (req, res) => {
       Notes
     } = req.body;
 
-    // 1️⃣ Create Disease Document
+    if (!mongoose.Types.ObjectId.isValid(Employee_ID)) {
+      return res.status(400).json({ message: "Invalid Employee ID" });
+    }
+
     const newDisease = await Disease.create({
-      Institute_ID,
-      Employee_ID,
+      Institute_ID: new mongoose.Types.ObjectId(Institute_ID),
+      Employee_ID: new mongoose.Types.ObjectId(Employee_ID),
       IsFamilyMember,
-      FamilyMember_ID: IsFamilyMember ? FamilyMember_ID : null,
+      FamilyMember_ID: IsFamilyMember && FamilyMember_ID
+        ? new mongoose.Types.ObjectId(FamilyMember_ID)
+        : null,
       Disease_Name,
       Category,
       Severity_Level,
       Notes
     });
 
-    // 2️⃣ Push into Employee Medical_History
     await Employee.findByIdAndUpdate(
-      Employee_ID,
+      new mongoose.Types.ObjectId(Employee_ID),
       {
         $push: {
           Medical_History: {
@@ -98,6 +103,7 @@ diseaseApp.post("/diseases", async (req, res) => {
     });
   }
 });
+
 
 
 module.exports = diseaseApp;

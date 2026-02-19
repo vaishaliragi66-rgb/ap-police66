@@ -6,6 +6,7 @@ import autoTable from "jspdf-autotable";
 
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 
+
 /* ===============================
    Utility: Abnormal Test Checker
 =================================*/
@@ -128,7 +129,8 @@ export default function InstituteAnalytics() {
   const [abnormalOnly, setAbnormalOnly] = useState(false);
   const [ageMin, setAgeMin] = useState("");
   const [ageMax, setAgeMax] = useState("");
-
+const [currentPage, setCurrentPage] = useState(1);
+const rowsPerPage = 10;
   useEffect(() => {
     const institute = JSON.parse(localStorage.getItem("institute"));
     if (!institute) {
@@ -150,33 +152,30 @@ export default function InstituteAnalytics() {
       });
   }, []);
 
-  /* -------- Filtering Logic -------- */
-  const filteredRows = rows.filter(r => {
-    const match = (v, f) => !f || (v && v.toString().toLowerCase().includes(f.toLowerCase()));
-    
-    const ageOk = 
-      (!ageMin || (r.Age !== null && r.Age >= Number(ageMin))) && 
-      (!ageMax || (r.Age !== null && r.Age <= Number(ageMax)));
-    
-    const diseasesText = (r.Diseases || []).join(" ");
-    const medsText = (r.Medicines || []).map(m => m.Medicine_Name).join(" ");
-    const testsText = (r.Tests || []).map(t => t.Test_Name).join(" ");
-    
-    const hasAbnormal = r.Tests?.some(t => isAbnormal(t.Result_Value, t.Reference_Range));
+  
 
-    return (
-      (!roleFilter || r.Role === roleFilter) &&
-      (!genderFilter || r.Gender === genderFilter) &&
-      (!bloodGroupFilter || r.Blood_Group === bloodGroupFilter) &&
-      match(r.Name, nameFilter) &&
-      match(r.District, districtFilter) &&
-      match(diseasesText, diseaseFilter) &&
-      match(medsText, medicineFilter) &&
-      match(testsText, testFilter) &&
-      ageOk &&
-      (!abnormalOnly || hasAbnormal)
-    );
-  });
+  const filteredRows = rows.filter(r => {
+  const match = (v, f) =>
+    !f || (v && v.toString().toLowerCase().includes(f.toLowerCase()));
+
+  return (
+    (!roleFilter || r.Role === roleFilter) &&
+    (!genderFilter || r.Gender === genderFilter) &&
+    (!bloodGroupFilter || r.Blood_Group === bloodGroupFilter) &&
+    match(r.Name, nameFilter) &&
+    match(r.District, districtFilter)
+  );
+});
+
+
+  /* -------- Filtering Logic -------- */
+const totalPages = Math.ceil(filteredRows.length / rowsPerPage) || 1;
+
+const indexOfLast = currentPage * rowsPerPage;
+const indexOfFirst = indexOfLast - rowsPerPage;
+
+const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
+
 
   if (loading) {
     return (
@@ -409,7 +408,8 @@ export default function InstituteAnalytics() {
                     </td>
                   </tr>
                 )}
-                {filteredRows.map((r, i) => (
+                {currentRows.map((r, i) => (
+
                   <tr key={i}>
                     <td>
                       <span className={`badge ${r.Role === "Employee" ? "bg-primary" : "bg-info"}`}>
@@ -481,6 +481,36 @@ export default function InstituteAnalytics() {
                 ))}
               </tbody>
             </table>
+            <div className="d-flex justify-content-center align-items-center gap-2 py-3">
+  <button
+    className="btn btn-outline-dark btn-sm"
+    disabled={currentPage === 1}
+    onClick={() => setCurrentPage(prev => prev - 1)}
+  >
+    Previous
+  </button>
+
+  {[...Array(totalPages)].map((_, i) => (
+    <button
+      key={i}
+      className={`btn btn-sm ${
+        currentPage === i + 1 ? "btn-dark" : "btn-outline-dark"
+      }`}
+      onClick={() => setCurrentPage(i + 1)}
+    >
+      {i + 1}
+    </button>
+  ))}
+
+  <button
+    className="btn btn-outline-dark btn-sm"
+    disabled={currentPage === totalPages}
+    onClick={() => setCurrentPage(prev => prev + 1)}
+  >
+    Next
+  </button>
+</div>
+
           </div>
         </div>
       </div>

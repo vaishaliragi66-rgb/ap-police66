@@ -127,7 +127,7 @@ const loadEmployeeReports = async () => {
       const reportRes = await axios.get(
   `http://localhost:${BACKEND_PORT}/employee-api/health-report`,
   { params: { absNo: selectedEmployee.ABS_NO } }
-);e
+);
 
     const diseaseRes = await axios.get(
       `http://localhost:${BACKEND_PORT}/disease-api/employee/${selectedEmployee._id}`
