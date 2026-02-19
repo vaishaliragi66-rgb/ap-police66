@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const diseaseApp = express.Router();
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Disease = require("../models/disease");
 
 // =======================================================
@@ -45,7 +45,8 @@ diseaseApp.get("/employee/:employeeId", async (req, res) => {
 
 
 
-diseaseApp.post("/diseases", async (req, res) => {
+diseaseApp.post("/diseases",verifyToken,
+  allowInstituteRoles("doctor"), async (req, res) => {
   try {
     const {
       Institute_ID,

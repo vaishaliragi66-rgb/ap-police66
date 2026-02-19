@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Employee = require("../models/employee");
 const Disease = require("../models/disease");
 const DiagnosisRecord = require("../models/diagnostics_record");

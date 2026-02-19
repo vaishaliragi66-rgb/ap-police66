@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const Groq = require('groq-sdk');
 const { schemaDefinitions } = require('../utils/schemaExtractor');
 const expressAsyncHandler = require("express-async-handler");
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 // Initialize Groq (works with or without API key)
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || undefined

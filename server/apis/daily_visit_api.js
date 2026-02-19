@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const DailyVisit = require("../models/daily_visit");
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 // REGISTER VISIT
-router.post("/register", async (req, res) => {
+router.post("/register",verifyToken,
+  allowInstituteRoles("frontdesk"), async (req, res) => {
   try {
     const {
       Institute_ID,

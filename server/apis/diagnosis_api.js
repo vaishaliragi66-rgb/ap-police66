@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const diagnosisApp = express.Router();
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const DiagnosisTest = require("../models/diagnostics_test");
 const DiagnosisRecord = require("../models/diagnostics_record");
 const Institute = require("../models/master_institute");
@@ -59,7 +59,8 @@ diagnosisApp.post("/tests/add", async (req, res) => {
 });
 
 // ✅ Add a diagnosis record
-diagnosisApp.post("/add", async (req, res) => {
+diagnosisApp.post("/add",verifyToken,
+  allowInstituteRoles("diagnosis"), async (req, res) => {
   try {
     const { Institute_ID, Employee_ID, IsFamilyMember, FamilyMember_ID, Tests, Diagnosis_Notes } = req.body;
 

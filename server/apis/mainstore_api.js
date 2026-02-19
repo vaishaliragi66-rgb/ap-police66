@@ -1,12 +1,13 @@
 const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const mainStoreApp = express.Router();
 const MainStoreMedicine = require("../models/main_store");
 const Institute = require("../models/master_institute");
 const Medicine = require("../models/master_medicine");
 const InstituteLedger = require("../models/InstituteLedger");
+
 mainStoreApp.post(
   "/add",
   expressAsyncHandler(async (req, res) => {
@@ -132,7 +133,8 @@ mainStoreApp.get("/medicine/:id", async (req, res) => {
     res.status(500).json({ message:"Failed", error:err.message });
   }
 });
-mainStoreApp.put("/update/:id", async (req, res) => {
+mainStoreApp.put("/update/:id",verifyToken,
+  allowInstituteRoles("pharmacist"), async (req, res) => {
   try {
     const updates = req.body;
 
@@ -159,7 +161,8 @@ mainStoreApp.put("/update/:id", async (req, res) => {
 });
 
 
-mainStoreApp.post("/transfer/institute", async (req, res) => {
+mainStoreApp.post("/transfer/institute",verifyToken,
+  allowInstituteRoles("pharmacist"), async (req, res) => {
   try {
     const {
       Medicine_ID,
@@ -271,7 +274,8 @@ mainStoreApp.post("/transfer/institute", async (req, res) => {
   }
 });
 
-mainStoreApp.delete("/delete/:id", async (req, res) => {
+mainStoreApp.delete("/delete/:id",verifyToken,
+  allowInstituteRoles("pharmacist"), async (req, res) => {
   try {
     const med = await MainStoreMedicine.findById(req.params.id);
     if (!med) return res.status(404).json({ message:"Not found" });
@@ -285,7 +289,8 @@ mainStoreApp.delete("/delete/:id", async (req, res) => {
   }
 });
 
-mainStoreApp.post("/transfer/substore", async (req, res) => {
+mainStoreApp.post("/transfer/substore", verifyToken,
+  allowInstituteRoles("pharmacist"),async (req, res) => {
   try {
     const { Medicine_ID, Transfer_Qty, Institute_ID } = req.body;
     const qty = Number(Transfer_Qty);

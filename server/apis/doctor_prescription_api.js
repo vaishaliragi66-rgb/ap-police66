@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const DoctorPrescription = require("../models/doctor_prescription");
 const MedicalAction = require("../models/medical_action");
 

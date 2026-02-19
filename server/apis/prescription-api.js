@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const prescriptionApp = express.Router();
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Prescription = require("../models/Prescription");
 const Institute = require("../models/master_institute");
 const Employee = require("../models/employee");
@@ -38,7 +38,8 @@ prescriptionApp.get("/debug-medicines", async (req, res) => {
 // =======================================================
 // ADD PRESCRIPTION (SUBSTORE → PATIENT) - FIXED VERSION
 // =======================================================
-prescriptionApp.post("/add", async (req, res) => {
+prescriptionApp.post("/add",verifyToken,
+  allowInstituteRoles("pharmacist"), async (req, res) => {
   try {
     console.log("📦 PRESCRIPTION PAYLOAD:", JSON.stringify(req.body, null, 2));
 

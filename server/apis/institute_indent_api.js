@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const indentApp = express.Router();
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Institute = require("../models/master_institute");
 const Medicine = require("../models/master_medicine");
 

@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
-
+const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const instituteApp = express.Router();
 const Institute = require('../models/master_institute');
 const Medicine = require("../models/master_medicine");  
@@ -14,25 +14,11 @@ const MainStoreMedicine = require("../models/main_store");
 const DiagnosisRecord = require("../models/diagnostics_record"); 
 const FamilyMember = require("../models/family_member");
 const Disease = require("../models/disease");
-// Middleware to verify JWT token
-const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ message: "Access denied. No token provided." });
-  }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "institutesecret123");
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired token" });
-  }
-};
 
 // GET all institutes
-instituteApp.get("/institutions", async (req, res) => {
+instituteApp.get("/institutions",verifyToken,
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
   try {
     const institutions = await Institute.find();
     res.json(institutions);
@@ -42,7 +28,8 @@ instituteApp.get("/institutions", async (req, res) => {
 });
 
 // GET all institutes except one
-instituteApp.get("/except/:id", async (req, res) => {
+instituteApp.get("/except/:id", verifyToken,
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"),async (req, res) => {
   try {
     const { id } = req.params;
     console.log(id)
@@ -167,80 +154,12 @@ instituteApp.post(
   })
 );
 
-// POST - Login Institute (with JWT token)
-instituteApp.post(
-  '/institute/login',
-  expressAsyncHandler(async (req, res) => {
-    try {
-      const { Email_ID, password } = req.body;
-
-      // Validate fields
-      if (!Email_ID || !password) {
-        return res.status(400).json({ 
-          message: "Email and Password are required" 
-        });
-      }
-
-      // Find institute by email
-      const institute = await Institute.findOne({ 
-        Email_ID: Email_ID.trim().toLowerCase() 
-      });
-
-      if (!institute) {
-        return res.status(401).json({ 
-          message: "Invalid email or password" 
-        });
-      }
-
-      // Compare hashed password
-      const isPasswordValid = await bcrypt.compare(password, institute.password);
-      
-      if (!isPasswordValid) {
-        return res.status(401).json({ 
-          message: "Invalid email or password" 
-        });
-      }
-
-      // Create JWT token
-      const token = jwt.sign(
-        { 
-          id: institute._id,
-          instituteId: institute._id,
-          email: institute.Email_ID,
-          name: institute.Institute_Name,
-          role: "institute"
-        },
-        process.env.JWT_SECRET || "institutesecret123",
-        { expiresIn: "24h" }
-      );
-
-      // Remove password from response
-      const instituteResponse = institute.toObject();
-      delete instituteResponse.password;
-
-      res.status(200).json({
-        message: "Login successful",
-        token: token,
-        payload: {
-          ...instituteResponse,
-          token // Include token in payload for convenience
-        }
-      });
-    } catch (err) {
-      console.error("Institute login error:", err);
-      res.status(500).json({ 
-        message: "Login failed", 
-        error: err.message 
-      });
-    }
-  })
-);
 
 // GET institute profile (protected route)
 instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
   try {
-    // Check if user is authorized to access this profile
-    if (req.user.id !== req.params.id && req.user.role !== "admin") {
+
+    if (req.user.instituteId !== req.params.id && req.user.role !== "admin") {
       return res.status(403).json({ 
         message: "Access denied. Not authorized to view this profile." 
       });
@@ -248,7 +167,7 @@ instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
 
     const institute = await Institute.findById(req.params.id)
       .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty')
-      .select('-password'); // Exclude password from response
+      .select('-password');
 
     if (!institute) {
       return res.status(404).json({ 
@@ -256,9 +175,10 @@ instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
       });
     }
 
-    // Compute inventory summary
     const totalDistinct = institute.Medicine_Inventory.length;
-    const totalQuantity = institute.Medicine_Inventory.reduce((sum, item) => sum + (item.Quantity || 0), 0);
+    const totalQuantity = institute.Medicine_Inventory.reduce(
+      (sum, item) => sum + (item.Quantity || 0), 0
+    );
 
     const lowStock = institute.Medicine_Inventory
       .filter(item => item.Medicine_ID && typeof item.Medicine_ID.Threshold_Qty === 'number')
@@ -270,7 +190,6 @@ instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
         threshold: item.Medicine_ID.Threshold_Qty
       }));
 
-    // Recent orders
     const recentOrders = (institute.Orders || [])
       .slice()
       .sort((a, b) => new Date(b.Order_Date) - new Date(a.Order_Date))
@@ -286,6 +205,7 @@ instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
       },
       recentOrders
     });
+
   } catch (err) {
     console.error('Error in GET /profile/:id', err);
     return res.status(500).json({ 
@@ -294,9 +214,8 @@ instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
     });
   }
 });
-
 // PUT /institute-api/profile/:id (protected route)
-instituteApp.put('/profile/:id', verifyToken, async (req, res) => {
+instituteApp.put('/profile/:id', verifyToken,allowInstituteRoles(), async (req, res) => {
   try {
     // Authorization check
     if (req.user.id !== req.params.id) {
@@ -368,140 +287,8 @@ instituteApp.put('/profile/:id', verifyToken, async (req, res) => {
   }
 });
 
-// GET inventory for ONE institute only
-// instituteApp.get("/inventory/:instituteId", async (req, res) => {
-//   try {
-//     const { instituteId } = req.params;
-
-//     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
-//       return res.status(400).json({ message: "Invalid institute ID" });
-//     }
-
-//     const instituteObjectId = new mongoose.Types.ObjectId(instituteId);
-
-//     const [mainStoreMeds, subStoreMeds] = await Promise.all([
-//       MainStoreMedicine.find({ Institute_ID: instituteObjectId }).lean(),
-//       Medicine.find({ Institute_ID: instituteObjectId }).lean()
-//     ]);
-
-//     const inventoryMap = {};
-
-//     // 🔹 MAIN STORE
-//     for (const m of mainStoreMeds) {
-//       const key = m.Medicine_Code;
-
-//       if (!inventoryMap[key]) {
-//         inventoryMap[key] = {
-//           Medicine_Code: m.Medicine_Code,
-//           Medicine_Name: m.Medicine_Name,
-//           Quantity: 0,
-//           Threshold_Qty: m.Threshold_Qty,
-//           Expiry_Date: m.Expiry_Date
-//         };
-//       }
-
-//       inventoryMap[key].Quantity += m.Quantity;
-//     }
-
-//     // 🔹 SUB STORE
-//     for (const m of subStoreMeds) {
-//       const key = m.Medicine_Code;
-
-//       if (!inventoryMap[key]) {
-//         inventoryMap[key] = {
-//           Medicine_Code: m.Medicine_Code,
-//           Medicine_Name: m.Medicine_Name,
-//           Quantity: 0,
-//           Threshold_Qty: m.Threshold_Qty,
-//           Expiry_Date: m.Expiry_Date
-//         };
-//       }
-
-//       inventoryMap[key].Quantity += m.Quantity;
-//     }
-
-//     const inventory = Object.values(inventoryMap);
-
-//     res.status(200).json(inventory);
-
-//   } catch (err) {
-//     console.error("Institute inventory error:", err);
-//     res.status(500).json({ message: err.message });
-//   }
-// });
-// instituteApp.get("/inventory/:instituteId", async (req, res) => {
-//   try {
-//     const { instituteId } = req.params;
-
-//     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
-//       return res.status(400).json({ message: "Invalid institute ID" });
-//     }
-
-//     const instituteObjectId = new mongoose.Types.ObjectId(instituteId);
-
-//     const [mainStoreMeds, subStoreMeds] = await Promise.all([
-//       MainStoreMedicine.find({ Institute_ID: instituteObjectId }).lean(),
-//       Medicine.find({ Institute_ID: instituteObjectId }).lean()
-//     ]);
-
-//     const inventoryMap = {};
-
-//     // Step 1: Add main store medicines
-//     for (const m of mainStoreMeds) {
-//       inventoryMap[m.Medicine_Code] = {
-//         Medicine_Code: m.Medicine_Code,
-//         Medicine_Name: m.Medicine_Name,
-//         mainQty: m.Quantity,
-//         subQty: 0
-//       };
-//     }
-
-//     // Step 2: Add substore medicines (priority)
-//     for (const m of subStoreMeds) {
-//       if (!inventoryMap[m.Medicine_Code]) {
-//         inventoryMap[m.Medicine_Code] = {
-//           Medicine_Code: m.Medicine_Code,
-//           Medicine_Name: m.Medicine_Name,
-//           mainQty: 0,
-//           subQty: m.Quantity
-//         };
-//       } else {
-//         inventoryMap[m.Medicine_Code].subQty = m.Quantity;
-//       }
-//     }
-
-//     // Step 3: Decide final output
-//     const inventory = Object.values(inventoryMap).map((item) => {
-//       let status = "";
-//       let quantity = 0;
-
-//       if (item.subQty > 0) {
-//         quantity = item.subQty;
-//         status = "Available in substore";
-//       } else if (item.mainQty > 0) {
-//         quantity = 0;
-//         status = "Not available in substore";
-//       } else {
-//         quantity = 0;
-//         status = "Not available in both";
-//       }
-
-//       return {
-//         Medicine_Code: item.Medicine_Code,
-//         Medicine_Name: item.Medicine_Name,
-//         Quantity: quantity,
-//         Status: status
-//       };
-//     });
-
-//     res.status(200).json(inventory);
-
-//   } catch (err) {
-//     console.error("Institute inventory error:", err);
-//     res.status(500).json({ message: err.message });
-//   }
-// });
-instituteApp.get("/inventory/:instituteId", async (req, res) => {
+instituteApp.get("/inventory/:instituteId",verifyToken,
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
   try {
     const { instituteId } = req.params;
 
@@ -585,7 +372,8 @@ instituteApp.get("/inventory/:instituteId", async (req, res) => {
 
 
 // GET single institute by ID
-instituteApp.get("/institution/:id", verifyToken, async (req, res) => {
+instituteApp.get("/institution/:id", verifyToken,
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
   try {
     const institute = await Institute.findById(req.params.id).select('-password');
     if (!institute) {
@@ -602,7 +390,8 @@ instituteApp.get("/institution/:id", verifyToken, async (req, res) => {
 });
 
 // GET dashboard stats (protected route)
-instituteApp.get("/dashboard-stats/:instituteId", verifyToken, async (req, res) => {
+instituteApp.get("/dashboard-stats/:instituteId",verifyToken,
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"),async (req, res) => {
   try {
     const { instituteId } = req.params;
 
@@ -660,7 +449,8 @@ instituteApp.get("/dashboard-stats/:instituteId", verifyToken, async (req, res) 
 });
 
 // GET detailed employees (protected route)
-instituteApp.get("/employees-detailed", verifyToken, async (req, res) => {
+instituteApp.get("/employees-detailed", verifyToken,
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
   try {
     const employees = await Employee.find({})
       .select('ABS_NO Name Email Designation DOB Phone_No Height Weight Address Blood_Group Photo Medical_History')
@@ -702,7 +492,8 @@ instituteApp.get("/employees-detailed", verifyToken, async (req, res) => {
 });
 
 // GET single employee details (protected route)
-instituteApp.get("/employee/:id", verifyToken, async (req, res) => {
+instituteApp.get("/employee/:id", verifyToken,
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -742,7 +533,8 @@ instituteApp.get("/employee/:id", verifyToken, async (req, res) => {
   }
 });
 
-instituteApp.get("/analytics/:instituteId", async (req, res) => {
+instituteApp.get("/analytics/:instituteId",verifyToken,
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
   try {
     const { instituteId } = req.params;
 
@@ -1219,7 +1011,8 @@ instituteApp.get("/analytics/:instituteId", async (req, res) => {
 
 
 // Optional: Token verification endpoint
-instituteApp.get("/verify-token", verifyToken, (req, res) => {
+instituteApp.get("/verify-token", verifyToken,
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), (req, res) => {
   res.status(200).json({
     message: "Token is valid",
     user: req.user

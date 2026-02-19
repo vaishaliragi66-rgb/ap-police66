@@ -10,7 +10,7 @@ const InstitutionCredentialSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["doctor", "pharmacist", "diagnosis", "xray"],
+      enum: ["doctor", "pharmacist", "diagnosis", "xray","front_desk"],
       required: true,
     },
 
