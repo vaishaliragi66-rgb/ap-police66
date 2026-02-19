@@ -10,6 +10,13 @@ export default function MainStore() {
   const navigate = useNavigate();
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
+const [currentPage, setCurrentPage] = useState(1);
+const rowsPerPage = 8;
+const indexOfLast = currentPage * rowsPerPage;
+const indexOfFirst = indexOfLast - rowsPerPage;
+const currentMedicines = medicines.slice(indexOfFirst, indexOfLast);
+const totalPages = Math.ceil(medicines.length / rowsPerPage);
+
 
   // modal state
   const [showModal, setShowModal] = useState(false);
@@ -51,6 +58,8 @@ export default function MainStore() {
       await axios.delete(`${BACKEND_URL}/mainstore/delete/${id}`);
       alert("Medicine deleted successfully");
       fetchMedicines();
+      setCurrentPage(1);
+
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete medicine");
     }
@@ -127,7 +136,8 @@ export default function MainStore() {
               </thead>
 
               <tbody>
-                {medicines.map(med => (
+                {currentMedicines.map(med => (
+
                   <tr key={med._id}>
                     <td>{med.Medicine_Code}</td>
                     <td>{med.Medicine_Name}</td>
@@ -158,6 +168,55 @@ export default function MainStore() {
               </tbody>
 
             </table>
+            {/* Pagination */}
+<div className="d-flex justify-content-center mt-3">
+  <nav>
+    <ul className="pagination">
+
+      <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+        <button
+          className="page-link"
+          onClick={() => setCurrentPage(prev => prev - 1)}
+        >
+          Previous
+        </button>
+      </li>
+
+      {[...Array(totalPages)].map((_, index) => (
+        <li
+          key={index}
+          className={`page-item ${
+            currentPage === index + 1 ? "active" : ""
+          }`}
+        >
+          <button
+            className="page-link"
+            onClick={() => setCurrentPage(index + 1)}
+          >
+            {index + 1}
+          </button>
+        </li>
+      ))}
+
+      <li
+        className={`page-item ${
+          currentPage === totalPages ? "disabled" : ""
+        }`}
+      >
+        <button
+          className="page-link"
+          onClick={() => setCurrentPage(prev => prev + 1)}
+        >
+          Next
+        </button>
+      </li>
+
+    </ul>
+  </nav>
+</div>
+
+
+
           </div>
         )}
       </div>

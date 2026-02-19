@@ -81,6 +81,57 @@ const EmployeeRegister = () => {
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
+const validateForm = () => {
+  const errors = [];
+
+  if (!formData.ABS_NO.trim()) {
+    errors.push("ABS Number is required");
+  }
+
+  if (!formData.Name.trim() || formData.Name.length < 3) {
+    errors.push("Full Name must be at least 3 characters");
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(formData.Email)) {
+    errors.push("Enter a valid email address");
+  }
+
+  if (formData.Password.length < 6) {
+    errors.push("Password must be at least 6 characters long");
+  }
+
+  if (!formData.Gender) {
+    errors.push("Gender is required");
+  }
+
+  if (formData.Phone_No && !/^[6-9]\d{9}$/.test(formData.Phone_No)) {
+    errors.push("Enter valid 10-digit Indian phone number");
+  }
+
+  if (formData.Address.Pincode && !/^\d{6}$/.test(formData.Address.Pincode)) {
+    errors.push("Pincode must be 6 digits");
+  }
+
+  if (formData.Height && isNaN(formData.Height)) {
+    errors.push("Height must be numeric");
+  }
+
+  if (formData.Weight && isNaN(formData.Weight)) {
+    errors.push("Weight must be numeric");
+  }
+
+  if (formData.DOB) {
+    const dob = new Date(formData.DOB);
+    const today = new Date();
+    const age = today.getFullYear() - dob.getFullYear();
+    if (age < 18) {
+      errors.push("Employee must be at least 18 years old");
+    }
+  }
+
+  return errors;
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -90,11 +141,14 @@ const EmployeeRegister = () => {
 
     try {
       // Validate required fields
-      if (!formData.ABS_NO || !formData.Name || !formData.Email || !formData.Password || !formData.Gender) {
-        setError("ABS Number, Name, Email, Password and Gender are required");
-        setLoading(false);
-        return;
-      }
+      const validationErrors = validateForm();
+
+if (validationErrors.length > 0) {
+  setError(validationErrors.join(", "));
+  setLoading(false);
+  return;
+}
+
 
       // Create FormData object
       const formPayload = new FormData();
@@ -379,7 +433,13 @@ const EmployeeRegister = () => {
                   className="form-control"
                   placeholder="Enter full name"
                   value={formData.Name}
-                  onChange={handleChange}
+                  onChange={(e) => {
+  const value = e.target.value;
+  if (/^[A-Za-z\s]*$/.test(value)) {
+    handleChange(e);
+  }
+}}
+
                   required
                   disabled={loading}
                 />

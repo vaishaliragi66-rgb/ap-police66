@@ -8,8 +8,8 @@ const EmployeeSchema = new Schema(
     Email: { type: String, required: true, unique: true, lowercase: true },
     Password: { type: String, required: true },
 
-    Designation: { type: String, default: "" },
-    DOB: { type: Date, default: null },
+    Designation: { type: String,required: true, default: "" },
+    DOB: { type: Date, required: true,default: null },
     Gender :{type:String,required: true},
     Blood_Group: {
       type: String,
@@ -18,17 +18,17 @@ const EmployeeSchema = new Schema(
     },
     
 
-    Height: { type: String, default: "" },
-    Weight: { type: String, default: "" },
-    Phone_No: { type: String, default: "" },
+    Height: { type: String,required: true, default: "" },
+    Weight: { type: String,required: true, default: "" },
+    Phone_No: { type: String,required: true, default: "" },
 
-    Photo: { type: String, default: "" },
+    Photo: { type: String,required: true, default: "" },
 
     Address: {
-      Street: { type: String, default: "" },
-      District: { type: String, default: "" },
-      State: { type: String, default: "" },
-      Pincode: { type: String, default: "" }
+      Street: { type: String,required: true, default: "" },
+      District: { type: String,required: true, default: "" },
+      State: { type: String, required: true, default: "" },
+      Pincode: { type: String, required: true, default: "" }
     },
 
     FamilyMembers: [
