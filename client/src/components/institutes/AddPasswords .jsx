@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -11,8 +11,31 @@ const AddPasswords = () => {
     frontdesk: ""
   });
 
+  const [roleStatus, setRoleStatus] = useState({});
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const token = localStorage.getItem("instituteToken");
+
+        const res = await axios.get(
+          "http://localhost:6100/institute-auth/get-role-status",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+        setRoleStatus(res.data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchStatus();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -21,53 +44,60 @@ const AddPasswords = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleSubmit = async (role) => {
     try {
-      await axios.post(
-        "http://localhost:6100/institute-auth/setup-roles",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const token = localStorage.getItem("instituteToken");
 
-      alert("Role passwords saved successfully");
+      const endpoint = roleStatus[role]
+        ? "update-role"
+        : "setup-role";
+
+      await axios({
+        method: roleStatus[role] ? "put" : "post",
+        url: `http://localhost:6100/institute-auth/${endpoint}`,
+        data: {
+  role: role === "frontdesk" ? "front_desk" : role,
+  password: formData[role]
+},
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      alert(`${role} password ${roleStatus[role] ? "updated" : "added"} successfully`);
       navigate("/institutes/home");
 
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to save passwords");
+      alert(err.response?.data?.message || "Operation failed");
     }
   };
 
   return (
     <div className="container mt-5" style={{ maxWidth: "500px" }}>
       <h3>Configure Role Passwords</h3>
-      <form onSubmit={handleSubmit}>
 
-        {Object.keys(formData).map((role) => (
-          <div className="mb-3" key={role}>
-            <label className="form-label">
-              {role.charAt(0).toUpperCase() + role.slice(1)} Password
-            </label>
-            <input
-              type="password"
-              className="form-control"
-              name={role}
-              value={formData[role]}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        ))}
+      {Object.keys(formData).map((role) => (
+        <div className="mb-3" key={role}>
+          <label className="form-label">
+            {role.charAt(0).toUpperCase() + role.slice(1)} Password
+          </label>
 
-        <button type="submit" className="btn btn-primary w-100">
-          Save Passwords
-        </button>
-      </form>
+          <input
+            type="password"
+            className="form-control"
+            name={role}
+            value={formData[role]}
+            onChange={handleChange}
+          />
+
+          <button
+            className="btn btn-primary w-100 mt-2"
+            onClick={() => handleSubmit(role)}
+          >
+            {roleStatus[role] ? "Update Password" : "Add Password"}
+          </button>
+        </div>
+      ))}
     </div>
   );
 };

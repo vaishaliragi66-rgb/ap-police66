@@ -56,7 +56,7 @@ const Institute_home = () => {
     pharmacist: ["pharmacyCard", "healthCard", "othersCard"],
     diagnosis: ["diagnosisCard", "healthCard", "othersCard"],
     xray: ["xrayCard", "healthCard", "othersCard"],
-    frontdesk: ["visitCard", "healthCard", "othersCard"]
+    front_desk: ["visitCard", "healthCard", "othersCard"]
   };
 
   const hasAccess = (card) => {

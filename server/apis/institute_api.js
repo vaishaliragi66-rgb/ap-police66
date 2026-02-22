@@ -18,7 +18,7 @@ const Disease = require("../models/disease");
 
 // GET all institutes
 instituteApp.get("/institutions",verifyToken,
-  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"), async (req, res) => {
   try {
     const institutions = await Institute.find();
     res.json(institutions);
@@ -29,7 +29,7 @@ instituteApp.get("/institutions",verifyToken,
 
 // GET all institutes except one
 instituteApp.get("/except/:id", verifyToken,
-  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"),async (req, res) => {
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"),async (req, res) => {
   try {
     const { id } = req.params;
     console.log(id)
@@ -58,6 +58,7 @@ instituteApp.get("/except/:id", verifyToken,
 // POST - Register new institute (with password hashing)
 instituteApp.post(
   "/register/institute",
+
   expressAsyncHandler(async (req, res) => {
     try {
       const instituteData = req.body;
@@ -155,6 +156,7 @@ instituteApp.post(
 );
 
 
+// GET institute profile (protected route)
 // GET institute profile (protected route)
 instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
   try {
@@ -288,7 +290,7 @@ instituteApp.put('/profile/:id', verifyToken,allowInstituteRoles(), async (req, 
 });
 
 instituteApp.get("/inventory/:instituteId",verifyToken,
-  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"), async (req, res) => {
   try {
     const { instituteId } = req.params;
 
@@ -373,7 +375,7 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
 
 // GET single institute by ID
 instituteApp.get("/institution/:id", verifyToken,
-  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"), async (req, res) => {
   try {
     const institute = await Institute.findById(req.params.id).select('-password');
     if (!institute) {
@@ -391,7 +393,7 @@ instituteApp.get("/institution/:id", verifyToken,
 
 // GET dashboard stats (protected route)
 instituteApp.get("/dashboard-stats/:instituteId",verifyToken,
-  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"),async (req, res) => {
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"),async (req, res) => {
   try {
     const { instituteId } = req.params;
 
@@ -450,7 +452,7 @@ instituteApp.get("/dashboard-stats/:instituteId",verifyToken,
 
 // GET detailed employees (protected route)
 instituteApp.get("/employees-detailed", verifyToken,
-  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"), async (req, res) => {
   try {
     const employees = await Employee.find({})
       .select('ABS_NO Name Email Designation DOB Phone_No Height Weight Address Blood_Group Photo Medical_History')
@@ -493,7 +495,7 @@ instituteApp.get("/employees-detailed", verifyToken,
 
 // GET single employee details (protected route)
 instituteApp.get("/employee/:id", verifyToken,
-  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -534,7 +536,7 @@ instituteApp.get("/employee/:id", verifyToken,
 });
 
 instituteApp.get("/analytics/:instituteId",verifyToken,
-  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), async (req, res) => {
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"), async (req, res) => {
   try {
     const { instituteId } = req.params;
 
@@ -1012,7 +1014,7 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
 
 // Optional: Token verification endpoint
 instituteApp.get("/verify-token", verifyToken,
-  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","frontdesk"), (req, res) => {
+  allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"), (req, res) => {
   res.status(200).json({
     message: "Token is valid",
     user: req.user

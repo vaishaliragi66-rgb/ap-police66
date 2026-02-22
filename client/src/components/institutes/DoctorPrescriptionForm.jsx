@@ -82,38 +82,37 @@ const [xrayData, setXrayData] = useState({
     return `${dd}-${mm}-${yyyy}`;
   };
 
-  const loadEmployeeReports = async () => {
-    if (!selectedEmployee?.ABS_NO) {
-      alert("No employee selected");
-      return;
-    }
+ const loadEmployeeReports = async () => {
+  if (!formData.Employee_ID) {
+    alert("No employee selected");
+    return;
+  }
   
-    try {
-      // Fetch Diagnosis Reports
-      const reportRes = await axios.get(
-  `http://localhost:${BACKEND_PORT}/employee-api/health-report`,
-  { params: { absNo: selectedEmployee.ABS_NO } }
-);
 
-  
-      // 🔥 Fetch ALL Diseases separately
-      const diseaseRes = await axios.get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${selectedEmployee._id}`
-      );
-  
-      setEmployeeReport({
-        ...reportRes.data,
-        allDiseases: diseaseRes.data || []
-      });
-  
-      setShowReports(true);
-  
-    } catch (err) {
-      console.error(err);
-      alert("Unable to fetch reports");
-    }
-  };
-  
+  try {
+    const res = await axios.get(
+      `http://localhost:${BACKEND_PORT}/employee-api/health-report-detailed`,
+      {
+        params: {
+          employeeId: formData.Employee_ID,
+          isFamily: formData.IsFamilyMember,
+          familyMemberId: formData.IsFamilyMember
+            ? formData.FamilyMember_ID
+            : null
+        }
+      }
+    );
+    console.log(res.data);
+
+    setEmployeeReport(res.data);
+    setDiseases(res.data.diseases || []);
+    setShowReports(true);
+
+  } catch (err) {
+    console.error(err);
+    alert("Unable to fetch reports");
+  }
+};
   useEffect(() => {
     axios
       .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/tests`)
@@ -175,6 +174,7 @@ useEffect(() => {
         `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
       );
   
+
       let data = res.data || [];
   
       // 🔥 FILTER PROPERLY HERE
@@ -213,7 +213,7 @@ useEffect(() => {
       const res = await axios.get(
         `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
       );
-      setDiseases(res.data || []);
+      setDiseases(reportRes.data.employeeDiseases);
     } catch {
       setDiseases([]);
     }
@@ -236,12 +236,16 @@ useEffect(() => {
   const twoMonthsAgo = new Date();
   twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
-  const relevantDiseases = diseases.filter((d) => {
-    if (formData.IsFamilyMember) {
-      return String(d.FamilyMember_ID?._id) === String(formData.FamilyMember_ID);
-    }
-    return !d.IsFamilyMember;
-  });
+const relevantDiseases = diseases.filter((d) => {
+  if (formData.IsFamilyMember) {
+    return (
+      d.IsFamilyMember === true &&
+      String(d.FamilyMember_ID) === String(formData.FamilyMember_ID)
+    );
+  }
+
+  return d.IsFamilyMember === false;
+});
 
   const communicableRecent = relevantDiseases.filter(
     (d) =>
@@ -451,7 +455,7 @@ const handleXraySubmit = async () => {
                   <h6 className="fw-bold text-dark mb-3">Diseases</h6>
 
                   {(() => {
-                    const allDiseases = employeeReport?.allDiseases || [];
+                    const allDiseases = employeeReport?.diseases || [];
 
                     const twoWeeksAgo = new Date();
                     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
@@ -509,34 +513,33 @@ const handleXraySubmit = async () => {
 
                   {/* ================= TESTS SECTION ================= */}
 
-                  <h6 className="fw-bold text-dark mb-3">Recent Tests</h6>
+ <h6 className="fw-bold text-dark mb-3">Recent Tests</h6>
 
-                  {employeeReport?.employeeDiagnosis?.length > 0 ? (
-                    employeeReport.employeeDiagnosis
-                      .flatMap(rec => rec.Tests)
-                      .sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp))
-                      .slice(0, 5)
-                      .map((test, index) => (
-                        <div key={index} className="border-bottom pb-2 mb-3">
-                          <div className="fw-semibold">
-                            {test.Test_Name}
-                          </div>
+{(() => {
+  const diagnosisActions =
+    employeeReport?.medicalActions?.filter(
+      a => a.action_type === "DOCTOR_DIAGNOSIS"
+    ) || [];
 
-                          <small className="text-muted">
-                            {new Date(test.Timestamp).toLocaleDateString("en-GB")}
-                          </small>
+  const tests = diagnosisActions.flatMap(
+    a => a.data?.tests || []
+  );
 
-                          <div className="mt-1">
-                            <strong>Result:</strong>{" "}
-                            {test.Result_Value || (
-                              <span className="text-warning">PENDING</span>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                  ) : (
-                    <div className="text-muted">No tests available</div>
-                  )}
+  return tests.length > 0 ? (
+    tests.slice(0, 5).map((test, index) => (
+      <div key={index} className="border-bottom pb-2 mb-3">
+        <div className="fw-semibold">
+          {test?.Test_Name || "Unknown Test"}
+        </div>
+        <div>
+          Result: {test?.Result_Value || "Pending"}
+        </div>
+      </div>
+    ))
+  ) : (
+    <div className="text-muted">No tests available</div>
+  );
+})()}
                 </div>
 
             </div>

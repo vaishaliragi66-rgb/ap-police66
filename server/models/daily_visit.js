@@ -93,6 +93,10 @@ const DailyVisitSchema = new mongoose.Schema({
 
 });
 
-DailyVisitSchema.index({ OP_No: 1 }, { unique: true });
+DailyVisitSchema.index(
+  { Institute_ID: 1, OP_No: 1 },
+  { unique: true }
+);
+
 
 module.exports = mongoose.model("DailyVisit", DailyVisitSchema);
