@@ -143,6 +143,8 @@ router.post(
       role
     });
 
+    console.log("Found credential:", credential); // Debug log
+
     if (!credential) {
       return res.status(404).json({
         message: "Role not configured"
@@ -181,47 +183,139 @@ router.post(
    POST /institute-auth/setup-roles
 ============================================================ */
 router.post(
-  "/setup-roles",
+  "/setup-role",
   verifyToken,
   expressAsyncHandler(async (req, res) => {
-
+console.log("User making request:", req.body); // Debug log
     if (req.user.role !== "institute") {
       return res.status(403).json({
         message: "Only institute account can configure roles"
       });
     }
 
-    const { doctor, pharmacist, diagnosis, xray } = req.body;
+    const { role, password } = req.body;
+
+    const allowedRoles = ["doctor", "pharmacist", "diagnosis", "xray", "front_desk"];
+
+    if (!role || !password) {
+      return res.status(400).json({
+        message: "Role and password are required"
+      });
+    }
+
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        message: "Invalid role"
+      });
+    }
+
+    const existing = await InstitutionCredential.findOne({
+      instituteId: req.user.instituteId,
+      role
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "Password already set for this role"
+      });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    await InstitutionCredential.create({
+      instituteId: req.user.instituteId,
+      role,
+      password: hashed
+    });
+
+    res.status(201).json({
+      message: `${role} password configured successfully`
+    });
+  })
+);
+
+router.put(
+  "/update-role-passwords",
+  verifyToken,
+  expressAsyncHandler(async (req, res) => {
+
+    if (req.user.role !== "institute") {
+      return res.status(403).json({
+        message: "Only institute account can update role passwords"
+      });
+    }
+
+    const { doctor, pharmacist, diagnosis, xray, frontdesk } = req.body;
 
     const roles = [
       { role: "doctor", password: doctor },
       { role: "pharmacist", password: pharmacist },
       { role: "diagnosis", password: diagnosis },
-      { role: "xray", password: xray }
+      { role: "xray", password: xray },
+      { role: "front_desk", password: frontdesk }
     ];
 
     for (let r of roles) {
 
       if (!r.password) continue;
 
+      const credential = await InstitutionCredential.findOne({
+        instituteId: req.user.instituteId,
+        role: r.role
+      });
+
+      if (!credential) {
+        return res.status(404).json({
+          message: `${r.role} not configured yet`
+        });
+      }
+
       const hashed = await bcrypt.hash(r.password, 10);
 
-      await InstitutionCredential.findOneAndUpdate(
-        {
-          instituteId: req.user.instituteId,
-          role: r.role
-        },
-        { password: hashed },
-        { upsert: true, new: true }
-      );
+      credential.password = hashed;
+      await credential.save();
     }
 
     res.status(200).json({
-      message: "Roles configured successfully"
+      message: "Role passwords updated successfully"
     });
   })
 );
 
+router.get(
+  "/get-role-status",
+  verifyToken,
+  expressAsyncHandler(async (req, res) => {
+
+    if (req.user.role !== "institute") {
+      return res.status(403).json({
+        message: "Only institute account can view roles"
+      });
+    }
+
+    const credentials = await InstitutionCredential.find({
+      instituteId: req.user.instituteId
+    });
+
+    const roleStatus = {
+      doctor: false,
+      pharmacist: false,
+      diagnosis: false,
+      xray: false,
+      frontdesk: false
+    };
+
+    credentials.forEach((cred) => {
+      if (cred.role === "front_desk") {
+        roleStatus.frontdesk = true;
+      } else {
+        roleStatus[cred.role] = true;
+      }
+    });
+
+    res.json(roleStatus);
+  })
+);
 
 /* ============================================================
    EXPORTS

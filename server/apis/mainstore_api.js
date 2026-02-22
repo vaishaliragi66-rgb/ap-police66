@@ -9,7 +9,8 @@ const Medicine = require("../models/master_medicine");
 const InstituteLedger = require("../models/InstituteLedger");
 
 mainStoreApp.post(
-  "/add",
+  "/add",verifyToken,
+  allowInstituteRoles("pharmacist"),
   expressAsyncHandler(async (req, res) => {
     try {
       const {

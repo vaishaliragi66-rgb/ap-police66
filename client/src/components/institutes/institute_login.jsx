@@ -137,7 +137,7 @@ const InstituteLogin = () => {
               <option value="pharmacist">Pharmacist</option>
               <option value="diagnosis">Diagnosis</option>
               <option value="xray">Xray</option>
-              <option value="frontdesk">Front Desk</option>
+              <option value="front_desk">Front Desk</option>
             </select>
           </div>
 

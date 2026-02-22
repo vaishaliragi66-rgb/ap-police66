@@ -10,6 +10,7 @@ const Employee = require("../models/employee");
 const Disease = require("../models/disease");
 const DiagnosisRecord = require("../models/diagnostics_record");
 const FamilyMember = require("../models/family_member");
+const MedicalAction = require("../models/medical_action");
 
 const employeeApp = express.Router();
 
@@ -50,6 +51,56 @@ const upload = multer({
 });
 
 /* ================= REGISTER ================= */
+employeeApp.get(
+  "/health-report-detailed",
+  async (req, res) => {
+    try {
+      const { employeeId, isFamily, familyMemberId } = req.query;
+
+      if (!employeeId) {
+        return res.status(400).json({
+          message: "employeeId is required"
+        });
+      }
+
+      const diseaseFilter = {
+        Employee_ID: employeeId
+      };
+
+      const prescriptionFilter = {
+        employee_id: employeeId
+      };
+
+      if (isFamily === "true") {
+        diseaseFilter.IsFamilyMember = true;
+        diseaseFilter.FamilyMember_ID = familyMemberId;
+
+        prescriptionFilter["data.IsFamilyMember"] = true;
+        prescriptionFilter["data.FamilyMember_ID"] = familyMemberId;
+      } else {
+        diseaseFilter.IsFamilyMember = false;
+        prescriptionFilter["data.IsFamilyMember"] = false;
+      }
+
+      const diseases = await Disease.find(diseaseFilter).sort({ createdAt: -1 });
+
+      const medicalActions = await MedicalAction.find({
+        employee_id: employeeId,
+        action_type: { $in: ["DOCTOR_DIAGNOSIS", "DOCTOR_XRAY"] },
+        ...prescriptionFilter
+      }).sort({ Timestamp: -1 });
+
+      res.json({
+        diseases,
+        medicalActions
+      });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
 
 employeeApp.post(
   "/register",
