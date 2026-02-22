@@ -10,8 +10,13 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 6100;
+
+  const API = axios.create({
+    baseURL: import.meta.env.VITE_BASE_URL
+  });
+
+
+ 
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -34,8 +39,8 @@ const AdminLogin = () => {
     }
 
     try {
-      const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/admin-api/login`,
+      const res = await API.post(
+        "/admin-api/login",
         { 
           email: email.trim().toLowerCase(), 
           password: password 

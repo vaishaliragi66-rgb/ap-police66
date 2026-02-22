@@ -3,7 +3,8 @@ import axios from "axios";
 
 const InstituteReports = () => {
 
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -16,7 +17,7 @@ const InstituteReports = () => {
   -------------------------------------------------- */
  useEffect(() => {
   axios
-    .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
+    .get(`${BASE_URL}/employee-api/all`)
     .then(res => {
       const list =
         Array.isArray(res.data?.employees)
@@ -57,7 +58,7 @@ const InstituteReports = () => {
   const loadHealthReport = async (absNo) => {
     try {
       const res = await axios.get(
-  `http://localhost:${BACKEND_PORT}/employee-api/health-report`,
+  `${BASE_URL}/employee-api/health-report`,
   { params: { absNo } }
 );
 

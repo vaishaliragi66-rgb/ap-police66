@@ -7,6 +7,7 @@ const DoctorDiagnosisForm = () => {
   const [familyMembers, setFamilyMembers] = useState([]);
   const [testsMaster, setTestsMaster] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const [instituteName, setInstituteName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,7 @@ const DoctorDiagnosisForm = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [visitId, setVisitId] = useState(null);
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || "6100";
+
 
   const formatDateDMY = (dateValue) => {
   if (!dateValue) return "—";
@@ -50,7 +51,7 @@ const DoctorDiagnosisForm = () => {
 
   const fetchInstituteName = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/institute-api/institution/${id}`);
+      const res = await axios.get(`${BASE_URL}/institute-api/institution/${id}`);
       setInstituteName(res.data?.Institute_Name || "");
     } catch (err) {
       console.error("Error fetching institute name:", err);
@@ -61,7 +62,7 @@ const DoctorDiagnosisForm = () => {
 
   const fetchTests = async () => {
     try {
-      const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/diagnosis-api/tests`);
+      const res = await axios.get(`${BASE_URL}/diagnosis-api/tests`);
       setTestsMaster(res.data || []);
       console.log("Tests fetched:", res.data?.length);
     } catch (err) {
@@ -161,7 +162,7 @@ const DoctorDiagnosisForm = () => {
     console.log("Submitting payload:", payload);
 
     try {
-      await axios.post(`http://localhost:${BACKEND_PORT_NO}/api/medical-actions`, {
+      await axios.post(`${BASE_URL}/api/medical-actions`, {
         employee_id: formData.Employee_ID,
         visit_id: visitId,
         action_type: "DOCTOR_DIAGNOSIS",

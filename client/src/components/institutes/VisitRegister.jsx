@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const VisitRegister = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
-
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState(""); 
   const [filtered, setFiltered] = useState([]);
@@ -33,7 +33,7 @@ const VisitRegister = () => {
   /* ================= FETCH EMPLOYEES ================= */
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
+      .get(`${BASE_URL}/employee-api/all`)
       .then(res => setEmployees(res.data.employees || []))
       .catch(err => console.error(err));
   }, []);
@@ -60,7 +60,7 @@ const VisitRegister = () => {
   useEffect(() => {
     if (isFamily && selectedEmployee) {
       axios.get(
-        `http://localhost:${BACKEND_PORT}/family-api/family/${selectedEmployee._id}`
+        `${BASE_URL}/family-api/family/${selectedEmployee._id}`
       )
       
         .then(res => setFamilyMembers(res.data || []))
@@ -75,7 +75,7 @@ const VisitRegister = () => {
     if (selectedEmployee) {
       axios
         .get(
-          `http://localhost:${BACKEND_PORT}/api/visits/next-numbers/${instituteId}`
+          `${BASE_URL}/api/visits/next-numbers/${instituteId}`
         )
         .then(res => {
           setPreviewToken(res.data.nextToken);
@@ -105,7 +105,7 @@ const VisitRegister = () => {
   
     try {
       await axios.post(
-        `http://localhost:${BACKEND_PORT}/api/visits/register`,
+        `${BASE_URL}/api/visits/register`,
         {
           Institute_ID: instituteId,
           employee_id: selectedEmployee._id,

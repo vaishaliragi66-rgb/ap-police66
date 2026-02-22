@@ -12,7 +12,7 @@ const AIInsights2 = () => {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'chart'
-
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
   // Get institute ID from localStorage (adjust based on your auth system)
   const getInstituteId = () => {
     const instituteData = localStorage.getItem('institute');
@@ -36,7 +36,7 @@ const AIInsights2 = () => {
     try {
       const instituteId = getInstituteId();
       
-      const response = await fetch('http://localhost:6100/ai-api/query', {
+      const response = await fetch(`${BASE_URL}/ai-api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

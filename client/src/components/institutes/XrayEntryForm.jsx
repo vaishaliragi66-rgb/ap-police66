@@ -15,8 +15,7 @@ const XrayEntryForm = () => {
 
 
 
-  const BACKEND_PORT_NO =
-    import.meta.env.VITE_BACKEND_PORT || "6100";
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const [formData, setFormData] = useState({
     Institute_ID: "",
@@ -55,7 +54,7 @@ const XrayEntryForm = () => {
   const fetchInstituteName = async (id) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/institution/${id}`
+        `${BASE_URL}/institute-api/institution/${id}`
       );
       setInstituteName(res.data?.Institute_Name || "");
     } catch (err) {
@@ -65,7 +64,7 @@ const XrayEntryForm = () => {
 const fetchXrayTypes = async () => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT_NO}/xray-api/types`
+      `${BASE_URL}/xray-api/types`
     );
 
     setXrayMaster(res.data || []);
@@ -147,7 +146,7 @@ const fetchXrayTypes = async () => {
 
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/xray-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
+        `${BASE_URL}/xray-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
       );
       setPastRecords(res.data || []);
       setShowHistory(true);
@@ -186,7 +185,7 @@ const fetchXrayTypes = async () => {
 
     try {
       await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/xray-api/add`,
+        `${BASE_URL}/xray-api/add`,
         {
           Institute_ID: formData.Institute_ID,
           Employee_ID: formData.Employee_ID,

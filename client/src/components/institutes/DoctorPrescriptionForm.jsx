@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 
 const DoctorPrescriptionForm = () => {
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [lastTwoVisits, setLastTwoVisits] = useState([]);
   const [selectedVisit, setSelectedVisit] = useState(null);
@@ -23,6 +23,7 @@ const [xrayMaster, setXrayMaster] = useState([]);
 const [xrayData, setXrayData] = useState({
   Xrays: [{ Xray_ID: "", Xray_Type: "" }]
 });
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   
   
@@ -91,7 +92,7 @@ const [xrayData, setXrayData] = useState({
 
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/employee-api/health-report-detailed`,
+      `${BASE_URL}/employee-api/health-report-detailed`,
       {
         params: {
           employeeId: formData.Employee_ID,
@@ -115,14 +116,14 @@ const [xrayData, setXrayData] = useState({
 };
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/tests`)
+      .get(`${BASE_URL}/diagnosis-api/tests`)
       .then(res => setTestsMaster(res.data || []))
       .catch(() => setTestsMaster([]));
   }, []);
   
 useEffect(() => {
   axios
-    .get(`http://localhost:${BACKEND_PORT}/xray-api/types`)
+    .get(`${BASE_URL}/xray-api/types`)
     .then(res => setXrayMaster(res.data || []))
     .catch(() => setXrayMaster([]));
 }, []);
@@ -134,7 +135,7 @@ useEffect(() => {
     if (!formData.Institute_ID) return;
   
     axios
-      .get(`http://localhost:${BACKEND_PORT}/institute-api/inventory/${formData.Institute_ID}`)
+      .get(`${BASE_URL}/institute-api/inventory/${formData.Institute_ID}`)
       .then(res => {
         const inventory = res.data || [];
   
@@ -171,7 +172,7 @@ useEffect(() => {
     try {
   
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
+        `${BASE_URL}/prescription-api/employee/${employeeId}`
       );
   
 
@@ -202,7 +203,7 @@ useEffect(() => {
   /* ================= API CALLS ================= */
   const fetchInstitute = async (id) => {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/institute-api/institution/${id}`
+      `${BASE_URL}/institute-api/institution/${id}`
     );
     setInstituteName(res.data?.Institute_Name || "");
   };
@@ -211,9 +212,9 @@ useEffect(() => {
   const fetchDiseases = async (employeeId) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
+        `${BASE_URL}/disease-api/employee/${employeeId}`
       );
-      setDiseases(reportRes.data.employeeDiseases);
+      setDiseases(res.data.employeeDiseases || []);
     } catch {
       setDiseases([]);
     }
@@ -225,7 +226,7 @@ useEffect(() => {
 
     axios
       .get(
-        `http://localhost:${BACKEND_PORT}/employee-api/profile/${formData.Employee_ID}`
+        `${BASE_URL}/employee-api/profile/${formData.Employee_ID}`
       )
       .then((res) => setEmployeeProfile(res.data))
       .catch(() => setEmployeeProfile(null));
@@ -305,7 +306,7 @@ const relevantDiseases = diseases.filter((d) => {
     }
     
 
-    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
+    await axios.post(`${BASE_URL}/api/medical-actions`, {
       Institute_ID: formData.Institute_ID,
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -328,7 +329,7 @@ const relevantDiseases = diseases.filter((d) => {
     // ✅ Save Disease (if selected)
     if (diseaseData.Disease_Name?.trim()) {
       await axios.post(
-  `http://localhost:${BACKEND_PORT}/disease-api/diseases`,
+  `${BASE_URL}/disease-api/diseases`,
   {
     Institute_ID: formData.Institute_ID,
     Employee_ID: formData.Employee_ID,
@@ -366,7 +367,7 @@ const relevantDiseases = diseases.filter((d) => {
       return;
     }
   
-    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
+    await axios.post(`${BASE_URL}/api/medical-actions`, {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
       action_type: "DOCTOR_DIAGNOSIS",
@@ -401,7 +402,7 @@ const handleXraySubmit = async () => {
   }
 
   await axios.post(
-    `http://localhost:${BACKEND_PORT}/api/medical-actions`,
+    `${BASE_URL}/api/medical-actions`,
     {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,

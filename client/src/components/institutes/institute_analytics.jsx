@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 
 /* ===============================
@@ -140,7 +140,7 @@ const rowsPerPage = 10;
     }
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/institute-api/analytics/${institute._id}`)
+      .get(`${BASE_URL}/institute-api/analytics/${institute._id}`)
       .then(res => {
         setRows(res.data || []);
         setLoading(false);

@@ -13,6 +13,7 @@ const AddPasswords = () => {
 
   const [roleStatus, setRoleStatus] = useState({});
   const navigate = useNavigate();
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -20,7 +21,7 @@ const AddPasswords = () => {
         const token = localStorage.getItem("instituteToken");
 
         const res = await axios.get(
-          "http://localhost:6100/institute-auth/get-role-status",
+          `${BASE_URL}/institute-auth/get-role-status`,
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -54,7 +55,7 @@ const AddPasswords = () => {
 
       await axios({
         method: roleStatus[role] ? "put" : "post",
-        url: `http://localhost:6100/institute-auth/${endpoint}`,
+        url: `${BASE_URL}/institute-auth/${endpoint}`,
         data: {
   role: role === "frontdesk" ? "front_desk" : role,
   password: formData[role]

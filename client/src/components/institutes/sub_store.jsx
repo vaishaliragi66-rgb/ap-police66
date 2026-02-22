@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 
 export default function SubStore() {
 
@@ -13,6 +12,7 @@ export default function SubStore() {
   const [typeFilter, setTypeFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   // ---------- SORT ----------
   const [sortConfig, setSortConfig] = useState({
@@ -49,7 +49,7 @@ export default function SubStore() {
   const instituteId = institute._id;
 
   axios
-    .get(`http://localhost:${BACKEND_PORT}/medicine-api/substore/${instituteId}`)
+    .get(`${BASE_URL}/medicine-api/substore/${instituteId}`)
     .then(res => {
       setRows(res.data || []);
       setLoading(false);

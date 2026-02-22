@@ -19,6 +19,7 @@ const Institute_home = () => {
   const institute = JSON.parse(localStorage.getItem("institute") || "{}");
   const role = localStorage.getItem("role") || "institute";
   const token = localStorage.getItem("instituteToken");
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
   
   useEffect(() => {
     if (!token) {
@@ -30,7 +31,7 @@ const Institute_home = () => {
 
   // ✅ Proper Logout
   const handleSignout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("instituteToken");
     localStorage.removeItem("role");
     localStorage.removeItem("institute");
 

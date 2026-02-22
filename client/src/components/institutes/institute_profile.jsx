@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { FaUniversity } from "react-icons/fa";
 
-const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+
 
 export default function InstituteProfile() {
   const [profile, setProfile] = useState(null);
@@ -12,6 +12,7 @@ export default function InstituteProfile() {
   const [form, setForm] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const formatDateDMY = (dateValue) => {
   if (!dateValue) return "—";
@@ -50,7 +51,7 @@ useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:${BACKEND_PORT_NO}/institute-api/profile/${id}`
+          `${BASE_URL}/institute-api/profile/${id}`
         );
         setProfile(res.data.profile);
         setForm({
@@ -96,7 +97,7 @@ useEffect(() => {
 
     try {
       const res = await axios.put(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/profile/${id}`,
+        `${BASE_URL}/institute-api/profile/${id}`,
         payload
       );
       setProfile(res.data.profile);

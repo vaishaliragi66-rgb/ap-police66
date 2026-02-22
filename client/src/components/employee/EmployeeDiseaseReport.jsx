@@ -9,6 +9,7 @@ const EmployeeDiseaseReport = () => {
   const [diseases, setDiseases] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
   // Filters
   const [showType, setShowType] = useState("ALL"); // ALL | SELF | FAMILY
   const [familyFilter, setFamilyFilter] = useState("ALL");
@@ -19,7 +20,7 @@ const EmployeeDiseaseReport = () => {
 
     axios
       .get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
+        `${BASE_URL}/disease-api/employee/${employeeId}`
       )
       .then((res) => {
         setDiseases(res.data || []);

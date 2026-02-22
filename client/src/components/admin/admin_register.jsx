@@ -6,7 +6,11 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const AdminRegister = () => {
   const navigate = useNavigate();
-  
+  const API = axios.create({
+    baseURL: import.meta.env.VITE_BASE_URL
+  });
+
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -22,7 +26,6 @@ const AdminRegister = () => {
   const [passwordStrength, setPasswordStrength] = useState("");
   const [passwordMatch, setPasswordMatch] = useState(true);
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 6100;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -137,8 +140,8 @@ const AdminRegister = () => {
 
       console.log("Submitting admin registration...");
 
-      const response = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/admin-api/register`,
+      const response = await API.post(
+        "/admin-api/register",
         adminData,
         {
           headers: {

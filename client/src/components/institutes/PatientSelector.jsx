@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+
 
 export default function PatientSelector({ onSelect, instituteId }) {
   const [todayVisits, setTodayVisits] = useState([]);
@@ -9,13 +9,13 @@ export default function PatientSelector({ onSelect, instituteId }) {
   const [options, setOptions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const wrapperRef = useRef(null);
-
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
   /* ================= LOAD TODAY VISITS ================= */
 useEffect(() => {
   if (!instituteId) return;
 
   axios
-    .get(`http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`)
+    .get(`${BASE_URL}/api/visits/today/${instituteId}`)
     
     .then(res => {
       setTodayVisits(res.data || []);
@@ -34,7 +34,7 @@ useEffect(() => {
     }
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
+      .get(`${BASE_URL}/employee-api/all`)
       .then(res => {
         const list = res.data?.employees || res.data || [];
         const filtered = list.filter(e =>

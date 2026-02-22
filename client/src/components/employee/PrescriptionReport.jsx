@@ -10,6 +10,7 @@ const PrescriptionReport = () => {
   const employeeId = localStorage.getItem("employeeId");
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
     if (employeeId) fetchPrescriptions();
@@ -18,7 +19,7 @@ const PrescriptionReport = () => {
   const fetchPrescriptions = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/prescription-api/employee/${employeeId}`
+        `${BASE_URL}/prescription-api/employee/${employeeId}`
       );
       setPrescriptions(res.data || []);
     } catch (err) {

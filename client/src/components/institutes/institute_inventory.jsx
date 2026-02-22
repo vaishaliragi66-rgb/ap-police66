@@ -12,6 +12,8 @@ const formatDateDMY = (value) => {
   ).padStart(2, "0")}-${d.getFullYear()}`;
 };
 
+
+
 /* ---------- DAYS FROM TODAY ---------- */
 const daysFromToday = (value) => {
   if (!value) return null;
@@ -25,11 +27,13 @@ const daysFromToday = (value) => {
 };
 
 function InstituteInventory() {
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  
   const [inventory, setInventory] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [instituteName, setInstituteName] = useState("");
+
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   /* ---------- FILTER STATES ---------- */
   const [searchMedicine, setSearchMedicine] = useState("");
@@ -50,12 +54,18 @@ function InstituteInventory() {
         
         setInstituteName(institute.Institute_Name || "Institute");
 
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("instituteToken");
 
-const res = await axios.get(
-  `http://localhost:${BACKEND_PORT_NO}/institute-api/inventory/${instituteId}`,
- 
-);
+        
+
+        const res = await axios.get(
+          `${BASE_URL}/institute-api/inventory/${instituteId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
 
 setInventory(res.data || []);
 
@@ -67,7 +77,7 @@ setInventory(res.data || []);
     };
 
     fetchInstituteAndInventory();
-  }, [BACKEND_PORT_NO]);
+  }, []);
 
   /* ---------- CHECK IF ANY FILTER IS ACTIVE ---------- */
   const hasActiveFilters = () => {

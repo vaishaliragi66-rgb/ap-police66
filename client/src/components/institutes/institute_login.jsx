@@ -15,8 +15,9 @@ const InstituteLogin = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,7 +38,7 @@ const InstituteLogin = () => {
       }
 
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}${endpoint}`,
+        `${BASE_URL}${endpoint}`,
         formData
       );
 

@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 /* ===============================
    Utility: Abnormal Test Checker
@@ -114,8 +114,7 @@ export default function EmployeeReports() {
   const [expandedRow, setExpandedRow] = useState(null);
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:${BACKEND_PORT}/admin-api/analytics/all`)
+   axios.get(`${BASE_URL}/admin-api/analytics/all`)
       .then(res => {
         setRows(res.data || []);
         setLoading(false);
@@ -241,8 +240,19 @@ export default function EmployeeReports() {
               </div>
   
               <div className="col-md-4 text-end">
-                <button className="btn btn-success me-2 px-4">Download CSV</button>
-                <button className="btn btn-danger px-4">Download PDF</button>
+                          <button
+              className="btn btn-success me-2 px-4"
+              onClick={() => downloadCSV(filteredRows)}
+            >
+              Download CSV
+            </button>
+
+            <button
+              className="btn btn-danger px-4"
+              onClick={() => downloadPDF(filteredRows)}
+            >
+              Download PDF
+            </button>
               </div>
   
             </div>

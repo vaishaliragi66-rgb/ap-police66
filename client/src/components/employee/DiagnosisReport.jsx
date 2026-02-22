@@ -9,28 +9,27 @@ const DiagnosisReport = () => {
   const [reports, setReports] = useState([]);
   const navigate = useNavigate();
   console.log("EmployeeObjectId from localStorage:", localStorage.getItem("employeeObjectId"));
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+ 
   const employeeObjectId = localStorage.getItem("employeeObjectId")
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-
-useEffect(() => {
-  if (!employeeObjectId) return;
-
-  axios
-    .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/records/${employeeObjectId}`)
-    .then(res => setReports(res.data || []))
-    .catch(err => {
-      if (err.response?.status === 404) {
-        setReports([]);
-      } else {
-        console.error(err);
-      }
-    });
-}, [employeeObjectId, refreshKey]); // ✅ IMPORTANT
-
+  useEffect(() => {
+    if (!employeeObjectId) return;
+  
+    axios
+      .get(`${BASE_URL}/diagnosis-api/records/${employeeObjectId}`)
+      .then(res => setReports(res.data || []))
+      .catch(err => {
+        if (err.response?.status === 404) {
+          setReports([]);
+        } else {
+          console.error(err);
+        }
+      });
+  }, [employeeObjectId, refreshKey]);
   /* ================= DATE FIX (ONLY createdAt) ================= */
   const formatDate = (report) => {
     // Priority:

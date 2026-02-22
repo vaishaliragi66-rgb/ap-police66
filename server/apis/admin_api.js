@@ -89,13 +89,13 @@ adminApp.post(
       
       // Generate JWT token
       const token = jwt.sign(
-        { 
-          id: savedAdmin._id,
-          email: savedAdmin.email,
-          role: savedAdmin.role 
-        }, 
-        "adminsecret123", // Use environment variable in production
-        { expiresIn: "24h" }
+        {
+          id: admin._id,
+          email: admin.email,
+          role: admin.role
+        },
+        process.env.ADMIN_JWT_SECRET,   // 👈 from .env
+        { expiresIn: process.env.JWT_EXPIRES_IN }
       );
 
       // Remove password from response
@@ -298,72 +298,72 @@ adminApp.put(
 
 /* ================= CHANGE PASSWORD ================= */
 
-adminApp.put(
-  "/change-password/:id",
-  expressAsyncHandler(async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { currentPassword, newPassword, confirmNewPassword } = req.body;
+// adminApp.put(
+//   "/change-password/:id",
+//   expressAsyncHandler(async (req, res) => {
+//     try {
+//       const { id } = req.params;
+//       const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
-      // Validate input
-      if (!currentPassword || !newPassword || !confirmNewPassword) {
-        return res.status(400).json({
-          success: false,
-          message: "All password fields are required"
-        });
-      }
+//       // Validate input
+//       if (!currentPassword || !newPassword || !confirmNewPassword) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "All password fields are required"
+//         });
+//       }
 
-      if (newPassword !== confirmNewPassword) {
-        return res.status(400).json({
-          success: false,
-          message: "New passwords do not match"
-        });
-      }
+//       if (newPassword !== confirmNewPassword) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "New passwords do not match"
+//         });
+//       }
 
-      if (newPassword.length < 8) {
-        return res.status(400).json({
-          success: false,
-          message: "New password must be at least 8 characters long"
-        });
-      }
+//       if (newPassword.length < 8) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "New password must be at least 8 characters long"
+//         });
+//       }
 
-      // Find admin
-      const admin = await Admin.findById(id);
-      if (!admin) {
-        return res.status(404).json({
-          success: false,
-          message: "Admin not found"
-        });
-      }
+//       // Find admin
+//       const admin = await Admin.findById(id);
+//       if (!admin) {
+//         return res.status(404).json({
+//           success: false,
+//           message: "Admin not found"
+//         });
+//       }
 
-      // Verify current password
-      const isMatch = await admin.comparePassword(currentPassword);
-      if (!isMatch) {
-        return res.status(401).json({
-          success: false,
-          message: "Current password is incorrect"
-        });
-      }
+//       // Verify current password
+//       const isMatch = await admin.comparePassword(currentPassword);
+//       if (!isMatch) {
+//         return res.status(401).json({
+//           success: false,
+//           message: "Current password is incorrect"
+//         });
+//       }
 
-      // Update password (will be hashed by pre-save middleware)
-      admin.password = newPassword;
-      await admin.save();
+//       // Update password (will be hashed by pre-save middleware)
+//       admin.password = newPassword;
+//       await admin.save();
 
-      res.status(200).json({
-        success: true,
-        message: "Password changed successfully"
-      });
+//       res.status(200).json({
+//         success: true,
+//         message: "Password changed successfully"
+//       });
 
-    } catch (err) {
-      console.error("Change password error:", err);
-      res.status(500).json({
-        success: false,
-        message: "Failed to change password",
-        error: err.message
-      });
-    }
-  })
-);
+//     } catch (err) {
+//       console.error("Change password error:", err);
+//       res.status(500).json({
+//         success: false,
+//         message: "Failed to change password",
+//         error: err.message
+//       });
+//     }
+//   })
+// );
 
 adminApp.get("/analytics/all", async (req, res) => {
   try {
@@ -746,36 +746,36 @@ adminApp.get("/analytics/institutes", async (req, res) => {
 
 const nodemailer = require("nodemailer");
 
-adminApp.post("/send-mail", async (req, res) => {
-  try {
-    const { from, to, subject, message } = req.body;
+// adminApp.post("/send-mail", async (req, res) => {
+//   try {
+//     const { from, to, subject, message } = req.body;
 
-    if (!from || !to) {
-      return res.status(400).json({ message: "Missing email fields" });
-    }
+//     if (!from || !to) {
+//       return res.status(400).json({ message: "Missing email fields" });
+//     }
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.ADMIN_EMAIL,       // Gmail used to SEND
-        pass: process.env.ADMIN_EMAIL_PASS   // App password
-      }
-    });
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: {
+//         user: process.env.ADMIN_EMAIL,       // Gmail used to SEND
+//         pass: process.env.ADMIN_EMAIL_PASS   // App password
+//       }
+//     });
 
-    await transporter.sendMail({
-      from: `"${from}" <${process.env.ADMIN_EMAIL}>`,
-      replyTo: from,        // 👈 replies go to admin
-      to,
-      subject,
-      text: message
-    });
+//     await transporter.sendMail({
+//       from: `"${from}" <${process.env.ADMIN_EMAIL}>`,
+//       replyTo: from,        // 👈 replies go to admin
+//       to,
+//       subject,
+//       text: message
+//     });
 
-    res.json({ message: "Mail sent successfully" });
-  } catch (err) {
-    console.error("Mail error:", err);
-    res.status(500).json({ message: "Mail sending failed" });
-  }
-});
+//     res.json({ message: "Mail sent successfully" });
+//   } catch (err) {
+//     console.error("Mail error:", err);
+//     res.status(500).json({ message: "Mail sending failed" });
+//   }
+// });
 
 
 

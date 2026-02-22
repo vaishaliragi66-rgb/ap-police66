@@ -13,6 +13,8 @@ const HealthSummary = () => {
   const institute = JSON.parse(localStorage.getItem("institute") || "{}");
   const instituteId = institute?._id;
 
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
+
   const [type, setType] = useState("daily");
   const [date, setDate] = useState("");
   const [month, setMonth] = useState("");
@@ -24,9 +26,9 @@ const HealthSummary = () => {
       let url = "";
 
       if (type === "daily") {
-        url = `http://localhost:6100/institute-api/health-summary?type=daily&date=${date}&instituteId=${instituteId}`;
+        url = `${BASE_URL}/institute-api/health-summary?type=daily&date=${date}&instituteId=${instituteId}`;
       } else {
-        url = `http://localhost:6100/institute-api/health-summary?type=monthly&year=${year}&month=${month}&instituteId=${instituteId}`;
+        url = `${BASE_URL}/institute-api/health-summary?type=monthly&year=${year}&month=${month}&instituteId=${instituteId}`;
       }
 
       const res = await axios.get(url);

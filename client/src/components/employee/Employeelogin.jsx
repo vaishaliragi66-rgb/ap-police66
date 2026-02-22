@@ -8,7 +8,7 @@ const Employeelogin = () => {
   const [absNo, setAbsNo] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
   const employeeName = localStorage.getItem("employeeName")
   
 
@@ -16,7 +16,7 @@ const Employeelogin = () => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/employee-api/login`,
+        `${BASE_URL}/employee-api/login`,
         { ABS_NO: absNo, Password: password }
       );
 

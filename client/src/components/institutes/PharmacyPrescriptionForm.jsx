@@ -25,6 +25,7 @@ const PharmacyPrescriptionForm = () => {
   const [showReports, setShowReports] = useState(false);
 
   const navigate = useNavigate();
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const [formData, setFormData] = useState({
     Institute_ID: "",
@@ -60,7 +61,7 @@ const PharmacyPrescriptionForm = () => {
   const fetchDoctorActions = async (employeeId, visitId) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/api/medical-actions/visit/${visitId}`
+        `${BASE_URL}/api/medical-actions/visit/${visitId}`
       );
       const actions = res.data || [];
       
@@ -75,7 +76,7 @@ const PharmacyPrescriptionForm = () => {
   const fetchLastTwoPrescriptions = async (employeeId, familyId = null) => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
+      `${BASE_URL}/prescription-api/employee/${employeeId}`
     );
 
     let data = res.data || [];
@@ -125,12 +126,12 @@ const loadEmployeeReports = async () => {
 
   try {
       const reportRes = await axios.get(
-  `http://localhost:${BACKEND_PORT}/employee-api/health-report`,
+  `${BASE_URL}/employee-api/health-report`,
   { params: { absNo: selectedEmployee.ABS_NO } }
 );
 
     const diseaseRes = await axios.get(
-      `http://localhost:${BACKEND_PORT}/disease-api/employee/${selectedEmployee._id}`
+      `${BASE_URL}/disease-api/employee/${selectedEmployee._id}`
     );
 
 
@@ -173,7 +174,7 @@ useEffect(() => {
   const fetchInstitute = async (id) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/institute-api/institution/${id}`
+        `${BASE_URL}/institute-api/institution/${id}`
       );
       setInstituteName(res.data?.Institute_Name || "");
     } catch (error) {
@@ -184,7 +185,7 @@ useEffect(() => {
   const fetchInventory = async (id) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/institute-api/inventory/${id}`
+        `${BASE_URL}/institute-api/inventory/${id}`
       );
       setInventory(res.data || []);
     } catch (error) {
@@ -196,7 +197,7 @@ useEffect(() => {
   const fetchDiseases = async (employeeId) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
+        `${BASE_URL}/disease-api/employee/${employeeId}`
       );
       setDiseases(res.data || []);
     } catch {
@@ -248,7 +249,7 @@ console.log("Results:", results);
   const validateMedicineQuantity = async (index, medicineName, quantity) => {
     try {
       await axios.post(
-        `http://localhost:${BACKEND_PORT}/medicine-limit-api/validate-medicine-quantity`,
+        `${BASE_URL}/medicine-limit-api/validate-medicine-quantity`,
         {
           medicine_name: medicineName.trim(),
           quantity: Number(quantity)
@@ -479,7 +480,7 @@ const handleSubmit = async (e) => {
 
   try {
     const response = await axios.post(
-      `http://localhost:${BACKEND_PORT}/prescription-api/add`,
+      `${BASE_URL}/prescription-api/add`,
       payload
     );
     
