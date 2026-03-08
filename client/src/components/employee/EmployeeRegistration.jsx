@@ -86,6 +86,8 @@ const validateForm = () => {
 
   if (!formData.ABS_NO.trim()) {
     errors.push("ABS Number is required");
+  } else if (!/^\d{6}$/.test(formData.ABS_NO)) {
+    errors.push("ABS number must be exactly 6 digits");
   }
 
   if (!formData.Name.trim() || formData.Name.length < 3) {
@@ -455,6 +457,12 @@ if (validationErrors.length > 0) {
       placeholder="Enter ABS Number"
       value={formData.ABS_NO}
       onChange={handleChange}
+      onKeyPress={(e) => {
+        if (!/[0-9]/.test(e.key)) {
+          e.preventDefault();
+        }
+      }}
+      maxLength="6"
       required
       disabled={loading}
     />
