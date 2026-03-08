@@ -9,6 +9,7 @@ const Institute = require("../models/master_institute");
 const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
 const MedicalAction = require("../models/medical_action");
+const DailyVisit = require("../models/daily_visit");
 
 // ✅ GET master test list
 xrayApp.get("/tests", async (req, res) => {
@@ -44,6 +45,49 @@ xrayApp.get("/visit/:visitId/doctor", async (req, res) => {
     res.status(200).json(action);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch doctor diagnosis" });
+  }
+});
+
+xrayApp.get("/queue/:Institute_ID", async (req, res) => {
+  try {
+    const { Institute_ID } = req.params;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const visits = await DailyVisit.find({
+      Institute_ID,
+      visit_date: today
+    })
+      .populate("employee_id")
+      .populate("FamilyMember")
+      .sort({ token_no: 1 });
+
+    if (!visits.length) {
+      return res.status(200).json([]);
+    }
+
+    const visitIds = visits.map((visit) => visit._id);
+
+    const doctorXrayActions = await MedicalAction.find({
+      visit_id: { $in: visitIds },
+      action_type: "DOCTOR_XRAY",
+      source: "DOCTOR",
+      "data.xrays.0": { $exists: true }
+    }).select("visit_id");
+
+    const allowedVisitIds = new Set(
+      doctorXrayActions.map((action) => String(action.visit_id))
+    );
+
+    const xrayQueueVisits = visits.filter((visit) =>
+      allowedVisitIds.has(String(visit._id))
+    );
+
+    res.status(200).json(xrayQueueVisits);
+  } catch (err) {
+    console.error("Error fetching xray queue visits:", err);
+    res.status(500).json({ error: "Failed to fetch xray queue" });
   }
 });
 

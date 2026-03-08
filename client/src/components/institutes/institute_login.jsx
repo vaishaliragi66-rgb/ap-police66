@@ -27,6 +27,22 @@ const InstituteLogin = () => {
     setMessage("");
     setLoading(true);
 
+    const normalizedEmail = formData.Email_ID.trim().toLowerCase();
+    const normalizedPassword = formData.password.trim();
+
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      setMessage("❌ Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+
+    if (!normalizedPassword) {
+      setMessage("❌ Password is required");
+      setLoading(false);
+      return;
+    }
+
     try {
       let endpoint = "";
 
@@ -38,7 +54,11 @@ const InstituteLogin = () => {
 
       const res = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}${endpoint}`,
-        formData
+        {
+          ...formData,
+          Email_ID: normalizedEmail,
+          password: normalizedPassword,
+        }
       );
 
       /* ================= STORE TOKEN ================= */

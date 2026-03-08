@@ -300,6 +300,7 @@ const fetchXrayTypes = async () => {
           {/* Patient Selector */}
           <PatientSelector
             instituteId={formData.Institute_ID}
+            onlyXrayQueue={true}
             onSelect={({ employee, visit }) => {
               const vId = visit?._id || null;
               const token =

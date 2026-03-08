@@ -158,6 +158,16 @@ const loadEmployeeReports = async () => {
     return `${dd}-${mm}-${yyyy}`;
   };
 
+  const formatExpiryMY = (value) => {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return "—";
+
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    return `${mm}-${yyyy}`;
+  };
+
   /* ================= INITIAL LOAD ================= */
 useEffect(() => {
   const instituteId = localStorage.getItem("instituteId");
@@ -320,6 +330,16 @@ else {
 }
 
 
+    if (field === "searchText") {
+      updated[index] = {
+        ...updated[index],
+        medicineId: "",
+        medicineName: "",
+        expiryDate: ""
+      };
+    }
+
+
     return { ...prev, Medicines: updated };
   });
 };
@@ -451,13 +471,41 @@ const addMedicineToForm = (inventoryItem, quantity) => {
 const handleSubmit = async (e) => {
   e.preventDefault();
 
+  const selectedRows = formData.Medicines.filter((medicine) => medicine.medicineId);
+
+  if (selectedRows.length === 0) {
+    alert("Please select at least one medicine from the sub-store list.");
+    return;
+  }
+
+  const hasManualEntry = formData.Medicines.some((medicine, index) => {
+    const typedText = (medicineSearch[index] || "").trim();
+    const hasTypedOrQty = typedText.length > 0 || Number(medicine.quantity) > 0;
+    return hasTypedOrQty && !medicine.medicineId;
+  });
+
+  if (hasManualEntry) {
+    alert("Please select medicine from suggestions only. Manual entry is not allowed.");
+    return;
+  }
+
+  const invalidSelected = selectedRows.some((medicine) => {
+    const invItem = inventory.find((item) => item.Medicine_Code === medicine.medicineId);
+    return !invItem || Number(medicine.quantity) <= 0;
+  });
+
+  if (invalidSelected) {
+    alert("Please select valid medicine and quantity from sub-store.");
+    return;
+  }
+
   // Build payload with PROPER Medicine_ID
   const payload = {
     Institute_ID: formData.Institute_ID,
     Employee_ID: formData.Employee_ID,
     IsFamilyMember: formData.IsFamilyMember,
     FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
-    Medicines: formData.Medicines.map(m => {
+    Medicines: selectedRows.map(m => {
       // Find medicine in inventory - IMPORTANT: Get the _id!
       const invItem = inventory.find(item => 
         item.Medicine_Code === m.medicineId
@@ -780,20 +828,36 @@ const handleSubmit = async (e) => {
                           placeholder="Type medicine name..."
                           // When displaying medicine in the input field:
                           value={
-                              activeMedicineIndex === i
-                                ? medicineSearch[i] ?? med.medicineName ?? ""
-                                : med.medicineName
-                                  ? `${med.medicineName.trim()} (Exp: ${formatDateDMY(med.expiryDate)})`
-                                  : ""
+                              (() => {
+                                const typedValue = medicineSearch[i];
+                                const hasTypedValue = typeof typedValue === "string" && typedValue.length > 0;
+
+                                if (hasTypedValue) {
+                                  return typedValue;
+                                }
+
+                                return med.medicineName
+                                  ? `${med.medicineName.trim()} (Exp: ${formatExpiryMY(med.expiryDate)})`
+                                  : "";
+                              })()
                             }
 
                           onFocus={() => setActiveMedicineIndex(i)}
-                          onChange={(e) =>
-                          setMedicineSearch(prev => ({
-                            ...prev,
-                            [i]: e.target.value
-                          }))
-                        }
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setMedicineSearch(prev => ({
+                              ...prev,
+                              [i]: value
+                            }));
+                            handleMedicineChange(i, "searchText", value);
+                          }}
+                          onBlur={() => {
+                            setTimeout(() => {
+                              if (activeMedicineIndex === i) {
+                                setActiveMedicineIndex(null);
+                              }
+                            }, 150);
+                          }}
 
                         />
 
@@ -808,13 +872,15 @@ const handleSubmit = async (e) => {
                               className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
                                 m.Quantity === 0 ? "disabled text-muted" : ""
                               }`}
-                              onClick={() => {
+                              onMouseDown={(e) => {
+                                e.preventDefault();
                                 if (m.Quantity === 0) return;
                                 handleMedicineChange(i, "medicineId", displayCode);
-                                setMedicineSearch(prev => ({
-                                  ...prev,
-                                  [i]: ""
-                                }));
+                                setMedicineSearch(prev => {
+                                  const updated = { ...prev };
+                                  delete updated[i];
+                                  return updated;
+                                });
 
                                 setFilteredMedicines([]);
                                 setActiveMedicineIndex(null);
@@ -823,7 +889,7 @@ const handleSubmit = async (e) => {
                               <div>
                                 <strong>{displayName}</strong>
                                 <div className="small text-muted">
-                                  Exp: {formatDateDMY(m.Expiry_Date)}
+                                  Exp: {formatExpiryMY(m.Expiry_Date)}
                                 </div>
                               </div>
 
