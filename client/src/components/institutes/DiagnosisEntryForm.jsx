@@ -357,6 +357,7 @@ const fetchPastRecords = async () => {
         {/* Employee Search */}
 <PatientSelector
   instituteId={formData.Institute_ID}
+  onlyDiagnosisQueue={true}
   onSelect={({ employee, visit }) => {
 console.log("VISIT OBJECT:", visit);
 

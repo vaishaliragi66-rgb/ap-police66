@@ -284,20 +284,15 @@ const relevantDiseases = diseases.filter((d) => {
 
 
 
-    const payload = {
-      Institute_ID: formData.Institute_ID,
-      Employee_ID: formData.Employee_ID,
-      IsFamilyMember: formData.IsFamilyMember,
-      FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
-      medicines: formData.Medicines.map(m => ({
-        Medicine_Name: m.Medicine_Name,
-        Dosage: m.Dosage,
-        Duration: m.Duration
-      })),
-      Notes: formData.Notes,
-    };
+    const selectedMedicines = formData.Medicines
+      .filter((med) => med.Medicine_Name?.trim())
+      .map((med) => ({
+        Medicine_Name: med.Medicine_Name,
+        Dosage: med.Dosage,
+        Duration: med.Duration
+      }));
 
-    for (let med of formData.Medicines) {
+    for (let med of selectedMedicines) {
       if (!uniqueMedicines.includes(med.Medicine_Name)) {
         alert("Invalid medicine selected. Please choose from list.");
         return;
@@ -316,7 +311,7 @@ const relevantDiseases = diseases.filter((d) => {
         FamilyMember_ID: formData.IsFamilyMember
           ? formData.FamilyMember_ID
           : null,
-          medicines: formData.Medicines.map(m => ({
+          medicines: selectedMedicines.map(m => ({
             Medicine_Name: m.Medicine_Name,
             Dosage: m.Dosage,
             Duration: m.Duration
@@ -658,7 +653,6 @@ const handleXraySubmit = async () => {
             copy[i].Medicine_Name = e.target.value;
             setFormData(prev => ({ ...prev, Medicines: copy }));
           }}
-          required
         >
           <option value="">Select Medicine</option>
 
