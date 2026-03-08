@@ -3,7 +3,7 @@ import axios from "axios";
 
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 
-export default function PatientSelector({ onSelect, instituteId }) {
+export default function PatientSelector({ onSelect, instituteId, onlyDiagnosisQueue = false, onlyXrayQueue = false }) {
   const [todayVisits, setTodayVisits] = useState([]);
   const [search, setSearch] = useState("");
   const [options, setOptions] = useState([]);
@@ -14,8 +14,14 @@ export default function PatientSelector({ onSelect, instituteId }) {
 useEffect(() => {
   if (!instituteId) return;
 
+  const endpoint = onlyDiagnosisQueue
+    ? `http://localhost:${BACKEND_PORT}/diagnosis-api/queue/${instituteId}`
+    : onlyXrayQueue
+    ? `http://localhost:${BACKEND_PORT}/xray-api/queue/${instituteId}`
+    : `http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`;
+
   axios
-    .get(`http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`)
+    .get(endpoint)
     
     .then(res => {
       setTodayVisits(res.data || []);
@@ -23,13 +29,33 @@ useEffect(() => {
     })
     
     .catch(err => console.error(err));
-}, [instituteId]);
+  }, [instituteId, onlyDiagnosisQueue, onlyXrayQueue]);
 
 
   /* ================= SEARCH ================= */
   useEffect(() => {
     if (!search.trim()) {
       setOptions(todayVisits);
+      return;
+    }
+
+    if (onlyDiagnosisQueue || onlyXrayQueue) {
+      const term = search.toLowerCase();
+      const filtered = todayVisits.filter((visit) => {
+        const absNo = String(visit?.employee_id?.ABS_NO || "").toLowerCase();
+        const employeeName = String(visit?.employee_id?.Name || "").toLowerCase();
+        const familyName = String(visit?.FamilyMember?.Name || "").toLowerCase();
+        const token = String(visit?.token_no || "").toLowerCase();
+
+        return (
+          absNo.includes(term) ||
+          employeeName.includes(term) ||
+          familyName.includes(term) ||
+          token.includes(term)
+        );
+      });
+
+      setOptions(filtered);
       return;
     }
 
@@ -44,7 +70,7 @@ useEffect(() => {
         );
         setOptions(filtered);
       });
-  }, [search, todayVisits]);
+  }, [search, todayVisits, onlyDiagnosisQueue, onlyXrayQueue]);
 
   /* ================= SELECT ================= */
 const handleSelect = (item) => {
