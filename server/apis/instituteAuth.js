@@ -10,6 +10,22 @@ const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || "institutesecret123";
 
+const BCRYPT_HASH_PREFIX_REGEX = /^\$2[aby]\$\d{2}\$/;
+
+const verifyPasswordWithLegacySupport = async (plainPassword, storedPassword) => {
+  if (!storedPassword) {
+    return { isMatch: false, shouldUpgradeHash: false };
+  }
+
+  if (BCRYPT_HASH_PREFIX_REGEX.test(storedPassword)) {
+    const isMatch = await bcrypt.compare(plainPassword, storedPassword);
+    return { isMatch, shouldUpgradeHash: false };
+  }
+
+  const isMatch = plainPassword === storedPassword;
+  return { isMatch, shouldUpgradeHash: isMatch };
+};
+
 
 /* ============================================================
    VERIFY TOKEN MIDDLEWARE
@@ -85,12 +101,20 @@ if (!institute) {
   });
 }
 
-    const isMatch = await bcrypt.compare(password, institute.password);
+    const { isMatch, shouldUpgradeHash } = await verifyPasswordWithLegacySupport(
+      password,
+      institute.password
+    );
 
     if (!isMatch) {
       return res.status(401).json({
         message: "Invalid credentials"
       });
+    }
+
+    if (shouldUpgradeHash) {
+      institute.password = await bcrypt.hash(password, 10);
+      await institute.save();
     }
 
     const token = jwt.sign(
@@ -151,12 +175,20 @@ router.post(
       });
     }
 
-    const isMatch = await bcrypt.compare(password, credential.password);
+    const { isMatch, shouldUpgradeHash } = await verifyPasswordWithLegacySupport(
+      password,
+      credential.password
+    );
 
     if (!isMatch) {
       return res.status(401).json({
         message: "Invalid credentials"
       });
+    }
+
+    if (shouldUpgradeHash) {
+      credential.password = await bcrypt.hash(password, 10);
+      await credential.save();
     }
 
     const token = jwt.sign(

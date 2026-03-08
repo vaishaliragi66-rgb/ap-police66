@@ -7,6 +7,7 @@ import HealthShield from '../../assets/Employee_login.svg'
 const Employeelogin = () => {
   const [absNo, setAbsNo] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
   const employeeName = localStorage.getItem("employeeName")
@@ -14,6 +15,18 @@ const Employeelogin = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+
+    // Validate ABS Number
+    if (!absNo.trim()) {
+      setError("ABS Number is required");
+      return;
+    }
+    if (!/^\d{6}$/.test(absNo)) {
+      setError("ABS number must be exactly 6 digits");
+      return;
+    }
+
     try {
       const res = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}/employee-api/login`,
@@ -33,7 +46,7 @@ const Employeelogin = () => {
 
       navigate("/employee/home");
     } catch (error) {
-      alert(error.response?.data?.message || "❌ Invalid credentials");
+      setError(error.response?.data?.message || "❌ Invalid credentials");
     }
   };
 
@@ -129,6 +142,18 @@ const Employeelogin = () => {
             boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
           }}
         >
+          {/* Error Message */}
+          {error && (
+            <div className="alert alert-danger alert-dismissible fade show w-100 mb-3">
+              <strong>Error:</strong> {error}
+              <button 
+                type="button" 
+                className="btn-close" 
+                onClick={() => setError("")}
+              ></button>
+            </div>
+          )}
+
           <form onSubmit={handleLogin}>
             {/* ABS Number */}
             <div className="mb-3">
@@ -139,6 +164,12 @@ const Employeelogin = () => {
                 placeholder="Enter ABS Number"
                 value={absNo}
                 onChange={(e) => setAbsNo(e.target.value)}
+                onKeyPress={(e) => {
+                  if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                maxLength="6"
                 required
               />
             </div>
