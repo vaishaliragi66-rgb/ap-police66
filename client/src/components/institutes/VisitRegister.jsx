@@ -319,7 +319,7 @@ const VisitRegister = () => {
           }
         />
       </div>
-
+{/* 
       <div className="col-md-6 mb-2">
         <label>Sugar</label>
         <input
@@ -330,7 +330,7 @@ const VisitRegister = () => {
             setVitals({ ...vitals, Sugar: e.target.value })
           }
         />
-      </div>
+      </div> */}
 
       <div className="col-md-6 mb-2">
         <label>GRBS</label>
