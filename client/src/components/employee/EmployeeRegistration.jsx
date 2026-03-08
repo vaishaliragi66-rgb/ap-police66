@@ -539,15 +539,39 @@ if (validationErrors.length > 0) {
               <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">Designation</label>
-                  <input
-                    type="text"
+                  <select
                     name="Designation"
-                    className="form-control"
-                    placeholder="Enter designation"
+                    className="form-select"
                     value={formData.Designation}
                     onChange={handleChange}
                     disabled={loading}
-                  />
+                  >
+                    <option value="">Select Designation</option>
+                    <option value="HC">HC</option>
+                    <option value="ARSI">ARSI</option>
+                    <option value="ASI">ASI</option>
+                    <option value="RSI">RSI</option>
+                    <option value="SI">SI</option>
+                    <option value="RI">RI</option>
+                    <option value="CI">CI</option>
+                    <option value="DSP">DSP</option>
+                    <option value="AC">AC</option>
+                    <option value="Adl.Commandant">Adl.Commandant</option>
+                    <option value="Adl.SP">Adl.SP</option>
+                    <option value="SP">SP</option>
+                    <option value="COMMANDANT">COMMANDANT</option>
+                    <option value="DIG">DIG</option>
+                    <option value="IG">IG</option>
+                    <option value="ADGP">ADGP</option>
+                    <option value="DGP">DGP</option>
+                    <option value="AO">AO</option>
+                    <option value="SR.Assistant">SR.Assistant</option>
+                    <option value="Jr.Assistant">Jr.Assistant</option>
+                    <option value="Superintendent">Superintendent</option>
+                    <option value="CLASS IV">CLASS IV</option>
+                    <option value="Record Assistant">Record Assistant</option>
+                    <option value="COOK">CooK</option>
+                  </select>
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">Date of Birth</label>
