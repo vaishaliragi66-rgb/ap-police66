@@ -16,13 +16,25 @@ const FamilyMemberProfile = () => {
       .then((res) => setMember(res.data));
   }, [id, BACKEND_PORT]);
 
-  if (!member)
+  if (!member) {
     return <div className="text-center mt-5">Loading...</div>;
+  }
 
   return (
     <div className="container mt-4">
-      <button className="btn btn-outline-dark mb-3" onClick={() => navigate(-1)}>
-        ← Back
+      <button
+        className="btn mb-3"
+        onClick={() => navigate(-1)}
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D6E0F0",
+          borderRadius: "8px",
+          padding: "6px 14px",
+          fontSize: "14px",
+          color: "#1F2933",
+        }}
+      >
+        &larr; Back
       </button>
 
       <div className="card shadow p-4">
