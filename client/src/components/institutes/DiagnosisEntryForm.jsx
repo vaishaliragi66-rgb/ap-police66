@@ -279,6 +279,35 @@ const fetchTests = async () => {
       }
     };
 
+  const handlePrint = () => {
+    const section = document.getElementById("diagnosis-print-section");
+    if (!section) return;
+
+    const printWindow = window.open("", "_blank", "width=1000,height=800");
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Diagnosis / Lab Test Entry</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; }
+            button { display: none !important; }
+          </style>
+        </head>
+        <body>${section.innerHTML}</body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 300);
+  };
+
 const filteredDoctorDiagnosis = doctorDiagnosis.filter(d => {
   const isFamily =
     d.data?.is_family_member ??
@@ -328,13 +357,31 @@ const fetchPastRecords = async () => {
 
     {/* FORM SIDE */}
     <div
+      id="diagnosis-print-section"
       style={{
         width: showHistory ? "65%" : "100%",
         transition: "0.3s ease",
         padding: "40px",
       }}
     >
-      <h2 style={{ textAlign: "center", marginBottom: 30, color: "#333" }}>🏥 Diagnosis / Lab Test Entry</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <h2 style={{ margin: 0, color: "#333" }}>🏥 Diagnosis / Lab Test Entry</h2>
+        <button
+          type="button"
+          onClick={handlePrint}
+          style={{
+            padding: "10px 16px",
+            background: "#6c757d",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            cursor: "pointer"
+          }}
+        >
+          🖨 Print
+        </button>
+      </div>
       
       <form onSubmit={handleSubmit} autoComplete="off">
         {/* Institute */}
@@ -664,11 +711,11 @@ const token = visit?.token_no || visit?.Token_Number || null;
           />
         </div>
 
-        {/* Submit Button */}
+        {/* Actions */}
         <button 
           type="submit" 
           style={{ 
-            marginTop: 10, 
+            marginTop: 10,
             width: "100%", 
             padding: "14px", 
             background: "#28a745", 
