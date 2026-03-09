@@ -22,12 +22,11 @@ const OthersLayout = () => {
 
   const menu = [
     { label: "Medicines Issued Register", path: "/institutes/medicines-issued-register", icon: <FaPills /> },
-    { label: "Inventory", path: "/institutes/inventory", icon: <FaBoxOpen /> },
     { label: "Employee Reports", path: "/institutions/reports", icon: <FaFileMedical /> },
     { label: "Ledger", path: "/institutes/ledger", icon: <FaClipboardList /> },
     { label: "Indent", path: "/institutes/indent", icon: <FaClipboardList /> },
     { label: "Main Store", path: "/institutions/main-store", icon: <FaWarehouse /> },
-    { label: "Sub Store", path: "/institutes/sub-store", icon: <FaWarehouse /> },
+    { label: "Substore", path: "/institutes/inventory", icon: <FaBoxOpen /> },
     { label: "AI Insights", path: "/institutes/ai-insights", icon: <FaRobot /> },
     { label: "Analytics", path: "/institutes/analytics", icon: <FaRobot />}
   ];

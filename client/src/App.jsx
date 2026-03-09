@@ -26,7 +26,6 @@ import DoctorPrescriptionForm from "./components/institutes/DoctorPrescriptionFo
 import VisitRegister from "./components/institutes/VisitRegister";
 import DoctorDiagnosisForm from "./components/institutes/DoctorDiagnosisForm";
 import MainStore from "./components/institutes/main_store"
-import SubStore from "./components/institutes/sub_store"
 import AddMainStoreMedicine from "./components/institutes/AddMainStoreMedicine";
 import TransferMainStoreMedicine from "./components/institutes/TransferMainstoreMedicine";
 import InstituteAnalytics from "./components/institutes/institute_analytics";
@@ -112,10 +111,6 @@ function App() {
         {
           path: "institutions/main-store",
           element: <MainStore />
-        },
-        {
-          path: "institutes/sub-store",
-          element: <SubStore />
         },
         {
           path: "/institutes/ai-insights",
