@@ -1,13 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Bar, Pie } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend } from "chart.js";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "bootstrap/dist/css/bootstrap.min.css";
-import ChartDataLabels from "chartjs-plugin-datalabels";
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, ChartDataLabels);
 
 const HealthSummary = () => {
   const institute = JSON.parse(localStorage.getItem("institute") || "{}");
@@ -18,6 +13,13 @@ const HealthSummary = () => {
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [data, setData] = useState(null);
+
+  const formatDateDMY = (isoDate) => {
+    if (!isoDate) return "-";
+    const [yyyy, mm, dd] = String(isoDate).split("-");
+    if (!yyyy || !mm || !dd) return isoDate;
+    return `${dd}-${mm}-${yyyy}`;
+  };
 
   const fetchSummary = async () => {
     try {
@@ -53,38 +55,10 @@ const HealthSummary = () => {
     pdf.save("HealthSummary.pdf");
   };
 
-  const diseaseChartData = data && {
-    labels: data.diseaseSummary.map(d => d.diseaseName),
-    datasets: [{
-      label: "Disease Count",
-      data: data.diseaseSummary.map(d => d.count),
-      backgroundColor: "#3B6FB6"
-    }]
-  };
-
-  const categoryChartData = data && {
-  labels: data.categorySummary.map(c => c.category),
-  datasets: [{
-    data: data.categorySummary.map(c => c.count),
-    backgroundColor: ["#28a745", "#dc3545"],
-    
-    datalabels: {
-      color: "#fff",
-      font: {
-        weight: "bold",
-        size: 16
-      },
-      formatter: (value) => value
-    }
-  }]
-};
-
-
   return (
     <div className="container my-4">
       <h3 className="fw-bold mb-4 text-center">Health Summary</h3>
 
-      {/* Filter Card */}
       <div className="card shadow-sm p-4 mb-4">
         <div className="d-flex gap-3 mb-3">
           <button className={`btn ${type === "daily" ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setType("daily")}>Daily</button>
@@ -113,140 +87,73 @@ const HealthSummary = () => {
 
       {data && (
         <div id="summary-section" className="bg-white p-4 rounded shadow-sm">
-
-          {/* REPORT HEADER */}
-          <div className="text-center mb-4">
-            <h4 className="fw-bold">{institute?.Institute_Name}</h4>
-            <p className="mb-0">
+          <div className="text-center mb-3">
+            <h5 className="fw-bold mb-1">
+              OP CENSUS OF DISTRICT POLICE HOSPITAL, {String(institute?.Institute_Name || "").toUpperCase()}
+            </h5>
+            <div className="small text-muted">
               {type === "daily"
-                ? `Daily Report - ${date}`
-                : `Monthly Report - ${month}/${year}`}
-            </p>
-            <hr />
-          </div>
-
-          {/* DEMOGRAPHICS */}
-          {/* MONTHLY CENSUS TABLE */}
-          {type === "monthly" && data?.monthlySummary && (
-            <div className="card p-3 shadow-sm mb-4">
-              <h6 className="fw-bold text-center mb-3">Monthly OP Census</h6>
-              <div className="table-responsive">
-                <table className="table table-bordered text-center">
-                  <thead className="table-light">
-                    <tr>
-                      <th>S.No</th>
-                      <th>Date</th>
-                      <th>Male</th>
-                      <th>Female</th>
-                      <th>Male Child</th>
-                      <th>Female Child</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.monthlySummary.map((row, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{new Date(row.date).toLocaleDateString()}</td>
-                        <td>{row.male}</td>
-                        <td>{row.female}</td>
-                        <td>{row.maleChildren}</td>
-                        <td>{row.femaleChildren}</td>
-                        <td className="fw-bold">{row.totalPatients}</td>
-                      </tr>
-                    ))}
-                    {/* TOTAL ROW */}
-                    <tr className="table-secondary fw-bold">
-                      <td colSpan="2">TOTAL</td>
-                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.male, 0)}</td>
-                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.female, 0)}</td>
-                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.maleChildren, 0)}</td>
-                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.femaleChildren, 0)}</td>
-                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.totalPatients, 0)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-          <div className="row g-3 mb-4">
-            {Object.entries(data.demographics).map(([key, value]) => (
-              <div className="col-lg-2 col-md-4 col-6" key={key}>
-                <div className="card text-center p-3 shadow-sm">
-                  <small className="text-muted text-capitalize">{key}</small>
-                  <h5 className="fw-bold">{value}</h5>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* CHARTS ROW */}
-          <div className="row mb-4">
-            <div className="col-md-6">
-              <div className="card p-3 shadow-sm">
-                <h6 className="fw-bold text-center">Disease Distribution</h6>
-                <div style={{ height: "300px" }}>
-                  <Bar
-                    data={diseaseChartData}
-                    options={{
-                      maintainAspectRatio: false,
-                      plugins: {
-                        datalabels: {
-                          anchor: "end",
-                          align: "top",
-                          formatter: (value) => value,
-                          font: { weight: "bold" }
-                        }
-                      }
-                    }}
-                  />
-
-                </div>
-              </div>
-            </div>
-
-            <div className="col-md-6">
-              <div className="card p-3 shadow-sm">
-                <h6 className="fw-bold text-center">Category Summary</h6>
-                <div style={{ height: "300px" }}>
-                  <Pie
-                    data={categoryChartData}
-                    options={{
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: { position: "bottom" }
-                      }
-                    }}
-                  />
-                </div>
-              </div>
+                ? `FOR ${formatDateDMY(date)}`
+                : `FOR ${month}-${year}`}
             </div>
           </div>
-          {/* MEDICINE TABLE */}
-          <div className="card p-3 shadow-sm">
-            <h6 className="fw-bold">Medicine Usage</h6>
-            <table className="table table-bordered mt-3">
-              <thead className="table-light">
-                <tr>
-                  <th>Medicine</th>
-                  <th>Total Quantity</th>
+
+          <table className="table table-bordered mt-3">
+            <thead className="table-light text-center align-middle">
+              <tr>
+                <th style={{ width: "70px" }}>S.No</th>
+                <th style={{ width: "130px" }}>Date</th>
+                <th>Male</th>
+                <th>Female</th>
+                <th>Male Child</th>
+                <th>Female Child</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data.censusRows || []).map((row, index) => (
+                <tr key={`${row.date}-${index}`}>
+                  <td className="text-center">{index + 1}</td>
+                  <td>{formatDateDMY(row.date)}</td>
+                  <td className="text-center">{row.male}</td>
+                  <td className="text-center">{row.female}</td>
+                  <td className="text-center">{row.maleChild}</td>
+                  <td className="text-center">{row.femaleChild}</td>
+                  <td className="text-center fw-semibold">{row.total}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {data.medicineUsage.map((m, i) => (
-                  <tr key={i}>
-                    <td>{m.medicineName}</td>
-                    <td>{m.totalQuantity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
 
+              {(data.censusRows || []).length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center text-muted">
+                    No census data available for selected period.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+
+            <tfoot className="table-light fw-bold">
+              <tr>
+                <td colSpan={2} className="text-end">TOTAL</td>
+                <td className="text-center">{data.totals?.male ?? 0}</td>
+                <td className="text-center">{data.totals?.female ?? 0}</td>
+                <td className="text-center">{data.totals?.maleChild ?? 0}</td>
+                <td className="text-center">{data.totals?.femaleChild ?? 0}</td>
+                <td className="text-center">{data.totals?.total ?? 0}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div className="mt-3 small">
+            <div>MALE = <strong>{data.totals?.male ?? 0}</strong></div>
+            <div>FEMALE = <strong>{data.totals?.female ?? 0}</strong></div>
+            <div>MALE CHILD = <strong>{data.totals?.maleChild ?? 0}</strong></div>
+            <div>FEMALE CHILD = <strong>{data.totals?.femaleChild ?? 0}</strong></div>
+            <div>TOTAL = <strong>{data.totals?.total ?? 0}</strong></div>
+          </div>
         </div>
       )}
 
-      {/* PRINT STYLES */}
       <style>
         {`
           @media print {
@@ -265,7 +172,6 @@ const HealthSummary = () => {
           }
         `}
       </style>
-
     </div>
   );
 };
