@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const XrayEntryForm = () => {
   const [instituteName, setInstituteName] = useState("");
@@ -277,525 +278,341 @@ const fetchXrayTypes = async () => {
   };
 
   return (
-    <div
-      style={{
-        background: "#b7c3cf",
-        minHeight: "100vh",
-        padding: "40px",
-      }}
-    >
-      <div
-        id="xray-print-section"
-        style={{
-          maxWidth: "1100px",
-          margin: "0 auto",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2
-            style={{
-              margin: 0,
-              color: "#333",
-            }}
-          >
-            🩻 X-ray Entry
-          </h2>
-          <button
-            type="button"
-            onClick={handlePrint}
-            style={{
-              padding: "10px 16px",
-              background: "#6c757d",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              fontWeight: "bold",
-              cursor: "pointer"
-            }}
-          >
-            🖨 Print
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          {/* Institute */}
-          <div style={{ marginBottom: 20 }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 8,
-                fontWeight: "bold",
-                color: "#555",
-              }}
-            >
-              Institute
-            </label>
-            <input
-              value={instituteName || "Loading..."}
-              readOnly
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: 8,
-                border: "1px solid #ddd",
-                backgroundColor: "#f9f9f9",
-              }}
-            />
-          </div>
-
-          {/* Patient Selector */}
-          <PatientSelector
-            instituteId={formData.Institute_ID}
-            onlyXrayQueue={true}
-            onSelect={({ employee, visit }) => {
-              const vId = visit?._id || null;
-              const token =
-                visit?.token_no ||
-                visit?.Token_Number ||
-                null;
-
-              setVisitId(vId);
-              setTokenNumber(token);
-              setSelectedEmployee(employee);
-              setSelectedFamilyMember(
-                visit?.IsFamilyMember
-                  ? visit.FamilyMember
-                  : null
-              );
-
-              setFormData((prev) => ({
-                ...prev,
-                Employee_ID: employee._id,
-                IsFamilyMember: Boolean(
-                  visit?.IsFamilyMember
-                ),
-                FamilyMember_ID:
-                  visit?.IsFamilyMember
-                    ? visit.FamilyMember?._id
-                    : "",
-              }));
-            }}
-          />
-          {selectedEmployee && (
-  <div
-    style={{
-      marginBottom: 20,
-      padding: "14px",
-      backgroundColor: "#eef6ff",
-      borderRadius: "8px",
-      border: "1px solid #cfe2ff",
-    }}
-  >
-    <div>
-      <strong>Employee Name:</strong>{" "}
-      {selectedEmployee.Name}
-    </div>
-    <div>
-      <strong>ABS No:</strong>{" "}
-      {selectedEmployee.ABS_NO}
-    </div>
-
-    {tokenNumber && (
-      <div>
-        <strong>Token Number:</strong>{" "}
-        {tokenNumber}
-      </div>
-    )}
-
-    {formData.IsFamilyMember &&
-      selectedFamilyMember && (
-        <>
-          <div>
-            <strong>Family Member:</strong>{" "}
-            {selectedFamilyMember.Name}
-          </div>
-          <div>
-            <strong>Relationship:</strong>{" "}
-            {selectedFamilyMember.Relationship}
-          </div>
-        </>
-      )}
-
-    <button
-      type="button"
-      onClick={fetchPastRecords}
-      style={{
-        marginTop: "10px",
-        padding: "8px 16px",
-        background:
-          "linear-gradient(135deg, #2563eb, #1e40af)",
-        color: "#ffffff",
-        border: "none",
-        borderRadius: "8px",
-        cursor: "pointer",
-        fontWeight: "600",
-        fontSize: "14px",
-        boxShadow:
-          "0 4px 10px rgba(37, 99, 235, 0.3)",
-        transition: "0.2s ease",
-      }}
-    >
-      📄 View History
-    </button>
-  </div>
-)}
-
-
-          {/* X-ray Section */}
-          <div style={{ marginBottom: 30 }}>
-            <h4
-              style={{
-                marginBottom: 20,
-                color: "#333",
-                borderBottom: "2px solid #eee",
-                paddingBottom: 10,
-              }}
-            >
-              X-rays
-            </h4>
-
-            {formData.Xrays.map((x, i) => (
-              <div
-                key={i}
-                style={{
-                  marginBottom: 20,
-                  padding: "15px",
-                  backgroundColor: "#f8f9fa",
-                  borderRadius: "8px",
-                  border: "1px solid #e9ecef",
-                }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "1fr 1fr 1fr 1fr auto",
-                    gap: "10px",
-                    alignItems: "center",
-                  }}
+    <div className="container-fluid mt-4">
+      <div className="row justify-content-center">
+        {/* ================= HISTORY PANEL ================= */}
+        {showHistory && (
+          <div className="col-lg-4 mb-3">
+            <div className="card shadow border-0 h-100">
+              <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <strong>🩻 X-ray History</strong>
+                <button
+                  className="btn btn-sm btn-light"
+                  onClick={() => setShowHistory(false)}
                 >
-                  {/* <select
-  value={x.Xray_Type}
-  onChange={(e) =>
-    handleXrayChange(i, "Xray_Type", e.target.value)
-  }
-  style={{
-    padding: "8px 10px",
-    borderRadius: "6px",
-    border: "1px solid #ddd",
-  }}
->
-  <option value="">Select X-ray Type</option>
-  {xrayTypes.map((type) => (
-    <option
-      key={type._id}
-      value={type.Xray_Type}
-    >
-      {type.Xray_Type} — {type.Body_Part}
-    </option>
-  ))}
-</select> */}
-<div>
-  <div style={{ fontSize: "12px", marginBottom: 4 }}>
-    X-ray Selection
-  </div>
-
-  <select
-    value={x.Xray_ID || ""}
-    onChange={(e) =>
-      handleXrayChange(i, "Xray_ID", e.target.value)
-    }
-    style={{
-      width: "100%",
-      padding: "8px 10px",
-      borderRadius: "6px",
-      border: "1px solid #ddd",
-    }}
-  >
-    <option value="">
-      Select X-ray (or type below)
-    </option>
-
-    {xrayMaster.map((xm) => (
-      <option key={xm._id} value={xm._id}>
-        {xm.Xray_Type} ({xm.Body_Part})
-      </option>
-    ))}
-  </select>
-</div>
-
-<div>
-  <div style={{ fontSize: "12px", marginBottom: 4 }}>
-    X-ray Type
-  </div>
-  <input
-    type="text"
-    placeholder="X-ray Type"
-    value={x.Xray_Type}
-    onChange={(e) =>
-      handleXrayChange(
-        i,
-        "Xray_Type",
-        e.target.value
-      )
-    }
-    style={{
-      width: "100%",
-      padding: "8px 10px",
-      borderRadius: "6px",
-      border: "1px solid #ddd",
-    }}
-  />
-</div>
-
-
-
-                  <input
-                    type="text"
-                    placeholder="Body Part"
-                    value={x.Body_Part}
-                    onChange={(e) =>
-                      handleXrayChange(
-                        i,
-                        "Body_Part",
-                        e.target.value
-                      )
-                    }
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      border: "1px solid #ddd",
-                    }}
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="View (AP/PA)"
-                    value={x.View}
-                    onChange={(e) =>
-                      handleXrayChange(
-                        i,
-                        "View",
-                        e.target.value
-                      )
-                    }
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      border: "1px solid #ddd",
-                    }}
-                  />
-{/* Film Size Field */}
-  <input
-    type="text"
-    placeholder="Film Size (10x8)"
-    value={x.Film_Size}
-    onChange={(e) =>
-      handleXrayChange(i, "Film_Size", e.target.value)
-    }
-    style={{
-      padding: "8px 10px",
-      borderRadius: "6px",
-      border: "1px solid #ddd",
-    }}
-  />
-                  {formData.Xrays.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeXray(i)
-                      }
-                      style={{
-                        background: "#dc3545",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "6px",
-                        padding: "8px 12px",
-                        cursor: "pointer",
-                      }}
+                  ✕
+                </button>
+              </div>
+              <div
+                className="card-body"
+                style={{ maxHeight: "70vh", overflowY: "auto" }}
+              >
+                {!pastRecords || pastRecords.length === 0 ? (
+                  <div className="text-muted text-center py-4">
+                    📭 No previous records found.
+                  </div>
+                ) : (
+                  pastRecords.map((record, index) => (
+                    <div
+                      key={record._id || index}
+                      className="border-bottom pb-3 mb-3"
                     >
-                      Remove
-                    </button>
-                  )}
-                </div>
+                      <div className="text-muted small mb-2">
+                        📅 Date: {record?.createdAt ? formatDateDMY(record.createdAt) : "—"}
+                      </div>
+                      {record?.Xrays?.length > 0 ? (
+                        record.Xrays.map((x, i) => (
+                          <div key={i} className="mb-2 p-2 bg-light rounded">
+                            <div className="fw-semibold text-dark">
+                              {x?.Xray_Type || "X-ray"}
+                            </div>
+                            <small className="text-muted">
+                              {x?.Body_Part || "N/A"}
+                              {x?.View && ` (${x.View})`}
+                            </small>
+                            {x?.Findings && (
+                              <div className="small text-secondary mt-1">
+                                Findings: {x.Findings}
+                              </div>
+                            )}
+                            {x?.Impression && (
+                              <div className="small text-secondary">
+                                Impression: {x.Impression}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-muted small">
+                          No X-ray details available
+                        </div>
+                      )}
+                      {record?.Xray_Notes && (
+                        <div className="mt-2 p-2 bg-light rounded small">
+                          📝 Notes: {record.Xray_Notes}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addXray}
-              style={{
-                padding: "10px 16px",
-                background: "#007bff",
-                color: "#fff",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-              }}
-            >
-              + Add Another X-ray
-            </button>
+            </div>
           </div>
+        )}
 
-          {/* Notes */}
-          <div style={{ marginBottom: 30 }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 8,
-                fontWeight: "bold",
-                color: "#555",
-              }}
-            >
-              X-ray Notes
-            </label>
-            <textarea
-              value={formData.Xray_Notes}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  Xray_Notes: e.target.value,
-                }))
-              }
-              rows={4}
-              placeholder="Enter X-ray notes..."
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "8px",
-                border: "1px solid #ddd",
-                resize: "vertical",
-              }}
-            />
-          </div>
-          {/* HISTORY PANEL */}
-{showHistory && (
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      right: 0,
-      height: "100vh",
-      width: "40%",
-      background: "#fff",
-      padding: 25,
-      overflowY: "auto",
-      boxShadow: "-4px 0 20px rgba(0,0,0,0.15)",
-      zIndex: 2000,
-      transition: "0.3s ease-in-out",
-    }}
-  >
-    {/* Header */}
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 20,
-      }}
-    >
-      <h3 style={{ margin: 0 }}>🩻 X-ray History</h3>
-      <button
-        onClick={() => setShowHistory(false)}
-        style={{
-          background: "#dc3545",
-          color: "#fff",
-          border: "none",
-          padding: "6px 10px",
-          borderRadius: "6px",
-          cursor: "pointer",
-        }}
-      >
-        Close ✖
-      </button>
-    </div>
-
-    {/* Content */}
-    {!pastRecords || pastRecords.length === 0 ? (
-      <div style={{ color: "#777" }}>
-        No previous records.
-      </div>
-    ) : (
-      pastRecords.map((record, index) => (
+        {/* ================= FORM ================= */}
         <div
-          key={record._id || index}
-          style={{
-            marginBottom: 20,
-            padding: 15,
-            borderRadius: 10,
-            background: "#f8f9fa",
-            border: "1px solid #e0e0e0",
-          }}
+          className={`mb-3 ${showHistory ? "col-lg-8" : "col-lg-10"}`}
+          style={{ transition: "all 0.4s ease" }}
         >
-          {/* Date */}
-          <div
-            style={{
-              fontSize: 13,
-              color: "#555",
-              marginBottom: 8,
-            }}
-          >
-            Date:{" "}
-            {record?.createdAt
-              ? formatDateDMY(record.createdAt)
-              : "—"}
+          <div className="card shadow border-0">
+            <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">🩻 X-ray Entry Form</h5>
+              <button
+                type="button"
+                className="btn btn-outline-light btn-sm"
+                onClick={handlePrint}
+              >
+                🖨️ Print
+              </button>
+            </div>
+
+            <div className="card-body">
+              <form onSubmit={handleSubmit}>
+                {/* Institute */}
+                <div className="mb-4">
+                  <label className="form-label fw-semibold">🏥 Institute</label>
+                  <input
+                    className="form-control"
+                    value={instituteName || "Loading..."}
+                    readOnly
+                  />
+                </div>
+
+                {/* Patient Selector */}
+                <div className="mb-4">
+                  <PatientSelector
+                    instituteId={formData.Institute_ID}
+                    onlyXrayQueue={true}
+                    onSelect={({ employee, visit }) => {
+                      const vId = visit?._id || null;
+                      const token =
+                        visit?.token_no ||
+                        visit?.Token_Number ||
+                        null;
+
+                      setVisitId(vId);
+                      setTokenNumber(token);
+                      setSelectedEmployee(employee);
+                      setSelectedFamilyMember(
+                        visit?.IsFamilyMember
+                          ? visit.FamilyMember
+                          : null
+                      );
+
+                      setFormData((prev) => ({
+                        ...prev,
+                        Employee_ID: employee._id,
+                        IsFamilyMember: Boolean(
+                          visit?.IsFamilyMember
+                        ),
+                        FamilyMember_ID:
+                          visit?.IsFamilyMember
+                            ? visit.FamilyMember?._id
+                            : "",
+                      }));
+                    }}
+                  />
+                </div>
+
+                {/* Selected Patient Info */}
+                {selectedEmployee && (
+                  <div className="alert alert-info mb-4">
+                    <div className="row">
+                      <div className="col-md-6">
+                        <strong>👨 Employee:</strong> {selectedEmployee.Name}
+                      </div>
+                      <div className="col-md-3">
+                        <strong>ID:</strong> {selectedEmployee.ABS_NO}
+                      </div>
+                      {tokenNumber && (
+                        <div className="col-md-3">
+                          <strong>🎫 Token:</strong> {tokenNumber}
+                        </div>
+                      )}
+                    </div>
+                    {formData.IsFamilyMember && selectedFamilyMember && (
+                      <div className="row mt-2">
+                        <div className="col-md-6">
+                          <strong>👨‍👩‍👧 Family Member:</strong> {selectedFamilyMember.Name}
+                        </div>
+                        <div className="col-md-6">
+                          <strong>Relation:</strong> {selectedFamilyMember.Relationship}
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={fetchPastRecords}
+                      >
+                        📄 View History
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* X-ray Details */}
+                <div className="mb-4">
+                  <h6 className="fw-bold text-dark mb-3 border-bottom pb-2">
+                    🩻 X-ray Details
+                  </h6>
+
+                  {formData.Xrays.map((x, i) => (
+                    <div
+                      key={i}
+                      className="border rounded p-3 mb-3 bg-light"
+                    >
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0">X-ray #{i + 1}</h6>
+                        {formData.Xrays.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={() => removeXray(i)}
+                          >
+                            🗑️ Remove
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="row g-3">
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold">X-ray Selection</label>
+                          <select
+                            className="form-select"
+                            value={x.Xray_ID || ""}
+                            onChange={(e) => handleXrayChange(i, "Xray_ID", e.target.value)}
+                          >
+                            <option value="">Select X-ray (or type below)</option>
+                            {xrayMaster.map((xm) => (
+                              <option key={xm._id} value={xm._id}>
+                                {xm.Xray_Type} ({xm.Body_Part})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold">X-ray Type</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="X-ray Type"
+                            value={x.Xray_Type}
+                            onChange={(e) => handleXrayChange(i, "Xray_Type", e.target.value)}
+                          />
+                        </div>
+
+                        <div className="col-md-4">
+                          <label className="form-label fw-semibold">Body Part</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Body Part"
+                            value={x.Body_Part}
+                            onChange={(e) => handleXrayChange(i, "Body_Part", e.target.value)}
+                          />
+                        </div>
+
+                        <div className="col-md-4">
+                          <label className="form-label fw-semibold">View</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="View (AP/PA)"
+                            value={x.View}
+                            onChange={(e) => handleXrayChange(i, "View", e.target.value)}
+                          />
+                        </div>
+
+                        <div className="col-md-4">
+                          <label className="form-label fw-semibold">Film Size</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Film Size (10x8)"
+                            value={x.Film_Size}
+                            onChange={(e) => handleXrayChange(i, "Film_Size", e.target.value)}
+                          />
+                        </div>
+
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold">Findings</label>
+                          <textarea
+                            className="form-control"
+                            rows={2}
+                            placeholder="Enter findings..."
+                            value={x.Findings}
+                            onChange={(e) => handleXrayChange(i, "Findings", e.target.value)}
+                          />
+                        </div>
+
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold">Impression</label>
+                          <textarea
+                            className="form-control"
+                            rows={2}
+                            placeholder="Enter impression..."
+                            value={x.Impression}
+                            onChange={(e) => handleXrayChange(i, "Impression", e.target.value)}
+                          />
+                        </div>
+
+                        <div className="col-12">
+                          <label className="form-label fw-semibold">Remarks</label>
+                          <textarea
+                            className="form-control"
+                            rows={2}
+                            placeholder="Enter remarks..."
+                            value={x.Remarks}
+                            onChange={(e) => handleXrayChange(i, "Remarks", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-success me-2"
+                    onClick={addXray}
+                  >
+                    ➕ Add Another X-ray
+                  </button>
+                </div>
+
+                {/* Notes */}
+                <div className="mb-4">
+                  <label className="form-label fw-semibold">📝 X-ray Notes</label>
+                  <textarea
+                    className="form-control"
+                    rows={4}
+                    placeholder="Enter X-ray notes..."
+                    value={formData.Xray_Notes}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        Xray_Notes: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="text-center">
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-lg px-5"
+                  >
+                    💾 Save X-ray Record
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-
-          {/* X-rays */}
-          {record?.Xrays?.length > 0 ? (
-            record.Xrays.map((x, i) => (
-              <div key={i} style={{ marginBottom: 6 }}>
-                <strong>
-                  {x?.Xray_Type || "X-ray"}
-                </strong>
-                {" — "}
-                {x?.Body_Part || "N/A"}
-                {x?.View && ` (${x.View})`}
-              </div>
-            ))
-          ) : (
-            <div style={{ color: "#888", fontSize: 13 }}>
-              No X-ray details
-            </div>
-          )}
-
-          {/* Notes */}
-          {record?.Xray_Notes && (
-            <div
-              style={{
-                marginTop: 8,
-                fontSize: 13,
-                color: "#444",
-              }}
-            >
-              Notes: {record.Xray_Notes}
-            </div>
-          )}
         </div>
-      ))
-    )}
-  </div>
-)}
-
-
-          {/* Actions */}
-          <button
-            type="submit"
-            style={{
-              width: "100%",
-              padding: "14px",
-              background: "#28a745",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "16px",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            💾 Save X-ray Record
-          </button>
-        </form>
       </div>
     </div>
   );
