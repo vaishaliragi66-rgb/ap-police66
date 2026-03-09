@@ -653,6 +653,110 @@ const handleXraySubmit = async () => {
                   </div>
                 )}
 
+                <h6 className="fw-bold" style={{ marginTop: "20px" }}>Disease</h6>
+
+<div className="row g-3 mt-2">
+
+  {/* Category */}
+  <div className="col-md-4">
+    <label className="form-label fw-semibold">Category</label>
+    <select
+      className="form-select"
+      value={diseaseData.Category}
+      onChange={(e) => {
+        setDiseaseData(prev => ({
+          ...prev,
+          Category: e.target.value,
+          Disease_Name: ""
+        }));
+        setShowOtherDiseaseInput(false);
+      }}
+    >
+      <option value="Communicable">Communicable</option>
+      <option value="Non-Communicable">Non-Communicable</option>
+    </select>
+  </div>
+
+  {/* Disease Name */}
+  <div className="col-md-4">
+    <label className="form-label fw-semibold">Disease Name</label>
+    <select
+      className="form-select"
+      value={diseaseData.Disease_Name}
+      onChange={(e) => {
+        if (e.target.value === "Other") {
+          setShowOtherDiseaseInput(true);
+          setDiseaseData(prev => ({ ...prev, Disease_Name: "" }));
+        } else {
+          setShowOtherDiseaseInput(false);
+          setDiseaseData(prev => ({
+            ...prev,
+            Disease_Name: e.target.value
+          }));
+        }
+      }}
+    >
+      <option value="">Select Disease</option>
+      {(diseaseData.Category === "Communicable"
+        ? communicableDiseases
+        : nonCommunicableDiseases
+      ).map((d, i) => (
+        <option key={i} value={d}>{d}</option>
+      ))}
+      <option value="Other">Other</option>
+    </select>
+  </div>
+
+  {/* Severity */}
+  <div className="col-md-4">
+    <label className="form-label fw-semibold">Severity</label>
+    <select
+      className="form-select"
+      value={diseaseData.Severity_Level}
+      onChange={(e) =>
+        setDiseaseData(prev => ({
+          ...prev,
+          Severity_Level: e.target.value
+        }))
+      }
+    >
+      <option>Mild</option>
+      <option>Moderate</option>
+      <option>Severe</option>
+      <option>Chronic</option>
+    </select>
+  </div>
+</div>
+
+{/* Other Disease Input */}
+{showOtherDiseaseInput && (
+  <div className="mt-3">
+    <input
+      className="form-control"
+      placeholder="Enter disease name"
+      value={diseaseData.Disease_Name}
+      onChange={(e) =>
+        setDiseaseData(prev => ({
+          ...prev,
+          Disease_Name: e.target.value
+        }))
+      }
+    />
+  </div>
+)}
+
+                <div className="mt-3">
+                  <label className="form-label fw-semibold">Notes</label>
+                  <textarea
+                    className="form-control"
+                    rows="3"
+                    value={formData.Notes}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, Notes: e.target.value }))
+                    }
+                  />
+                </div>
+
                 <h6 className="fw-bold mt-4">Medicines</h6>
 
                 {formData.Medicines.map((med, i) => (
@@ -745,112 +849,6 @@ const handleXraySubmit = async () => {
                 >
                   + Add Medicine
                 </button>
-
-                <hr className="my-4" />
-<h6 className="fw-bold">Disease</h6>
-
-<div className="row g-3 mt-2">
-
-  {/* Category */}
-  <div className="col-md-4">
-    <label className="form-label fw-semibold">Category</label>
-    <select
-      className="form-select"
-      value={diseaseData.Category}
-      onChange={(e) => {
-        setDiseaseData(prev => ({
-          ...prev,
-          Category: e.target.value,
-          Disease_Name: ""
-        }));
-        setShowOtherDiseaseInput(false);
-      }}
-    >
-      <option value="Communicable">Communicable</option>
-      <option value="Non-Communicable">Non-Communicable</option>
-    </select>
-  </div>
-
-  {/* Disease Name */}
-  <div className="col-md-4">
-    <label className="form-label fw-semibold">Disease Name</label>
-    <select
-      className="form-select"
-      value={diseaseData.Disease_Name}
-      onChange={(e) => {
-        if (e.target.value === "Other") {
-          setShowOtherDiseaseInput(true);
-          setDiseaseData(prev => ({ ...prev, Disease_Name: "" }));
-        } else {
-          setShowOtherDiseaseInput(false);
-          setDiseaseData(prev => ({
-            ...prev,
-            Disease_Name: e.target.value
-          }));
-        }
-      }}
-    >
-      <option value="">Select Disease</option>
-      {(diseaseData.Category === "Communicable"
-        ? communicableDiseases
-        : nonCommunicableDiseases
-      ).map((d, i) => (
-        <option key={i} value={d}>{d}</option>
-      ))}
-      <option value="Other">Other</option>
-    </select>
-  </div>
-
-  {/* Severity */}
-  <div className="col-md-4">
-    <label className="form-label fw-semibold">Severity</label>
-    <select
-      className="form-select"
-      value={diseaseData.Severity_Level}
-      onChange={(e) =>
-        setDiseaseData(prev => ({
-          ...prev,
-          Severity_Level: e.target.value
-        }))
-      }
-    >
-      <option>Mild</option>
-      <option>Moderate</option>
-      <option>Severe</option>
-      <option>Chronic</option>
-    </select>
-  </div>
-</div>
-
-{/* Other Disease Input */}
-{showOtherDiseaseInput && (
-  <div className="mt-3">
-    <input
-      className="form-control"
-      placeholder="Enter disease name"
-      value={diseaseData.Disease_Name}
-      onChange={(e) =>
-        setDiseaseData(prev => ({
-          ...prev,
-          Disease_Name: e.target.value
-        }))
-      }
-    />
-  </div>
-)}
-
-
-                <div className="mt-3">
-                  <label className="form-label fw-semibold">Notes</label>
-                  <textarea
-                    className="form-control"
-                    rows="3"
-                    value={formData.Notes}
-                    onChange={(e) =>
-                      setFormData((f) => ({ ...f, Notes: e.target.value }))
-                    }
-                  />
-                </div>
 
                 <button
                   type="submit"
