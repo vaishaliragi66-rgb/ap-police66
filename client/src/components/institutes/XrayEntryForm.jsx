@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
 
 const XrayEntryForm = () => {
   const [instituteName, setInstituteName] = useState("");
@@ -13,6 +14,7 @@ const XrayEntryForm = () => {
   const [tokenNumber, setTokenNumber] = useState(null);
   const [xrayTypes, setXrayTypes] = useState([]);
   const [xrayMaster, setXrayMaster] = useState([]);
+  const navigate = useNavigate();
 
 
 
@@ -278,7 +280,23 @@ const fetchXrayTypes = async () => {
   };
 
   return (
-    <div className="container-fluid mt-4">
+    
+       <div className="container-fluid mt-2">
+      {/* Back Button */}
+      <button
+        className="btn mb-3"
+        onClick={() => navigate(-1)}
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D6E0F0",
+          borderRadius: "8px",
+          padding: "6px 14px",
+          fontSize: "14px",
+          color: "#1F2933",
+        }}
+      >
+        ← Back
+      </button>
       <div className="row justify-content-center">
         {/* ================= HISTORY PANEL ================= */}
         {showHistory && (
