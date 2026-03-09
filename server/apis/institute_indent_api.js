@@ -31,27 +31,49 @@ indentApp.get("/generate", async (req, res) => {
       ])
     );
 
-    const items = medicines.map(med => {
-  const stockOnHand = med.Quantity || 0;
+    // Calculate previous 1 year consumption for each medicine
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-  const bufferQty = Math.max(
-    med.Threshold_Qty || 10,
-    10
-  );
+    const InstituteLedger = require("../models/InstituteLedger");
 
-  const requiredQty = Math.max(bufferQty - stockOnHand, 0);
+    const items = await Promise.all(medicines.map(async med => {
+      const stockOnHand = med.Quantity || 0;
 
-  return {
-    Medicine_Code: med.Medicine_Code,
-    Medicine_Name: med.Medicine_Name,
-    Type: med.Type,
-    Category: med.Category,
-    Stock_On_Hand: stockOnHand,
-    Buffer_Quantity: bufferQty,
-    Required_Quantity: requiredQty,
-    Remarks: requiredQty > 0 ? "Below buffer stock" : "Sufficient stock"
-  };
-});
+      // Aggregate total consumption (OUT) for this medicine in the past year
+      const consumptionAgg = await InstituteLedger.aggregate([
+        {
+          $match: {
+            Institute_ID: mongoose.Types.ObjectId(instituteId),
+            Medicine_ID: med._id,
+            Direction: "OUT",
+            Timestamp: { $gte: oneYearAgo }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalConsumption: { $sum: "$Quantity" }
+          }
+        }
+      ]);
+
+      const prevYearConsumption = consumptionAgg.length > 0 ? consumptionAgg[0].totalConsumption : 0;
+      const bufferQty = prevYearConsumption + 0.1 * prevYearConsumption;
+      const requiredQty = Math.max(Math.round(bufferQty - stockOnHand), 0);
+
+      return {
+        Medicine_Code: med.Medicine_Code,
+        Medicine_Name: med.Medicine_Name,
+        Type: med.Type,
+        Category: med.Category,
+        Stock_On_Hand: stockOnHand,
+        Previous_Year_Consumption: prevYearConsumption,
+        Buffer_Quantity: Math.round(bufferQty),
+        Required_Quantity: requiredQty,
+        Remarks: requiredQty > 0 ? "Below buffer stock" : "Sufficient stock"
+      };
+    }));
 
 
     res.json({

@@ -234,36 +234,8 @@ const AdminLogin = () => {
           >
             {loading ? "Logging in..." : "Login as Admin"}
           </button>
-
-  
-          {/* Links */}
-          <div className="text-center mt-3">
-            <p className="text-muted small mb-0">
-              Need admin access?{" "}
-              <Link
-                to="/admin/register"
-                className="fw-semibold text-decoration-none"
-                style={{ color: "#4A70A9" }}
-              >
-                Register here
-              </Link>
-            </p>
-          </div>
-  
-          <div className="text-center mt-2">
-            <p className="text-muted small mb-0">
-              Are you an employee?{" "}
-              <Link
-                to="/employee-login"
-                className="fw-semibold text-decoration-none"
-                style={{ color: "#4A70A9" }}
-              >
-                Employee Login
-              </Link>
-            </p>
-          </div>
         </form>
-      </div>
+        </div>
   
       {/* Security Note */}
       <div
