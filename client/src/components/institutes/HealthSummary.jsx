@@ -6,12 +6,21 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const HealthSummary = () => {
   const institute = JSON.parse(localStorage.getItem("institute") || "{}");
-  const instituteId = institute?._id;
+  // prefer full object _id, fallback to standalone instituteId (older flows)
+  const instituteId = institute?._id || localStorage.getItem("instituteId");
 
   const [type, setType] = useState("daily");
   const [date, setDate] = useState("");
   const [month, setMonth] = useState("");
-  const [year, setYear] = useState("");
+  // compute current year/month before using them to initialize state
+  const today = new Date();
+  const currYear = today.getFullYear();
+  const currMonth = today.getMonth() + 1;
+  const [year, setYear] = useState(currYear);
+  const [startYear, setStartYear] = useState(currYear);
+  const [startMonth, setStartMonth] = useState(currMonth);
+  const [endYear, setEndYear] = useState(currYear);
+  const [endMonth, setEndMonth] = useState(currMonth);
   const [data, setData] = useState(null);
 
   const formatDateDMY = (isoDate) => {
@@ -20,21 +29,138 @@ const HealthSummary = () => {
     if (!yyyy || !mm || !dd) return isoDate;
     return `${dd}-${mm}-${yyyy}`;
   };
+  const pad = (n) => {
+    if (n === undefined || n === null) return "";
+    return String(n).toString().padStart(2, "0");
+  };
 
   const fetchSummary = async () => {
+    // require institute id available; backend will validate its format
+    if (!instituteId) {
+      alert("Missing institute. Please login and try again.");
+      return;
+    }
     try {
-      let url = "";
-
       if (type === "daily") {
-        url = `http://localhost:6100/institute-api/health-summary?type=daily&date=${date}&instituteId=${instituteId}`;
-      } else {
-        url = `http://localhost:6100/institute-api/health-summary?type=monthly&year=${year}&month=${month}&instituteId=${instituteId}`;
+        const url = `http://localhost:6100/institute-api/health-summary?type=daily&date=${date}&instituteId=${instituteId}`;
+        const res = await axios.get(url);
+        setData(res.data);
+        return;
       }
 
-      const res = await axios.get(url);
-      setData(res.data);
+      if (type === "yearly") {
+        // build months 1..12 for the selected year
+        const months = [];
+        for (let m = 1; m <= 12; m++) months.push({ year: Number(year), month: m });
+        const calls = months.map(({ year: y, month: m }) =>
+          axios.get(`http://localhost:6100/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
+        );
+
+        const results = await Promise.allSettled(calls);
+        const mergedRowsMap = new Map();
+        let mergedTotals = { male: 0, female: 0, maleChild: 0, femaleChild: 0, total: 0 };
+
+        results.forEach(r => {
+          if (r.status === 'fulfilled' && r.value?.data) {
+            const body = r.value.data;
+            const rows = body.censusRows || [];
+            rows.forEach(row => {
+              const key = row.date;
+              if (!mergedRowsMap.has(key)) mergedRowsMap.set(key, { ...row });
+              else {
+                const existing = mergedRowsMap.get(key);
+                existing.male += row.male || 0;
+                existing.female += row.female || 0;
+                existing.maleChild += row.maleChild || 0;
+                existing.femaleChild += row.femaleChild || 0;
+                existing.total += row.total || 0;
+                mergedRowsMap.set(key, existing);
+              }
+            });
+
+            const t = body.totals || {};
+            mergedTotals.male += t.male || 0;
+            mergedTotals.female += t.female || 0;
+            mergedTotals.maleChild += t.maleChild || 0;
+            mergedTotals.femaleChild += t.femaleChild || 0;
+            mergedTotals.total += t.total || 0;
+          }
+        });
+
+        const censusRows = Array.from(mergedRowsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+        setData({ censusRows, totals: mergedTotals });
+        return;
+      }
+
+      // Monthly: if start/end range spans multiple months, fetch each month separately and merge client-side
+      const buildMonthList = (sYear, sMonth, eYear, eMonth) => {
+        const months = [];
+        let y = Number(sYear);
+        let m = Number(sMonth);
+        const endY = Number(eYear);
+        const endM = Number(eMonth);
+        while (y < endY || (y === endY && m <= endM)) {
+          months.push({ year: y, month: m });
+          m++;
+          if (m > 12) {
+            m = 1;
+            y++;
+          }
+        }
+        return months;
+      };
+
+      // determine whether to use explicit start/end or single month
+      let calls = [];
+      if (startYear && startMonth && endYear && endMonth) {
+        const months = buildMonthList(startYear, startMonth, endYear, endMonth);
+        calls = months.map(({ year: y, month: m }) =>
+          axios.get(`http://localhost:6100/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
+        );
+      } else if (year && month) {
+        calls = [axios.get(`http://localhost:6100/institute-api/health-summary?type=monthly&year=${year}&month=${month}&instituteId=${instituteId}`)];
+      } else {
+        alert('Please provide a valid month range or year+month');
+        return;
+      }
+
+      const results = await Promise.allSettled(calls);
+      // collect successful results
+      const mergedRowsMap = new Map();
+      let mergedTotals = { male: 0, female: 0, maleChild: 0, femaleChild: 0, total: 0 };
+
+      results.forEach(r => {
+        if (r.status === 'fulfilled' && r.value?.data) {
+          const body = r.value.data;
+          const rows = body.censusRows || [];
+          rows.forEach(row => {
+            const key = row.date;
+            if (!mergedRowsMap.has(key)) mergedRowsMap.set(key, { ...row });
+            else {
+              const existing = mergedRowsMap.get(key);
+              existing.male += row.male || 0;
+              existing.female += row.female || 0;
+              existing.maleChild += row.maleChild || 0;
+              existing.femaleChild += row.femaleChild || 0;
+              existing.total += row.total || 0;
+              mergedRowsMap.set(key, existing);
+            }
+          });
+
+          const t = body.totals || {};
+          mergedTotals.male += t.male || 0;
+          mergedTotals.female += t.female || 0;
+          mergedTotals.maleChild += t.maleChild || 0;
+          mergedTotals.femaleChild += t.femaleChild || 0;
+          mergedTotals.total += t.total || 0;
+        }
+      });
+
+      const censusRows = Array.from(mergedRowsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+      setData({ censusRows, totals: mergedTotals });
     } catch (error) {
-      alert("Error fetching summary");
+      console.error('FetchSummary error', error?.response?.data || error.message || error);
+      alert('Error fetching summary — check server logs');
     }
   };
 
@@ -63,17 +189,30 @@ const HealthSummary = () => {
         <div className="d-flex gap-3 mb-3">
           <button className={`btn ${type === "daily" ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setType("daily")}>Daily</button>
           <button className={`btn ${type === "monthly" ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setType("monthly")}>Monthly</button>
+          <button className={`btn ${type === "yearly" ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setType("yearly")}>Yearly</button>
         </div>
 
         {type === "daily" ? (
           <input type="date" className="form-control mb-3" value={date} onChange={e => setDate(e.target.value)} />
-        ) : (
+        ) : type === "yearly" ? (
           <div className="row g-2 mb-3">
             <div className="col">
               <input type="number" placeholder="Year" className="form-control" value={year} onChange={e => setYear(e.target.value)} />
             </div>
-            <div className="col">
-              <input type="number" placeholder="Month (1-12)" className="form-control" value={month} onChange={e => setMonth(e.target.value)} />
+          </div>
+        ) : (
+          <div className="row g-2 mb-3">
+            <div className="col-6">
+              <div className="d-flex">
+                <input type="number" placeholder="Start Year" className="form-control me-2" value={startYear} onChange={e => setStartYear(e.target.value)} />
+                <input type="number" placeholder="Start Month (1-12)" className="form-control" value={startMonth} onChange={e => setStartMonth(e.target.value)} />
+              </div>
+            </div>
+            <div className="col-6">
+              <div className="d-flex">
+                <input type="number" placeholder="End Year" className="form-control me-2" value={endYear} onChange={e => setEndYear(e.target.value)} />
+                <input type="number" placeholder="End Month (1-12)" className="form-control" value={endMonth} onChange={e => setEndMonth(e.target.value)} />
+              </div>
             </div>
           </div>
         )}
@@ -92,9 +231,7 @@ const HealthSummary = () => {
               OP CENSUS OF DISTRICT POLICE HOSPITAL, {String(institute?.Institute_Name || "").toUpperCase()}
             </h5>
             <div className="small text-muted">
-              {type === "daily"
-                ? `FOR ${formatDateDMY(date)}`
-                : `FOR ${month}-${year}`}
+              {type === "daily" ? `FOR ${formatDateDMY(date)}` : type === "yearly" ? `FOR YEAR ${year}` : `FOR ${pad(startMonth)}-${startYear} TO ${pad(endMonth)}-${endYear}`}
             </div>
           </div>
 
