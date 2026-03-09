@@ -607,7 +607,6 @@ const handleXraySubmit = async () => {
                 BP: ${vitals.Blood_Pressure || "-"}
                 Pulse: ${vitals.Pulse || "-"}
                 Oxygen: ${vitals.Oxygen || "-"}
-                Sugar: ${vitals.Sugar || "-"}
                 GRBS: ${vitals.GRBS || "-"}
                       `;
 

@@ -230,6 +230,35 @@ const fetchXrayTypes = async () => {
     }
   };
 
+  const handlePrint = () => {
+    const section = document.getElementById("xray-print-section");
+    if (!section) return;
+
+    const printWindow = window.open("", "_blank", "width=1000,height=800");
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>X-ray Entry</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; }
+            button { display: none !important; }
+          </style>
+        </head>
+        <body>${section.innerHTML}</body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 300);
+  };
+
   const formatDateDMY = (dateValue) => {
     if (!dateValue) return "—";
     const date = new Date(dateValue);
@@ -256,20 +285,37 @@ const fetchXrayTypes = async () => {
       }}
     >
       <div
+        id="xray-print-section"
         style={{
           maxWidth: "1100px",
           margin: "0 auto",
         }}
       >
-        <h2
-          style={{
-            textAlign: "center",
-            marginBottom: 30,
-            color: "#333",
-          }}
-        >
-          🩻 X-ray Entry
-        </h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2
+            style={{
+              margin: 0,
+              color: "#333",
+            }}
+          >
+            🩻 X-ray Entry
+          </h2>
+          <button
+            type="button"
+            onClick={handlePrint}
+            style={{
+              padding: "10px 16px",
+              background: "#6c757d",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              cursor: "pointer"
+            }}
+          >
+            🖨 Print
+          </button>
+        </div>
 
         <form onSubmit={handleSubmit}>
           {/* Institute */}
@@ -732,7 +778,7 @@ const fetchXrayTypes = async () => {
 )}
 
 
-          {/* Submit */}
+          {/* Actions */}
           <button
             type="submit"
             style={{
