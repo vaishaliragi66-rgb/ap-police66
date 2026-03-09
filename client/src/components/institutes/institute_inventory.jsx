@@ -33,6 +33,9 @@ function InstituteInventory() {
 
   /* ---------- FILTER STATES ---------- */
   const [searchMedicine, setSearchMedicine] = useState("");
+  const [medicineFilter, setMedicineFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [quantityFilter, setQuantityFilter] = useState("");
   const [expiryFilter, setExpiryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -52,12 +55,12 @@ function InstituteInventory() {
 
         const token = localStorage.getItem("token");
 
-const res = await axios.get(
-  `http://localhost:${BACKEND_PORT_NO}/institute-api/inventory/${instituteId}`,
- 
-);
+        // Fetch only sub store data (inventory)
+        const res = await axios.get(
+          `http://localhost:${BACKEND_PORT_NO}/medicine-api/substore/${instituteId}`
+        );
 
-setInventory(res.data || []);
+        setInventory(res.data || []);
 
         
       } catch (error) {
@@ -119,6 +122,8 @@ setInventory(res.data || []);
                 <th>#</th>
                 <th>Medicine Name</th>
                 <th>Code</th>
+                <th>Type</th>
+                <th>Category</th>
                 <th>Quantity</th>
                 <th>Threshold</th>
                 <th>Expiry Date</th>
@@ -153,6 +158,8 @@ setInventory(res.data || []);
                     <td>${index + 1}</td>
                     <td>${row.Medicine_Name || '—'}</td>
                     <td>${row.Medicine_Code || '—'}</td>
+                    <td>${row.Type || '—'}</td>
+                    <td>${row.Category || '—'}</td>
                     <td>${currentStock}</td>
                     <td>${threshold}</td>
                     <td>${row.Expiry_Date ? formatDateDMY(row.Expiry_Date) : "—"}</td>
@@ -192,6 +199,9 @@ setInventory(res.data || []);
   /* ---------- GET ACTIVE FILTERS ---------- */
   const getActiveFilters = () => {
     const filters = [];
+    if (medicineFilter) filters.push(`Medicine: "${medicineFilter}"`);
+    if (typeFilter) filters.push(`Type: "${typeFilter}"`);
+    if (categoryFilter) filters.push(`Category: "${categoryFilter}"`);
     if (searchMedicine) filters.push(`Search: "${searchMedicine}"`);
     if (quantityFilter !== "") filters.push(`Qty ≤ ${quantityFilter}`);
     if (expiryFilter) filters.push(`Expiry ≤ ${expiryFilter}`);
@@ -217,6 +227,11 @@ setInventory(res.data || []);
     return filters;
   };
 
+  /* ---------- UNIQUE DROPDOWN VALUES ---------- */
+  const uniqueMedicines = [...new Set(inventory.map(r => r.Medicine_Name).filter(Boolean))];
+  const uniqueTypes = [...new Set(inventory.map(r => r.Type).filter(Boolean))];
+  const uniqueCategories = [...new Set(inventory.map(r => r.Category).filter(Boolean))];
+
  const filteredInventory = inventory.filter((item) => {
   // Hide zero stock medicines
   if (!item.Quantity || item.Quantity <= 0) {
@@ -225,13 +240,31 @@ setInventory(res.data || []);
 
   const daysLeft = daysFromToday(item.Expiry_Date);
 
-  // Search filter
-  if (
-    searchMedicine &&
-    !item.Medicine_Name
-      ?.toLowerCase()
-      .includes(searchMedicine.toLowerCase())
-  ) {
+  // Search filter (searches across multiple fields)
+  if (searchMedicine && searchMedicine.trim() !== "") {
+    const q = searchMedicine.toLowerCase();
+    if (
+      !(item.Medicine_Code?.toLowerCase().includes(q) ||
+        item.Medicine_Name?.toLowerCase().includes(q) ||
+        item.Type?.toLowerCase().includes(q) ||
+        item.Category?.toLowerCase().includes(q))
+    ) {
+      return false;
+    }
+  }
+
+  // Medicine name filter
+  if (medicineFilter && medicineFilter !== "" && item.Medicine_Name !== medicineFilter) {
+    return false;
+  }
+
+  // Type filter
+  if (typeFilter && typeFilter !== "" && item.Type !== typeFilter) {
+    return false;
+  }
+
+  // Category filter
+  if (categoryFilter && categoryFilter !== "" && item.Category !== categoryFilter) {
     return false;
   }
 
@@ -426,11 +459,62 @@ setInventory(res.data || []);
         <div className="card-body">
           <h6 className="card-title mb-3">Filters</h6>
           <div className="row g-3">
-            <div className="col-md-3 col-sm-6">
-              <label className="form-label">Search Medicine</label>
+            <div className="col-md-2 col-sm-6">
+              <label className="form-label">Medicine</label>
+              <select
+                className="form-select form-select-sm"
+                value={medicineFilter}
+                onChange={(e) => {
+                  setMedicineFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Medicines</option>
+                {uniqueMedicines.map((m, i) => (
+                  <option key={i} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-2 col-sm-6">
+              <label className="form-label">Type</label>
+              <select
+                className="form-select form-select-sm"
+                value={typeFilter}
+                onChange={(e) => {
+                  setTypeFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Types</option>
+                {uniqueTypes.map((t, i) => (
+                  <option key={i} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-2 col-sm-6">
+              <label className="form-label">Category</label>
+              <select
+                className="form-select form-select-sm"
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Categories</option>
+                {uniqueCategories.map((c, i) => (
+                  <option key={i} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="col-md-2 col-sm-6">
+              <label className="form-label">Search</label>
               <input
                 type="text"
-                className="form-control"
+                className="form-control form-control-sm"
                 placeholder="Medicine name..."
                 value={searchMedicine}
                 onChange={(e) => {
@@ -444,7 +528,7 @@ setInventory(res.data || []);
               <label className="form-label">Quantity ≤</label>
               <input
                 type="number"
-                className="form-control"
+                className="form-control form-control-sm"
                 placeholder="Max quantity"
                 value={quantityFilter}
                 onChange={(e) => {
@@ -458,7 +542,7 @@ setInventory(res.data || []);
               <label className="form-label">Expiry ≤</label>
               <input
                 type="date"
-                className="form-control"
+                className="form-control form-control-sm"
                 value={expiryFilter}
                 onChange={(e) => {
                   setExpiryFilter(e.target.value);
@@ -470,7 +554,7 @@ setInventory(res.data || []);
             <div className="col-md-2 col-sm-6">
               <label className="form-label">Status</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
@@ -488,7 +572,7 @@ setInventory(res.data || []);
             <div className="col-md-3 col-sm-6">
               <label className="form-label">Threshold Status</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={thresholdFilter}
                 onChange={(e) => {
                   setThresholdFilter(e.target.value);
@@ -532,12 +616,13 @@ setInventory(res.data || []);
                       <th>#</th>
                       <th>Medicine Name</th>
                       <th>Code</th>
+                      <th>Type</th>
+                      <th>Category</th>
                       <th>Quantity</th>
                       <th>Threshold</th>
                       <th>Expiry Date</th>
                       <th>Days Left</th>
                       <th>Status</th>
-                      <th>Store</th>
 
                     </tr>
                   </thead>
@@ -580,6 +665,8 @@ setInventory(res.data || []);
                           <td>{(currentPage - 1) * rowsPerPage + index + 1}</td>
                           <td>{row.Medicine_Name}</td>
                           <td>{row.Medicine_Code}</td>
+                          <td>{row.Type || "—"}</td>
+                          <td>{row.Category || "—"}</td>
                           <td>{currentStock}</td>
                           <td>{threshold}</td>
                           <td>{row.Expiry_Date ? formatDateDMY(row.Expiry_Date) : "—"}</td>
@@ -596,19 +683,6 @@ setInventory(res.data || []);
                               <span>{status}</span>
                             </span>
                           </td>
-                          <td>
-  <span
-    className={`badge ${
-      row.Store_Type === "MAIN_STORE"
-        ? "bg-primary"
-        : "bg-secondary"
-    }`}
-  >
-    {row.Store_Type === "MAIN_STORE"
-      ? "Main Store"
-      : "Sub Store"}
-  </span>
-</td>
 
                         </tr>
                       );
