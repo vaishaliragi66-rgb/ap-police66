@@ -65,10 +65,24 @@ const [xrayData, setXrayData] = useState({
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Medicines: [{ Medicine_Name: "", Dosage: "", Duration: "" }],
+    Medicines: [{ Medicine_Name: "", Dosage: "", Duration: "", Quantity: 0 }],
     Notes: "",
     Disease_Name: "" 
   });
+  
+  const calculateQuantity = (dosage, duration) => {
+    if (!dosage || !duration) return 0;
+
+    // Example dosage: "1-0-2"
+    const parts = dosage.split("-").map(n => Number(n) || 0);
+    const perDay = parts.reduce((a, b) => a + b, 0);
+
+    // Example duration: "3 days" or just "3"
+    const daysMatch = duration.match(/\d+/);
+    const days = daysMatch ? Number(daysMatch[0]) : 0;
+
+    return perDay * days;
+  };
   const formatDateDMY = (value) => {
     if (!value) return "—";
 
@@ -258,7 +272,7 @@ const relevantDiseases = diseases.filter((d) => {
       ...prev,
       Medicines: [
         ...prev.Medicines,
-        { Medicine_Name: "", Dosage: "", Duration: "" }
+        { Medicine_Name: "", Dosage: "", Duration: "", Quantity: 0 }
       ]
     }));
 
@@ -289,7 +303,8 @@ const relevantDiseases = diseases.filter((d) => {
       .map((med) => ({
         Medicine_Name: med.Medicine_Name,
         Dosage: med.Dosage,
-        Duration: med.Duration
+        Duration: med.Duration,
+        Quantity: med.Quantity
       }));
 
     for (let med of selectedMedicines) {
@@ -314,7 +329,8 @@ const relevantDiseases = diseases.filter((d) => {
           medicines: selectedMedicines.map(m => ({
             Medicine_Name: m.Medicine_Name,
             Dosage: m.Dosage,
-            Duration: m.Duration
+            Duration: m.Duration,
+            Quantity: m.Quantity
           })),
         notes: formData.Notes
       }
@@ -643,7 +659,7 @@ const handleXraySubmit = async () => {
   <div key={i} className="mb-3">
     <div className="row g-2 align-items-end">
 
-      <div className="col-md-4">
+      <div className="col-md-3">
         <label className="form-label">Medicine</label>
         <select
           className="form-select"
@@ -676,12 +692,13 @@ const handleXraySubmit = async () => {
           onChange={(e) => {
             const copy = [...formData.Medicines];
             copy[i].Dosage = e.target.value;
+            copy[i].Quantity = calculateQuantity(e.target.value, copy[i].Duration);
             setFormData(prev => ({ ...prev, Medicines: copy }));
           }}
         />
       </div>
 
-      <div className="col-md-3">
+      <div className="col-md-2">
         <label className="form-label">Duration</label>
         <input
           type="text"
@@ -691,8 +708,19 @@ const handleXraySubmit = async () => {
           onChange={(e) => {
             const copy = [...formData.Medicines];
             copy[i].Duration = e.target.value;
+            copy[i].Quantity = calculateQuantity(copy[i].Dosage, e.target.value);
             setFormData(prev => ({ ...prev, Medicines: copy }));
           }}
+        />
+      </div>
+
+      <div className="col-md-2">
+        <label className="form-label">Quantity</label>
+        <input
+          type="number"
+          className="form-control"
+          value={med.Quantity}
+          readOnly
         />
       </div>
 
