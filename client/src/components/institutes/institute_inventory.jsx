@@ -96,7 +96,7 @@ function InstituteInventory() {
     printWindow.document.write(`
       <html>
         <head>
-          <title>${instituteName} - Inventory Report</title>
+          <title>${instituteName} - Substore Report</title>
           <style>
             body { font-family: Arial, sans-serif; margin: 20px; }
             h1 { color: #333; text-align: center; }
@@ -111,7 +111,7 @@ function InstituteInventory() {
           </style>
         </head>
         <body>
-          <h1>${instituteName} - Inventory Report</h1>
+          <h1>${instituteName} - Substore Report</h1>
           <p><strong>Generated on:</strong> ${printDate}</p>
           ${activeFilters.length > 0 ? `<p><strong>Filters Applied:</strong> ${activeFilters.join(", ")}</p>` : ''}
           <hr>
@@ -240,17 +240,23 @@ function InstituteInventory() {
 
   const daysLeft = daysFromToday(item.Expiry_Date);
 
-  // Search filter (searches across multiple fields)
-  if (searchMedicine && searchMedicine.trim() !== "") {
-    const q = searchMedicine.toLowerCase();
-    if (
-      !(item.Medicine_Code?.toLowerCase().includes(q) ||
-        item.Medicine_Name?.toLowerCase().includes(q) ||
-        item.Type?.toLowerCase().includes(q) ||
-        item.Category?.toLowerCase().includes(q))
-    ) {
-      return false;
-    }
+  // Search by medicine name, code, type, and category
+  const searchQuery = searchMedicine.trim().toLowerCase();
+  if (searchQuery) {
+    const searchableFields = [
+      item.Medicine_Name,
+      item.Medicine_Code,
+      item.Type,
+      item.Category
+    ]
+      .filter(Boolean)
+      .map((value) => value.toString().toLowerCase());
+
+    const isSearchMatch = searchableFields.some((value) =>
+      value.includes(searchQuery)
+    );
+
+    if (!isSearchMatch) return false;
   }
 
   // Medicine name filter
@@ -374,7 +380,7 @@ function InstituteInventory() {
   return (
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Institute Inventory</h2>
+        <h2 className="mb-0">Institute Substore</h2>
         
         <div className="d-flex gap-2">
           {/* PRINT BUTTON */}
@@ -515,7 +521,7 @@ function InstituteInventory() {
               <input
                 type="text"
                 className="form-control form-control-sm"
-                placeholder="Medicine name..."
+                placeholder="Search by medicine/code/type/category..."
                 value={searchMedicine}
                 onChange={(e) => {
                   setSearchMedicine(e.target.value);
