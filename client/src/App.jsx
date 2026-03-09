@@ -55,6 +55,10 @@ function AppShell() {
 
   const path = location.pathname;
   const hasLocalBackButton =
+    path === "/" ||
+    path === "/institutes/home" ||
+    path === "/employee/home" ||
+    path === "/admin/dashboard" ||
     path === "/employee/profile" ||
     path === "/institutes/doctor-prescription" ||
     path === "/institutions/diagnosis-entry" ||
@@ -78,10 +82,11 @@ function AppShell() {
   return (
     <div>
       <GlobalHeader />
-      {!hasLocalBackButton && (
-        <div className="px-3 md:px-4 pt-3">
+      <div style={{ position: "relative" }}>
+        {!hasLocalBackButton && (
           <button
-            className="btn mb-3"
+            type="button"
+            className="global-back-btn"
             onClick={handleBack}
             style={{
               backgroundColor: "#FFFFFF",
@@ -89,14 +94,20 @@ function AppShell() {
               borderRadius: "8px",
               padding: "6px 14px",
               fontSize: "14px",
-              color: "#1F2933"
+              color: "#1F2933",
+              lineHeight: 1.2,
+              cursor: "pointer",
+              position: "absolute",
+              top: "12px",
+              left: "12px",
+              zIndex: 2
             }}
           >
             &larr; Back
           </button>
-        </div>
-      )}
-      <Outlet />
+        )}
+        <Outlet />
+      </div>
     </div>
   );
 }

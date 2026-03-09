@@ -15,6 +15,22 @@ function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
+      <div style={{ padding: "12px 12px 0" }}>
+        <button
+          className="btn mb-3"
+          onClick={() => navigate(-1)}
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D6E0F0",
+            borderRadius: "8px",
+            padding: "6px 14px",
+            fontSize: "14px",
+            color: "#1F2933",
+          }}
+        >
+          &larr; Back
+        </button>
+      </div>
 
       {/* HEADER */}
       <div className="admin-header">

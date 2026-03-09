@@ -99,6 +99,23 @@ const EmployeeHome = () => {
   </div>
 </header>
 
+      <div style={{ width: "100%", padding: "12px 32px 0" }}>
+        <button
+          className="btn mb-3"
+          onClick={() => navigate(-1)}
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D6E0F0",
+            borderRadius: "8px",
+            padding: "6px 14px",
+            fontSize: "14px",
+            color: "#1F2933",
+          }}
+        >
+          &larr; Back
+        </button>
+      </div>
+
       {/* Welcome Section */}
       <div className="text-center mt-5 mb-5">
         <h3

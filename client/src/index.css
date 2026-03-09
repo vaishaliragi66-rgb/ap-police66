@@ -4,3 +4,13 @@
   background-color: #eff6ff !important;
   transform: translateX(4px);
 }
+
+.global-back-btn,
+.global-back-btn:hover,
+.global-back-btn:active,
+.global-back-btn:focus,
+.global-back-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none;
+}
