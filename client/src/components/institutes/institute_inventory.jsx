@@ -33,6 +33,9 @@ function InstituteInventory() {
 
   /* ---------- FILTER STATES ---------- */
   const [searchMedicine, setSearchMedicine] = useState("");
+  const [medicineFilter, setMedicineFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [quantityFilter, setQuantityFilter] = useState("");
   const [expiryFilter, setExpiryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -52,12 +55,12 @@ function InstituteInventory() {
 
         const token = localStorage.getItem("token");
 
-const res = await axios.get(
-  `http://localhost:${BACKEND_PORT_NO}/institute-api/inventory/${instituteId}`,
- 
-);
+        // Fetch only sub store data (inventory)
+        const res = await axios.get(
+          `http://localhost:${BACKEND_PORT_NO}/medicine-api/substore/${instituteId}`
+        );
 
-setInventory(res.data || []);
+        setInventory(res.data || []);
 
         
       } catch (error) {
@@ -93,7 +96,7 @@ setInventory(res.data || []);
     printWindow.document.write(`
       <html>
         <head>
-          <title>${instituteName} - Inventory Report</title>
+          <title>${instituteName} - Substore Report</title>
           <style>
             body { font-family: Arial, sans-serif; margin: 20px; }
             h1 { color: #333; text-align: center; }
@@ -108,7 +111,7 @@ setInventory(res.data || []);
           </style>
         </head>
         <body>
-          <h1>${instituteName} - Inventory Report</h1>
+          <h1>${instituteName} - Substore Report</h1>
           <p><strong>Generated on:</strong> ${printDate}</p>
           ${activeFilters.length > 0 ? `<p><strong>Filters Applied:</strong> ${activeFilters.join(", ")}</p>` : ''}
           <hr>
@@ -119,6 +122,8 @@ setInventory(res.data || []);
                 <th>#</th>
                 <th>Medicine Name</th>
                 <th>Code</th>
+                <th>Type</th>
+                <th>Category</th>
                 <th>Quantity</th>
                 <th>Threshold</th>
                 <th>Expiry Date</th>
@@ -153,6 +158,8 @@ setInventory(res.data || []);
                     <td>${index + 1}</td>
                     <td>${row.Medicine_Name || '—'}</td>
                     <td>${row.Medicine_Code || '—'}</td>
+                    <td>${row.Type || '—'}</td>
+                    <td>${row.Category || '—'}</td>
                     <td>${currentStock}</td>
                     <td>${threshold}</td>
                     <td>${row.Expiry_Date ? formatDateDMY(row.Expiry_Date) : "—"}</td>
@@ -192,6 +199,9 @@ setInventory(res.data || []);
   /* ---------- GET ACTIVE FILTERS ---------- */
   const getActiveFilters = () => {
     const filters = [];
+    if (medicineFilter) filters.push(`Medicine: "${medicineFilter}"`);
+    if (typeFilter) filters.push(`Type: "${typeFilter}"`);
+    if (categoryFilter) filters.push(`Category: "${categoryFilter}"`);
     if (searchMedicine) filters.push(`Search: "${searchMedicine}"`);
     if (quantityFilter !== "") filters.push(`Qty ≤ ${quantityFilter}`);
     if (expiryFilter) filters.push(`Expiry ≤ ${expiryFilter}`);
@@ -217,6 +227,11 @@ setInventory(res.data || []);
     return filters;
   };
 
+  /* ---------- UNIQUE DROPDOWN VALUES ---------- */
+  const uniqueMedicines = [...new Set(inventory.map(r => r.Medicine_Name).filter(Boolean))];
+  const uniqueTypes = [...new Set(inventory.map(r => r.Type).filter(Boolean))];
+  const uniqueCategories = [...new Set(inventory.map(r => r.Category).filter(Boolean))];
+
  const filteredInventory = inventory.filter((item) => {
   // Hide zero stock medicines
   if (!item.Quantity || item.Quantity <= 0) {
@@ -225,13 +240,37 @@ setInventory(res.data || []);
 
   const daysLeft = daysFromToday(item.Expiry_Date);
 
-  // Search filter
-  if (
-    searchMedicine &&
-    !item.Medicine_Name
-      ?.toLowerCase()
-      .includes(searchMedicine.toLowerCase())
-  ) {
+  // Search by medicine name, code, type, and category
+  const searchQuery = searchMedicine.trim().toLowerCase();
+  if (searchQuery) {
+    const searchableFields = [
+      item.Medicine_Name,
+      item.Medicine_Code,
+      item.Type,
+      item.Category
+    ]
+      .filter(Boolean)
+      .map((value) => value.toString().toLowerCase());
+
+    const isSearchMatch = searchableFields.some((value) =>
+      value.includes(searchQuery)
+    );
+
+    if (!isSearchMatch) return false;
+  }
+
+  // Medicine name filter
+  if (medicineFilter && medicineFilter !== "" && item.Medicine_Name !== medicineFilter) {
+    return false;
+  }
+
+  // Type filter
+  if (typeFilter && typeFilter !== "" && item.Type !== typeFilter) {
+    return false;
+  }
+
+  // Category filter
+  if (categoryFilter && categoryFilter !== "" && item.Category !== categoryFilter) {
     return false;
   }
 
@@ -341,7 +380,7 @@ setInventory(res.data || []);
   return (
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Institute Inventory</h2>
+        <h2 className="mb-0">Institute Substore</h2>
         
         <div className="d-flex gap-2">
           {/* PRINT BUTTON */}
@@ -426,12 +465,63 @@ setInventory(res.data || []);
         <div className="card-body">
           <h6 className="card-title mb-3">Filters</h6>
           <div className="row g-3">
-            <div className="col-md-3 col-sm-6">
-              <label className="form-label">Search Medicine</label>
+            <div className="col-md-2 col-sm-6">
+              <label className="form-label">Medicine</label>
+              <select
+                className="form-select form-select-sm"
+                value={medicineFilter}
+                onChange={(e) => {
+                  setMedicineFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Medicines</option>
+                {uniqueMedicines.map((m, i) => (
+                  <option key={i} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-2 col-sm-6">
+              <label className="form-label">Type</label>
+              <select
+                className="form-select form-select-sm"
+                value={typeFilter}
+                onChange={(e) => {
+                  setTypeFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Types</option>
+                {uniqueTypes.map((t, i) => (
+                  <option key={i} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-2 col-sm-6">
+              <label className="form-label">Category</label>
+              <select
+                className="form-select form-select-sm"
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Categories</option>
+                {uniqueCategories.map((c, i) => (
+                  <option key={i} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="col-md-2 col-sm-6">
+              <label className="form-label">Search</label>
               <input
                 type="text"
-                className="form-control"
-                placeholder="Medicine name..."
+                className="form-control form-control-sm"
+                placeholder="Search by medicine/code/type/category..."
                 value={searchMedicine}
                 onChange={(e) => {
                   setSearchMedicine(e.target.value);
@@ -444,7 +534,7 @@ setInventory(res.data || []);
               <label className="form-label">Quantity ≤</label>
               <input
                 type="number"
-                className="form-control"
+                className="form-control form-control-sm"
                 placeholder="Max quantity"
                 value={quantityFilter}
                 onChange={(e) => {
@@ -458,7 +548,7 @@ setInventory(res.data || []);
               <label className="form-label">Expiry ≤</label>
               <input
                 type="date"
-                className="form-control"
+                className="form-control form-control-sm"
                 value={expiryFilter}
                 onChange={(e) => {
                   setExpiryFilter(e.target.value);
@@ -470,7 +560,7 @@ setInventory(res.data || []);
             <div className="col-md-2 col-sm-6">
               <label className="form-label">Status</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
@@ -488,7 +578,7 @@ setInventory(res.data || []);
             <div className="col-md-3 col-sm-6">
               <label className="form-label">Threshold Status</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={thresholdFilter}
                 onChange={(e) => {
                   setThresholdFilter(e.target.value);
@@ -532,12 +622,13 @@ setInventory(res.data || []);
                       <th>#</th>
                       <th>Medicine Name</th>
                       <th>Code</th>
+                      <th>Type</th>
+                      <th>Category</th>
                       <th>Quantity</th>
                       <th>Threshold</th>
                       <th>Expiry Date</th>
                       <th>Days Left</th>
                       <th>Status</th>
-                      <th>Store</th>
 
                     </tr>
                   </thead>
@@ -580,6 +671,8 @@ setInventory(res.data || []);
                           <td>{(currentPage - 1) * rowsPerPage + index + 1}</td>
                           <td>{row.Medicine_Name}</td>
                           <td>{row.Medicine_Code}</td>
+                          <td>{row.Type || "—"}</td>
+                          <td>{row.Category || "—"}</td>
                           <td>{currentStock}</td>
                           <td>{threshold}</td>
                           <td>{row.Expiry_Date ? formatDateDMY(row.Expiry_Date) : "—"}</td>
@@ -596,19 +689,6 @@ setInventory(res.data || []);
                               <span>{status}</span>
                             </span>
                           </td>
-                          <td>
-  <span
-    className={`badge ${
-      row.Store_Type === "MAIN_STORE"
-        ? "bg-primary"
-        : "bg-secondary"
-    }`}
-  >
-    {row.Store_Type === "MAIN_STORE"
-      ? "Main Store"
-      : "Sub Store"}
-  </span>
-</td>
 
                         </tr>
                       );
