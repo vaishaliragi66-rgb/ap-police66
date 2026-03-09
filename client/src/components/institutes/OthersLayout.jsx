@@ -10,6 +10,7 @@ import {
   FaBars,
   FaTimes
 } from "react-icons/fa";
+import { APP_HEADER_HEIGHT } from "../GlobalHeader";
 
 const OthersLayout = () => {
   const navigate = useNavigate();
@@ -39,10 +40,10 @@ const OthersLayout = () => {
         <div
           style={{
             width: "240px",
-            height: "100vh",
+            height: `calc(100vh - ${APP_HEADER_HEIGHT}px)`,
             position: "fixed",
             left: 0,
-            top: 0,
+            top: `${APP_HEADER_HEIGHT}px`,
             background: "linear-gradient(180deg, #BED2EB 0%, #e6f0ff 100%)",
             color: "#1f2937",
             borderRight: "1px solid #dbeafe",
