@@ -39,37 +39,23 @@ useEffect(() => {
       return;
     }
 
-    if (onlyDiagnosisQueue || onlyXrayQueue) {
-      const term = search.toLowerCase();
-      const filtered = todayVisits.filter((visit) => {
-        const absNo = String(visit?.employee_id?.ABS_NO || "").toLowerCase();
-        const employeeName = String(visit?.employee_id?.Name || "").toLowerCase();
-        const familyName = String(visit?.FamilyMember?.Name || "").toLowerCase();
-        const token = String(visit?.token_no || "").toLowerCase();
+    // Always filter only today's visits
+    const term = search.toLowerCase();
+    const filtered = todayVisits.filter((visit) => {
+      const absNo = String(visit?.employee_id?.ABS_NO || "").toLowerCase();
+      const employeeName = String(visit?.employee_id?.Name || "").toLowerCase();
+      const familyName = String(visit?.FamilyMember?.Name || "").toLowerCase();
+      const token = String(visit?.token_no || "").toLowerCase();
 
-        return (
-          absNo.includes(term) ||
-          employeeName.includes(term) ||
-          familyName.includes(term) ||
-          token.includes(term)
-        );
-      });
-
-      setOptions(filtered);
-      return;
-    }
-
-    axios
-      .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
-      .then(res => {
-        const list = res.data?.employees || res.data || [];
-        const filtered = list.filter(e =>
-          String(e.ABS_NO || "")
-            .toLowerCase()
-            .includes(search.toLowerCase())
-        );
-        setOptions(filtered);
-      });
+      return (
+        absNo.includes(term) ||
+        employeeName.includes(term) ||
+        familyName.includes(term) ||
+        token.includes(term)
+      );
+    });
+    setOptions(filtered);
+    return;
   }, [search, todayVisits, onlyDiagnosisQueue, onlyXrayQueue]);
 
   /* ================= SELECT ================= */

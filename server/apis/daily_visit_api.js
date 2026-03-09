@@ -26,18 +26,20 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
     const currentYear = today.getFullYear();
     const instituteObjectId = new mongoose.Types.ObjectId(Institute_ID);
 
-    /* ================= TOKEN NUMBER (PER DAY, PER INSTITUTE) ================= */
+    // Find last token for today (using date range)
     const lastTokenVisit = await DailyVisit.findOne({
       Institute_ID: instituteObjectId,
-      visit_date: today
+      visit_date: { $gte: today, $lt: tomorrow }
     }).sort({ token_no: -1 });
 
     const token_no = lastTokenVisit ? lastTokenVisit.token_no + 1 : 1;
-    /* ================= OP NUMBER (PER YEAR, PER INSTITUTE) ================= */
 
+    // OP number logic unchanged
     const lastOPVisit = await DailyVisit.findOne({
       Institute_ID: instituteObjectId,
       $expr: {
@@ -46,13 +48,11 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
     }).sort({ OP_No: -1 });
 
     let OP_No = 1;
-
     if (lastOPVisit) {
       OP_No = lastOPVisit.OP_No + 1;
     }
 
-
-    /* ================= CREATE VISIT ================= */
+    // Create visit
     const visit = await DailyVisit.create({
       Institute_ID:instituteObjectId,
       employee_id,
@@ -72,7 +72,7 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
       },
       token_no,
       visit_date: today
-    });;
+    });
 
     res.status(201).json({
       message: "Visit registered successfully",
@@ -92,12 +92,16 @@ router.get("/today/:Institute_ID", async (req, res) => {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
+    // Find visits where visit_date is >= today and < tomorrow
     const visits = await DailyVisit.find({
       Institute_ID,
-      visit_date: today
-    }).populate("employee_id")
-    .populate("FamilyMember");
+      visit_date: { $gte: today, $lt: tomorrow }
+    })
+      .populate("employee_id")
+      .populate("FamilyMember");
 
     res.json(visits);
 

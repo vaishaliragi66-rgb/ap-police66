@@ -126,6 +126,49 @@ const HealthSummary = () => {
           </div>
 
           {/* DEMOGRAPHICS */}
+          {/* MONTHLY CENSUS TABLE */}
+          {type === "monthly" && data?.monthlySummary && (
+            <div className="card p-3 shadow-sm mb-4">
+              <h6 className="fw-bold text-center mb-3">Monthly OP Census</h6>
+              <div className="table-responsive">
+                <table className="table table-bordered text-center">
+                  <thead className="table-light">
+                    <tr>
+                      <th>S.No</th>
+                      <th>Date</th>
+                      <th>Male</th>
+                      <th>Female</th>
+                      <th>Male Child</th>
+                      <th>Female Child</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.monthlySummary.map((row, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{new Date(row.date).toLocaleDateString()}</td>
+                        <td>{row.male}</td>
+                        <td>{row.female}</td>
+                        <td>{row.maleChildren}</td>
+                        <td>{row.femaleChildren}</td>
+                        <td className="fw-bold">{row.totalPatients}</td>
+                      </tr>
+                    ))}
+                    {/* TOTAL ROW */}
+                    <tr className="table-secondary fw-bold">
+                      <td colSpan="2">TOTAL</td>
+                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.male, 0)}</td>
+                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.female, 0)}</td>
+                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.maleChildren, 0)}</td>
+                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.femaleChildren, 0)}</td>
+                      <td>{data.monthlySummary.reduce((sum, r) => sum + r.totalPatients, 0)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
           <div className="row g-3 mb-4">
             {Object.entries(data.demographics).map(([key, value]) => (
               <div className="col-lg-2 col-md-4 col-6" key={key}>
@@ -179,7 +222,6 @@ const HealthSummary = () => {
               </div>
             </div>
           </div>
-
           {/* MEDICINE TABLE */}
           <div className="card p-3 shadow-sm">
             <h6 className="fw-bold">Medicine Usage</h6>

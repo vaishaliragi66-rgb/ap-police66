@@ -100,7 +100,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
       <div className="d-flex gap-3 mb-3">
         <button className="btn btn-primary"
           onClick={() => navigate("/institutes/add")}>
-          ➕ Add Medicine
+          ➕ Receipt
         </button>
 
         <button className="btn btn-success"

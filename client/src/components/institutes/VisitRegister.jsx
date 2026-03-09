@@ -309,7 +309,7 @@ const VisitRegister = () => {
       </div>
 
       <div className="col-md-6 mb-2">
-        <label>Oxygen (%)</label>
+        <label>SPO{<sub>2</sub>}</label>
         <input
           type="number"
           className="form-control"
