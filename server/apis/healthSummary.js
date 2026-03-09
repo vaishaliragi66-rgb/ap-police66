@@ -10,7 +10,7 @@ const FamilyMember = require("../models/family_member");
 
 router.get("/health-summary", async (req, res) => {
   try {
-    const { type, date, year, month, instituteId } = req.query;
+    const { type, date, year, month, instituteId, startYear, startMonth, endYear, endMonth } = req.query;
 
     // ===============================
     // 1️⃣ VALIDATION
@@ -27,8 +27,8 @@ router.get("/health-summary", async (req, res) => {
       return res.status(400).json({ message: "Date is required for daily summary" });
     }
 
-    if (type === "monthly" && (!year || !month)) {
-      return res.status(400).json({ message: "Year and month are required for monthly summary" });
+    if (type === "monthly" && !((year && month) || (startYear && startMonth && endYear && endMonth))) {
+      return res.status(400).json({ message: "Provide either year+month or startYear+startMonth+endYear+endMonth for monthly summary" });
     }
 
     const instituteObjectId = new mongoose.Types.ObjectId(instituteId);
@@ -46,14 +46,29 @@ router.get("/health-summary", async (req, res) => {
       start = new Date(`${date}T00:00:00+05:30`);
       end = new Date(`${date}T23:59:59.999+05:30`);
     } else {
-      selectedYear = Number(year);
-      selectedMonth = Number(month);
+      // support either single month (year+month) or a month range (startYear+startMonth to endYear+endMonth)
+      if (startYear && startMonth && endYear && endMonth) {
+        const sYear = Number(startYear);
+        const sMonth = Number(startMonth);
+        const eYear = Number(endYear);
+        const eMonth = Number(endMonth);
 
-      const monthString = pad2(selectedMonth);
-      const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+        const sMonthStr = pad2(sMonth);
+        const eMonthStr = pad2(eMonth);
 
-      start = new Date(`${selectedYear}-${monthString}-01T00:00:00+05:30`);
-      end = new Date(`${selectedYear}-${monthString}-${pad2(daysInMonth)}T23:59:59.999+05:30`);
+        const daysInEndMonth = new Date(eYear, eMonth, 0).getDate();
+
+        start = new Date(`${sYear}-${sMonthStr}-01T00:00:00+05:30`);
+        end = new Date(`${eYear}-${eMonthStr}-${pad2(daysInEndMonth)}T23:59:59.999+05:30`);
+      } else {
+        selectedYear = Number(year);
+        selectedMonth = Number(month);
+        const monthString = pad2(selectedMonth);
+        const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+
+        start = new Date(`${selectedYear}-${monthString}-01T00:00:00+05:30`);
+        end = new Date(`${selectedYear}-${monthString}-${pad2(daysInMonth)}T23:59:59.999+05:30`);
+      }
     }
 
     const normalizeGender = (value) => {
@@ -168,11 +183,10 @@ router.get("/health-summary", async (req, res) => {
     };
 
     if (type === "monthly") {
-      const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const key = `${selectedYear}-${pad2(selectedMonth)}-${pad2(day)}`;
-        rowMap.set(key, makeEmptyRow(key));
+      // create rows for every day in the selected range (start..end)
+      for (let cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
+        const key = toLocalDateKey(cursor);
+        if (key) rowMap.set(key, makeEmptyRow(key));
       }
     }
 
