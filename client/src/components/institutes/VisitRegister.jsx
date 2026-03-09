@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
 
 const VisitRegister = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const navigate = useNavigate();
 
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState(""); 
@@ -149,7 +151,23 @@ const VisitRegister = () => {
 
   /* ================= UI ================= */
   return (
-    <div className="container mt-5">
+   
+       <div className="container-fluid mt-2">
+      {/* Back Button */}
+      <button
+        className="btn mb-3"
+        onClick={() => navigate(-1)}
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D6E0F0",
+          borderRadius: "8px",
+          padding: "6px 14px",
+          fontSize: "14px",
+          color: "#1F2933",
+        }}
+      >
+        ← Back
+      </button>
       <div className="col-md-6 mx-auto">
         <div className="card shadow">
         <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">

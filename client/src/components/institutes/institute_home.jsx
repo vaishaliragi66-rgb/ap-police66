@@ -99,8 +99,11 @@ const Institute_home = () => {
       Welcome back, {institute?.Institute_Name}
     </small>
   </div>
-
+   
+{/* <small className="text-muted center">SARCPL
+    </small> */}
   <div style={{ position: "relative" }}>
+   
     <FaUserCircle
       size={36}
       style={{ cursor: "pointer" }}

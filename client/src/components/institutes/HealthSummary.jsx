@@ -3,12 +3,13 @@ import axios from "axios";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
 
 const HealthSummary = () => {
   const institute = JSON.parse(localStorage.getItem("institute") || "{}");
   // prefer full object _id, fallback to standalone instituteId (older flows)
   const instituteId = institute?._id || localStorage.getItem("instituteId");
-
+  const navigate = useNavigate();
   const [type, setType] = useState("daily");
   const [date, setDate] = useState("");
   const [month, setMonth] = useState("");
@@ -182,7 +183,23 @@ const HealthSummary = () => {
   };
 
   return (
-    <div className="container my-4">
+   
+       <div className="container-fluid mt-2">
+      {/* Back Button */}
+      <button
+        className="btn mb-1"
+        onClick={() => navigate(-1)}
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D6E0F0",
+          borderRadius: "8px",
+          padding: "6px 14px",
+          fontSize: "14px",
+          color: "#1F2933",
+        }}
+      >
+        ← Back
+      </button>
       <h3 className="fw-bold mb-4 text-center">Health Summary</h3>
 
       <div className="card shadow-sm p-4 mb-4">

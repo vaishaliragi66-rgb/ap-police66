@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
+import { useNavigate } from "react-router-dom";
 
 const DoctorPrescriptionForm = () => {
   const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const navigate = useNavigate();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [lastTwoVisits, setLastTwoVisits] = useState([]);
   const [selectedVisit, setSelectedVisit] = useState(null);
@@ -440,7 +442,23 @@ const handleXraySubmit = async () => {
 
   /* ================= UI ================= */
   return (
-    <div className="container-fluid mt-4">
+    
+    <div className="container-fluid mt-1">
+      {/* Back Button */}
+      <button
+        className="btn mb-3"
+        onClick={() => navigate(-1)}
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D6E0F0",
+          borderRadius: "8px",
+          padding: "6px 14px",
+          fontSize: "14px",
+          color: "#1F2933",
+        }}
+      >
+        ← Back
+      </button>
       <div className="row justify-content-center">
         {/* ================= LEFT REPORTS ================= */}
         {showReports && (

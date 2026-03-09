@@ -556,7 +556,23 @@ const handleSubmit = async (e) => {
 
   /* ================= UI ================= */
   return (
-    <div className="container-fluid mt-4">
+    <div className="container-fluid mt-2">
+       
+      {/* Back Button */}
+      <button
+        className="btn mb-3"
+        onClick={() => navigate(-1)}
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D6E0F0",
+          borderRadius: "8px",
+          padding: "6px 14px",
+          fontSize: "14px",
+          color: "#1F2933",
+        }}
+      >
+        ← Back
+      </button>
       <div className="row">
         {/* LEFT REPORTS */}
 {showReports && (
