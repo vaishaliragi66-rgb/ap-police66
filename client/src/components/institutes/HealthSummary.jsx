@@ -60,6 +60,9 @@ const HealthSummary = () => {
         const results = await Promise.allSettled(calls);
         const mergedRowsMap = new Map();
         let mergedTotals = { male: 0, female: 0, maleChild: 0, femaleChild: 0, total: 0 };
+        const mergedDiseaseMap = new Map();
+        const mergedCategoryMap = new Map();
+        const mergedMedicineMap = new Map();
 
         results.forEach(r => {
           if (r.status === 'fulfilled' && r.value?.data) {
@@ -85,11 +88,37 @@ const HealthSummary = () => {
             mergedTotals.maleChild += t.maleChild || 0;
             mergedTotals.femaleChild += t.femaleChild || 0;
             mergedTotals.total += t.total || 0;
+              // merge disease summary
+              (body.diseaseSummary || []).forEach(d => {
+                const key = d.diseaseName || d._id || JSON.stringify(d._id || d.name || d);
+                const prev = mergedDiseaseMap.get(key) || { diseaseName: d.diseaseName || d._id?.name || key, category: d.category || d._id?.category || d.category, count: 0 };
+                prev.count += d.count || 0;
+                mergedDiseaseMap.set(key, prev);
+              });
+
+              // merge category summary
+              (body.categorySummary || []).forEach(c => {
+                const key = c.category || c._id || String(c);
+                const prev = mergedCategoryMap.get(key) || { category: key, count: 0 };
+                prev.count += c.count || 0;
+                mergedCategoryMap.set(key, prev);
+              });
+
+              // merge medicine usage
+              (body.medicineUsage || []).forEach(med => {
+                const key = med.medicineName || med._id || String(med);
+                const prevQty = mergedMedicineMap.get(key) || 0;
+                mergedMedicineMap.set(key, prevQty + (med.totalQuantity || med.total || 0));
+              });
           }
         });
 
         const censusRows = Array.from(mergedRowsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
-        setData({ censusRows, totals: mergedTotals });
+          const diseaseSummary = Array.from(mergedDiseaseMap.values()).sort((a,b)=>b.count - a.count);
+          const categorySummary = Array.from(mergedCategoryMap.values()).sort((a,b)=>b.count - a.count);
+          const medicineUsage = Array.from(mergedMedicineMap.entries()).map(([medicineName, totalQuantity]) => ({ medicineName, totalQuantity })).sort((a,b)=>b.totalQuantity - a.totalQuantity);
+
+          setData({ censusRows, totals: mergedTotals, diseaseSummary, categorySummary, medicineUsage });
         return;
       }
 
@@ -129,6 +158,9 @@ const HealthSummary = () => {
       // collect successful results
       const mergedRowsMap = new Map();
       let mergedTotals = { male: 0, female: 0, maleChild: 0, femaleChild: 0, total: 0 };
+      const mergedDiseaseMap = new Map();
+      const mergedCategoryMap = new Map();
+      const mergedMedicineMap = new Map();
 
       results.forEach(r => {
         if (r.status === 'fulfilled' && r.value?.data) {
@@ -154,11 +186,38 @@ const HealthSummary = () => {
           mergedTotals.maleChild += t.maleChild || 0;
           mergedTotals.femaleChild += t.femaleChild || 0;
           mergedTotals.total += t.total || 0;
+
+          // merge disease summary
+          (body.diseaseSummary || []).forEach(d => {
+            const key = d.diseaseName || d._id || JSON.stringify(d._id || d.name || d);
+            const prev = mergedDiseaseMap.get(key) || { diseaseName: d.diseaseName || d._id?.name || key, category: d.category || d._id?.category || d.category, count: 0 };
+            prev.count += d.count || 0;
+            mergedDiseaseMap.set(key, prev);
+          });
+
+          // merge category summary
+          (body.categorySummary || []).forEach(c => {
+            const key = c.category || c._id || String(c);
+            const prev = mergedCategoryMap.get(key) || { category: key, count: 0 };
+            prev.count += c.count || 0;
+            mergedCategoryMap.set(key, prev);
+          });
+
+          // merge medicine usage
+          (body.medicineUsage || []).forEach(med => {
+            const key = med.medicineName || med._id || String(med);
+            const prevQty = mergedMedicineMap.get(key) || 0;
+            mergedMedicineMap.set(key, prevQty + (med.totalQuantity || med.total || 0));
+          });
         }
       });
 
       const censusRows = Array.from(mergedRowsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
-      setData({ censusRows, totals: mergedTotals });
+      const diseaseSummary = Array.from(mergedDiseaseMap.values()).sort((a,b)=>b.count - a.count);
+      const categorySummary = Array.from(mergedCategoryMap.values()).sort((a,b)=>b.count - a.count);
+      const medicineUsage = Array.from(mergedMedicineMap.entries()).map(([medicineName, totalQuantity]) => ({ medicineName, totalQuantity })).sort((a,b)=>b.totalQuantity - a.totalQuantity);
+
+      setData({ censusRows, totals: mergedTotals, diseaseSummary, categorySummary, medicineUsage });
     } catch (error) {
       console.error('FetchSummary error', error?.response?.data || error.message || error);
       alert('Error fetching summary — check server logs');
@@ -298,12 +357,115 @@ const HealthSummary = () => {
             </tfoot>
           </table>
 
-          <div className="mt-3 small">
-            <div>MALE = <strong>{data.totals?.male ?? 0}</strong></div>
-            <div>FEMALE = <strong>{data.totals?.female ?? 0}</strong></div>
-            <div>MALE CHILD = <strong>{data.totals?.maleChild ?? 0}</strong></div>
-            <div>FEMALE CHILD = <strong>{data.totals?.femaleChild ?? 0}</strong></div>
-            <div>TOTAL = <strong>{data.totals?.total ?? 0}</strong></div>
+          <div className="row g-2 mt-3">
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="card p-3 text-center">
+                <div className="small text-muted">Male</div>
+                <div className="h5 fw-bold">{data.totals?.male ?? 0}</div>
+              </div>
+            </div>
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="card p-3 text-center">
+                <div className="small text-muted">Female</div>
+                <div className="h5 fw-bold">{data.totals?.female ?? 0}</div>
+              </div>
+            </div>
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="card p-3 text-center">
+                <div className="small text-muted">Children</div>
+                <div className="h5 fw-bold">{(data.totals?.maleChild ?? 0) + (data.totals?.femaleChild ?? 0)}</div>
+              </div>
+            </div>
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="card p-3 text-center">
+                <div className="small text-muted">Male Children</div>
+                <div className="h5 fw-bold">{data.totals?.maleChild ?? 0}</div>
+              </div>
+            </div>
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="card p-3 text-center">
+                <div className="small text-muted">Female Children</div>
+                <div className="h5 fw-bold">{data.totals?.femaleChild ?? 0}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="row mt-4">
+            <div className="col-md-6 mb-3">
+              <div className="card p-3 h-100">
+                <div className="fw-semibold mb-2">Disease Distribution</div>
+                {data.diseaseSummary && data.diseaseSummary.length > 0 ? (
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Disease</th>
+                        <th className="text-end">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.diseaseSummary.map((d, i) => (
+                        <tr key={i}>
+                          <td>{d.diseaseName}</td>
+                          <td className="text-end">{d.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-muted">No disease data</div>
+                )}
+              </div>
+            </div>
+
+            <div className="col-md-6 mb-3">
+              <div className="card p-3 h-100">
+                <div className="fw-semibold mb-2">Category Summary</div>
+                {data.categorySummary && data.categorySummary.length > 0 ? (
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Category</th>
+                        <th className="text-end">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.categorySummary.map((c, i) => (
+                        <tr key={i}>
+                          <td>{c.category}</td>
+                          <td className="text-end">{c.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-muted">No category data</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="card mt-3 p-3">
+            <div className="fw-semibold mb-2">Medicine Usage</div>
+            {data.medicineUsage && data.medicineUsage.length > 0 ? (
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Medicine</th>
+                    <th className="text-end">Total Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.medicineUsage.map((m, i) => (
+                    <tr key={i}>
+                      <td>{m.medicineName}</td>
+                      <td className="text-end">{m.totalQuantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-muted">No medicine usage data</div>
+            )}
           </div>
         </div>
       )}
