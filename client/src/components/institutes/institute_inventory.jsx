@@ -12,6 +12,13 @@ const formatDateDMY = (value) => {
   ).padStart(2, "0")}-${d.getFullYear()}`;
 };
 
+const formatExpiryDate = (value) => {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (isNaN(d)) return "—";
+  return `${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+};
+
 /* ---------- DAYS FROM TODAY ---------- */
 const daysFromToday = (value) => {
   if (!value) return null;
@@ -162,7 +169,7 @@ function InstituteInventory() {
                     <td>${row.Category || '—'}</td>
                     <td>${currentStock}</td>
                     <td>${threshold}</td>
-                    <td>${row.Expiry_Date ? formatDateDMY(row.Expiry_Date) : "—"}</td>
+                    <td>${row.Expiry_Date ? formatExpiryDate(row.Expiry_Date) : "—"}</td>
                     <td><span class="badge ${statusClass}">${statusIcon} ${status}</span></td>
                   </tr>
                 `;
@@ -547,11 +554,15 @@ function InstituteInventory() {
             <div className="col-md-2 col-sm-6">
               <label className="form-label">Expiry ≤</label>
               <input
-                type="date"
+                type="month"
                 className="form-control form-control-sm"
-                value={expiryFilter}
+                value={expiryFilter ? expiryFilter.slice(0, 7) : ""}
                 onChange={(e) => {
-                  setExpiryFilter(e.target.value);
+                  if (e.target.value) {
+                    setExpiryFilter(e.target.value + "-01");
+                  } else {
+                    setExpiryFilter("");
+                  }
                   setCurrentPage(1);
                 }}
               />
@@ -675,7 +686,7 @@ function InstituteInventory() {
                           <td>{row.Category || "—"}</td>
                           <td>{currentStock}</td>
                           <td>{threshold}</td>
-                          <td>{row.Expiry_Date ? formatDateDMY(row.Expiry_Date) : "—"}</td>
+                          <td>{row.Expiry_Date ? formatExpiryDate(row.Expiry_Date) : "—"}</td>
                           <td>
                             {daysLeft !== null ? (
                               <span className={daysLeft < 0 ? "text-danger" : daysLeft <= 5 ? "text-warning" : "text-success"}>
