@@ -145,7 +145,7 @@ router.post(
   expressAsyncHandler(async (req, res) => {
 
     const { Email_ID, role, password } = req.body;
-
+    const normalizedRole = role.trim().toLowerCase();
     if (!Email_ID || !role || !password) {
       return res.status(400).json({
         message: "Email, role and password are required"
@@ -164,33 +164,28 @@ router.post(
 
     const credential = await InstitutionCredential.findOne({
       instituteId: institute._id,
-      role
+      role: { $regex: `^${normalizedRole}$`, $options: "i" }
     });
-
-    console.log("Found credential:", credential); // Debug log
-
+    console.log("Login role:", role);
+    console.log("Institute ID:", institute._id);
+    console.log("Credential found:", credential)
+    const test = await bcrypt.compare("p@123", credential.password);
+  console.log("Manual test:", test);
+  console.log("Stored password:", credential.password);
     if (!credential) {
       return res.status(404).json({
         message: "Role not configured"
       });
     }
-
-    const { isMatch, shouldUpgradeHash } = await verifyPasswordWithLegacySupport(
-      password,
-      credential.password
-    );
+    console.log("Entered password:", password);
+    console.log("Password length:", password.length);
+    const isMatch = await bcrypt.compare(password, credential.password);
 
     if (!isMatch) {
       return res.status(401).json({
         message: "Invalid credentials"
       });
     }
-
-    if (shouldUpgradeHash) {
-      credential.password = await bcrypt.hash(password, 10);
-      await credential.save();
-    }
-
     const token = jwt.sign(
       {
         instituteId: institute._id,
@@ -203,13 +198,11 @@ router.post(
     res.status(200).json({
       message: "Login successful",
       token,
-  instituteId: institute._id,
-  instituteName: institute.Institute_Name
+      instituteId: institute._id,
+      instituteName: institute.Institute_Name
     });
   })
 );
-
-
 /* ============================================================
    SETUP ROLE PASSWORDS (Only institute main login allowed)
    POST /institute-auth/setup-roles
@@ -271,45 +264,26 @@ router.put(
   verifyToken,
   expressAsyncHandler(async (req, res) => {
 
-    if (req.user.role !== "institute") {
-      return res.status(403).json({
-        message: "Only institute account can update role passwords"
+    const { role, password } = req.body;
+
+    const credential = await InstitutionCredential.findOne({
+      instituteId: req.user.instituteId,
+      role
+    });
+
+    if (!credential) {
+      return res.status(404).json({
+        message: "Role not configured yet"
       });
     }
 
-    const { doctor, pharmacist, diagnosis, xray, frontdesk } = req.body;
+    const hashed = await bcrypt.hash(password, 10);
 
-    const roles = [
-      { role: "doctor", password: doctor },
-      { role: "pharmacist", password: pharmacist },
-      { role: "diagnosis", password: diagnosis },
-      { role: "xray", password: xray },
-      { role: "front_desk", password: frontdesk }
-    ];
-
-    for (let r of roles) {
-
-      if (!r.password) continue;
-
-      const credential = await InstitutionCredential.findOne({
-        instituteId: req.user.instituteId,
-        role: r.role
-      });
-
-      if (!credential) {
-        return res.status(404).json({
-          message: `${r.role} not configured yet`
-        });
-      }
-
-      const hashed = await bcrypt.hash(r.password, 10);
-
-      credential.password = hashed;
-      await credential.save();
-    }
+    credential.password = hashed;
+    await credential.save();
 
     res.status(200).json({
-      message: "Role passwords updated successfully"
+      message: "Password updated successfully"
     });
   })
 );
