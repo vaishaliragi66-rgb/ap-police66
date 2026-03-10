@@ -6,6 +6,7 @@ import {
   FaPrescriptionBottleAlt,
   FaVirus,
   FaSignOutAlt,
+  FaImage,
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -47,6 +48,13 @@ const EmployeeHome = () => {
       desc: "Track your health records and previous conditions.",
       onClick: () => navigate("/employee/disease-history"),
       btnText: "View History",
+    },
+    {
+      icon: <FaImage size={30} />,
+      title: "X‑ray Reports",
+      desc: "View your x‑ray records and findings.",
+      onClick: () => navigate("/employee/xray-report"),
+      btnText: "View Reports",
     },
     {
       icon: <FaSignOutAlt size={30} />,
