@@ -55,9 +55,11 @@ const downloadCSV = (data) => {
 
   const blob = new Blob([csv], { type: "text/csv" });
   const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
+  const objectUrl = URL.createObjectURL(blob);
+  link.href = objectUrl;
   link.download = "Employee_Analytics.csv";
   link.click();
+  URL.revokeObjectURL(objectUrl);
 };
 
 const downloadPDF = (data) => {
@@ -241,8 +243,20 @@ export default function EmployeeReports() {
               </div>
   
               <div className="col-md-4 text-end">
-                <button className="btn btn-success me-2 px-4">Download CSV</button>
-                <button className="btn btn-danger px-4">Download PDF</button>
+                <button
+                  className="btn btn-success me-2 px-4"
+                  onClick={() => downloadCSV(filteredRows)}
+                  disabled={!filteredRows.length}
+                >
+                  Download CSV
+                </button>
+                <button
+                  className="btn btn-danger px-4"
+                  onClick={() => downloadPDF(filteredRows)}
+                  disabled={!filteredRows.length}
+                >
+                  Download PDF
+                </button>
               </div>
   
             </div>

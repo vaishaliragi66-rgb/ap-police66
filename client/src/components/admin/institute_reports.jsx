@@ -192,8 +192,8 @@ export default function InstituteReports() {
           MEDICINES MODAL
       ================================*/}
       {selectedInstitute && (
-        <div className="modal show fade d-block" style={{ background: "#00000080" }}>
-          <div className="modal-dialog modal-xl">
+        <div className="modal show fade d-block mt-4" style={{ background: "#00000080", marginTop: "1000px" }}>
+          <div className="modal-dialog modal-xl "style={{ marginTop: "7rem" }}>
             <div className="modal-content">
               <div className="modal-header">
                 <h5>{selectedInstitute.Institute_Name} – Medicines Inventory</h5>

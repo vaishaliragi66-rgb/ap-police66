@@ -29,7 +29,7 @@ const Employeelogin = () => {
         { ABS_NO: absNo, Password: password }
       );
 
-      alert("✅ Login successful!");
+     // alert("✅ Login successful!");
 
       // ✅ Save Employee Data
       console.log("LOGIN RESPONSE PAYLOAD:", res.data.payload);

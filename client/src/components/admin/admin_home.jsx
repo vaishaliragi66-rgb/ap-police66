@@ -38,7 +38,9 @@ function AdminDashboard() {
         <p>Manage institutes, employees, and system insights</p>
       </div>
 
-      {/* KPI / STATS */}
+<br />
+<br/>
+      {/* KPI / STATS
       <div className="admin-stats">
         <div className="stat-card">
           <FaBuilding className="stat-icon" />
@@ -63,7 +65,7 @@ function AdminDashboard() {
             <span>Medical & Diagnostic Records</span>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* MAIN ACTIONS */}
       <div className="admin-actions">
