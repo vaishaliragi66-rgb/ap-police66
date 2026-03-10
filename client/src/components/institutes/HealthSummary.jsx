@@ -1,9 +1,29 @@
 import React, { useState } from "react";
 import axios from "axios";
+import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend
+} from "chart.js";
+import { Bar, Pie } from "react-chartjs-2";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend
+);
 
 const HealthSummary = () => {
   const institute = JSON.parse(localStorage.getItem("institute") || "{}");
@@ -23,7 +43,11 @@ const HealthSummary = () => {
   const [endYear, setEndYear] = useState(currYear);
   const [endMonth, setEndMonth] = useState(currMonth);
   const [data, setData] = useState(null);
+  const [diseasePage, setDiseasePage] = useState(1);
+  const [medicinePage, setMedicinePage] = useState(1);
+  const [exportAll, setExportAll] = useState(false);
 
+const rowsPerPage = 10;
   const formatDateDMY = (isoDate) => {
     if (!isoDate) return "-";
     const [yyyy, mm, dd] = String(isoDate).split("-");
@@ -119,6 +143,13 @@ const HealthSummary = () => {
           const medicineUsage = Array.from(mergedMedicineMap.entries()).map(([medicineName, totalQuantity]) => ({ medicineName, totalQuantity })).sort((a,b)=>b.totalQuantity - a.totalQuantity);
 
           setData({ censusRows, totals: mergedTotals, diseaseSummary, categorySummary, medicineUsage });
+        return;
+      }
+      if (
+        Number(startYear) > Number(endYear) ||
+        (Number(startYear) === Number(endYear) && Number(startMonth) > Number(endMonth))
+      ) {
+        alert("Start month must be before End month");
         return;
       }
 
@@ -229,17 +260,200 @@ const HealthSummary = () => {
   };
 
   const handleDownload = async () => {
+  setExportAll(true);
+
+  setTimeout(async () => {
     const element = document.getElementById("summary-section");
+
     const canvas = await html2canvas(element, { scale: 2 });
+
     const imgData = canvas.toDataURL("image/png");
 
     const pdf = new jsPDF("p", "mm", "a4");
+
     const imgWidth = 190;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+
     pdf.save("HealthSummary.pdf");
-  };
+
+    setExportAll(false);
+  }, 300);
+};
+  
+  // VIEW CENSUS IN EXCEL
+const viewCensusExcel = () => {
+  if (!data?.censusRows?.length) return;
+
+  const rows = data.censusRows.map((row, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${formatDateDMY(row.date)}</td>
+      <td>${row.male}</td>
+      <td>${row.female}</td>
+      <td>${row.maleChild}</td>
+      <td>${row.femaleChild}</td>
+      <td>${row.total}</td>
+    </tr>
+  `).join("");
+
+  const html = `
+    <html>
+      <head>
+        <title>Census Spreadsheet</title>
+        <style>
+          body{font-family:Arial;padding:20px;background:#f5f5f5}
+          table{border-collapse:collapse;width:100%;background:white}
+          th,td{border:1px solid #d0d0d0;padding:8px;text-align:center}
+          th{background:#e9ecef;font-weight:bold}
+        </style>
+      </head>
+      <body>
+        <h3>Census Spreadsheet</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Date</th>
+              <th>Male</th>
+              <th>Female</th>
+              <th>Male Child</th>
+              <th>Female Child</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+
+  const newWindow = window.open("");
+  newWindow.document.write(html);
+  newWindow.document.close();
+};
+
+// DOWNLOAD CENSUS EXCEL
+const downloadCensusExcel = () => {
+  if (!data?.censusRows?.length) return;
+
+  const rows = data.censusRows.map((row, i) => ({
+    "S.No": i + 1,
+    Date: formatDateDMY(row.date),
+    Male: row.male,
+    Female: row.female,
+    "Male Child": row.maleChild,
+    "Female Child": row.femaleChild,
+    Total: row.total
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(wb, ws, "Census");
+  XLSX.writeFile(wb, "Census_Report.xlsx");
+};
+// VIEW MEDICINE EXCEL
+const viewMedicineExcel = () => {
+  if (!data?.medicineUsage?.length) return;
+
+  const rows = data.medicineUsage.map((row, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${row.medicineName}</td>
+      <td>${row.totalQuantity}</td>
+    </tr>
+  `).join("");
+
+  const html = `
+    <html>
+      <head>
+        <title>Medicine Spreadsheet</title>
+        <style>
+          body{font-family:Arial;padding:20px;background:#f5f5f5}
+          table{border-collapse:collapse;width:100%;background:white}
+          th,td{border:1px solid #d0d0d0;padding:8px}
+          th{background:#e9ecef;font-weight:bold}
+        </style>
+      </head>
+      <body>
+        <h3>Medicine Usage Spreadsheet</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Medicine</th>
+              <th>Total Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+
+  const newWindow = window.open("");
+  newWindow.document.write(html);
+  newWindow.document.close();
+};
+// DOWNLOAD MEDICINE EXCEL
+const downloadMedicineExcel = () => {
+  if (!data?.medicineUsage?.length) return;
+
+  const rows = data.medicineUsage.map((row, i) => ({
+    "S.No": i + 1,
+    Medicine: row.medicineName,
+    "Total Quantity": row.totalQuantity
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(wb, ws, "Medicine Usage");
+  XLSX.writeFile(wb, "Medicine_Usage_Report.xlsx");
+};
+
+  const diseaseChartData = {
+  labels: data?.diseaseSummary?.map(d => d.diseaseName) || [],
+  datasets: [
+    {
+      label: "Disease Count",
+      data: data?.diseaseSummary?.map(d => d.count) || [],
+      backgroundColor: "#4e73df"
+    }
+  ]
+};
+
+const categoryChartData = {
+  labels: data?.categorySummary?.map(c => c.category) || [],
+  datasets: [
+    {
+      data: data?.categorySummary?.map(c => c.count) || [],
+      backgroundColor: ["#28a745", "#dc3545", "#ffc107", "#17a2b8"]
+    }
+  ]
+};
+
+  const paginatedMedicines =
+  exportAll
+    ? data?.medicineUsage || []
+    : data?.medicineUsage?.slice(
+        (medicinePage - 1) * rowsPerPage,
+        medicinePage * rowsPerPage
+      ) || [];
+
+  const paginatedCensusRows =
+  exportAll
+    ? data?.censusRows || []
+    : data?.censusRows?.slice(
+        (diseasePage - 1) * rowsPerPage,
+        diseasePage * rowsPerPage
+      ) || [];
 
   return (
    
@@ -281,13 +495,33 @@ const HealthSummary = () => {
             <div className="col-6">
               <div className="d-flex">
                 <input type="number" placeholder="Start Year" className="form-control me-2" value={startYear} onChange={e => setStartYear(e.target.value)} />
-                <input type="number" placeholder="Start Month (1-12)" className="form-control" value={startMonth} onChange={e => setStartMonth(e.target.value)} />
+                <select
+                  className="form-control"
+                  value={startMonth}
+                  onChange={e => setStartMonth(Number(e.target.value))}
+                >
+                  {[...Array(12)].map((_, i) => (
+                    <option key={i+1} value={i+1}>
+                      {new Date(0, i).toLocaleString("default", { month: "long" })}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="col-6">
               <div className="d-flex">
                 <input type="number" placeholder="End Year" className="form-control me-2" value={endYear} onChange={e => setEndYear(e.target.value)} />
-                <input type="number" placeholder="End Month (1-12)" className="form-control" value={endMonth} onChange={e => setEndMonth(e.target.value)} />
+                <select
+                  className="form-control"
+                  value={endMonth}
+                  onChange={e => setEndMonth(Number(e.target.value))}
+                >
+                  {[...Array(12)].map((_, i) => (
+                    <option key={i+1} value={i+1}>
+                      {new Date(0, i).toLocaleString("default", { month: "long" })}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -310,8 +544,26 @@ const HealthSummary = () => {
               {type === "daily" ? `FOR ${formatDateDMY(date)}` : type === "yearly" ? `FOR YEAR ${year}` : `FOR ${pad(startMonth)}-${startYear} TO ${pad(endMonth)}-${endYear}`}
             </div>
           </div>
+          <div className="d-flex justify-content-between align-items-center mt-3">
+          <h6 className="fw-semibold mb-0">Census Table</h6>
 
-          <table className="table table-bordered mt-3">
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={viewCensusExcel}
+            >
+              View Excel
+            </button>
+
+            <button
+              className="btn btn-sm btn-success"
+              onClick={downloadCensusExcel}
+            >
+              Export Excel
+            </button>
+          </div>
+        </div>
+          <table className="table table-bordered mt-2">
             <thead className="table-light text-center align-middle">
               <tr>
                 <th style={{ width: "70px" }}>S.No</th>
@@ -324,9 +576,11 @@ const HealthSummary = () => {
               </tr>
             </thead>
             <tbody>
-              {(data.censusRows || []).map((row, index) => (
+              {paginatedCensusRows.map((row, index) => (
                 <tr key={`${row.date}-${index}`}>
-                  <td className="text-center">{index + 1}</td>
+                  <td className="text-center">
+                  {(diseasePage - 1) * rowsPerPage + index + 1}
+                  </td>
                   <td>{formatDateDMY(row.date)}</td>
                   <td className="text-center">{row.male}</td>
                   <td className="text-center">{row.female}</td>
@@ -356,6 +610,35 @@ const HealthSummary = () => {
               </tr>
             </tfoot>
           </table>
+          
+            <div className="d-flex justify-content-center align-items-center gap-2 mt-3">
+              <button
+                className="btn btn-sm btn-outline-dark"
+                disabled={diseasePage === 1}
+                onClick={() => setDiseasePage(diseasePage - 1)}
+              >
+                Prev
+              </button>
+
+              {[...Array(Math.ceil((data?.censusRows?.length || 0) / rowsPerPage))].map((_, i) => (
+                <button
+                  key={i}
+                  className={`btn btn-sm ${diseasePage === i + 1 ? "btn-dark" : "btn-outline-dark"}`}
+                  onClick={() => setDiseasePage(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                className="btn btn-sm btn-outline-dark"
+                disabled={diseasePage === Math.ceil((data?.censusRows?.length || 0) / rowsPerPage)}
+                onClick={() => setDiseasePage(diseasePage + 1)}
+              >
+                Next
+              </button>
+
+            </div>
 
           <div className="row g-2 mt-3">
             <div className="col-6 col-md-4 col-lg-2">
@@ -391,52 +674,80 @@ const HealthSummary = () => {
           </div>
 
           <div className="row mt-4">
+
+            {/* Disease Distribution */}
             <div className="col-md-6 mb-3">
               <div className="card p-3 h-100">
                 <div className="fw-semibold mb-2">Disease Distribution</div>
+
                 {data.diseaseSummary && data.diseaseSummary.length > 0 ? (
-                  <table className="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Disease</th>
-                        <th className="text-end">Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.diseaseSummary.map((d, i) => (
-                        <tr key={i}>
-                          <td>{d.diseaseName}</td>
-                          <td className="text-end">{d.count}</td>
+                  <>
+                    <div style={{height:"280px"}}>
+                      <Bar
+                        data={diseaseChartData}
+                        options={{
+                          maintainAspectRatio:false,
+                          plugins:{legend:{display:false}}
+                        }}
+                      />
+                    </div>
+                    <table className="table table-sm mt-3">
+                      <thead>
+                        <tr>
+                          <th>Disease</th>
+                          <th className="text-end">Count</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {data.diseaseSummary.map((d, i) => (
+                          <tr key={i}>
+                            <td>{d.diseaseName}</td>
+                            <td className="text-end">{d.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
                 ) : (
                   <div className="text-muted">No disease data</div>
                 )}
               </div>
             </div>
 
+
+            {/* Category Summary */}
             <div className="col-md-6 mb-3">
               <div className="card p-3 h-100">
                 <div className="fw-semibold mb-2">Category Summary</div>
+
                 {data.categorySummary && data.categorySummary.length > 0 ? (
-                  <table className="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Category</th>
-                        <th className="text-end">Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.categorySummary.map((c, i) => (
-                        <tr key={i}>
-                          <td>{c.category}</td>
-                          <td className="text-end">{c.count}</td>
+                  <>
+                    <div style={{height:"280px"}}>
+                      <Pie
+                        data={categoryChartData}
+                        options={{
+                          maintainAspectRatio:false
+                        }}
+                      />
+                    </div>
+
+                    <table className="table table-sm mt-3">
+                      <thead>
+                        <tr>
+                          <th>Category</th>
+                          <th className="text-end">Count</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {data.categorySummary.map((c, i) => (
+                          <tr key={i}>
+                            <td>{c.category}</td>
+                            <td className="text-end">{c.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
                 ) : (
                   <div className="text-muted">No category data</div>
                 )}
@@ -445,7 +756,26 @@ const HealthSummary = () => {
           </div>
 
           <div className="card mt-3 p-3">
-            <div className="fw-semibold mb-2">Medicine Usage</div>
+            {/* Header */}
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <div className="fw-semibold">Medicine Usage</div>
+
+              <div className="d-flex gap-2">
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={viewMedicineExcel}
+                >
+                  View Excel
+                </button>
+
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={downloadMedicineExcel}
+                >
+                  Export Excel
+                </button>
+              </div>
+            </div>
             {data.medicineUsage && data.medicineUsage.length > 0 ? (
               <table className="table table-sm">
                 <thead>
@@ -455,7 +785,7 @@ const HealthSummary = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.medicineUsage.map((m, i) => (
+                  {paginatedMedicines.map((m, i) => (
                     <tr key={i}>
                       <td>{m.medicineName}</td>
                       <td className="text-end">{m.totalQuantity}</td>
@@ -463,9 +793,38 @@ const HealthSummary = () => {
                   ))}
                 </tbody>
               </table>
+              
             ) : (
               <div className="text-muted">No medicine usage data</div>
             )}
+          </div>
+          <div className="d-flex justify-content-center align-items-center gap-2 mt-3">
+            <button
+              className="btn btn-sm btn-outline-dark"
+              disabled={medicinePage === 1}
+              onClick={() => setMedicinePage(medicinePage - 1)}
+            >
+              Prev
+            </button>
+
+            {[...Array(Math.ceil((data?.medicineUsage?.length || 0) / rowsPerPage))].map((_, i) => (
+              <button
+                key={i}
+                className={`btn btn-sm ${medicinePage === i + 1 ? "btn-dark" : "btn-outline-dark"}`}
+                onClick={() => setMedicinePage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button
+              className="btn btn-sm btn-outline-dark"
+              disabled={medicinePage === Math.ceil((data?.medicineUsage?.length || 0) / rowsPerPage)}
+              onClick={() => setMedicinePage(medicinePage + 1)}
+            >
+              Next
+            </button>
+
           </div>
         </div>
       )}

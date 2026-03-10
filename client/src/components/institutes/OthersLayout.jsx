@@ -8,7 +8,8 @@ import {
   FaBoxOpen,
   FaFileMedical,
   FaBars,
-  FaTimes
+  FaTimes,
+  FaHome
 } from "react-icons/fa";
 import { APP_HEADER_HEIGHT } from "../GlobalHeader";
 
@@ -111,6 +112,29 @@ const OthersLayout = () => {
 
         <Outlet />
       </div>
+      {/* Floating Home Button */}
+      <button
+        onClick={() => navigate("/institutes/home")}
+        style={{
+          position: "fixed",
+          bottom: "25px",
+          left: "20px",
+          background: "#2563eb",
+          color: "white",
+          border: "none",
+          borderRadius: "50px",
+          padding: "12px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
+          zIndex: 2000,
+          fontWeight: "600",
+          cursor: "pointer"
+        }}
+      >
+        <FaHome /> Home
+</button>
     </div>
   );
 };
