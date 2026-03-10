@@ -22,10 +22,6 @@ const Employeelogin = () => {
       setError("ABS Number is required");
       return;
     }
-    if (!/^\d{6}$/.test(absNo)) {
-      setError("ABS number must be exactly 6 digits");
-      return;
-    }
 
     try {
       const res = await axios.post(
@@ -164,12 +160,7 @@ const Employeelogin = () => {
                 placeholder="Enter ABS Number"
                 value={absNo}
                 onChange={(e) => setAbsNo(e.target.value)}
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-                maxLength="6"
+                minLength="6"
                 required
               />
             </div>

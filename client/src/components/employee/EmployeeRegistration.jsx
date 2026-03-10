@@ -86,9 +86,7 @@ const validateForm = () => {
 
   if (!formData.ABS_NO.trim()) {
     errors.push("ABS Number is required");
-  } else if (!/^\d{6}$/.test(formData.ABS_NO)) {
-    errors.push("ABS number must be exactly 6 digits");
-  }
+  } 
 
   if (!formData.Name.trim() || formData.Name.length < 3) {
     errors.push("Full Name must be at least 3 characters");
@@ -230,58 +228,6 @@ if (validationErrors.length > 0) {
   return (
     <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center py-5" 
          style={{ backgroundColor: "#f8f9fa" }}>
-          <style>
-{`
-  /* Label – calm & light */
-  .form-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: #1F2933;
-    margin-bottom: 6px;
-  }
-
-  /* Card-style inputs */
-  .form-control,
-  .form-select {
-    background-color: #F8FAFC;
-    border: 1px solid #E6EEFA;
-    border-radius: 12px;
-    padding: 10px 14px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-  }
-
-  /* Focus – dashboard blue line */
-  .form-control:focus,
-  .form-select:focus {
-    background-color: #FFFFFF;
-    border-color: #4A70A9;
-    box-shadow: none;
-  }
-
-  /* Placeholder */
-  .form-control::placeholder {
-    color: #9AA4B2;
-    font-size: 13px;
-  }
-
-  /* Disabled */
-  .form-control:disabled,
-  .form-select:disabled {
-    background-color: #F1F5FB;
-    opacity: 0.8;
-  }
-
-  /* Spacing between fields */
-  .mb-3 {
-    margin-bottom: 16px !important;
-  }
-`}
-</style>
-  
-
-
-      
       {/* Header */}
       <div className="text-center mb-4">
         <div className="d-flex justify-content-center align-items-center mb-3">
@@ -457,12 +403,7 @@ if (validationErrors.length > 0) {
       placeholder="Enter ABS Number"
       value={formData.ABS_NO}
       onChange={handleChange}
-      onKeyPress={(e) => {
-        if (!/[0-9]/.test(e.key)) {
-          e.preventDefault();
-        }
-      }}
-      maxLength="6"
+      minLength="6"
       required
       disabled={loading}
     />

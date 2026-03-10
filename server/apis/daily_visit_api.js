@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const DailyVisit = require("../models/daily_visit");
+const MedicalAction = require("../models/medical_action");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 // REGISTER VISIT
 
@@ -85,23 +86,23 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
   }
 });
 
-// GET TODAY VISITS BY INSTITUTE
-router.get("/today/:Institute_ID", async (req, res) => {
+router.get("/today/:instituteId", async (req, res) => {
   try {
-    const { Institute_ID } = req.params;
+
+    const { instituteId } = req.params;
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0,0,0,0);
+
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    // Find visits where visit_date is >= today and < tomorrow
     const visits = await DailyVisit.find({
-      Institute_ID,
+      Institute_ID: instituteId,
       visit_date: { $gte: today, $lt: tomorrow }
     })
-      .populate("employee_id")
-      .populate("FamilyMember");
+    .populate("employee_id")
+    .populate("FamilyMember");
 
     res.json(visits);
 
@@ -148,68 +149,6 @@ router.get("/next-numbers/:Institute_ID", async (req, res) => {
 });
 
 
-module.exports = router;
 
-
-// GET TODAY VISITS BY INSTITUTE
-router.get("/today/:Institute_ID", async (req, res) => {
-  try {
-    const { Institute_ID } = req.params;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const visits = await DailyVisit.find({
-      Institute_ID,
-      visit_date: today
-    }).populate("employee_id")
-    .populate("FamilyMember");
-
-    res.json(visits);
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.get("/next-numbers/:Institute_ID", async (req, res) => {
-  try {
-    const { Institute_ID } = req.params;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const currentYear = today.getFullYear();
-
-    /* ===== TOKEN ===== */
-    const lastTokenVisit = await DailyVisit.findOne({
-      Institute_ID,
-      visit_date: today
-    }).sort({ token_no: -1 });
-
-    const nextToken = lastTokenVisit ? lastTokenVisit.token_no + 1 : 1;
-
-    /* ===== OP ===== */
-    const startOfYear = new Date(currentYear, 0, 1);
-    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59);
-
-    const lastOPVisit = await DailyVisit.findOne({
-      visit_date: { $gte: startOfYear, $lte: endOfYear }
-    }).sort({ OP_No: -1 });
-    
-    let nextOP = 1;
-    
-    if (lastOPVisit && typeof lastOPVisit.OP_No === "number") {
-      nextOP = lastOPVisit.OP_No + 1;
-    }
-
-    res.json({
-      nextToken,
-      nextOP
-    });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 module.exports = router;

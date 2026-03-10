@@ -14,6 +14,7 @@ const XrayEntryForm = () => {
   const [tokenNumber, setTokenNumber] = useState(null);
   const [xrayTypes, setXrayTypes] = useState([]);
   const [xrayMaster, setXrayMaster] = useState([]);
+  const [doctorXrays, setDoctorXrays] = useState([]);
   const navigate = useNavigate();
 
 
@@ -54,6 +55,20 @@ const XrayEntryForm = () => {
   fetchXrayTypes();
     }
   }, []);
+
+  const fetchDoctorXrays = async (visitId) => {
+  try {
+    const res = await axios.get(
+      `http://localhost:${BACKEND_PORT_NO}/xray-api/visit/${visitId}/doctor`
+    );
+
+    setDoctorXrays(res.data?.xrays || []);
+
+  } catch (err) {
+    console.error("Failed to fetch doctor xrays", err);
+    setDoctorXrays([]);
+  }
+};
 
   const fetchInstituteName = async (id) => {
     try {
@@ -279,6 +294,35 @@ const fetchXrayTypes = async () => {
     return `${day}-${month}-${year}`;
   };
 
+  useEffect(() => {
+
+  if (!doctorXrays || doctorXrays.length === 0) return;
+
+  const populated = doctorXrays.map(x => {
+
+    const master = xrayMaster.find(m => m._id === x.Xray_ID);
+
+    return {
+      Xray_ID: x.Xray_ID || "",
+      Xray_Type: x.Xray_Type || "",
+      Body_Part: master?.Body_Part || "",
+      Side: master?.Side || "NA",
+      View: master?.View || "",
+      Film_Size: master?.Film_Size || "",
+      Findings: "",
+      Impression: "",
+      Remarks: ""
+    };
+
+  });
+
+  setFormData(prev => ({
+    ...prev,
+    Xrays: populated
+  }));
+
+}, [doctorXrays, xrayMaster]);
+
   return (
     
        <div className="container-fluid mt-2">
@@ -417,7 +461,9 @@ const fetchXrayTypes = async () => {
                           ? visit.FamilyMember
                           : null
                       );
-
+                      if (vId) {
+                        fetchDoctorXrays(vId);
+                      }
                       setFormData((prev) => ({
                         ...prev,
                         Employee_ID: employee._id,

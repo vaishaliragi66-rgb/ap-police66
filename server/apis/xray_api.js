@@ -31,70 +31,63 @@ xrayApp.get("/types", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 xrayApp.get("/visit/:visitId/doctor", async (req, res) => {
   try {
-    const action = await MedicalAction.findOne({
-      visit_id: req.params.visitId,
-      action_type: "DOCTOR_DIAGNOSIS",
-      source: "DOCTOR"
-    })
-    .sort({ created_at: -1 });
+    const { visitId } = req.params;
 
-    if (!action) return res.status(200).json(null);
+    const actions = await MedicalAction.find({
+      visit_id: visitId,
+      action_type: "DOCTOR_XRAY"
+    }).sort({ createdAt: -1 });
 
-    res.status(200).json(action);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch doctor diagnosis" });
-  }
-});
-
-xrayApp.get("/queue/:Institute_ID", async (req, res) => {
-  try {
-    const { Institute_ID } = req.params;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const visits = await DailyVisit.find({
-      Institute_ID,
-      visit_date: today
-    })
-      .populate("employee_id")
-      .populate("FamilyMember")
-      .sort({ token_no: 1 });
-
-    if (!visits.length) {
-      return res.status(200).json([]);
+    if (!actions.length) {
+      return res.json({ xrays: [] });
     }
 
-    const visitIds = visits.map((visit) => visit._id);
+    const xrays = actions.flatMap(a => a.data?.xrays || []);
 
-    const doctorXrayActions = await MedicalAction.find({
-      visit_id: { $in: visitIds },
-      action_type: "DOCTOR_XRAY",
-      source: "DOCTOR",
-      "data.xrays.0": { $exists: true }
-    }).select("visit_id");
+    res.json({
+      visit_id: visitId,
+      xrays
+    });
 
-    const allowedVisitIds = new Set(
-      doctorXrayActions.map((action) => String(action.visit_id))
-    );
-
-    const xrayQueueVisits = visits.filter((visit) =>
-      allowedVisitIds.has(String(visit._id))
-    );
-
-    res.status(200).json(xrayQueueVisits);
   } catch (err) {
-    console.error("Error fetching xray queue visits:", err);
-    res.status(500).json({ error: "Failed to fetch xray queue" });
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch doctor xrays" });
   }
 });
 
 
+xrayApp.get("/queue/:instituteId", async (req, res) => {
+  try {
 
-// ✅ Add a new master test
-// ✅ Add a new master X-ray type
+    const { instituteId } = req.params;
+
+    const visits = await DailyVisit.find({
+      Institute_ID: instituteId
+    })
+    .populate("employee_id")
+    .populate("FamilyMember");
+
+    const actions = await MedicalAction.find({
+      action_type: "DOCTOR_XRAY"
+    });
+
+    const visitIds = actions.map(a => String(a.visit_id));
+
+    const xrayVisits = visits.filter(v =>
+      visitIds.includes(String(v._id))
+    );
+
+    res.json(xrayVisits);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch x-ray queue" });
+  }
+});
+
 xrayApp.post("/xrays/add", async (req, res) => {
   try {
     const {
@@ -146,7 +139,6 @@ xrayApp.post("/xrays/add", async (req, res) => {
     });
   }
 });
-
 
 xrayApp.post("/add",verifyToken,
   allowInstituteRoles("xray"), async (req, res) => {

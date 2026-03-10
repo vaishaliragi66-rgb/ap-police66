@@ -20,7 +20,6 @@ router.post("/add", async (req, res) => {
       visit_id
     } = req.body;
 
-    // Basic validation
     if (!Institute_ID || !Employee_ID || !Array.isArray(Medicines) || Medicines.length === 0) {
       return res.status(400).json({ message: "Required fields missing" });
     }
@@ -29,45 +28,38 @@ router.post("/add", async (req, res) => {
       return res.status(400).json({ message: "Invalid Employee ID" });
     }
 
-    // Save doctor prescription
     const prescription = await DoctorPrescription.create({
       Institute: Institute_ID,
       Employee: Employee_ID,
       IsFamilyMember,
-      
       FamilyMember: IsFamilyMember ? FamilyMember_ID : null,
       Medicines,
       Notes
     });
 
-    // ===================================================
-    // LOG MEDICAL ACTION (DOCTOR)
-// ===================================================
-    try {
-      await MedicalAction.create({
-        employee_id: Employee_ID,
-        visit_id: visit_id || null,
-        action_type: "DOCTOR_PRESCRIPTION",
-        source: "DOCTOR",
-        data: {
-          doctor_prescription_id: prescription._id,
-          medicines: Medicines
-        },
-        remarks: Notes || ""
-      });
-    } catch (logErr) {
-      console.error("⚠️ MedicalAction log failed (doctor):", logErr.message);
-    }
+    await MedicalAction.create({
+      employee_id: Employee_ID,
+      visit_id: visit_id || null,
+      action_type: "DOCTOR_PRESCRIPTION",
+      source: "DOCTOR",
+      data: {
+        doctor_prescription_id: prescription._id,
+        medicines: Medicines
+      },
+      remarks: Notes || ""
+    });
 
-    return res.status(201).json({
+    res.status(201).json({
       message: "Doctor prescription saved",
       doctorPrescriptionId: prescription._id
     });
 
   } catch (err) {
     console.error("Doctor prescription error:", err);
-    return res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
+
+
 
 module.exports = router;
