@@ -96,7 +96,7 @@ const OthersLayout = () => {
         style={{
           marginLeft: !hideSidebar && open ? "240px" : "0",
           width: "100%",
-          padding: "20px",
+          padding: "20px 100px",
           transition: "all 0.3s ease"
         }}
       >

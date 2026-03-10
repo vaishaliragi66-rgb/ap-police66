@@ -22,7 +22,7 @@ function GlobalHeader() {
         </div>
       </div>
       <span className="text-sm text-[#6B7280] hidden md:inline">
-        Powered by AP Police Health Division
+       SARCPL
       </span>
     </header>
   );
