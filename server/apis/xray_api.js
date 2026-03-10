@@ -327,14 +327,16 @@ xrayApp.get("/records/:personId", async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(personId))
       return res.status(400).json({ message: "Invalid ID" });
 
+    // default behaviour: return all records belonging to this employee, including
+    // family‑member entries. A query may still request a specific family member by
+    // setting ?isFamily=true&familyId=<id> (used by institute entry form).
     const filter = { Employee: personId };
 
     if (isFamily === "true" && familyId) {
       filter.IsFamilyMember = true;
       filter.FamilyMember = familyId;
-    } else {
-      filter.IsFamilyMember = false;
     }
+    // else leave filter alone so both self and family rows are returned
 
     const records = await XrayRecord.find(filter)
       .populate("Employee", "Name")

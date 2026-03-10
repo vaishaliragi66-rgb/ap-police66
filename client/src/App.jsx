@@ -41,6 +41,7 @@ import EmployeeReports from "./components/admin/employee_reports";
 import DoctorLayout from "./components/institutes/DoctorLayout";
 import OthersLayout from "./components/institutes/OthersLayout";
 import XrayEntryForm from "./components/institutes/XrayEntryForm";
+import XrayReport from "./components/employee/XrayReport";
 import HealthSummary from "./components/institutes/HealthSummary";
 import AddPasswords from "./components/institutes/AddPasswords ";
 const token = localStorage.getItem("instituteToken");
@@ -64,8 +65,7 @@ function AppShell() {
     path === "/institutions/diagnosis-entry" ||
     path === "/employee/disease-history" ||
     path === "/employee/prescription-report" ||
-    path === "/employee/diagnosis-report" ||
-    path === "/institutes/health-summary" ||
+    path === "/employee/diagnosis-report" ||    path === "/employee/xray-report" ||    path === "/institutes/health-summary" ||
     path.startsWith("/employee/family/") ||
     path === "/institutions/prescriptions" ||
     path === "/institutes/visit-register" ||
@@ -231,6 +231,10 @@ function App() {
         {
           path: "employee/diagnosis-report",
           element: <DiagnosisReport />,
+        },
+        {
+          path: "employee/xray-report",
+          element: <XrayReport />,
         },
         {
           path:"employee/home",
