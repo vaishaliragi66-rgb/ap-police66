@@ -60,6 +60,15 @@ const [selectedPrescription, setSelectedPrescription] = useState(null);
   return `${day}-${month}-${year}`; // DD-MM-YYYY
 };
 
+// ---------- TODAY FILTER ----------
+const applyTodayFilter = () => {
+  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+  setStartDate(today);
+  setEndDate(today);
+  setCurrentPage(1);
+};
+
 const uniqueMedicineIds = [
   ...new Set(rows.map(r => r.medicineId).filter(Boolean))
 ];
@@ -589,255 +598,257 @@ const printPrescription = () => {
 
         {/* ---------- HEADER ---------- */}
         <div className="card-header d-flex justify-content-between align-items-center"
-  style={{
-    background: COLORS.primary,
-    color: "#fff",
-    borderBottom: `1px solid ${COLORS.border}`
-  }}
->
-  <h5 className="mb-0">Medicines Issued</h5>
-
-  <div className="d-flex gap-2">
-    <button
-      className="btn btn-sm"
-      style={{
-        background: "#fff",
-        color: COLORS.primary,
-        border: `1px solid ${COLORS.primary}`
-      }}
-      onClick={handleDownloadCSV}
-    >
-      ⬇ Download
-    </button>
-
-    <button
-      className="btn btn-sm"
-      style={{
-        background: "#fff",
-        color: COLORS.primary,
-        border: `1px solid ${COLORS.primary}`
-      }}
-      onClick={handlePrint}
-    >
-      🖨 Print
-    </button>
-  </div>
-</div>
-
-
-
-        {/* ================= FILTER CARD ================= */}
-        {showFilters && (
-          <div className="card-body border-bottom" style={{ background: COLORS.light }}>
-  <div className="card border-0 shadow-sm">
-    <div
-      className="card-header fw-semibold"
-      style={{
-        background: COLORS.light,
-        color: COLORS.text,
-        borderBottom: `1px solid ${COLORS.border}`
-      }}
-    >
-      Filters
-    </div>
-
-    <div className="card-body bg-white">
-
-      <div className="d-flex flex-wrap gap-2 align-items-end">
-      <select
-          className="form-select form-select-sm"
-          style={{ width: "180px" }}
-          value={categoryFilter}
-          onChange={(e) => {
-            setCategoryFilter(e.target.value);
-            setCurrentPage(1);
+          style={{
+            background: COLORS.primary,
+            color: "#fff",
+            borderBottom: `1px solid ${COLORS.border}`
           }}
         >
-          <option value="">All Categories</option>
-          {uniqueCategories.map((c, i) => (
-            <option key={i} value={c}>{c}</option>
-          ))}
-        </select>
-        
-        <select
-          className="form-select form-select-sm"
-          style={{ width: "180px" }}
-          value={typeFilter}
-          onChange={(e) => {
-            setTypeFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-        >
-          <option value="">All Types</option>
-          {uniqueTypes.map((t, i) => (
-            <option key={i} value={t}>{t}</option>
-          ))}
-        </select>
-        <select
-          className="form-select form-select-sm"
-          style={{ width: "200px" }}
-          value={medicineFilter}
-          onChange={(e) => {
-            setMedicineFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-        >
-          <option value="">All Medicines</option>
-          {uniqueMedicines.map((m, i) => (
-            <option key={i} value={m}>{m}</option>
-          ))}
-        </select>
-         <input
-          type="text"
-          className="form-control form-control-sm"
-          style={{ width: "340px" }}
-          placeholder="Search ABS / Name / Issued To / Ref / Medicine ID"
-          value={searchFilter}
-          onChange={(e) => {
-            setSearchFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      <div>
-        <label className="form-label small">Start Date</label>
-        <input
-          type="date"
-          className="form-control form-control-sm"
-          value={startDate}
-          onChange={(e) => {
-            setStartDate(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      </div>
+          <h5 className="mb-0">Medicines Issued</h5>
 
-      <div>
-        <label className="form-label small">End Date</label>
-        <input
-          type="date"
-          className="form-control form-control-sm"
-          value={endDate}
-          onChange={(e) => {
-            setEndDate(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      </div>
-      <div className="w-100"></div>
-      <div>
-        <label className="form-label small">Start Time</label>
-        <input
-          type="time"
-          className="form-control form-control-sm"
-          value={startTime}
-          onChange={(e) => {
-            setStartTime(e.target.value);
-            setCurrentPage(1);
-          }}
-          onBlur={validateTimeRange}
-        />
-      </div>
-    
-      <div>
-        <label className="form-label small">End Time</label>
-        <input
-          type="time"
-          className="form-control form-control-sm"
-          value={endTime}
-          onChange={(e) => {
-            setEndTime(e.target.value);
-            setCurrentPage(1);
-          }}
-          onBlur={validateTimeRange}
-        />
-      </div>
-      <select
-        className="form-select form-select-sm"
-        style={{ width: "180px" }}
-        value={issuedToFilter}
-        onChange={(e) => {
-          setIssuedToFilter(e.target.value);
-          setCurrentPage(1);
-        }}
-      >
-        <option value="">Issued To (All)</option>
-        {issuedToOptions.map((opt, i) => (
-          <option key={i} value={opt}>{opt}</option>
-        ))}
-      </select>
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-sm"
+              style={{
+                background: "#fff",
+                color: COLORS.primary,
+                border: `1px solid ${COLORS.primary}`
+              }}
+              onClick={handleDownloadCSV}
+            >
+              ⬇ Download
+            </button>
 
-      {/* ✅ MOVE MEDICINE ID HERE */}
-      <select
-        className="form-select form-select-sm"
-        style={{ width: "180px" }}
-        value={medicineIdFilter}
-        onChange={(e) => {
-          setMedicineIdFilter(e.target.value);
-          setCurrentPage(1);
-        }}
-      >
-        <option value="">All Medicine IDs</option>
-        {uniqueMedicineIds.map((id, i) => (
-          <option key={i} value={id}>{id}</option>
-        ))}
-      </select>
-      <div>
-        <label className="form-label small">Expiry ≤</label>
-        <input
-          type="date"
-          className="form-control form-control-sm"
-          value={expiryDateFilter}
-          onChange={(e) => {
-            setExpiryDateFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      </div>
-
-            <div>
-        <label className="form-label small">Qty Less Than</label>
-        <input
-          type="number"
-          min="1"
-          className="form-control form-control-sm"
-          placeholder="e.g. 3"
-          value={quantityFilter}
-          onChange={(e) => {
-            setQuantityFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      </div>
+            <button
+              className="btn btn-sm"
+              style={{
+                background: "#fff",
+                color: COLORS.primary,
+                border: `1px solid ${COLORS.primary}`
+              }}
+              onClick={handlePrint}
+            >
+              🖨 Print
+            </button>
+          </div>
+        </div>
 
 
-      </div>
-      <div>
-        
-      </div>
-    </div>
-  </div>
-</div>
-)}
 
+                {/* ================= FILTER CARD ================= */}
+                {showFilters && (
+                  <div className="card-body border-bottom" style={{ background: COLORS.light }}>
+          <div className="card border-0 shadow-sm">
+            <div
+              className="card-header fw-semibold"
+              style={{
+                background: COLORS.light,
+                color: COLORS.text,
+                borderBottom: `1px solid ${COLORS.border}`
+              }}
+            >
+              Filters
+            </div>
+
+            <div className="card-body bg-white">
+
+              <div className="d-flex flex-wrap gap-2 align-items-end">
+              <select
+                  className="form-select form-select-sm"
+                  style={{ width: "180px" }}
+                  value={categoryFilter}
+                  onChange={(e) => {
+                    setCategoryFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">All Categories</option>
+                  {uniqueCategories.map((c, i) => (
+                    <option key={i} value={c}>{c}</option>
+                  ))}
+                </select>
+                
+                <select
+                  className="form-select form-select-sm"
+                  style={{ width: "180px" }}
+                  value={typeFilter}
+                  onChange={(e) => {
+                    setTypeFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">All Types</option>
+                  {uniqueTypes.map((t, i) => (
+                    <option key={i} value={t}>{t}</option>
+                  ))}
+                </select>
+                <select
+                  className="form-select form-select-sm"
+                  style={{ width: "200px" }}
+                  value={medicineFilter}
+                  onChange={(e) => {
+                    setMedicineFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">All Medicines</option>
+                  {uniqueMedicines.map((m, i) => (
+                    <option key={i} value={m}>{m}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  style={{ width: "340px" }}
+                  placeholder="Search ABS / Name / Issued To / Ref / Medicine ID"
+                  value={searchFilter}
+                  onChange={(e) => {
+                    setSearchFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              <div>
+                <label className="form-label small">Start Date</label>
+                <input
+                  type="date"
+                  className="form-control form-control-sm"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="form-label small">End Date</label>
+                <input
+                  type="date"
+                  className="form-control form-control-sm"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+              <button
+                className="btn btn-sm btn-outline-success"
+                onClick={applyTodayFilter}
+              >
+                Today
+              </button>
+              <div className="w-100"></div>
+              <div>
+                <label className="form-label small">Start Time</label>
+                <input
+                  type="time"
+                  className="form-control form-control-sm"
+                  value={startTime}
+                  onChange={(e) => {
+                    setStartTime(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  onBlur={validateTimeRange}
+                />
+              </div>
+            
+              <div>
+                <label className="form-label small">End Time</label>
+                <input
+                  type="time"
+                  className="form-control form-control-sm"
+                  value={endTime}
+                  onChange={(e) => {
+                    setEndTime(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  onBlur={validateTimeRange}
+                />
+              </div>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: "180px" }}
+                value={issuedToFilter}
+                onChange={(e) => {
+                  setIssuedToFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">Issued To (All)</option>
+                {issuedToOptions.map((opt, i) => (
+                  <option key={i} value={opt}>{opt}</option>
+                ))}
+              </select>
+
+              {/* ✅ MOVE MEDICINE ID HERE */}
+              <select
+                className="form-select form-select-sm"
+                style={{ width: "180px" }}
+                value={medicineIdFilter}
+                onChange={(e) => {
+                  setMedicineIdFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Medicine IDs</option>
+                {uniqueMedicineIds.map((id, i) => (
+                  <option key={i} value={id}>{id}</option>
+                ))}
+              </select>
+              <div>
+                <label className="form-label small">Expiry ≤</label>
+                <input
+                  type="date"
+                  className="form-control form-control-sm"
+                  value={expiryDateFilter}
+                  onChange={(e) => {
+                    setExpiryDateFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+
+                    <div>
+                <label className="form-label small">Qty Less Than</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="form-control form-control-sm"
+                  placeholder="e.g. 3"
+                  value={quantityFilter}
+                  onChange={(e) => {
+                    setQuantityFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+
+
+              </div>
+              <div>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
 
         {/* ---------- TABLE ---------- */}
         <div className="card-body">
           {/* ---------- ROWS PER PAGE (TOP RIGHT – CONSISTENT) ---------- */}
           <div className="d-flex justify-content-end align-items-center gap-3 mb-3">
-
-                  <button
-          className="btn btn-sm"
-          style={{
-            border: `1px solid ${COLORS.primary}`,
-            color: COLORS.primary
-          }}
-          onClick={() => setShowFilters(prev => !prev)}
-        >
-          {showFilters ? "Hide Filters ▲" : "Show Filters ▼"}
-        </button>
-
-
-              <div className="d-flex align-items-center gap-2">
+            <button
+              className="btn btn-sm"
+              style={{
+                border: `1px solid ${COLORS.primary}`,
+                color: COLORS.primary
+              }}
+              onClick={() => setShowFilters(prev => !prev)}
+            >
+              {showFilters ? "Hide Filters ▲" : "Show Filters ▼"}
+            </button>
+            <div className="d-flex align-items-center gap-2">
                 <span className="fw-semibold text-muted">Rows per page:</span>
                 <select
                   className="form-select form-select-sm"
