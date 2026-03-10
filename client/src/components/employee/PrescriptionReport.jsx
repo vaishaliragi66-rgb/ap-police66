@@ -343,7 +343,7 @@ const PrescriptionReport = () => {
             <tbody>
               {selectedPrescription.Medicines.map((m, i) => {
                 const expiry = m.Medicine_ID?.Expiry_Date
-                  ? new Date(m.Medicine_ID.Expiry_Date).toLocaleDateString()
+                  ? new Date(m.Medicine_ID.Expiry_Date).toLocaleDateString('en-GB', { month: '2-digit', year: 'numeric' })
                   : "N/A";
 
                 const isExpired =

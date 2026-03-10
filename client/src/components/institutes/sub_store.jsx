@@ -13,6 +13,7 @@ export default function SubStore() {
   const [typeFilter, setTypeFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
+  const [expiryDateFilter, setExpiryDateFilter] = useState("");
 
   // ---------- SORT ----------
   const [sortConfig, setSortConfig] = useState({
@@ -25,6 +26,13 @@ export default function SubStore() {
     const d = new Date(dateValue);
     if (isNaN(d.getTime())) return "—";
     return `${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`;
+  };
+
+  const formatExpiryDate = (dateValue) => {
+    if (!dateValue) return "—";
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return "—";
+    return `${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`;
   };
 
   const handleSort = (key) => {
@@ -88,7 +96,17 @@ export default function SubStore() {
     const categoryMatch =
       categoryFilter === "" || r.Category === categoryFilter;
 
-    return searchMatch && medicineMatch && typeMatch && categoryMatch;
+    // Expiry date filter - Show medicines expiring ON OR BEFORE the selected month
+    let expiryMatch = true;
+    if (expiryDateFilter && r.Expiry_Date) {
+      const expiry = new Date(r.Expiry_Date);
+      expiry.setHours(0, 0, 0, 0);
+      const filterDate = new Date(expiryDateFilter);
+      filterDate.setHours(23, 59, 59, 999);
+      expiryMatch = expiry <= filterDate;
+    }
+
+    return searchMatch && medicineMatch && typeMatch && categoryMatch && expiryMatch;
   });
 
   // ---------- SORT ----------
@@ -132,9 +150,9 @@ export default function SubStore() {
         <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
           <h5 className="mb-0">Sub-Store Medicine Stock</h5>
 
-          <div className="d-flex gap-2">
+          <div className="d-flex gap-2 flex-wrap">
 
-            <select className="form-select" style={{ width:"200px" }}
+            <select className="form-select" style={{ width:"180px" }}
               value={medicineFilter}
               onChange={e => { setMedicineFilter(e.target.value); setCurrentPage(1); }}
             >
@@ -142,7 +160,7 @@ export default function SubStore() {
               {uniqueMedicines.map((m,i) => <option key={i} value={m}>{m}</option>)}
             </select>
 
-            <select className="form-select" style={{ width:"180px" }}
+            <select className="form-select" style={{ width:"150px" }}
               value={typeFilter}
               onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }}
             >
@@ -150,7 +168,7 @@ export default function SubStore() {
               {uniqueTypes.map((t,i) => <option key={i} value={t}>{t}</option>)}
             </select>
 
-            <select className="form-select" style={{ width:"180px" }}
+            <select className="form-select" style={{ width:"150px" }}
               value={categoryFilter}
               onChange={e => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
             >
@@ -160,10 +178,26 @@ export default function SubStore() {
 
             <input
               className="form-control"
-              style={{ width:"260px" }}
+              style={{ width:"250px" }}
               placeholder="Search Medicine / Code / Type / Category..."
               value={searchFilter}
               onChange={e => { setSearchFilter(e.target.value); setCurrentPage(1); }}
+            />
+
+            <input
+              type="month"
+              className="form-control"
+              style={{ width:"150px" }}
+              value={expiryDateFilter ? expiryDateFilter.slice(0, 7) : ""}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setExpiryDateFilter(e.target.value + "-01");
+                } else {
+                  setExpiryDateFilter("");
+                }
+                setCurrentPage(1);
+              }}
+              title="Show medicines expiring ON OR BEFORE this month"
             />
           </div>
         </div>
@@ -220,7 +254,7 @@ export default function SubStore() {
                       {r.Quantity}
                     </td>
                     <td>{r.Threshold_Qty}</td>
-                    <td>{r.Expiry_Date ? formatDateDMY(r.Expiry_Date) : "-"}</td>
+                    <td>{r.Expiry_Date ? formatExpiryDate(r.Expiry_Date) : "-"}</td>
                   </tr>
                 ))}
               </tbody>

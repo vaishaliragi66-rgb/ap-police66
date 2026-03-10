@@ -5,6 +5,16 @@ import { useNavigate } from "react-router-dom";
 
 const BACKEND_URL = "http://localhost:6100";
 
+// Format date to show only MM-YYYY
+const formatExpiryDate = (dateStr) => {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "-";
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${month}-${year}`;
+};
+
 export default function MainStore() {
 
   const navigate = useNavigate();
@@ -144,7 +154,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                     <td>{med.Issued_By}</td>
                     <td>{med.Quantity}</td>
                     <td>{med.Threshold_Qty}</td>
-                    <td>{med.Expiry_Date?.split("T")[0]}</td>
+                    <td>{formatExpiryDate(med.Expiry_Date)}</td>
 
                     <td className="text-center">
 
@@ -287,11 +297,18 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                   <div className="col-md-4">
                     <label>Expiry Date</label>
                     <input
-                      type="date"
+                      type="month"
                       name="Expiry_Date"
                       className="form-control"
-                      value={selectedMed.Expiry_Date?.split("T")[0]}
-                      onChange={handleEditChange}
+                      value={selectedMed.Expiry_Date ? selectedMed.Expiry_Date.slice(0, 7) : ""}
+                      onChange={(e) => {
+                        // Set day to 1 for month-year format
+                        if (e.target.value) {
+                          handleEditChange({ target: { name: "Expiry_Date", value: e.target.value + "-01" } });
+                        } else {
+                          handleEditChange({ target: { name: "Expiry_Date", value: "" } });
+                        }
+                      }}
                     />
                   </div>
 

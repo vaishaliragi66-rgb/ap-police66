@@ -60,6 +60,18 @@ const [selectedPrescription, setSelectedPrescription] = useState(null);
   return `${day}-${month}-${year}`; // DD-MM-YYYY
 };
 
+  const formatExpiryDate = (dateValue) => {
+  if (!dateValue) return "—";
+
+  const date = new Date(dateValue);
+  if (isNaN(date.getTime())) return "—";
+
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${month}-${year}`; // MM-YYYY
+};
+
 // ---------- TODAY FILTER ----------
 const applyTodayFilter = () => {
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -309,7 +321,7 @@ const uniqueMedicineIds = [
       r.medicineName,
       r.medicineType,
       r.medicineCategory,
-      r.expiry ? formatDateDMY(new Date(r.expiry)) : "-",
+      r.expiry ? formatExpiryDate(new Date(r.expiry)) : "-",
       r.quantity,
       r.prescriptionId.slice(-6)
     ]);
@@ -368,7 +380,7 @@ const uniqueMedicineIds = [
         row.medicineName,
         row.medicineCategory,
         row.quantity,
-        row.expiry ? formatDateDMY(new Date(row.expiry)) : "-"
+        row.expiry ? formatExpiryDate(new Date(row.expiry)) : "-"
       ]],
       theme: "grid",
       headStyles: {
@@ -799,11 +811,11 @@ const printPrescription = () => {
               <div>
                 <label className="form-label small">Expiry ≤</label>
                 <input
-                  type="date"
+                  type="month"
                   className="form-control form-control-sm"
-                  value={expiryDateFilter}
+                  value={expiryDateFilter ? expiryDateFilter.slice(0, 7) : ""}
                   onChange={(e) => {
-                    setExpiryDateFilter(e.target.value);
+                    setExpiryDateFilter(e.target.value ? e.target.value + "-01" : "");
                     setCurrentPage(1);
                   }}
                 />
@@ -911,7 +923,7 @@ const printPrescription = () => {
                     <td>{r.medicineName}</td>
                     <td>{r.medicineType}</td>
                     <td>{r.medicineCategory}</td>
-                    <td>{r.expiry ? formatDateDMY(new Date(r.expiry)) : "-"}</td>
+                    <td>{r.expiry ? formatExpiryDate(new Date(r.expiry)) : "-"}</td>
                     <td>{r.quantity}</td>
                     <td>{r.prescriptionId.slice(-6)}</td>
                     <td>

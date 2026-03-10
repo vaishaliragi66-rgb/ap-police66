@@ -39,6 +39,15 @@ const LedgerStore = () => {
     return `${day}-${month}-${year}`;
   };
 
+  const formatExpiryDate = (dateValue) => {
+    if (!dateValue) return "—";
+    const date = new Date(dateValue);
+    if (isNaN(date)) return "—";
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${month}-${year}`;
+  };
+
   const formatDateTime = (dateValue) => {
     if (!dateValue) return "—";
     const date = new Date(dateValue);
@@ -278,7 +287,7 @@ const downloadCSV = () => {
       formatDateTime(l.Timestamp),
       l.Transaction_Type,
       l.Medicine_Name,
-      l.Expiry_Date ? formatDateDMY(new Date(l.Expiry_Date)) : "-",
+      l.Expiry_Date ? formatExpiryDate(new Date(l.Expiry_Date)) : "-",
       l.Expiry_Date ? calculateDaysUntilExpiry(l.Expiry_Date) : "-",
       Math.abs(l.Quantity),
       Math.abs(l.Balance_After),
@@ -318,7 +327,7 @@ const downloadCSV = () => {
       l.Transaction_Type,
       l.Direction,
       l.Medicine_Name,
-      l.Expiry_Date ? formatDateDMY(new Date(l.Expiry_Date)) : "-",
+      l.Expiry_Date ? formatExpiryDate(new Date(l.Expiry_Date)) : "-",
       l.Expiry_Date ? calculateDaysUntilExpiry(l.Expiry_Date) : "-",
       Math.abs(l.Quantity),
       Math.abs(l.Balance_After),
@@ -467,7 +476,7 @@ const downloadCSV = () => {
                       <td>
                         {data.expiryDate ? (
                           <span className="badge bg-info">
-                            {formatDateDMY(data.expiryDate)}
+                            {formatExpiryDate(data.expiryDate)}
                           </span>
                         ) : "—"}
                       </td>
@@ -541,7 +550,7 @@ const downloadCSV = () => {
             <small className="text-light">
               Institute ID: {instituteId} | 
               Showing {sortedLedger.length} of {currentStoreLedger.length} transactions
-              {expiryDateFilter && ` | Expiring by: ${formatDateDMY(expiryDateFilter)}`}
+              {expiryDateFilter && ` | Expiring by: ${formatExpiryDate(expiryDateFilter)}`}
             </small>
           </div>
           <div>
@@ -607,24 +616,31 @@ const downloadCSV = () => {
               <label className="form-label mb-1">Expiry By Date</label>
               <div className="input-group">
                 <input
-                  type="date"
+                  type="month"
                   className="form-control"
                   value={expiryDateFilter}
-                  onChange={(e) => setExpiryDateFilter(e.target.value)}
-                  title="Show medicines expiring ON OR BEFORE this date"
+                  onChange={(e) => {
+                    // Convert month format (YYYY-MM) to date format with day 1
+                    if (e.target.value) {
+                      setExpiryDateFilter(e.target.value + "-01");
+                    } else {
+                      setExpiryDateFilter("");
+                    }
+                  }}
+                  title="Show medicines expiring ON OR BEFORE this month"
                 />
-                {expiryDateFilter && (
-                  <button
-                    className="btn btn-outline-secondary"
-                    type="button"
-                    onClick={() => setExpiryDateFilter("")}
-                    title="Clear expiry filter"
-                  >
-                    ✕
-                  </button>
-                )}
               </div>
-              <small className="text-muted">Shows medicines expiring by this date</small>
+              {expiryDateFilter && (
+                <button
+                  className="btn btn-outline-secondary btn-sm mt-1"
+                  type="button"
+                  onClick={() => setExpiryDateFilter("")}
+                  title="Clear expiry filter"
+                >
+                  Clear
+                </button>
+              )}
+              <small className="text-muted d-block mt-1">Shows medicines expiring by end of this month</small>
             </div>
           </div>
 
@@ -793,7 +809,7 @@ const downloadCSV = () => {
                       isExpired ? 'bg-danger' :
                       isNearExpiry ? 'bg-warning' : 'bg-success'
                     }`}>
-                      {formatDateDMY(l.Expiry_Date)}
+                      {formatExpiryDate(l.Expiry_Date)}
                     </span>
                   </div>
                 ) : "—"}
