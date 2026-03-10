@@ -100,7 +100,8 @@ const LedgerStore = () => {
       const mainLedger = fullLedger.filter((l) => {
           return (
             l.Transaction_Type === "MAINSTORE_ADD" ||
-            (l.Transaction_Type === "SUBSTORE_ADD" && l.Direction === "OUT")
+            (l.Transaction_Type === "SUBSTORE_ADD" && l.Direction === "OUT")||
+            l.Transaction_Type === "STORE_TRANSFER"
           );
         });
 

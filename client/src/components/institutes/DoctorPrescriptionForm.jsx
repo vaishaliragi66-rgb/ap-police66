@@ -316,7 +316,10 @@ const relevantDiseases = diseases.filter((d) => {
       }
     }
     
-
+if (selectedMedicines.length === 0) {
+  alert("Please add at least one medicine");
+  return;
+}
     await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
       Institute_ID: formData.Institute_ID,
       employee_id: formData.Employee_ID,
@@ -374,11 +377,12 @@ const relevantDiseases = diseases.filter((d) => {
       return;
     }
   
-    if (diagnosisData.Tests.length === 0) {
-      alert("Please add at least one test");
-      return;
-    }
-  
+  const validTests = diagnosisData.Tests.filter(t => t.Test_ID);
+
+if (validTests.length === 0) {
+  alert("Please select at least one test");
+  return;
+}
     await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -408,10 +412,12 @@ const handleXraySubmit = async () => {
     return;
   }
 
-  if (xrayData.Xrays.length === 0) {
-    alert("Please add at least one X-ray");
-    return;
-  }
+ const validXrays = xrayData.Xrays.filter(x => x.Xray_ID);
+
+if (validXrays.length === 0) {
+  alert("Please select at least one X-ray");
+  return;
+}
 
   await axios.post(
     `http://localhost:${BACKEND_PORT}/api/medical-actions`,

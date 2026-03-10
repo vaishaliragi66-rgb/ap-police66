@@ -3,7 +3,7 @@ import axios from "axios";
 
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 
-export default function PatientSelector({ onSelect, instituteId, onlyDiagnosisQueue = false, onlyXrayQueue = false }) {
+export default function PatientSelector({ onSelect, instituteId, onlyDiagnosisQueue = false, onlyXrayQueue = false, onlyPharmacyQueue = false }) {
   const [todayVisits, setTodayVisits] = useState([]);
   const [search, setSearch] = useState("");
   const [options, setOptions] = useState([]);
@@ -14,10 +14,13 @@ export default function PatientSelector({ onSelect, instituteId, onlyDiagnosisQu
 useEffect(() => {
   if (!instituteId) return;
 
-  const endpoint = onlyDiagnosisQueue
+  const endpoint =
+  onlyDiagnosisQueue
     ? `http://localhost:${BACKEND_PORT}/diagnosis-api/queue/${instituteId}`
     : onlyXrayQueue
     ? `http://localhost:${BACKEND_PORT}/xray-api/queue/${instituteId}`
+    : onlyPharmacyQueue
+    ? `http://localhost:${BACKEND_PORT}/prescription-api/queue/${instituteId}`
     : `http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`;
 
   axios
@@ -29,7 +32,7 @@ useEffect(() => {
     })
     
     .catch(err => console.error(err));
-  }, [instituteId, onlyDiagnosisQueue, onlyXrayQueue]);
+  }, [instituteId, onlyDiagnosisQueue, onlyXrayQueue,onlyPharmacyQueue]);
 
 
   /* ================= SEARCH ================= */

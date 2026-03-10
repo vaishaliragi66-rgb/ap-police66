@@ -691,6 +691,7 @@ const handleSubmit = async (e) => {
                 {/* Patient Selector */}
                 <PatientSelector
                   instituteId={formData.Institute_ID}
+                  onlyPharmacyQueue={true}
                   onSelect={({ employee, visit }) => {
                     setSelectedEmployee(employee);
                     setSelectedVisit(visit);
@@ -973,7 +974,7 @@ const handleSubmit = async (e) => {
                     rows="3"
                     value={formData.Notes}
                     onChange={(e) =>
-                      setFormData((f) => ({ ...f, Notes: e.target.value }))
+                      setFormData((f) => ({ ...f, Notes: e.tar7.value }))
                     }
                     placeholder="Any additional notes from pharmacy..."
                   />

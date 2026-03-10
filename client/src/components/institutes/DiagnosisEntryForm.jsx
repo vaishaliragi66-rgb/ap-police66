@@ -50,7 +50,8 @@ const fetchDoctorDiagnosis = async (visitId) => {
       `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/visit/${visitId}/doctor`
     );
 
-    setDoctorDiagnosis(res.data ? [res.data] : []);
+    setDoctorDiagnosis(res.data?.tests || []);
+
   } catch (err) {
     console.error("Failed to fetch doctor diagnosis", err);
     setDoctorDiagnosis([]);
@@ -59,8 +60,8 @@ const fetchDoctorDiagnosis = async (visitId) => {
 
 
 useEffect(() => {
-  if (doctorDiagnosis.length === 0) {
-    // reset to single empty row
+
+  if (!doctorDiagnosis || doctorDiagnosis.length === 0) {
     setFormData(prev => ({
       ...prev,
       Tests: [{
@@ -74,32 +75,26 @@ useEffect(() => {
     return;
   }
 
-  // 🧠 get latest doctor prescription
-  const latestPrescription = doctorDiagnosis[0]; 
+  const populatedTests = doctorDiagnosis.map(t => {
 
-  const latestTests = (latestPrescription.data?.tests || []).map(t => ({
-    Test_ID: t.Test_ID || "",
-    Test_Name: t.Test_Name || "",
-    Result_Value: "",
-    Reference_Range: t.Reference_Range || "",
-    Units: t.Units || "",
-    Remarks: ""
-  }));
+    const master = testsMaster.find(m => m._id === t.Test_ID);
+
+    return {
+      Test_ID: t.Test_ID || "",
+      Test_Name: t.Test_Name || "",
+      Result_Value: "",
+      Reference_Range: master?.Reference_Range || "",
+      Units: master?.Units || ""
+    };
+
+  });
 
   setFormData(prev => ({
     ...prev,
-    Tests: latestTests.length > 0 ? latestTests : [{
-      Test_ID: "",
-      Test_Name: "",
-      Result_Value: "",
-      Reference_Range: "",
-      Units: ""
-    }]
+    Tests: populatedTests
   }));
 
-}, [doctorDiagnosis]);
-
-
+}, [doctorDiagnosis, testsMaster]);
 
   useEffect(() => {
     const localInstituteId = localStorage.getItem("instituteId");
@@ -309,7 +304,7 @@ const fetchTests = async () => {
     }, 300);
   };
 
-const filteredDoctorDiagnosis = doctorDiagnosis.filter(d => {
+const filteredDoctorDiagnosis = (doctorDiagnosis || []).filter(d => {
   const isFamily =
     d.data?.is_family_member ??
     d.data?.IsFamilyMember ??
@@ -546,16 +541,19 @@ const fetchPastRecords = async () => {
                     <h6 className="alert-heading">👨‍⚕️ Doctor Diagnosis (Reference)</h6>
                     {filteredDoctorDiagnosis.map((d, i) => (
                       <div key={i} className="mt-2">
+
                         <ul className="mb-2">
-                          {d.data.tests.map((t, idx) => (
+                          {(d.data?.tests || []).map((t, idx) => (
                             <li key={idx}>{t.Test_Name}</li>
                           ))}
                         </ul>
-                        {d.data.notes && (
+
+                        {d.data?.notes && (
                           <div className="small text-muted">
                             Notes: {d.data.notes}
                           </div>
                         )}
+
                       </div>
                     ))}
                   </div>

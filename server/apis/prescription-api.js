@@ -8,7 +8,7 @@ const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
 const InstituteLedger = require("../models/InstituteLedger");
 const MedicalAction = require("../models/medical_action");
-
+const DailyVisit = require("../models/daily_visit");
 // 🔴 IMPORTANT: THIS IS NOW SUBSTORE STOCK
 const Medicine = require("../models/master_medicine");
 
@@ -318,5 +318,36 @@ const fetchInventory = async (id) => {
     setInventory([]);
   }
 };
-module.exports = prescriptionApp;
 
+prescriptionApp.get("/queue/:instituteId", async (req, res) => {
+
+  try {
+
+    const visits = await DailyVisit.find({
+      Institute_ID: req.params.instituteId
+    })
+    .populate("employee_id")
+    .populate("FamilyMember");
+
+    const actions = await MedicalAction.find({
+      action_type: "DOCTOR_PRESCRIPTION"
+    });
+
+    const visitIds = actions.map(a => String(a.visit_id));
+
+    const pharmacyVisits = visits.filter(v =>
+      visitIds.includes(String(v._id))
+    );
+
+    res.json(pharmacyVisits);
+
+  } catch (err) {
+
+    console.error(err);
+    res.status(500).json({ message: "Queue error" });
+
+  }
+
+});
+
+module.exports = prescriptionApp;

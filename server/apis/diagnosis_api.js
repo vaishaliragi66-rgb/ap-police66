@@ -23,64 +23,59 @@ diagnosisApp.get("/tests", async (req, res) => {
 
 diagnosisApp.get("/visit/:visitId/doctor", async (req, res) => {
   try {
-    const action = await MedicalAction.findOne({
-      visit_id: req.params.visitId,
-      action_type: "DOCTOR_DIAGNOSIS",
-      source: "DOCTOR"
-    })
-    .sort({ created_at: -1 });
+    const { visitId } = req.params;
 
-    if (!action) return res.status(200).json(null);
+    const actions = await MedicalAction.find({
+      visit_id: visitId,
+      action_type: "DOCTOR_DIAGNOSIS"
+    }).sort({ createdAt: -1 });
 
-    res.status(200).json(action);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch doctor diagnosis" });
-  }
-});
-
-diagnosisApp.get("/queue/:Institute_ID", async (req, res) => {
-  try {
-    const { Institute_ID } = req.params;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const visits = await DailyVisit.find({
-      Institute_ID,
-      visit_date: today
-    })
-      .populate("employee_id")
-      .populate("FamilyMember")
-      .sort({ token_no: 1 });
-
-    if (!visits.length) {
-      return res.status(200).json([]);
+    if (!actions.length) {
+      return res.json([]);
     }
 
-    const visitIds = visits.map((visit) => visit._id);
+    // collect all tests from all doctor prescriptions
+    const tests = actions.flatMap(a => a.data?.tests || []);
 
-    const doctorDiagnosisActions = await MedicalAction.find({
-      visit_id: { $in: visitIds },
-      action_type: "DOCTOR_DIAGNOSIS",
-      source: "DOCTOR",
-      "data.tests.0": { $exists: true }
-    }).select("visit_id");
+    res.json({
+      visit_id: visitId,
+      tests
+    });
 
-    const allowedVisitIds = new Set(
-      doctorDiagnosisActions.map((action) => String(action.visit_id))
-    );
-
-    const diagnosisQueueVisits = visits.filter((visit) =>
-      allowedVisitIds.has(String(visit._id))
-    );
-
-    res.status(200).json(diagnosisQueueVisits);
   } catch (err) {
-    console.error("Error fetching diagnosis queue visits:", err);
-    res.status(500).json({ error: "Failed to fetch diagnosis queue" });
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch doctor tests" });
   }
 });
 
+diagnosisApp.get("/queue/:instituteId", async (req, res) => {
+  try {
+
+    const { instituteId } = req.params;
+
+    const visits = await DailyVisit.find({
+      Institute_ID: instituteId
+    })
+    .populate("employee_id")
+    .populate("FamilyMember");
+
+    const actions = await MedicalAction.find({
+      action_type: "DOCTOR_DIAGNOSIS"
+    });
+
+    const visitIds = actions.map(a => String(a.visit_id));
+
+    const diagnosisVisits = visits.filter(v =>
+      visitIds.includes(String(v._id))
+    );
+
+    res.json(diagnosisVisits);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch diagnosis queue" });
+  }
+});
 
 
 // ✅ Add a new master test
