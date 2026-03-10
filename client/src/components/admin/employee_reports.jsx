@@ -171,7 +171,7 @@ export default function EmployeeReports() {
       <div className="container-fluid">
   
         {/* ================= HEADER ================= */}
-        <div className="mb-4">
+        <div className="mb-4 mt-4">
           <h3 style={{ fontWeight: 600, color: "#111827", marginBottom: 4 }}>
             Employee Medical Analytics
           </h3>
