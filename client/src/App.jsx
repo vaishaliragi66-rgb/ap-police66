@@ -27,7 +27,7 @@ import DoctorPrescriptionForm from "./components/institutes/DoctorPrescriptionFo
 import VisitRegister from "./components/institutes/VisitRegister";
 import MainStore from "./components/institutes/main_store"
 import AddMainStoreMedicine from "./components/institutes/AddMainStoreMedicine";
-import TransferMainStoreMedicine from "./components/institutes/TransferMainstoreMedicine";
+import TransferMainStoreMedicine from "./components/institutes/TransferMainStoreMedicine";
 import InstituteAnalytics from "./components/institutes/institute_analytics";
 import AdminRegister from "./components/admin/admin_register";
 import AdminLogin from "./components/admin/admin_login";
