@@ -7,6 +7,7 @@ const InstituteReports = () => {
 
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [recentTodayVisits, setRecentTodayVisits] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [report, setReport] = useState(null);
@@ -28,6 +29,29 @@ const InstituteReports = () => {
       setEmployees(list);
     })
     .catch(err => console.error("Employee fetch error:", err));
+}, []);
+
+ useEffect(() => {
+  const instituteId = localStorage.getItem("instituteId");
+  if (!instituteId) return;
+
+  axios
+    .get(`http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`)
+    .then(res => {
+      const visits = Array.isArray(res.data) ? res.data : [];
+
+      const sortedVisits = [...visits].sort((a, b) => {
+        const timeA = new Date(a.created_at || a.visit_date || 0).getTime();
+        const timeB = new Date(b.created_at || b.visit_date || 0).getTime();
+        return timeB - timeA;
+      });
+
+      setRecentTodayVisits(sortedVisits.slice(0, 5));
+    })
+    .catch(err => {
+      console.error("Today visits fetch error:", err);
+      setRecentTodayVisits([]);
+    });
 }, []);
 
 
@@ -102,6 +126,65 @@ const InstituteReports = () => {
           📋 Employee + Family Disease & Diagnosis Report
         </h3>
   
+        <div style={{ marginBottom: 24 }}>
+          <h5 style={{ fontWeight: 700, color: "#111", marginBottom: 12 }}>
+            Recent 5 Visits Today
+          </h5>
+
+          {recentTodayVisits.length ? (
+            <div className="table-responsive">
+              <table className="table table-bordered align-middle">
+                <thead style={{ background: "#f3f4f6" }}>
+                  <tr>
+                    <th>Token</th>
+                    <th>ABS No</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Symptoms</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentTodayVisits.map((visit) => {
+                    const absNo = visit.abs_no || visit.employee_id?.ABS_NO || "";
+                    const displayName = visit.IsFamilyMember
+                      ? visit.FamilyMember?.Name || visit.name || "—"
+                      : visit.employee_id?.Name || visit.name || "—";
+
+                    return (
+                      <tr key={visit._id}>
+                        <td>{visit.token_no || "—"}</td>
+                        <td>{absNo || "—"}</td>
+                        <td>{displayName}</td>
+                        <td>
+                          {visit.IsFamilyMember
+                            ? `Family${visit.FamilyMember?.Relationship ? ` (${visit.FamilyMember.Relationship})` : ""}`
+                            : "Employee"}
+                        </td>
+                        <td>{visit.symptoms || "—"}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-dark"
+                            onClick={() => loadHealthReport(absNo)}
+                            disabled={!absNo}
+                          >
+                            View Report
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={{ color: "#6b7280", marginBottom: 0 }}>
+              No visit records found for today.
+            </p>
+          )}
+        </div>
+
         {/* SEARCH */}
         <div style={{ marginBottom: 20 }}>
           <label
