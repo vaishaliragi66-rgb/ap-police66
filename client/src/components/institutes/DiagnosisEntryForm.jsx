@@ -696,6 +696,70 @@ const fetchPastRecords = async () => {
                   </button>
                 </div>
               </form>
+
+              {/* Hidden Print Section */}
+              <div id="diagnosis-print-section" style={{ display: "none" }}>
+                <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+                  🏥 Diagnosis / Lab Test Entry Report
+                </h2>
+                
+                <div style={{ marginBottom: "20px", borderBottom: "1px solid #ddd", paddingBottom: "15px" }}>
+                  <h4>Institute Information</h4>
+                  <p><strong>Institute Name:</strong> {instituteName || "N/A"}</p>
+                </div>
+
+                {selectedEmployee && (
+                  <div style={{ marginBottom: "20px", borderBottom: "1px solid #ddd", paddingBottom: "15px" }}>
+                    <h4>Patient Information</h4>
+                    <p><strong>Employee Name:</strong> {selectedEmployee.Name || "N/A"}</p>
+                    <p><strong>ABS No:</strong> {selectedEmployee.ABS_NO || "N/A"}</p>
+                    {tokenNumber && <p><strong>Token Number:</strong> {tokenNumber}</p>}
+                    {formData.IsFamilyMember && selectedFamilyMember && (
+                      <>
+                        <p><strong>Family Member:</strong> {selectedFamilyMember.Name || "N/A"}</p>
+                        <p><strong>Relationship:</strong> {selectedFamilyMember.Relationship || "N/A"}</p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {formData.Tests.length > 0 && (
+                  <div style={{ marginBottom: "20px", borderBottom: "1px solid #ddd", paddingBottom: "15px" }}>
+                    <h4>Tests</h4>
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "15px" }}>
+                      <thead>
+                        <tr style={{ backgroundColor: "#f0f0f0", borderBottom: "2px solid #333" }}>
+                          <th style={{ padding: "10px", textAlign: "left", border: "1px solid #ddd" }}>Test Name</th>
+                          <th style={{ padding: "10px", textAlign: "left", border: "1px solid #ddd" }}>Result</th>
+                          <th style={{ padding: "10px", textAlign: "left", border: "1px solid #ddd" }}>Reference Range</th>
+                          <th style={{ padding: "10px", textAlign: "left", border: "1px solid #ddd" }}>Units</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {formData.Tests.map((t, i) => (
+                          <tr key={i} style={{ borderBottom: "1px solid #ddd" }}>
+                            <td style={{ padding: "10px", border: "1px solid #ddd" }}>{t.Test_Name || "N/A"}</td>
+                            <td style={{ padding: "10px", border: "1px solid #ddd" }}>{t.Result_Value || "N/A"}</td>
+                            <td style={{ padding: "10px", border: "1px solid #ddd" }}>{t.Reference_Range || "N/A"}</td>
+                            <td style={{ padding: "10px", border: "1px solid #ddd" }}>{t.Units || "N/A"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {formData.Diagnosis_Notes && (
+                  <div style={{ marginBottom: "20px" }}>
+                    <h4>Diagnosis Notes</h4>
+                    <p style={{ whiteSpace: "pre-wrap" }}>{formData.Diagnosis_Notes}</p>
+                  </div>
+                )}
+
+                <div style={{ marginTop: "30px", textAlign: "center", color: "#666", fontSize: "12px" }}>
+                  <p>Generated on: {new Date().toLocaleString()}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

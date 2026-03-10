@@ -674,6 +674,93 @@ const fetchXrayTypes = async () => {
                   </button>
                 </div>
               </form>
+
+              {/* Hidden Print Section */}
+              <div id="xray-print-section" style={{ display: "none" }}>
+                <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+                  🩻 X-ray Entry Report
+                </h2>
+                
+                <div style={{ marginBottom: "20px", borderBottom: "1px solid #ddd", paddingBottom: "15px" }}>
+                  <h4>Institute Information</h4>
+                  <p><strong>Institute Name:</strong> {instituteName || "N/A"}</p>
+                </div>
+
+                {selectedEmployee && (
+                  <div style={{ marginBottom: "20px", borderBottom: "1px solid #ddd", paddingBottom: "15px" }}>
+                    <h4>Patient Information</h4>
+                    <p><strong>Employee Name:</strong> {selectedEmployee.Name || "N/A"}</p>
+                    <p><strong>ABS No:</strong> {selectedEmployee.ABS_NO || "N/A"}</p>
+                    {tokenNumber && <p><strong>Token Number:</strong> {tokenNumber}</p>}
+                    {formData.IsFamilyMember && selectedFamilyMember && (
+                      <>
+                        <p><strong>Family Member:</strong> {selectedFamilyMember.Name || "N/A"}</p>
+                        <p><strong>Relationship:</strong> {selectedFamilyMember.Relationship || "N/A"}</p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {formData.Xrays.length > 0 && (
+                  <div style={{ marginBottom: "20px", borderBottom: "1px solid #ddd", paddingBottom: "15px" }}>
+                    <h4>X-ray Details</h4>
+                    {formData.Xrays.map((x, i) => (
+                      <div key={i} style={{ marginBottom: "15px", padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "4px" }}>
+                        <h6 style={{ marginBottom: "10px" }}>X-ray #{i + 1}</h6>
+                        <table style={{ width: "100%", fontSize: "13px", marginBottom: "10px" }}>
+                          <tbody>
+                            <tr>
+                              <td style={{ width: "30%", fontWeight: "bold", paddingBottom: "5px" }}>Type:</td>
+                              <td style={{ paddingBottom: "5px" }}>{x.Xray_Type || "N/A"}</td>
+                            </tr>
+                            <tr>
+                              <td style={{ fontWeight: "bold", paddingBottom: "5px" }}>Body Part:</td>
+                              <td style={{ paddingBottom: "5px" }}>{x.Body_Part || "N/A"}</td>
+                            </tr>
+                            <tr>
+                              <td style={{ fontWeight: "bold", paddingBottom: "5px" }}>View:</td>
+                              <td style={{ paddingBottom: "5px" }}>{x.View || "N/A"}</td>
+                            </tr>
+                            <tr>
+                              <td style={{ fontWeight: "bold", paddingBottom: "5px" }}>Film Size:</td>
+                              <td style={{ paddingBottom: "5px" }}>{x.Film_Size || "N/A"}</td>
+                            </tr>
+                            {x.Findings && (
+                              <tr>
+                                <td style={{ fontWeight: "bold", paddingBottom: "5px", verticalAlign: "top" }}>Findings:</td>
+                                <td style={{ paddingBottom: "5px", whiteSpace: "pre-wrap" }}>{x.Findings}</td>
+                              </tr>
+                            )}
+                            {x.Impression && (
+                              <tr>
+                                <td style={{ fontWeight: "bold", paddingBottom: "5px", verticalAlign: "top" }}>Impression:</td>
+                                <td style={{ paddingBottom: "5px", whiteSpace: "pre-wrap" }}>{x.Impression}</td>
+                              </tr>
+                            )}
+                            {x.Remarks && (
+                              <tr>
+                                <td style={{ fontWeight: "bold", paddingBottom: "5px", verticalAlign: "top" }}>Remarks:</td>
+                                <td style={{ paddingBottom: "5px", whiteSpace: "pre-wrap" }}>{x.Remarks}</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {formData.Xray_Notes && (
+                  <div style={{ marginBottom: "20px" }}>
+                    <h4>X-ray Notes</h4>
+                    <p style={{ whiteSpace: "pre-wrap" }}>{formData.Xray_Notes}</p>
+                  </div>
+                )}
+
+                <div style={{ marginTop: "30px", textAlign: "center", color: "#666", fontSize: "12px" }}>
+                  <p>Generated on: {new Date().toLocaleString()}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
