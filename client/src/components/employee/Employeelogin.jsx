@@ -3,36 +3,44 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUserLock } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import HealthShield from '../../assets/Employee_login.svg'
+import HealthShield from "../../assets/Employee_login.svg";
+
 const Employeelogin = () => {
   const [absNo, setAbsNo] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
-  const employeeName = localStorage.getItem("employeeName")
-  
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
+    setMessage("");
+    setLoading(true);
 
     // Validate ABS Number
     if (!absNo.trim()) {
-      setError("ABS Number is required");
+      setMessage("❌ ABS Number is required");
+      setLoading(false);
+      return;
+    }
+
+    if (!password.trim()) {
+      setMessage("❌ Password is required");
+      setLoading(false);
       return;
     }
 
     try {
       const res = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}/employee-api/login`,
-        { ABS_NO: absNo, Password: password }
+        { ABS_NO: absNo.trim(), Password: password.trim() }
       );
 
-     // alert("✅ Login successful!");
-
-      // ✅ Save Employee Data
+      /* SAVE EMPLOYEE DATA */
       console.log("LOGIN RESPONSE PAYLOAD:", res.data.payload);
+
       localStorage.setItem("employeeToken", res.data.payload.token);
       localStorage.setItem("employeeId", res.data.payload.id);
       localStorage.setItem("employeeName", res.data.payload.Name);
@@ -40,9 +48,17 @@ const Employeelogin = () => {
       localStorage.setItem("employeeABS", res.data.payload.ABS_NO);
       localStorage.setItem("employeeObjectId", res.data.payload._id);
 
-      navigate("/employee/home");
+      setMessage("✅ Login successful");
+
+      setTimeout(() => {
+        navigate("/employee/home");
+      }, 1000);
     } catch (error) {
-      setError(error.response?.data?.message || "❌ Invalid credentials");
+      setMessage(
+        "❌ " + (error.response?.data?.message || "Invalid credentials")
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,7 +67,7 @@ const Employeelogin = () => {
       className="min-vh-100 d-flex"
       style={{ backgroundColor: "#F8FAFC", fontFamily: "Inter, sans-serif" }}
     >
-      {/* LEFT SIDE – VISUAL / BRAND */}
+      {/* LEFT SIDE */}
       <div
         className="d-none d-md-flex flex-column justify-content-center align-items-center text-center"
         style={{
@@ -60,29 +76,27 @@ const Employeelogin = () => {
           padding: "60px",
         }}
       >
-       <div
-        className="rounded-circle d-flex align-items-center justify-content-center mb-4"
-        style={{
-          width: "140px",
-          height: "140px",
-          
-        }}
-      >
-        <img
-          src={HealthShield}
-          alt="Health & Safety"
+        <div
+          className="rounded-circle d-flex align-items-center justify-content-center mb-4"
           style={{
-            width: "400px",
-            height: "400px",
+            width: "140px",
+            height: "140px",
           }}
-        />
-      </div>
+        >
+          <img
+            src={HealthShield}
+            alt="Health & Safety"
+            style={{
+              width: "400px",
+              height: "400px",
+            }}
+          />
+        </div>
 
-  
         <h2 style={{ color: "#1F2933", fontWeight: 600 }}>
           AP Police Medical System
         </h2>
-  
+
         <p
           style={{
             color: "#6B7280",
@@ -95,8 +109,8 @@ const Employeelogin = () => {
           and internal operations.
         </p>
       </div>
-  
-      {/* RIGHT SIDE – LOGIN FORM */}
+
+      {/* RIGHT SIDE */}
       <div
         className="d-flex flex-column justify-content-center align-items-center"
         style={{
@@ -119,7 +133,7 @@ const Employeelogin = () => {
           >
             <FaUserLock size={28} />
           </div>
-  
+
           <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
             Employee Login
           </h3>
@@ -127,7 +141,7 @@ const Employeelogin = () => {
             Login using your ABS number and password
           </p>
         </div>
-  
+
         {/* Login Card */}
         <div
           className="bg-white w-100"
@@ -138,18 +152,6 @@ const Employeelogin = () => {
             boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
           }}
         >
-          {/* Error Message */}
-          {error && (
-            <div className="alert alert-danger alert-dismissible fade show w-100 mb-3">
-              <strong>Error:</strong> {error}
-              <button 
-                type="button" 
-                className="btn-close" 
-                onClick={() => setError("")}
-              ></button>
-            </div>
-          )}
-
           <form onSubmit={handleLogin}>
             {/* ABS Number */}
             <div className="mb-3">
@@ -164,7 +166,7 @@ const Employeelogin = () => {
                 required
               />
             </div>
-  
+
             {/* Password */}
             <div className="mb-4">
               <label className="form-label">Password</label>
@@ -177,10 +179,11 @@ const Employeelogin = () => {
                 required
               />
             </div>
-  
+
             {/* Button */}
             <button
               type="submit"
+              disabled={loading}
               className="w-100"
               style={{
                 backgroundColor: "#4A70A9",
@@ -192,31 +195,43 @@ const Employeelogin = () => {
                 fontWeight: 500,
               }}
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
-  
-            {/* Footer */}
-            <div className="text-center mt-3">
-              <p style={{ fontSize: "13px", color: "#6B7280" }}>
-                Don’t have an account?{" "}
-                <Link
-                  to="/employee-register"
-                  style={{
-                    color: "#4A70A9",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                  }}
-                >
-                  Register here
-                </Link>
-              </p>
-            </div>
           </form>
+
+          {/* MESSAGE ALERT */}
+          {message && (
+            <div
+              className={`alert mt-3 text-center ${
+                message.startsWith("✅")
+                  ? "alert-success"
+                  : "alert-danger"
+              }`}
+            >
+              {message}
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="text-center mt-3">
+            <p style={{ fontSize: "13px", color: "#6B7280" }}>
+              Don’t have an account?{" "}
+              <Link
+                to="/employee-register"
+                style={{
+                  color: "#4A70A9",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                Register here
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
-  
 };
 
 export default Employeelogin;
