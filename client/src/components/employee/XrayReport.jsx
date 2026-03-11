@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const XrayReport = () => {
@@ -78,6 +80,79 @@ const XrayReport = () => {
       (a, b) =>
         new Date(b.Xrays[0].Timestamp) - new Date(a.Xrays[0].Timestamp)
     );
+  };
+
+  const downloadXrayReport = (report) => {
+    const doc = new jsPDF("l", "mm", "a4");
+
+    const left = 15;
+    const right = 282;
+    const instituteName =
+      report.Institute?.Institute_Name || "Medical Institute";
+    const reportDate = formatDate(report);
+    const patientName = report.Employee?.Name || "Employee";
+    const employeeIdText = report.Employee?.ABS_NO
+      ? `(${report.Employee.ABS_NO})`
+      : "";
+    const issuedTo = report.IsFamilyMember
+      ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})`
+      : "Self";
+
+    doc.setFontSize(16);
+    doc.text(instituteName.toUpperCase(), 148.5, 18, {
+      align: "center"
+    });
+
+    doc.setFontSize(12);
+    doc.text("X-RAY REPORT", 148.5, 26, {
+      align: "center"
+    });
+
+    doc.line(left, 30, right, 30);
+
+    doc.setFontSize(10);
+    doc.text(`Employee Name: ${patientName} ${employeeIdText}`, left, 40);
+    doc.text(`Report For: ${issuedTo}`, left, 46);
+    doc.text(`Report Date: ${reportDate}`, left, 52);
+
+    const tableData = report.Xrays.map((x) => [
+      x.Xray_Type || "-",
+      x.Body_Part || "-",
+      x.Side || "-",
+      x.View || "-",
+      x.Film_Size || "-",
+      x.Findings || "-",
+      x.Impression || "-",
+      x.Remarks || "-"
+    ]);
+
+    autoTable(doc, {
+      startY: 60,
+      head: [[
+        "Type",
+        "Body Part",
+        "Side",
+        "View",
+        "Size",
+        "Findings",
+        "Impression",
+        "Remarks"
+      ]],
+      body: tableData,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [40, 40, 40] },
+      margin: { left, right: 15 }
+    });
+
+    doc.setFontSize(9);
+    doc.text(
+      "This is a system-generated X-ray report.",
+      148.5,
+      doc.lastAutoTable.finalY + 12,
+      { align: "center" }
+    );
+
+    doc.save(`Xray_Report_${report._id.slice(-6)}.pdf`);
   };
 
   // derive filtered list
@@ -261,22 +336,38 @@ const XrayReport = () => {
                         <td>{formatDate(report)}</td>
 
                         <td>
-                          <button
-                            className="btn btn-sm"
-                            style={{
-                              borderRadius: "999px",
-                              border: "1px solid #4A70A9",
-                              backgroundColor: "#4A70A9",
-                              color: "#FFFFFF",
-                              fontWeight: 500,
-                            }}
-                            onClick={() => {
-                              setSelectedReport(report);
-                              setShowModal(true);
-                            }}
-                          >
-                            View
-                          </button>
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                borderRadius: "999px",
+                                border: "1px solid #4A70A9",
+                                backgroundColor: "#4A70A9",
+                                color: "#FFFFFF",
+                                fontWeight: 500,
+                              }}
+                              onClick={() => {
+                                setSelectedReport(report);
+                                setShowModal(true);
+                              }}
+                            >
+                              View
+                            </button>
+
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                borderRadius: "999px",
+                                border: "1px solid #4A70A9",
+                                backgroundColor: "#FFFFFF",
+                                color: "#4A70A9",
+                                fontWeight: 500,
+                              }}
+                              onClick={() => downloadXrayReport(report)}
+                            >
+                              Download
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -349,6 +440,13 @@ const XrayReport = () => {
                   onClick={() => setShowModal(false)}
                 >
                   Close
+                </button>
+
+                <button
+                  className="btn btn-primary"
+                  onClick={() => downloadXrayReport(selectedReport)}
+                >
+                  Download PDF
                 </button>
               </div>
             </div>
