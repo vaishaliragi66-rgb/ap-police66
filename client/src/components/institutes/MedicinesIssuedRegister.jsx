@@ -105,7 +105,7 @@ const uniqueMedicineIds = [
 
     axios
       .get(
-        `${process.env.REACT_APP_API_URL}/prescription-api/institute/${instituteId}`
+        `${import.meta.env.REACT_APP_API_URL}/prescription-api/institute/${instituteId}`
       )
       .then((res) => {
         const flattened = [];

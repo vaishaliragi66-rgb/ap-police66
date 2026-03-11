@@ -32,7 +32,7 @@ export default function InstituteReports() {
   ================================*/
   useEffect(() => {
     axios
-      .get(`${process.env.REACT_APP_API_URL}/admin-api/analytics/institutes`)
+      .get(`${import.meta.env.REACT_APP_API_URL}/admin-api/analytics/institutes`)
       .then(res => {
         setRows(res.data || []);
         setFiltered(res.data || []);
@@ -317,7 +317,7 @@ export default function InstituteReports() {
                     try {
                       setSending(true);
                       await axios.post(
-                        `${process.env.REACT_APP_API_URL}/admin-api/send-mail`,
+                        `${import.meta.env.REACT_APP_API_URL}/admin-api/send-mail`,
                         {
                           from: adminEmail,
                           to: mailInstitute.Email_ID,

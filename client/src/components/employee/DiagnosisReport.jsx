@@ -20,7 +20,7 @@ useEffect(() => {
   if (!employeeObjectId) return;
 
   axios
-    .get(`${process.env.REACT_APP_API_URL}/diagnosis-api/records/${employeeObjectId}`)
+    .get(`${import.meta.env.REACT_APP_API_URL}/diagnosis-api/records/${employeeObjectId}`)
     .then(res => setReports(res.data || []))
     .catch(err => {
       if (err.response?.status === 404) {

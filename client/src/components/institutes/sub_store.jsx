@@ -57,7 +57,7 @@ export default function SubStore() {
   const instituteId = institute._id;
 
   axios
-    .get(`${process.env.REACT_APP_API_URL}/medicine-api/substore/${instituteId}`)
+    .get(`${import.meta.env.REACT_APP_API_URL}/medicine-api/substore/${instituteId}`)
     .then(res => {
       setRows(res.data || []);
       setLoading(false);

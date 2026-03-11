@@ -47,7 +47,7 @@ const [tokenNumber, setTokenNumber] = useState(null);
 const fetchDoctorDiagnosis = async (visitId) => {
   try {
     const res = await axios.get(
-      `${process.env.REACT_APP_API_URL}/diagnosis-api/visit/${visitId}/doctor`
+      `${import.meta.env.REACT_APP_API_URL}/diagnosis-api/visit/${visitId}/doctor`
     );
 
     setDoctorDiagnosis(res.data?.tests || []);
@@ -110,7 +110,7 @@ useEffect(() => {
 
   const fetchInstituteName = async (id) => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/institute-api/institution/${id}`);
+      const res = await axios.get(`${import.meta.env.REACT_APP_API_URL}/institute-api/institution/${id}`);
       setInstituteName(res.data?.Institute_Name || "");
     } catch (err) {
       console.error("Error fetching institute name:", err);
@@ -122,7 +122,7 @@ useEffect(() => {
 const fetchTests = async () => {
   try {
     const res = await axios.get(
-      `${process.env.REACT_APP_API_URL}/diagnosis-api/tests`
+      `${import.meta.env.REACT_APP_API_URL}/diagnosis-api/tests`
     );
 
     setTestsMaster(res.data || []);
@@ -232,7 +232,7 @@ const fetchTests = async () => {
 
     try {
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/diagnosis-api/add`,
+        `${import.meta.env.REACT_APP_API_URL}/diagnosis-api/add`,
         {
           Institute_ID: formData.Institute_ID,
           Employee_ID: formData.Employee_ID,
@@ -326,7 +326,7 @@ const filteredDoctorDiagnosis = (doctorDiagnosis || []).filter(d => {
 
 const fetchVisitDetails = async (visitId) => {
   const res = await axios.get(
-    `${process.env.REACT_APP_API_URL}/visit-api/visit/${visitId}`
+    `${import.meta.env.REACT_APP_API_URL}/visit-api/visit/${visitId}`
   );
   return res.data;
 };
@@ -335,7 +335,7 @@ const fetchPastRecords = async () => {
 
   try {
     const res = await axios.get(
-      `${process.env.REACT_APP_API_URL}/diagnosis-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
+      `${import.meta.env.REACT_APP_API_URL}/diagnosis-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
     );
 
     setPastRecords(res.data || []);

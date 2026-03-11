@@ -67,7 +67,7 @@ const rowsPerPage = 10;
     }
     try {
       if (type === "daily") {
-        const url = `${process.env.REACT_APP_API_URL}/institute-api/health-summary?type=daily&date=${date}&instituteId=${instituteId}`;
+        const url = `${import.meta.env.REACT_APP_API_URL}/institute-api/health-summary?type=daily&date=${date}&instituteId=${instituteId}`;
         const res = await axios.get(url);
         setData(res.data);
         return;
@@ -78,7 +78,7 @@ const rowsPerPage = 10;
         const months = [];
         for (let m = 1; m <= 12; m++) months.push({ year: Number(year), month: m });
         const calls = months.map(({ year: y, month: m }) =>
-          axios.get(`${process.env.REACT_APP_API_URL}/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
+          axios.get(`${import.meta.env.REACT_APP_API_URL}/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
         );
 
         const results = await Promise.allSettled(calls);
@@ -176,10 +176,10 @@ const rowsPerPage = 10;
       if (startYear && startMonth && endYear && endMonth) {
         const months = buildMonthList(startYear, startMonth, endYear, endMonth);
         calls = months.map(({ year: y, month: m }) =>
-          axios.get(`${process.env.REACT_APP_API_URL}/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
+          axios.get(`${import.meta.env.REACT_APP_API_URL}/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
         );
       } else if (year && month) {
-        calls = [axios.get(`${process.env.REACT_APP_API_URL}/institute-api/health-summary?type=monthly&year=${year}&month=${month}&instituteId=${instituteId}`)];
+        calls = [axios.get(`${import.meta.env.REACT_APP_API_URL}/institute-api/health-summary?type=monthly&year=${year}&month=${month}&instituteId=${instituteId}`)];
       } else {
         alert('Please provide a valid month range or year+month');
         return;

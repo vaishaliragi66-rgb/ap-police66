@@ -19,7 +19,7 @@ const EmployeeDiseaseReport = () => {
 
     axios
       .get(
-        `${process.env.REACT_APP_API_URL}/disease-api/employee/${employeeId}`
+        `${import.meta.env.REACT_APP_API_URL}/disease-api/employee/${employeeId}`
       )
       .then((res) => {
         setDiseases(res.data || []);

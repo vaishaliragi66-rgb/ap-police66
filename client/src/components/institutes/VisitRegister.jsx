@@ -35,7 +35,7 @@ const VisitRegister = () => {
   /* ================= FETCH EMPLOYEES ================= */
   useEffect(() => {
     axios
-      .get(`${process.env.REACT_APP_API_URL}/employee-api/all`)
+      .get(`${import.meta.env.REACT_APP_API_URL}/employee-api/all`)
       .then(res => setEmployees(res.data.employees || []))
       .catch(err => console.error(err));
   }, []);
@@ -62,7 +62,7 @@ const VisitRegister = () => {
   useEffect(() => {
     if (isFamily && selectedEmployee) {
       axios.get(
-        `${process.env.REACT_APP_API_URL}/family-api/family/${selectedEmployee._id}`
+        `${import.meta.env.REACT_APP_API_URL}/family-api/family/${selectedEmployee._id}`
       )
       
         .then(res => setFamilyMembers(res.data || []))
@@ -77,7 +77,7 @@ const VisitRegister = () => {
     if (selectedEmployee) {
       axios
         .get(
-          `${process.env.REACT_APP_API_URL}/api/visits/next-numbers/${instituteId}`
+          `${import.meta.env.REACT_APP_API_URL}/api/visits/next-numbers/${instituteId}`
         )
         .then(res => {
           setPreviewToken(res.data.nextToken);
@@ -107,7 +107,7 @@ const VisitRegister = () => {
   
     try {
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/visits/register`,
+        `${import.meta.env.REACT_APP_API_URL}/api/visits/register`,
         {
           Institute_ID: instituteId,
           employee_id: selectedEmployee._id,
@@ -386,7 +386,7 @@ const VisitRegister = () => {
       {
       <div className="d-flex justify-content-center mb-3">
       <img
-        src={`${process.env.REACT_APP_API_URL}${selectedEmployee.Photo}`}
+        src={`${import.meta.env.REACT_APP_API_URL}${selectedEmployee.Photo}`}
         alt="Employee"
         style={{
           width: "120px",
@@ -434,7 +434,7 @@ const VisitRegister = () => {
       {/*
       <div className="text-center mb-3">
         <img
-          src={`${process.env.REACT_APP_API_URL}${selectedFamily.Photo}`}
+          src={`${import.meta.env.REACT_APP_API_URL}${selectedFamily.Photo}`}
           alt="Family Member"
           className="rounded-circle"
           width="120"

@@ -34,7 +34,7 @@ const Employeelogin = () => {
 
     try {
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/employee-api/login`,
+        `${import.meta.env.REACT_APP_API_URL}/employee-api/login`,
         { ABS_NO: absNo.trim(), Password: password.trim() }
       );
 

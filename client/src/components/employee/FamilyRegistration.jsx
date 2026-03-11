@@ -53,7 +53,7 @@ const FamilyMemberRegistration = () => {
       };
 
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/family-api/register`,
+        `${import.meta.env.REACT_APP_API_URL}/family-api/register`,
         payload
       );
 

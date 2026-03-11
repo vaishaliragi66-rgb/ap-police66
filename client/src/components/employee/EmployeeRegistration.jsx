@@ -178,7 +178,7 @@ if (validationErrors.length > 0) {
       console.log("Submitting registration...");
 
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/employee-api/register`,
+        `${import.meta.env.REACT_APP_API_URL}/employee-api/register`,
         formPayload,
         
       );

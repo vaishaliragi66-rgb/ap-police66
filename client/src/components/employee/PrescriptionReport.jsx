@@ -18,7 +18,7 @@ const PrescriptionReport = () => {
   const fetchPrescriptions = async () => {
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/prescription-api/employee/${employeeId}`
+        `${import.meta.env.REACT_APP_API_URL}/prescription-api/employee/${employeeId}`
       );
       setPrescriptions(res.data || []);
     } catch (err) {

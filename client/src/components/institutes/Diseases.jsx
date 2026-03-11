@@ -77,7 +77,7 @@ const Diseases = () => {
   const fetchInstituteName = async (id) => {
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/institute-api/institution/${id}`
+        `${import.meta.env.REACT_APP_API_URL}/institute-api/institution/${id}`
       );
       setInstituteName(res.data?.Institute_Name || "Unknown Institute");
     } catch (err) {
@@ -88,7 +88,7 @@ const Diseases = () => {
   const fetchEmployees = async () => {
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/employee-api/employees`
+        `${import.meta.env.REACT_APP_API_URL}/employee-api/employees`
       );
       // Use employee-api/all instead of /employees if needed
       setEmployees(res.data || []);
@@ -97,7 +97,7 @@ const Diseases = () => {
       // Try alternative endpoint
       try {
         const altRes = await axios.get(
-          `${process.env.REACT_APP_API_URL}/employee-api/all`
+          `${import.meta.env.REACT_APP_API_URL}/employee-api/all`
         );
         setEmployees(altRes.data?.employees || []);
       } catch (altErr) {
@@ -133,7 +133,7 @@ const Diseases = () => {
         
         // Try with employee's _id
         const res = await axios.get(
-          `${process.env.REACT_APP_API_URL}/family-api/family/${formData.Employee_ID}`
+          `${import.meta.env.REACT_APP_API_URL}/family-api/family/${formData.Employee_ID}`
         );
         
         console.log("Family API response:", res.data);
@@ -144,7 +144,7 @@ const Diseases = () => {
           console.log("No family members found via direct API, trying alternative...");
           // Check if employee data includes family members
           const employeeRes = await axios.get(
-            `${process.env.REACT_APP_API_URL}/employee-api/profile/${formData.Employee_ID}`
+            `${import.meta.env.REACT_APP_API_URL}/employee-api/profile/${formData.Employee_ID}`
           );
           
           if (employeeRes.data?.FamilyMembers) {
@@ -152,7 +152,7 @@ const Diseases = () => {
             const familyPromises = employeeRes.data.FamilyMembers.map(async (familyId) => {
               try {
                 const familyRes = await axios.get(
-                  `${process.env.REACT_APP_API_URL}/family-api/member/${familyId}`
+                  `${import.meta.env.REACT_APP_API_URL}/family-api/member/${familyId}`
                 );
                 return familyRes.data;
               } catch (err) {
@@ -246,7 +246,7 @@ const Diseases = () => {
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/disease-api/diseases`,
+        `${import.meta.env.REACT_APP_API_URL}/disease-api/diseases`,
         payload
       );
       

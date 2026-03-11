@@ -35,7 +35,7 @@ const AdminLogin = () => {
 
     try {
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/admin-api/login`,
+        `${import.meta.env.REACT_APP_API_URL}/admin-api/login`,
         { 
           email: email.trim().toLowerCase(), 
           password: password 

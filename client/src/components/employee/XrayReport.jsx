@@ -20,7 +20,7 @@ const XrayReport = () => {
 
     axios
       .get(
-        `${process.env.REACT_APP_API_URL}/xray-api/records/${employeeObjectId}`
+        `${import.meta.env.REACT_APP_API_URL}/xray-api/records/${employeeObjectId}`
       )
       .then((res) => {
         console.log("X-ray records fetched", res.data);

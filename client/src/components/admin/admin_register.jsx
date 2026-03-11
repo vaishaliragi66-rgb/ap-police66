@@ -138,7 +138,7 @@ const AdminRegister = () => {
       console.log("Submitting admin registration...");
 
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/admin-api/register`,
+        `${import.meta.env.REACT_APP_API_URL}/admin-api/register`,
         adminData,
         {
           headers: {

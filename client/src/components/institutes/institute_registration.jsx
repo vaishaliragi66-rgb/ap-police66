@@ -55,7 +55,7 @@ const InstituteRegister = () => {
 
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/institute-api/register/institute`,
+        `${import.meta.env.REACT_APP_API_URL}/institute-api/register/institute`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

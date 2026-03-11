@@ -19,7 +19,7 @@ const InstituteIndent = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/indent-api/generate`,
+        `${import.meta.env.REACT_APP_API_URL}/indent-api/generate`,
         { params: { instituteId } }
       );
       setIndentData(res.data);
