@@ -16,7 +16,7 @@ const InstituteLogin = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
