@@ -107,7 +107,7 @@ const [xrayData, setXrayData] = useState({
 
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/employee-api/health-report-detailed`,
+      `${process.env.REACT_APP_API_URL}/employee-api/health-report-detailed`,
       {
         params: {
           employeeId: formData.Employee_ID,
@@ -131,14 +131,14 @@ const [xrayData, setXrayData] = useState({
 };
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/tests`)
+      .get(`${process.env.REACT_APP_API_URL}/diagnosis-api/tests`)
       .then(res => setTestsMaster(res.data || []))
       .catch(() => setTestsMaster([]));
   }, []);
   
 useEffect(() => {
   axios
-    .get(`http://localhost:${BACKEND_PORT}/xray-api/types`)
+    .get(`${process.env.REACT_APP_API_URL}/xray-api/types`)
     .then(res => setXrayMaster(res.data || []))
     .catch(() => setXrayMaster([]));
 }, []);
@@ -150,7 +150,7 @@ useEffect(() => {
     if (!formData.Institute_ID) return;
   
     axios
-      .get(`http://localhost:${BACKEND_PORT}/institute-api/inventory/${formData.Institute_ID}`)
+      .get(`${process.env.REACT_APP_API_URL}/institute-api/inventory/${formData.Institute_ID}`)
       .then(res => {
         const inventory = res.data || [];
   
@@ -187,7 +187,7 @@ useEffect(() => {
     try {
   
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
+        `${process.env.REACT_APP_API_URL}/prescription-api/employee/${employeeId}`
       );
   
 
@@ -218,7 +218,7 @@ useEffect(() => {
   /* ================= API CALLS ================= */
   const fetchInstitute = async (id) => {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/institute-api/institution/${id}`
+      `${process.env.REACT_APP_API_URL}/institute-api/institution/${id}`
     );
     setInstituteName(res.data?.Institute_Name || "");
   };
@@ -227,7 +227,7 @@ useEffect(() => {
   const fetchDiseases = async (employeeId) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
+        `${process.env.REACT_APP_API_URL}/disease-api/employee/${employeeId}`
       );
       setDiseases(reportRes.data.employeeDiseases);
     } catch {
@@ -241,7 +241,7 @@ useEffect(() => {
 
     axios
       .get(
-        `http://localhost:${BACKEND_PORT}/employee-api/profile/${formData.Employee_ID}`
+        `${process.env.REACT_APP_API_URL}/employee-api/profile/${formData.Employee_ID}`
       )
       .then((res) => setEmployeeProfile(res.data))
       .catch(() => setEmployeeProfile(null));
@@ -320,7 +320,7 @@ if (selectedMedicines.length === 0) {
   alert("Please add at least one medicine");
   return;
 }
-    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
+    await axios.post(`${process.env.REACT_APP_API_URL}/api/medical-actions`, {
       Institute_ID: formData.Institute_ID,
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -344,7 +344,7 @@ if (selectedMedicines.length === 0) {
     // ✅ Save Disease (if selected)
     if (diseaseData.Disease_Name?.trim()) {
       await axios.post(
-  `http://localhost:${BACKEND_PORT}/disease-api/diseases`,
+  `${process.env.REACT_APP_API_URL}/disease-api/diseases`,
   {
     Institute_ID: formData.Institute_ID,
     Employee_ID: formData.Employee_ID,
@@ -383,7 +383,7 @@ if (validTests.length === 0) {
   alert("Please select at least one test");
   return;
 }
-    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
+    await axios.post(`${process.env.REACT_APP_API_URL}/api/medical-actions`, {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
       action_type: "DOCTOR_DIAGNOSIS",
@@ -420,7 +420,7 @@ if (validXrays.length === 0) {
 }
 
   await axios.post(
-    `http://localhost:${BACKEND_PORT}/api/medical-actions`,
+    `${process.env.REACT_APP_API_URL}/api/medical-actions`,
     {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,

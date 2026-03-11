@@ -34,7 +34,7 @@ const Employeelogin = () => {
 
     try {
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/employee-api/login`,
+        `${process.env.REACT_APP_API_URL}/employee-api/login`,
         { ABS_NO: absNo.trim(), Password: password.trim() }
       );
 

@@ -17,7 +17,7 @@ const InstituteReports = () => {
   -------------------------------------------------- */
  useEffect(() => {
   axios
-    .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
+    .get(`${process.env.REACT_APP_API_URL}/employee-api/all`)
     .then(res => {
       const list =
         Array.isArray(res.data?.employees)
@@ -36,7 +36,7 @@ const InstituteReports = () => {
   if (!instituteId) return;
 
   axios
-    .get(`http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`)
+    .get(`${process.env.REACT_APP_API_URL}/api/visits/today/${instituteId}`)
     .then(res => {
       const visits = Array.isArray(res.data) ? res.data : [];
 
@@ -81,7 +81,7 @@ const InstituteReports = () => {
   const loadHealthReport = async (absNo) => {
     try {
       const res = await axios.get(
-  `http://localhost:${BACKEND_PORT}/employee-api/health-report`,
+  `${process.env.REACT_APP_API_URL}/employee-api/health-report`,
   { params: { absNo } }
 );
 

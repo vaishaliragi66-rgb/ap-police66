@@ -36,7 +36,7 @@ const AIInsights = () => {
     try {
       const instituteId = getInstituteId();
       
-      const response = await fetch('http://localhost:6100/ai-api/query', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/ai-api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

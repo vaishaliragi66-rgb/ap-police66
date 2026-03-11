@@ -138,7 +138,7 @@ const AdminRegister = () => {
       console.log("Submitting admin registration...");
 
       const response = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/admin-api/register`,
+        `${process.env.REACT_APP_API_URL}/admin-api/register`,
         adminData,
         {
           headers: {

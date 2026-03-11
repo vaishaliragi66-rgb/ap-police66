@@ -12,7 +12,7 @@ const FamilyMemberProfile = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/family-api/family-report/${id}`)
+      .get(`${process.env.REACT_APP_API_URL}/family-api/family-report/${id}`)
       .then((res) => setMember(res.data));
   }, [id, BACKEND_PORT]);
 

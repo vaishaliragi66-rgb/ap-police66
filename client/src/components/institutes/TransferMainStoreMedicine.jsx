@@ -4,7 +4,7 @@ import axios from "axios";
 import { FaExchangeAlt } from "react-icons/fa";
 
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
-const BACKEND_URL = `http://localhost:${BACKEND_PORT}`;
+const BACKEND_URL = `${process.env.REACT_APP_API_URL}`;
 
 export default function TransferMainStoreMedicine() {
 

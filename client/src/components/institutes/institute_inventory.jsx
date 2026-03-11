@@ -64,7 +64,7 @@ function InstituteInventory() {
 
         // Fetch only sub store data (inventory)
         const res = await axios.get(
-          `http://localhost:${BACKEND_PORT_NO}/medicine-api/substore/${instituteId}`
+          `${process.env.REACT_APP_API_URL}/medicine-api/substore/${instituteId}`
         );
 
         setInventory(res.data || []);

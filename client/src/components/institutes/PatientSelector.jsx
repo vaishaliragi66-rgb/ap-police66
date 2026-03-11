@@ -16,12 +16,12 @@ useEffect(() => {
 
   const endpoint =
   onlyDiagnosisQueue
-    ? `http://localhost:${BACKEND_PORT}/diagnosis-api/queue/${instituteId}`
+    ? `${process.env.REACT_APP_API_URL}/diagnosis-api/queue/${instituteId}`
     : onlyXrayQueue
-    ? `http://localhost:${BACKEND_PORT}/xray-api/queue/${instituteId}`
+    ? `${process.env.REACT_APP_API_URL}/xray-api/queue/${instituteId}`
     : onlyPharmacyQueue
-    ? `http://localhost:${BACKEND_PORT}/prescription-api/queue/${instituteId}`
-    : `http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`;
+    ? `${process.env.REACT_APP_API_URL}/prescription-api/queue/${instituteId}`
+    : `${process.env.REACT_APP_API_URL}/api/visits/today/${instituteId}`;
 
   axios
     .get(endpoint)

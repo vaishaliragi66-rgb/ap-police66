@@ -53,7 +53,7 @@ const FamilyMemberRegistration = () => {
       };
 
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/family-api/register`,
+        `${process.env.REACT_APP_API_URL}/family-api/register`,
         payload
       );
 

@@ -59,7 +59,7 @@ const XrayEntryForm = () => {
   const fetchDoctorXrays = async (visitId) => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT_NO}/xray-api/visit/${visitId}/doctor`
+      `${process.env.REACT_APP_API_URL}/xray-api/visit/${visitId}/doctor`
     );
 
     setDoctorXrays(res.data?.xrays || []);
@@ -73,7 +73,7 @@ const XrayEntryForm = () => {
   const fetchInstituteName = async (id) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/institution/${id}`
+        `${process.env.REACT_APP_API_URL}/institute-api/institution/${id}`
       );
       setInstituteName(res.data?.Institute_Name || "");
     } catch (err) {
@@ -83,7 +83,7 @@ const XrayEntryForm = () => {
 const fetchXrayTypes = async () => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT_NO}/xray-api/types`
+      `${process.env.REACT_APP_API_URL}/xray-api/types`
     );
 
     setXrayMaster(res.data || []);
@@ -165,7 +165,7 @@ const fetchXrayTypes = async () => {
 
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/xray-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
+        `${process.env.REACT_APP_API_URL}/xray-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
       );
       setPastRecords(res.data || []);
       setShowHistory(true);
@@ -204,7 +204,7 @@ const fetchXrayTypes = async () => {
 
     try {
       await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/xray-api/add`,
+        `${process.env.REACT_APP_API_URL}/xray-api/add`,
         {
           Institute_ID: formData.Institute_ID,
           Employee_ID: formData.Employee_ID,

@@ -15,11 +15,11 @@ const EmployeeProfile = () => {
     if (!employeeId) return;
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/employee-api/profile/${employeeId}`)
+      .get(`${process.env.REACT_APP_API_URL}/employee-api/profile/${employeeId}`)
       .then((res) => setEmployee(res.data));
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/family-api/family/${employeeId}`)
+      .get(`${process.env.REACT_APP_API_URL}/family-api/family/${employeeId}`)
       .then((res) => setFamily(res.data || []));
   }, [employeeId, BACKEND_PORT]);
 
@@ -107,9 +107,9 @@ const EmployeeProfile = () => {
               <img
                 src={
                   employee.Profile_Pic
-                    ? `http://localhost:${BACKEND_PORT}${employee.Profile_Pic}`
+                    ? `${process.env.REACT_APP_API_URL}${employee.Profile_Pic}`
                     : employee.Photo
-                    ? `http://localhost:${BACKEND_PORT}${employee.Photo}`
+                    ? `${process.env.REACT_APP_API_URL}${employee.Photo}`
                     : "/default-avatar.png"
                 }
                 

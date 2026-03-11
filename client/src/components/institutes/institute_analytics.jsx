@@ -140,7 +140,7 @@ const rowsPerPage = 10;
     }
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/institute-api/analytics/${institute._id}`)
+      .get(`${process.env.REACT_APP_API_URL}/institute-api/analytics/${institute._id}`)
       .then(res => {
         setRows(res.data || []);
         setLoading(false);

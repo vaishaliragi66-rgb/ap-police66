@@ -50,7 +50,7 @@ useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:${BACKEND_PORT_NO}/institute-api/profile/${id}`
+          `${process.env.REACT_APP_API_URL}/institute-api/profile/${id}`
         );
         setProfile(res.data.profile);
         setForm({
@@ -96,7 +96,7 @@ useEffect(() => {
 
     try {
       const res = await axios.put(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/profile/${id}`,
+        `${process.env.REACT_APP_API_URL}/institute-api/profile/${id}`,
         payload
       );
       setProfile(res.data.profile);

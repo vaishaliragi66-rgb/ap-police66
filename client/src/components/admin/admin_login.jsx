@@ -35,7 +35,7 @@ const AdminLogin = () => {
 
     try {
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/admin-api/login`,
+        `${process.env.REACT_APP_API_URL}/admin-api/login`,
         { 
           email: email.trim().toLowerCase(), 
           password: password 

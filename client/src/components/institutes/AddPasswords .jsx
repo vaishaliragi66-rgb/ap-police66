@@ -20,7 +20,7 @@
           const token = localStorage.getItem("instituteToken");
 
           const res = await axios.get(
-            "http://localhost:6100/institute-auth/get-role-status",
+            `${process.env.REACT_APP_API_URL}/institute-auth/get-role-status`,
             {
               headers: {
                 Authorization: `Bearer ${token}`
@@ -54,7 +54,7 @@
 
         await axios({
           method: roleStatus[role] ? "put" : "post",
-          url: `http://localhost:6100/institute-auth/${endpoint}`,
+          url: `${process.env.REACT_APP_API_URL}/institute-auth/${endpoint}`,
           data: {
           role: role,
     password: formData[role]
