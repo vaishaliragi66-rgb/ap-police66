@@ -10,7 +10,7 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  
+
   const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 6100;
 
   const handleLogin = async (e) => {
@@ -35,24 +35,24 @@ const AdminLogin = () => {
 
     try {
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/admin-api/login`,
-        { 
-          email: email.trim().toLowerCase(), 
-          password: password 
+        `${BACKEND_URL}:${BACKEND_PORT_NO}/admin-api/login`,
+        {
+          email: email.trim().toLowerCase(),
+          password: password
         }
       );
 
       if (res.data.success) {
         // ✅ Save Admin Data to localStorage
         console.log("ADMIN LOGIN RESPONSE:", res.data);
-        
+
         localStorage.setItem("adminToken", res.data.token);
         localStorage.setItem("adminId", res.data.admin._id);
         localStorage.setItem("adminName", res.data.admin.name);
         localStorage.setItem("adminEmail", res.data.admin.email);
         localStorage.setItem("adminRole", res.data.admin.role);
         localStorage.setItem("adminPermissions", JSON.stringify(res.data.admin.permissions));
-        
+
         // Clear any existing employee data (optional)
         localStorage.removeItem("employeeToken");
         localStorage.removeItem("employeeId");
@@ -66,7 +66,7 @@ const AdminLogin = () => {
 
     } catch (error) {
       console.error("Admin login error:", error);
-      
+
       // Handle different error types
       if (error.response?.data?.message) {
         setError(error.response.data.message);
@@ -117,9 +117,9 @@ const AdminLogin = () => {
         >
           <FaUserShield size={32} />
         </div>
-  
+
         <h2 className="fw-bold text-dark mb-2">Admin Login</h2>
-  
+
         <div
           style={{
             width: "70px",
@@ -130,12 +130,12 @@ const AdminLogin = () => {
             margin: "0 auto 14px auto",
           }}
         />
-  
+
         <p className="text-muted" style={{ fontSize: "0.95rem" }}>
           Secure access to administrator dashboard
         </p>
       </div>
-  
+
       {/* Error */}
       {error && (
         <div
@@ -145,7 +145,7 @@ const AdminLogin = () => {
           {error}
         </div>
       )}
-  
+
       {/* Login Card */}
       <div
         className="bg-white p-5 rounded-4 shadow-sm w-100"
@@ -175,7 +175,7 @@ const AdminLogin = () => {
               }}
             />
           </div>
-  
+
           {/* Password */}
           <div className="mb-4">
             <label className="form-label text-muted small fw-semibold">
@@ -196,7 +196,7 @@ const AdminLogin = () => {
               }}
             />
           </div>
-  
+
           {/* Forgot Password */}
           <div className="text-end mb-4">
             <Link
@@ -206,7 +206,7 @@ const AdminLogin = () => {
               Forgot Password?
             </Link>
           </div>
-  
+
           {/* Button */}
           <button
             type="submit"
@@ -235,8 +235,8 @@ const AdminLogin = () => {
             {loading ? "Logging in..." : "Login as Admin"}
           </button>
         </form>
-        </div>
-  
+      </div>
+
       {/* Security Note */}
       <div
         className="text-center mt-4"
@@ -254,7 +254,7 @@ const AdminLogin = () => {
       </div>
     </div>
   );
-  
+
 };
 
 export default AdminLogin;

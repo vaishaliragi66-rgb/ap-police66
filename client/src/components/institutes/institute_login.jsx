@@ -53,7 +53,7 @@ const InstituteLogin = () => {
       }
 
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}${endpoint}`,
+        `${BACKEND_URL}:${BACKEND_PORT_NO}${endpoint}`,
         {
           ...formData,
           Email_ID: normalizedEmail,

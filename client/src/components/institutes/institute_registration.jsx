@@ -55,7 +55,7 @@ const InstituteRegister = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/register/institute`,
+        `${BACKEND_URL}:${BACKEND_PORT_NO}/institute-api/register/institute`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

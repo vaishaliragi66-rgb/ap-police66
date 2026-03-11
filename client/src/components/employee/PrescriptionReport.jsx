@@ -18,7 +18,7 @@ const PrescriptionReport = () => {
   const fetchPrescriptions = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/prescription-api/employee/${employeeId}`
+        `${BACKEND_URL}:${BACKEND_PORT_NO}/prescription-api/employee/${employeeId}`
       );
       setPrescriptions(res.data || []);
     } catch (err) {

@@ -73,7 +73,7 @@ const AddMainStoreMedicine = () => {
       setSuccess("");
 
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/mainstore/add`,
+        `${BACKEND_URL}:${BACKEND_PORT_NO}/mainstore/add`,
         {
           ...formData,
           Quantity: Number(formData.Quantity),

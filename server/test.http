@@ -1,24 +1,24 @@
 ### get all institutes
-GET http://localhost:6100/institute-api/institutions
+GET ${BACKEND_URL}:6100/institute-api/institutions
 
 ###
-GET http://localhost:6100/medicine-api/medicines
+GET ${BACKEND_URL}:6100/medicine-api/medicines
 
 
 ###get a medicine by name
-GET http://localhost:6100/medicine-api/medicine/name/PainAway
+GET ${BACKEND_URL}:6100/medicine-api/medicine/name/PainAway
 
 ###delete a medicine by id
-DELETE http://localhost:6100/medicine-api/medicine_delete/1
+DELETE ${BACKEND_URL}:6100/medicine-api/medicine_delete/1
 
 
 ###
-GET http://localhost:6100/family-api/family/673369fa1f1c7e63f4c5be21
+GET ${BACKEND_URL}:6100/family-api/family/673369fa1f1c7e63f4c5be21
 
 
 
 ###
-POST http://localhost:6100/api/visits/register
+POST ${BACKEND_URL}:6100/api/visits/register
 Content-Type: application/json
 
 {
@@ -26,10 +26,10 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:6100/api/visits/today
+GET ${BACKEND_URL}:6100/api/visits/today
 
 ###
-POST http://localhost:6100/api/medical-actions
+POST ${BACKEND_URL}:6100/api/medical-actions
 Content-Type: application/json
 
 {
@@ -41,7 +41,7 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:6100/doctor-prescription-api/add
+POST ${BACKEND_URL}:6100/doctor-prescription-api/add
 Content-Type: application/json
 
 {
@@ -61,7 +61,7 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:6100/diagnosis-api/add
+POST ${BACKEND_URL}:6100/diagnosis-api/add
 Content-Type: application/json
 
 {
@@ -85,4 +85,4 @@ Content-Type: application/json
 
 
 ###
-http://localhost:6100/institute-api/analytics/696241bed5066b8df470b6b0
+${BACKEND_URL}:6100/institute-api/analytics/696241bed5066b8df470b6b0

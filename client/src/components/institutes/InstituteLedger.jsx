@@ -102,7 +102,7 @@ const LedgerStore = () => {
 
       // Fetch COMPLETE ledger (no type filter)
       const ledgerRes = await axios.get(
-          `http://localhost:${BACKEND_PORT}/ledger-api/institute/${instituteId}`
+          `${BACKEND_URL}:${BACKEND_PORT}/ledger-api/institute/${instituteId}`
         );
 
       const fullLedger = ledgerRes.data.ledger || [];

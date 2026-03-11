@@ -20,7 +20,7 @@ const XrayReport = () => {
 
     axios
       .get(
-        `http://localhost:${BACKEND_PORT}/xray-api/records/${employeeObjectId}`
+        `${BACKEND_URL}:${BACKEND_PORT}/xray-api/records/${employeeObjectId}`
       )
       .then((res) => {
         console.log("X-ray records fetched", res.data);

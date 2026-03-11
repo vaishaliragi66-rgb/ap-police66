@@ -19,7 +19,7 @@ const EmployeeDiseaseReport = () => {
 
     axios
       .get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
+        `${BACKEND_URL}:${BACKEND_PORT}/disease-api/employee/${employeeId}`
       )
       .then((res) => {
         setDiseases(res.data || []);

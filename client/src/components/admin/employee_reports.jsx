@@ -117,7 +117,7 @@ export default function EmployeeReports() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/admin-api/analytics/all`)
+      .get(`${BACKEND_URL}:${BACKEND_PORT}/admin-api/analytics/all`)
       .then(res => {
         setRows(res.data || []);
         setLoading(false);

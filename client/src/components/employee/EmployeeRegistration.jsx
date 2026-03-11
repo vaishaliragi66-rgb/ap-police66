@@ -178,7 +178,7 @@ if (validationErrors.length > 0) {
       console.log("Submitting registration...");
 
       const response = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/employee-api/register`,
+        `${BACKEND_URL}:${BACKEND_PORT_NO}/employee-api/register`,
         formPayload,
         
       );

@@ -60,7 +60,7 @@ const PharmacyPrescriptionForm = () => {
   const fetchDoctorActions = async (employeeId, visitId) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/api/medical-actions/visit/${visitId}`
+        `${BACKEND_URL}:${BACKEND_PORT}/api/medical-actions/visit/${visitId}`
       );
       const actions = res.data || [];
       
@@ -75,7 +75,7 @@ const PharmacyPrescriptionForm = () => {
   const fetchLastTwoPrescriptions = async (employeeId, familyId = null) => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
+      `${BACKEND_URL}:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
     );
 
     let data = res.data || [];
@@ -125,12 +125,12 @@ const loadEmployeeReports = async () => {
 
   try {
       const reportRes = await axios.get(
-  `http://localhost:${BACKEND_PORT}/employee-api/health-report`,
+  `${BACKEND_URL}:${BACKEND_PORT}/employee-api/health-report`,
   { params: { absNo: selectedEmployee.ABS_NO } }
 );
 
     const diseaseRes = await axios.get(
-      `http://localhost:${BACKEND_PORT}/disease-api/employee/${selectedEmployee._id}`
+      `${BACKEND_URL}:${BACKEND_PORT}/disease-api/employee/${selectedEmployee._id}`
     );
 
 
@@ -183,7 +183,7 @@ useEffect(() => {
   const fetchInstitute = async (id) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/institute-api/institution/${id}`
+        `${BACKEND_URL}:${BACKEND_PORT}/institute-api/institution/${id}`
       );
       setInstituteName(res.data?.Institute_Name || "");
     } catch (error) {
@@ -194,7 +194,7 @@ useEffect(() => {
   const fetchInventory = async (id) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/institute-api/inventory/${id}`
+        `${BACKEND_URL}:${BACKEND_PORT}/institute-api/inventory/${id}`
       );
       setInventory(res.data || []);
     } catch (error) {
@@ -206,7 +206,7 @@ useEffect(() => {
   const fetchDiseases = async (employeeId) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
+        `${BACKEND_URL}:${BACKEND_PORT}/disease-api/employee/${employeeId}`
       );
       setDiseases(res.data || []);
     } catch {
@@ -258,7 +258,7 @@ console.log("Results:", results);
   const validateMedicineQuantity = async (index, medicineName, quantity) => {
     try {
       await axios.post(
-        `http://localhost:${BACKEND_PORT}/medicine-limit-api/validate-medicine-quantity`,
+        `${BACKEND_URL}:${BACKEND_PORT}/medicine-limit-api/validate-medicine-quantity`,
         {
           medicine_name: medicineName.trim(),
           quantity: Number(quantity)
@@ -527,7 +527,7 @@ const handleSubmit = async (e) => {
 
   try {
     const response = await axios.post(
-      `http://localhost:${BACKEND_PORT}/prescription-api/add`,
+      `${BACKEND_URL}:${BACKEND_PORT}/prescription-api/add`,
       payload
     );
     

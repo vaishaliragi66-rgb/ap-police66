@@ -308,7 +308,7 @@ prescriptionApp.get("/debug-medicine/:code/:instituteId", async (req, res) => {
 const fetchInventory = async (id) => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/institute-api/inventory/${id}`
+      `${BACKEND_URL}:${BACKEND_PORT}/institute-api/inventory/${id}`
     );
     console.log("📦 INVENTORY API RESPONSE:", res.data[0]); // Check first item
     console.log("Has _id field?", res.data[0]?._id ? "YES" : "NO");
