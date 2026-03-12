@@ -459,8 +459,8 @@ adminApp.get("/analytics/all", async (req, res) => {
             }
           },
 
-          First_Visit: { $min: "$diagnosis.createdAt" },
-          Last_Visit: { $max: "$diagnosis.createdAt" }
+          First_Visit_Date: { $min: "$diagnosis.createdAt" },
+          Last_Visit_Date: { $max: "$diagnosis.createdAt" }
         }
       }
     ];

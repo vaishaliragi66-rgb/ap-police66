@@ -323,8 +323,17 @@ prescriptionApp.get("/queue/:instituteId", async (req, res) => {
 
   try {
 
+    const { instituteId } = req.params;
+
+    const start = new Date();
+    start.setHours(0,0,0,0);
+
+    const end = new Date();
+    end.setHours(23,59,59,999);
+
     const visits = await DailyVisit.find({
-      Institute_ID: req.params.instituteId
+      Institute_ID: instituteId,
+      visit_date: { $gte: start, $lte: end }   // ONLY TODAY
     })
     .populate("employee_id")
     .populate("FamilyMember");
@@ -342,10 +351,8 @@ prescriptionApp.get("/queue/:instituteId", async (req, res) => {
     res.json(pharmacyVisits);
 
   } catch (err) {
-
     console.error(err);
     res.status(500).json({ message: "Queue error" });
-
   }
 
 });
