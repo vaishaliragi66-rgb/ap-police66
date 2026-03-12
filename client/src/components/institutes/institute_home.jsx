@@ -147,22 +147,6 @@ const Institute_home = () => {
   </div>
 </div>
 
-      <div className="px-4 pt-3">
-        <button
-          className="btn mb-3"
-          onClick={() => navigate(-1)}
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D6E0F0",
-            borderRadius: "8px",
-            padding: "6px 14px",
-            fontSize: "14px",
-            color: "#1F2933",
-          }}
-        >
-          &larr; Back
-        </button>
-      </div>
 
       {/* DASHBOARD */}
       <div className="container-fluid p-4">
