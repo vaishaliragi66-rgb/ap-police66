@@ -27,4 +27,17 @@ const DiagnosisRecordSchema = new Schema({
   }
 );
 
+// Add reports metadata for uploaded diagnosis reports
+DiagnosisRecordSchema.add({
+  Reports: [
+    {
+      filename: { type: String },
+      originalname: { type: String },
+      url: { type: String },
+      uploadedBy: { type: String },
+      uploadedAt: { type: Date, default: Date.now }
+    }
+  ]
+});
+
 module.exports = mongoose.model("DiagnosisRecord", DiagnosisRecordSchema);

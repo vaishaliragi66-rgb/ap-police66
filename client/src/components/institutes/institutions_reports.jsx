@@ -11,6 +11,49 @@ const InstituteReports = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [report, setReport] = useState(null);
+  const [selectedDiagnosisRec, setSelectedDiagnosisRec] = useState(null);
+  const [showRecModal, setShowRecModal] = useState(false);
+  const [loadingRec, setLoadingRec] = useState(false);
+
+  // Fetch a fresh diagnosis record (includes Reports) before showing modal
+  const viewRecord = async (rec) => {
+    try {
+      setLoadingRec(true);
+
+      // Determine employee id and family flags
+      const empId = rec?.Employee?._id || report?.employee?._id || rec?.Employee || null;
+      const isFamily = rec?.IsFamilyMember ? true : false;
+      const familyId = rec?.FamilyMember?._id || rec?.FamilyMember || '';
+
+      if (!empId) {
+        setSelectedDiagnosisRec(rec);
+        setShowRecModal(true);
+        return;
+      }
+
+      // Fetch records for this employee (these include Reports)
+      const recordsRes = await axios.get(
+        `http://localhost:${BACKEND_PORT}/diagnosis-api/records/${empId}`,
+        { params: { isFamily: isFamily, familyId: familyId } }
+      );
+
+      const records = Array.isArray(recordsRes.data) ? recordsRes.data : [];
+      const found = records.find(r => String(r._id) === String(rec._id));
+
+      if (found) {
+        setSelectedDiagnosisRec(found);
+      } else {
+        setSelectedDiagnosisRec(rec);
+      }
+      setShowRecModal(true);
+    } catch (err) {
+      console.error('Failed to fetch record via records API:', err);
+      setSelectedDiagnosisRec(rec);
+      setShowRecModal(true);
+    } finally {
+      setLoadingRec(false);
+    }
+  };
 
   /* --------------------------------------------------
       FETCH ALL EMPLOYEES (ABS + NAME)
@@ -303,36 +346,134 @@ const InstituteReports = () => {
             </h6>
   
             {report.employeeDiagnosis?.length ? (
-              <div className="table-responsive">
-                <table className="table table-bordered align-middle">
-                  <thead style={{ background: "#f3f4f6" }}>
-                    <tr>
-                      <th>Date</th>
-                      <th>Test</th>
-                      <th>Result</th>
-                      <th>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.employeeDiagnosis.flatMap((rec, i) =>
-                      rec.Tests.map((t, j) => (
-                        <tr key={`${i}-${j}`}>
-                          <td>
-                            {new Date(t.Timestamp).toLocaleDateString()}
-                          </td>
-                          <td>{t.Test_Name}</td>
-                          <td>{t.Result_Value}</td>
-                          <td>{t.Remarks || "—"}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+              <div>
+                {report.employeeDiagnosis.map((rec, idx) => (
+                  <div key={idx} className="mb-3">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <div>
+                        <strong>{new Date(rec.updatedAt || rec.createdAt || Date.now()).toLocaleDateString()}</strong>
+                        <div className="small text-muted">{rec.visitSummary?.symptoms || ''}</div>
+                      </div>
+                      <div>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-dark"
+                          onClick={() => viewRecord(rec)}
+                          disabled={loadingRec}
+                        >
+                          {loadingRec ? 'Loading…' : 'View Report'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="table-responsive">
+                      <table className="table table-bordered align-middle mb-0">
+                        <thead style={{ background: "#f3f4f6" }}>
+                          <tr>
+                            <th>Test</th>
+                            <th>Result</th>
+                            <th>Remarks</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(rec.Tests || []).map((t, j) => (
+                            <tr key={j}>
+                              <td>{t.Test_Name}</td>
+                              <td>{t.Result_Value}</td>
+                              <td>{t.Remarks || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <p style={{ color: "#6b7280" }}>
                 No employee diagnosis records.
               </p>
+            )}
+
+            {/* Uploaded reports */}
+            {report.employeeDiagnosis && report.employeeDiagnosis.length > 0 && (
+              (() => {
+                const allReports = report.employeeDiagnosis.flatMap(r => r.Reports || []);
+                return allReports.length ? (
+                  <div style={{ marginTop: 18 }}>
+                    <h6 style={{ fontWeight: 600, marginTop: 12 }}>📎 Uploaded Reports</h6>
+                    <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                      {allReports.map((rep, idx) => (
+                        <li key={idx} style={{ marginBottom: 8 }}>
+                          <a href={`http://localhost:${BACKEND_PORT}/${rep.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{rep.originalname || rep.filename}</a>
+                          <a href={`http://localhost:${BACKEND_PORT}/${rep.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null;
+              })()
+            )}
+
+            {/* Diagnosis record modal */}
+            {showRecModal && selectedDiagnosisRec && (
+              <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+                <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                  <div className="modal-content">
+                    <div className="modal-header bg-primary text-white">
+                      <h5 className="modal-title">Diagnosis Report</h5>
+                      <button type="button" className="btn-close btn-close-white" onClick={() => setShowRecModal(false)} />
+                    </div>
+
+                    <div className="modal-body">
+                      <p><strong>Institute:</strong> {selectedDiagnosisRec.Institute?.Institute_Name || report.employee?.Institute_Name || '-'}</p>
+                      <p><strong>Date:</strong> {new Date(selectedDiagnosisRec.updatedAt || selectedDiagnosisRec.createdAt || Date.now()).toLocaleString()}</p>
+
+                      <table className="table table-bordered">
+                        <thead className="table-light">
+                          <tr>
+                            <th>Test Name</th>
+                            <th>Result</th>
+                            <th>Remarks</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(selectedDiagnosisRec.Tests || []).map((t, i) => (
+                            <tr key={i}>
+                              <td>{t.Test_Name}</td>
+                              <td>{t.Result_Value} {t.Units || ''}</td>
+                              <td>{t.Remarks || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {selectedDiagnosisRec.Reports && selectedDiagnosisRec.Reports.length > 0 && (
+                        <div className="mt-3">
+                          <h6>Uploaded Reports</h6>
+                          <ul className="list-unstyled">
+                            {selectedDiagnosisRec.Reports.map((r, i) => {
+                              const urlPath = r.url ? r.url.replace(/^\/+/, '') : '';
+                              const href = `http://localhost:${BACKEND_PORT}/${urlPath}`;
+                              return (
+                                <li key={i} className="mb-2">
+                                  <a href={href} target="_blank" rel="noreferrer" className="me-2">{r.originalname || r.filename}</a>
+                                  <a href={href} download className="btn btn-sm btn-outline-secondary">Download</a>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+
+                    </div>
+
+                    <div className="modal-footer">
+                      <button type="button" className="btn btn-secondary" onClick={() => setShowRecModal(false)}>Close</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
 {/* FULL MEDICAL HISTORY */}

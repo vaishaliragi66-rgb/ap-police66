@@ -21,9 +21,7 @@ const XrayReport = () => {
     if (!employeeObjectId) return;
 
     axios
-      .get(
-        `http://localhost:${BACKEND_PORT}/xray-api/records/${employeeObjectId}`
-      )
+      .get(`http://localhost:${BACKEND_PORT}/xray-api/records/${employeeObjectId}`)
       .then((res) => {
         console.log("X-ray records fetched", res.data);
         setReports(res.data || []);
@@ -76,10 +74,7 @@ const XrayReport = () => {
       });
     });
 
-    return rows.sort(
-      (a, b) =>
-        new Date(b.Xrays[0].Timestamp) - new Date(a.Xrays[0].Timestamp)
-    );
+    return rows.sort((a, b) => new Date(b.Xrays[0].Timestamp) - new Date(a.Xrays[0].Timestamp));
   };
 
   const downloadXrayReport = (report) => {
@@ -87,26 +82,17 @@ const XrayReport = () => {
 
     const left = 15;
     const right = 282;
-    const instituteName =
-      report.Institute?.Institute_Name || "Medical Institute";
+    const instituteName = report.Institute?.Institute_Name || "Medical Institute";
     const reportDate = formatDate(report);
     const patientName = report.Employee?.Name || "Employee";
-    const employeeIdText = report.Employee?.ABS_NO
-      ? `(${report.Employee.ABS_NO})`
-      : "";
-    const issuedTo = report.IsFamilyMember
-      ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})`
-      : "Self";
+    const employeeIdText = report.Employee?.ABS_NO ? `(${report.Employee.ABS_NO})` : "";
+    const issuedTo = report.IsFamilyMember ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})` : "Self";
 
     doc.setFontSize(16);
-    doc.text(instituteName.toUpperCase(), 148.5, 18, {
-      align: "center"
-    });
+    doc.text(instituteName.toUpperCase(), 148.5, 18, { align: "center" });
 
     doc.setFontSize(12);
-    doc.text("X-RAY REPORT", 148.5, 26, {
-      align: "center"
-    });
+    doc.text("X-RAY REPORT", 148.5, 26, { align: "center" });
 
     doc.line(left, 30, right, 30);
 
@@ -128,16 +114,7 @@ const XrayReport = () => {
 
     autoTable(doc, {
       startY: 60,
-      head: [[
-        "Type",
-        "Body Part",
-        "Side",
-        "View",
-        "Size",
-        "Findings",
-        "Impression",
-        "Remarks"
-      ]],
+      head: [["Type", "Body Part", "Side", "View", "Size", "Findings", "Impression", "Remarks"]],
       body: tableData,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [40, 40, 40] },
@@ -145,12 +122,7 @@ const XrayReport = () => {
     });
 
     doc.setFontSize(9);
-    doc.text(
-      "This is a system-generated X-ray report.",
-      148.5,
-      doc.lastAutoTable.finalY + 12,
-      { align: "center" }
-    );
+    doc.text("This is a system-generated X-ray report.", 148.5, doc.lastAutoTable.finalY + 12, { align: "center" });
 
     doc.save(`Xray_Report_${report._id.slice(-6)}.pdf`);
   };
@@ -279,26 +251,11 @@ const XrayReport = () => {
             </div>
 
             {filteredReports.length === 0 ? (
-              <p className="text-center text-muted">
-                No x‑ray reports found.
-              </p>
+              <p className="text-center text-muted">No x‑ray reports found.</p>
             ) : (
               <div className="table-responsive">
-                <table
-                  className="table align-middle"
-                  style={{
-                    border: "1px solid #D6E0F0",
-                    borderRadius: "12px",
-                    overflow: "hidden",
-                  }}
-                >
-                  <thead
-                    style={{
-                      backgroundColor: "#F3F7FF",
-                      color: "#1F2933",
-                      fontWeight: 600,
-                    }}
-                  >
+                <table className="table align-middle" style={{ border: "1px solid #D6E0F0", borderRadius: "12px", overflow: "hidden" }}>
+                  <thead style={{ backgroundColor: "#F3F7FF", color: "#1F2933", fontWeight: 600 }}>
                     <tr>
                       <th>#</th>
                       <th>Patient</th>
@@ -313,60 +270,18 @@ const XrayReport = () => {
                     {splitReportsByDate(filteredReports).map((report, index) => (
                       <tr key={report._id + report.Xrays[0]?.Timestamp}>
                         <td>{index + 1}</td>
-
                         <td>
                           {report.Employee?.Name}
-                          {report.Employee?.ABS_NO &&
-                            ` (${report.Employee.ABS_NO})`}
+                          {report.Employee?.ABS_NO && ` (${report.Employee.ABS_NO})`}
                         </td>
-
-                        <td>
-                          {report.IsFamilyMember
-                            ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})`
-                            : "Self"}
-                        </td>
-
-                        <td>
-                          {report.Institute?.Institute_Name ||
-                            "Medical Institute"}
-                        </td>
-
+                        <td>{report.IsFamilyMember ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})` : "Self"}</td>
+                        <td>{report.Institute?.Institute_Name || "Medical Institute"}</td>
                         <td>{report.Xrays.length}</td>
-
                         <td>{formatDate(report)}</td>
-
                         <td>
                           <div className="d-flex gap-2">
-                            <button
-                              className="btn btn-sm"
-                              style={{
-                                borderRadius: "999px",
-                                border: "1px solid #4A70A9",
-                                backgroundColor: "#4A70A9",
-                                color: "#FFFFFF",
-                                fontWeight: 500,
-                              }}
-                              onClick={() => {
-                                setSelectedReport(report);
-                                setShowModal(true);
-                              }}
-                            >
-                              View
-                            </button>
-
-                            <button
-                              className="btn btn-sm"
-                              style={{
-                                borderRadius: "999px",
-                                border: "1px solid #4A70A9",
-                                backgroundColor: "#FFFFFF",
-                                color: "#4A70A9",
-                                fontWeight: 500,
-                              }}
-                              onClick={() => downloadXrayReport(report)}
-                            >
-                              Download
-                            </button>
+                            <button className="btn btn-sm" style={{ borderRadius: "999px", border: "1px solid #4A70A9", backgroundColor: "#4A70A9", color: "#FFFFFF", fontWeight: 500 }} onClick={() => { setSelectedReport(report); setShowModal(true); }}>View</button>
+                            <button className="btn btn-sm" style={{ borderRadius: "999px", border: "1px solid #4A70A9", backgroundColor: "#FFFFFF", color: "#4A70A9", fontWeight: 500 }} onClick={() => downloadXrayReport(report)}>Download</button>
                           </div>
                         </td>
                       </tr>
@@ -385,20 +300,12 @@ const XrayReport = () => {
             <div className="modal-content">
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title">X‑ray Details</h5>
-                <button
-                  className="btn-close btn-close-white"
-                  onClick={() => setShowModal(false)}
-                />
+                <button className="btn-close btn-close-white" onClick={() => setShowModal(false)} />
               </div>
 
               <div className="modal-body">
                 <p><strong>Employee:</strong> {selectedReport.Employee?.Name}</p>
-                <p>
-                  <strong>Report For:</strong>{" "}
-                  {selectedReport.IsFamilyMember
-                    ? `${selectedReport.FamilyMember?.Name} (${selectedReport.FamilyMember?.Relationship})`
-                    : "Self"}
-                </p>
+                <p><strong>Report For:</strong> {selectedReport.IsFamilyMember ? `${selectedReport.FamilyMember?.Name} (${selectedReport.FamilyMember?.Relationship})` : 'Self'}</p>
                 <p><strong>Institute:</strong> {selectedReport.Institute?.Institute_Name}</p>
                 <p><strong>Date:</strong> {formatDate(selectedReport)}</p>
 
@@ -420,34 +327,61 @@ const XrayReport = () => {
                   <tbody>
                     {selectedReport.Xrays.map((x, i) => (
                       <tr key={i}>
-                        <td>{x.Xray_Type}</td>
-                        <td>{x.Body_Part}</td>
-                        <td>{x.Side}</td>
-                        <td>{x.View || "-"}</td>
-                        <td>{x.Film_Size || "-"}</td>
-                        <td>{x.Findings || "-"}</td>
-                        <td>{x.Impression || "-"}</td>
-                        <td>{x.Remarks || "-"}</td>
+                        <td>{x.Xray_Type || '-'}</td>
+                        <td>{x.Body_Part || '-'}</td>
+                        <td>{x.Side || '-'}</td>
+                        <td>{x.View || '-'}</td>
+                        <td>{x.Film_Size || '-'}</td>
+                        <td>{x.Findings || '-'}</td>
+                        <td>{x.Impression || '-'}</td>
+                        <td>{x.Remarks || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+
+                {/* Per-Xray reports grouped under the table */}
+                {selectedReport.Xrays && selectedReport.Xrays.some(x => x?.Reports && x.Reports.length > 0) && (
+                  <div className="mt-3">
+                    <strong>Uploaded Reports:</strong>
+                    {selectedReport.Xrays.map((x, idx) => (
+                      x?.Reports && x.Reports.length > 0 ? (
+                        <div key={idx} className="mt-2">
+                          <div className="fw-semibold">X‑ray #{idx + 1}: {x.Xray_Type || x.Body_Part || 'X‑ray'}</div>
+                          <ul className="list-unstyled mt-1 mb-0">
+                            {x.Reports.map((r, j) => (
+                              <li key={j} className="mb-1">
+                                <a href={`http://localhost:${BACKEND_PORT}/${r?.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
+                                <a href={`http://localhost:${BACKEND_PORT}/${r?.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null
+                    ))}
+                  </div>
+                )}
+
+                {/* Record-level fallback reports */}
+                {selectedReport?.Reports && selectedReport.Reports.length > 0 && (
+                  <div className="mt-3">
+                    <strong>Uploaded Reports (record-level):</strong>
+                    <ul className="list-unstyled mt-2 mb-0">
+                      {selectedReport.Reports.map((r, idx) => (
+                        <li key={idx} className="mb-1">
+                          <a href={`http://localhost:${BACKEND_PORT}/${r?.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
+                          <a href={`http://localhost:${BACKEND_PORT}/${r?.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
               </div>
 
               <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
-                  Close
-                </button>
-
-                <button
-                  className="btn btn-primary"
-                  onClick={() => downloadXrayReport(selectedReport)}
-                >
-                  Download PDF
-                </button>
+                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
+                <button className="btn btn-primary" onClick={() => downloadXrayReport(selectedReport)}>Download PDF</button>
               </div>
             </div>
           </div>

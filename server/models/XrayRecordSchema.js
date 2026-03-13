@@ -69,6 +69,17 @@ const XrayRecordSchema = new Schema({
         type: Date, 
         default: Date.now 
       }
+      ,
+      // Allow uploaded reports to be stored per-Xray
+      Reports: [
+        {
+          filename: { type: String },
+          originalname: { type: String },
+          url: { type: String },
+          uploadedBy: { type: String },
+          uploadedAt: { type: Date, default: Date.now }
+        }
+      ]
     }
   ],
 
@@ -78,6 +89,19 @@ const XrayRecordSchema = new Schema({
 
 }, {
   timestamps: true
+});
+
+// Add reports metadata for uploaded X-ray reports
+XrayRecordSchema.add({
+  Reports: [
+    {
+      filename: { type: String },
+      originalname: { type: String },
+      url: { type: String },
+      uploadedBy: { type: String },
+      uploadedAt: { type: Date, default: Date.now }
+    }
+  ]
 });
 
 module.exports = mongoose.model("XrayRecord", XrayRecordSchema);
