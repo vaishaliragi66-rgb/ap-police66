@@ -9,6 +9,7 @@ const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Employee = require("../models/employee");
 const Disease = require("../models/disease");
 const DiagnosisRecord = require("../models/diagnostics_record");
+const XrayRecord = require("../models/XrayRecordSchema");
 const FamilyMember = require("../models/family_member");
 const MedicalAction = require("../models/medical_action");
 
@@ -88,11 +89,44 @@ employeeApp.get(
         employee_id: employeeId,
         action_type: { $in: ["DOCTOR_DIAGNOSIS", "DOCTOR_XRAY"] },
         ...prescriptionFilter
-      }).sort({ Timestamp: -1 });
+      }).sort({ created_at: -1 });
+
+      const diagnosisFilter = {
+        Employee: employeeId
+      };
+
+      const xrayFilter = {
+        Employee: employeeId
+      };
+
+      if (isFamily === "true") {
+        diagnosisFilter.IsFamilyMember = true;
+        diagnosisFilter.FamilyMember = familyMemberId;
+        xrayFilter.IsFamilyMember = true;
+        xrayFilter.FamilyMember = familyMemberId;
+      } else {
+        diagnosisFilter.IsFamilyMember = false;
+        xrayFilter.IsFamilyMember = false;
+      }
+
+      const diagnosisRecords = await DiagnosisRecord.find(diagnosisFilter)
+        .populate("Institute", "Institute_Name")
+        .populate("Employee", "Name ABS_NO")
+        .populate("FamilyMember", "Name Relationship")
+        .populate("Tests.Test_ID", "Test_Name Reference_Range Units")
+        .sort({ updatedAt: -1, createdAt: -1 });
+
+      const xrayRecords = await XrayRecord.find(xrayFilter)
+        .populate("Institute", "Institute_Name")
+        .populate("Employee", "Name ABS_NO")
+        .populate("FamilyMember", "Name Relationship")
+        .sort({ updatedAt: -1, createdAt: -1 });
 
       res.json({
         diseases,
-        medicalActions
+        medicalActions,
+        diagnosisRecords,
+        xrayRecords
       });
 
     } catch (err) {
