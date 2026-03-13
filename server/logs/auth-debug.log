@@ -1,0 +1,40 @@
+[2026-03-09T15:24:47.128Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:09:33.824Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:09:33.955Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:12:50.206Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:12:50.354Z] LOGIN success for Email=apollo@gmail.com
+[2026-03-09T16:13:17.839Z] DEBUG set-password institute Email=apollo@gmail.com
+[2026-03-09T16:13:26.423Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:13:26.549Z] LOGIN success for Email=apollo@gmail.com
+[2026-03-09T16:15:59.583Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:15:59.825Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:16:11.699Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:16:11.899Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:17:16.109Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:17:16.383Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:17:31.058Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:17:31.269Z] LOGIN success for Email=apollo@gmail.com
+[2026-03-09T16:21:56.910Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:21:57.205Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:22:04.944Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:22:05.299Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:22:25.866Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:22:25.968Z] LOGIN success for Email=apollo@gmail.com
+[2026-03-09T16:34:04.823Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:34:05.450Z] LOGIN success for Email=apollo@gmail.com
+[2026-03-09T16:36:16.728Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:36:16.925Z] LOGIN success for Email=apollo@gmail.com
+[2026-03-09T16:37:55.316Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:37:55.632Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:38:04.083Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:38:04.440Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:40:54.238Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:40:54.430Z] LOGIN success for Email=apollo@gmail.com
+[2026-03-09T16:41:36.120Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:41:36.409Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:46:09.542Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:46:09.830Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-09T16:48:35.788Z] LOGIN attempt Email=apollo@gmail.com hasPassword=true
+[2026-03-09T16:48:36.059Z] LOGIN failed - wrong password for Email=apollo@gmail.com
+[2026-03-11T16:52:08.340Z] LOGIN attempt Email=neelima@gmail.com hasPassword=true
+[2026-03-11T16:52:08.572Z] LOGIN success for Email=neelima@gmail.com
