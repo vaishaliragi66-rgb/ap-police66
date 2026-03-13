@@ -6,6 +6,48 @@ import autoTable from "jspdf-autotable";
 
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 
+const isPresent = (value) => {
+  if (value === null || value === undefined) return false;
+  const normalized = String(value).trim();
+  return normalized !== "" && normalized !== "N/A" && normalized !== "-" && normalized !== "—";
+};
+
+const pickFirstPresent = (...values) => values.find(isPresent);
+
+const parseAddressParts = (address) => {
+  if (!address || typeof address !== "string") {
+    return { district: "", state: "" };
+  }
+
+  const parts = address.split(",").map(part => part.trim());
+  const district = parts[1] || "";
+  const state = (parts[2] || "").split("-")[0].trim();
+
+  return { district, state };
+};
+
+const normalizeAnalyticsRow = (row, employeeIndex) => {
+  const employee =
+    employeeIndex.byAbs.get(String(row.ABS_NO || "").trim()) ||
+    employeeIndex.byName.get(String(row.Name || "").trim().toLowerCase()) ||
+    null;
+
+  const parsedAddress = parseAddressParts(employee?.Address);
+
+  return {
+    ...row,
+    ABS_NO: pickFirstPresent(row.ABS_NO, employee?.ABS_NO) || "",
+    Name: pickFirstPresent(row.Name, employee?.Name) || "",
+    District: pickFirstPresent(row.District, row.Address?.District, parsedAddress.district) || "",
+    State: pickFirstPresent(row.State, row.Address?.State, parsedAddress.state) || "",
+    Gender: pickFirstPresent(row.Gender, employee?.Gender) || "",
+    Blood_Group: pickFirstPresent(row.Blood_Group, employee?.Blood_Group) || "",
+    Phone_No: pickFirstPresent(row.Phone_No, employee?.Phone_No) || "",
+    Height: pickFirstPresent(row.Height, employee?.Height) || "",
+    Weight: pickFirstPresent(row.Weight, employee?.Weight) || ""
+  };
+};
+
 
 /* ===============================
    Utility: Abnormal Test Checker
@@ -33,11 +75,16 @@ const downloadCSV = (data) => {
 
   const headers = [
     "Role",
+    "ABS Number",
     "Name",
     "Gender",
     "District",
+    "State",
     "Age",
     "Blood Group",
+    "Phone Number",
+    "Height",
+    "Weight",
     "Diseases",
     "Tests",
     "Medicines",
@@ -47,12 +94,17 @@ const downloadCSV = (data) => {
 
   const rows = data.map(r => [
     r.Role,
+    r.ABS_NO || "",
     r.Name,
     r.Gender || "",
     r.District || "",
+    r.State || "",
     r.Age ?? "",
     r.Blood_Group || "",
-    (r.Diseases || []).join("; "),
+    r.Phone_No || "",
+    r.Height || "",
+    r.Weight || "",
+    [...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])].join("; "),
     (r.Tests || []).map(t => `${t.Test_Name}: ${t.Result_Value} ${t.Units || ""}`).join("; "),
     (r.Medicines || []).map(m => `${m.Medicine_Name} (${m.Quantity})`).join("; "),
     r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "",
@@ -78,11 +130,16 @@ const downloadPDF = (data) => {
     startY: 22,
     head: [[
       "Role",
+      "ABS Number",
       "Name",
       "Gender",
       "District",
+      "State",
       "Age",
       "Blood Group",
+      "Phone Number",
+      "Height",
+      "Weight",
       "Diseases",
       "Tests",
       "Medicines",
@@ -91,12 +148,17 @@ const downloadPDF = (data) => {
     ]],
     body: data.map(r => [
       r.Role,
+      r.ABS_NO || "—",
       r.Name,
       r.Gender || "—",
       r.District || "—",
+      r.State || "—",
       r.Age ?? "—",
       r.Blood_Group || "—",
-      (r.Diseases || []).join(", "),
+      r.Phone_No || "—",
+      r.Height || "—",
+      r.Weight || "—",
+      [...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])].join(", "),
       (r.Tests || []).map(t => `${t.Test_Name}: ${t.Result_Value}`).join("; "),
       (r.Medicines || []).map(m => `${m.Medicine_Name} (${m.Quantity})`).join("; "),
       r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "—",
@@ -122,6 +184,8 @@ export default function InstituteAnalytics() {
   const [genderFilter, setGenderFilter] = useState("");
   const [nameFilter, setNameFilter] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
+  const [absFilter, setAbsFilter] = useState("");
   const [diseaseFilter, setDiseaseFilter] = useState("");
   const [medicineFilter, setMedicineFilter] = useState("");
   const [testFilter, setTestFilter] = useState("");
@@ -139,33 +203,89 @@ const rowsPerPage = 10;
       return;
     }
 
-    axios
-      .get(`http://localhost:${BACKEND_PORT}/institute-api/analytics/${institute._id}`)
-      .then(res => {
-        setRows(res.data || []);
+    const loadAnalytics = async () => {
+      try {
+        const [analyticsRes, employeesRes] = await Promise.all([
+          axios.get(`http://localhost:${BACKEND_PORT}/institute-api/analytics/${institute._id}`),
+          axios.get(`http://localhost:${BACKEND_PORT}/institute-api/employees-detailed`).catch(() => ({ data: { employees: [] } }))
+        ]);
+
+        const employees = employeesRes?.data?.employees || [];
+        const employeeIndex = {
+          byAbs: new Map(
+            employees
+              .filter(emp => isPresent(emp.ABS_NO))
+              .map(emp => [String(emp.ABS_NO).trim(), emp])
+          ),
+          byName: new Map(
+            employees
+              .filter(emp => isPresent(emp.Name))
+              .map(emp => [String(emp.Name).trim().toLowerCase(), emp])
+          )
+        };
+
+        const analyticsRows = Array.isArray(analyticsRes.data) ? analyticsRes.data : [];
+        setRows(analyticsRows.map(row => normalizeAnalyticsRow(row, employeeIndex)));
         setLoading(false);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error("Analytics load error:", err);
         setError("Failed to load analytics data");
         setLoading(false);
-      });
+      }
+    };
+
+    loadAnalytics();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    roleFilter,
+    genderFilter,
+    nameFilter,
+    districtFilter,
+    stateFilter,
+    absFilter,
+    diseaseFilter,
+    medicineFilter,
+    testFilter,
+    bloodGroupFilter,
+    abnormalOnly,
+    ageMin,
+    ageMax
+  ]);
 
   
 
   const filteredRows = rows.filter(r => {
-  const match = (v, f) =>
-    !f || (v && v.toString().toLowerCase().includes(f.toLowerCase()));
+    const match = (v, f) =>
+      !f || (v && v.toString().toLowerCase().includes(f.toLowerCase()));
 
-  return (
-    (!roleFilter || r.Role === roleFilter) &&
-    (!genderFilter || r.Gender === genderFilter) &&
-    (!bloodGroupFilter || r.Blood_Group === bloodGroupFilter) &&
-    match(r.Name, nameFilter) &&
-    match(r.District, districtFilter)
-  );
-});
+    const ageOK =
+      (!ageMin || r.Age >= Number(ageMin)) &&
+      (!ageMax || r.Age <= Number(ageMax));
+
+    const hasAbnormal =
+      r.Tests?.some(t => isAbnormal(t.Result_Value, t.Reference_Range));
+
+    return (
+      (!roleFilter || r.Role === roleFilter) &&
+      (!genderFilter || r.Gender === genderFilter) &&
+      (!bloodGroupFilter || r.Blood_Group === bloodGroupFilter) &&
+      match(r.Name, nameFilter) &&
+      match(r.District, districtFilter) &&
+      match(r.State, stateFilter) &&
+      match(r.ABS_NO, absFilter) &&
+      match(
+        [...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])].join(" "),
+        diseaseFilter
+      ) &&
+      match((r.Medicines || []).map(m => m.Medicine_Name).join(" "), medicineFilter) &&
+      match((r.Tests || []).map(t => t.Test_Name).join(" "), testFilter) &&
+      ageOK &&
+      (!abnormalOnly || hasAbnormal)
+    );
+  });
 
 
   /* -------- Filtering Logic -------- */
@@ -280,6 +400,30 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
               />
             </div>
 
+            {/* State Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">State</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by state"
+                value={stateFilter}
+                onChange={(e) => setStateFilter(e.target.value)}
+              />
+            </div>
+
+            {/* ABS Number Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">ABS Number</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by ABS number"
+                value={absFilter}
+                onChange={(e) => setAbsFilter(e.target.value)}
+              />
+            </div>
+
             {/* Disease Filter */}
             <div className="col-md-3">
               <label className="form-label fw-semibold">Disease</label>
@@ -388,11 +532,16 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
               <thead className="table-dark">
                 <tr>
                   <th>Role</th>
+                  <th>ABS Number</th>
                   <th>Name</th>
                   <th>Gender</th>
-                  <th>Blood Group</th>
                   <th>District</th>
+                  <th>State</th>
                   <th>Age</th>
+                  <th>Blood Group</th>
+                  <th>Phone Number</th>
+                  <th>Height</th>
+                  <th>Weight</th>
                   <th>Diseases</th>
                   <th>Tests</th>
                   <th>Medicines</th>
@@ -403,7 +552,7 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
               <tbody>
                 {filteredRows.length === 0 && (
                   <tr>
-                    <td colSpan="11" className="text-center py-4 text-muted">
+                    <td colSpan="16" className="text-center py-4 text-muted">
                       No records found matching the current filters
                     </td>
                   </tr>
@@ -416,15 +565,20 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
                         {r.Role}
                       </span>
                     </td>
+                    <td>{r.ABS_NO || "—"}</td>
                     <td className="fw-semibold">{r.Name}</td>
                     <td>{r.Gender || "—"}</td>
-                    <td>{r.Blood_Group || "—"}</td>
                     <td>{r.District || "—"}</td>
+                    <td>{r.State || "—"}</td>
                     <td>{r.Age ?? "—"}</td>
+                    <td>{r.Blood_Group || "—"}</td>
+                    <td>{r.Phone_No || "—"}</td>
+                    <td>{r.Height || "—"}</td>
+                    <td>{r.Weight || "—"}</td>
                     <td>
-                      {r.Diseases?.length ? (
+                      {([...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])]).length ? (
                         <div className="d-flex flex-column gap-1">
-                          {r.Diseases.map((disease, idx) => (
+                          {([...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])]).map((disease, idx) => (
                             <span key={idx} className="badge bg-warning text-dark">
                               {disease}
                             </span>

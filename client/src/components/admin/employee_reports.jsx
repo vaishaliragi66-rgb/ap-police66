@@ -30,16 +30,37 @@ const downloadCSV = (data) => {
   if (!data.length) return;
 
   const headers = [
-    "Role","Name","District","Age",
-    "Communicable Diseases","Non-Communicable Diseases",
-    "Tests","Medicines","First Visit","Last Visit"
+    "Role",
+    "ABS Number",
+    "Name",
+    "Gender",
+    "District",
+    "State",
+    "Age",
+    "Blood Group",
+    "Phone Number",
+    "Height",
+    "Weight",
+    "Communicable Diseases",
+    "Non-Communicable Diseases",
+    "Tests",
+    "Medicines",
+    "First Visit",
+    "Last Visit"
   ];
 
   const rows = data.map(r => [
     r.Role,
+    r.ABS_NO || "",
     r.Name,
+    r.Gender || "",
     r.District || "",
+    r.State || "",
     r.Age ?? "",
+    r.Blood_Group || "",
+    r.Phone_No || "",
+    r.Height || "",
+    r.Weight || "",
     (r.Communicable_Diseases || []).join("; "),
     (r.NonCommunicable_Diseases || []).join("; "),
     (r.Tests || []).map(t => `${t.Test_Name}:${t.Result_Value}`).join("; "),
@@ -68,23 +89,44 @@ const downloadPDF = (data) => {
 
   autoTable(doc, {
     head: [[
-      "Role","Name","District","Age",
-      "Communicable","Non-Communicable",
-      "Tests","Medicines","First Visit","Last Visit"
+      "Role",
+      "ABS Number",
+      "Name",
+      "Gender",
+      "District",
+      "State",
+      "Age",
+      "Blood Group",
+      "Phone Number",
+      "Height",
+      "Weight",
+      "Communicable",
+      "Non-Communicable",
+      "Tests",
+      "Medicines",
+      "First Visit",
+      "Last Visit"
     ]],
     body: data.map(r => [
       r.Role,
+      r.ABS_NO || "—",
       r.Name,
-      r.District || "",
-      r.Age ?? "",
+      r.Gender || "—",
+      r.District || "—",
+      r.State || "—",
+      r.Age ?? "—",
+      r.Blood_Group || "—",
+      r.Phone_No || "—",
+      r.Height || "—",
+      r.Weight || "—",
       (r.Communicable_Diseases || []).join(", "),
       (r.NonCommunicable_Diseases || []).join(", "),
       (r.Tests || []).map(t => `${t.Test_Name}:${t.Result_Value}`).join("; "),
       (r.Medicines || []).map(m => `${m.Medicine_Name} (${m.Quantity})`).join("; "),
-      r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "",
-      r.Last_Visit_Date ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB") : ""
+      r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "—",
+      r.Last_Visit_Date ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB") : "—"
     ]),
-    styles: { fontSize: 8 },
+    styles: { fontSize: 6 },
     headStyles: { fillColor: [33, 37, 41] }
   });
 
@@ -275,8 +317,26 @@ export default function EmployeeReports() {
             <table className="table align-middle mb-0">
               <thead style={{ backgroundColor: "#F3F7FF" }}>
                 <tr style={{ color: "#374151", fontSize: 14 }}>
-                  {["Role","Name","District","Age","Communicable","Non-Communicable","Tests","Medicines","First Visit","Last Visit","Details"]
-                    .map(h => <th key={h}>{h}</th>)}
+                  {[
+                    "Role",
+                    "ABS Number",
+                    "Name",
+                    "Gender",
+                    "District",
+                    "State",
+                    "Age",
+                    "Blood Group",
+                    "Phone Number",
+                    "Height",
+                    "Weight",
+                    "Communicable",
+                    "Non-Communicable",
+                    "Tests",
+                    "Medicines",
+                    "First Visit",
+                    "Last Visit",
+                    "Details"
+                  ].map(h => <th key={h}>{h}</th>)}
                 </tr>
               </thead>
   
@@ -288,13 +348,20 @@ export default function EmployeeReports() {
                   return (
                     <tr key={idx} style={{ borderBottom: "1px solid #E5E7EB" }}>
                       <td>{r.Role}</td>
+                      <td>{r.ABS_NO || "—"}</td>
                       <td style={{ fontWeight: 600 }}>{r.Name}</td>
+                      <td>{r.Gender || "—"}</td>
                       <td>{r.District || "—"}</td>
+                      <td>{r.State || "—"}</td>
                       <td>{r.Age ?? "—"}</td>
-  
+                      <td>{r.Blood_Group || "—"}</td>
+                      <td>{r.Phone_No || "—"}</td>
+                      <td>{r.Height || "—"}</td>
+                      <td>{r.Weight || "—"}</td>
+
                       <td>{expanded ? r.Communicable_Diseases?.join(", ") : r.Communicable_Diseases?.[0] || "—"}</td>
                       <td>{expanded ? r.NonCommunicable_Diseases?.join(", ") : r.NonCommunicable_Diseases?.[0] || "—"}</td>
-  
+
                       <td>
                         {expanded
                           ? r.Tests?.map((t, k) => (
@@ -309,7 +376,7 @@ export default function EmployeeReports() {
                           ? `${r.Tests[0].Test_Name}: ${r.Tests[0].Result_Value} ...`
                           : "—"}
                       </td>
-  
+
                       <td>
                         {expanded
                           ? r.Medicines?.map((m, k) => (
@@ -319,10 +386,10 @@ export default function EmployeeReports() {
                           ? `${r.Medicines[0].Medicine_Name} (${r.Medicines[0].Quantity}) ...`
                           : "—"}
                       </td>
-  
+
                       <td>{r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "—"}</td>
                       <td>{r.Last_Visit_Date ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB") : "—"}</td>
-  
+
                       <td>
                         <button
                           className="btn btn-sm"

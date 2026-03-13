@@ -455,7 +455,7 @@ instituteApp.get("/employees-detailed", verifyToken,
   allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"), async (req, res) => {
   try {
     const employees = await Employee.find({})
-      .select('ABS_NO Name Email Designation DOB Phone_No Height Weight Address Blood_Group Photo Medical_History')
+      .select('ABS_NO Name Email Designation DOB Gender Phone_No Height Weight Address Blood_Group Photo Medical_History')
       .select('-password') // Ensure password is not included
       .sort({ Name: 1 })
       .lean();
@@ -571,6 +571,46 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
           as: "prescriptions"
         }
       },
+      {
+        $lookup: {
+          from: "medicalactions",
+          let: { empId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$employee_id", "$$empId"] },
+                    { $eq: ["$action_type", "DOCTOR_PRESCRIPTION"] },
+                    { $eq: [{ $ifNull: ["$data.IsFamilyMember", false] }, false] }
+                  ]
+                }
+              }
+            },
+            {
+              $lookup: {
+                from: "dailyvisits",
+                localField: "visit_id",
+                foreignField: "_id",
+                as: "visit"
+              }
+            },
+            {
+              $addFields: {
+                visit: { $ifNull: [{ $arrayElemAt: ["$visit", 0] }, null] }
+              }
+            },
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$visit.Institute_ID", instituteObjectId]
+                }
+              }
+            }
+          ],
+          as: "doctorPrescriptions"
+        }
+      },
 
       /* 🔹 Diagnosis Records */
       {
@@ -622,6 +662,7 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
           $expr: {
             $or: [
               { $gt: [{ $size: "$prescriptions" }, 0] },
+              { $gt: [{ $size: "$doctorPrescriptions" }, 0] },
               { $gt: [{ $size: "$diagnosis" }, 0] },
               { $gt: [{ $size: "$diseases" }, 0] }
             ]
@@ -652,16 +693,19 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
       {
         $project: {
           Role: { $literal: "Employee" },
-          Name: "$Name",
+          Name: { $ifNull: ["$Name", "N/A"] },
+          ABS_NO: { $ifNull: ["$ABS_NO", "N/A"] },
           Linked_Employee_Name: null,
 
-          District: "$Address.District",
+          District: { $ifNull: ["$Address.District", "N/A"] },
+          State: { $ifNull: ["$Address.State", "N/A"] },
 
           Age: 1,
-          Gender: "$Gender",
-          Blood_Group: "$Blood_Group",
-          Height: "$Height",
-          Weight: "$Weight",
+          Gender: { $ifNull: ["$Gender", "N/A"] },
+          Blood_Group: { $ifNull: ["$Blood_Group", "N/A"] },
+          Phone_No: { $ifNull: ["$Phone_No", "N/A"] },
+          Height: { $ifNull: ["$Height", "N/A"] },
+          Weight: { $ifNull: ["$Weight", "N/A"] },
 
           Communicable_Diseases: {
             $map: {
@@ -714,11 +758,36 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
           },
 
           Medicines: {
-            $reduce: {
-              input: "$prescriptions",
-              initialValue: [],
-              in: { $concatArrays: ["$$value", "$$this.Medicines"] }
-            }
+            $concatArrays: [
+              {
+                $reduce: {
+                  input: "$prescriptions",
+                  initialValue: [],
+                  in: { $concatArrays: ["$$value", "$$this.Medicines"] }
+                }
+              },
+              {
+                $reduce: {
+                  input: "$doctorPrescriptions",
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: { $ifNull: ["$$this.data.medicines", []] },
+                          as: "m",
+                          in: {
+                            Medicine_Name: "$$m.Medicine_Name",
+                            Quantity: { $ifNull: ["$$m.Quantity", 0] }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
           },
           First_Visit_Date: {
             $min: {
@@ -735,6 +804,13 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
                     input: "$prescriptions",
                     as: "p",
                     in: "$$p.Timestamp"
+                  }
+                },
+                {
+                  $map: {
+                    input: "$doctorPrescriptions",
+                    as: "dp",
+                    in: "$$dp.created_at"
                   }
                 }
               ]
@@ -756,6 +832,13 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
                     input: "$prescriptions",
                     as: "p",
                     in: "$$p.Timestamp"
+                  }
+                },
+                {
+                  $map: {
+                    input: "$doctorPrescriptions",
+                    as: "dp",
+                    in: "$$dp.created_at"
                   }
                 }
               ]
@@ -789,6 +872,66 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
             }
           ],
           as: "prescriptions"
+        }
+      },
+      {
+        $lookup: {
+          from: "medicalactions",
+          let: { empId: "$Employee", famId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$employee_id", "$$empId"] },
+                    { $eq: ["$action_type", "DOCTOR_PRESCRIPTION"] },
+                    { $eq: [{ $ifNull: ["$data.IsFamilyMember", false] }, true] },
+                    {
+                      $eq: [
+                        {
+                          $convert: {
+                            input: "$data.FamilyMember_ID",
+                            to: "string",
+                            onError: "",
+                            onNull: ""
+                          }
+                        },
+                        {
+                          $convert: {
+                            input: "$$famId",
+                            to: "string",
+                            onError: "",
+                            onNull: ""
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              $lookup: {
+                from: "dailyvisits",
+                localField: "visit_id",
+                foreignField: "_id",
+                as: "visit"
+              }
+            },
+            {
+              $addFields: {
+                visit: { $ifNull: [{ $arrayElemAt: ["$visit", 0] }, null] }
+              }
+            },
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$visit.Institute_ID", instituteObjectId]
+                }
+              }
+            }
+          ],
+          as: "doctorPrescriptions"
         }
       },
 
@@ -842,6 +985,7 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
           $expr: {
             $or: [
               { $gt: [{ $size: "$prescriptions" }, 0] },
+              { $gt: [{ $size: "$doctorPrescriptions" }, 0] },
               { $gt: [{ $size: "$diagnosis" }, 0] },
               { $gt: [{ $size: "$diseases" }, 0] }
             ]
@@ -858,7 +1002,11 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
           as: "emp"
         }
       },
-      { $unwind: "$emp" },
+      {
+        $addFields: {
+          emp: { $ifNull: [{ $arrayElemAt: ["$emp", 0] }, {}] }
+        }
+      },
 
       /* 🔹 Derived Fields */
       {
@@ -883,16 +1031,22 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
       {
         $project: {
           Role: { $literal: "Family" },
-          Name: "$Name",
-          Linked_Employee_Name: "$emp.Name",
-
-          District: "$emp.Address.District",
+          Name: { $ifNull: ["$Name", "N/A"] },
+          Linked_Employee_Name: { $ifNull: ["$emp.Name", "N/A"] },
+          ABS_NO: { $ifNull: ["$emp.ABS_NO", "N/A"] },
+          District: {
+            $ifNull: ["$Address.District", { $ifNull: ["$emp.Address.District", "N/A"] }]
+          },
+          State: {
+            $ifNull: ["$Address.State", { $ifNull: ["$emp.Address.State", "N/A"] }]
+          },
 
           Age: 1,
-          Gender: "$Gender",
-          Blood_Group: "$Blood_Group",
-          Height: "$Height",
-          Weight: "$Weight",
+          Gender: { $ifNull: ["$Gender", "N/A"] },
+          Blood_Group: { $ifNull: ["$Blood_Group", "N/A"] },
+          Phone_No: { $ifNull: ["$Phone_No", "N/A"] },
+          Height: { $ifNull: ["$Height", "N/A"] },
+          Weight: { $ifNull: ["$Weight", "N/A"] },
 
           Communicable_Diseases: {
             $map: {
@@ -945,11 +1099,36 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
           },
 
           Medicines: {
-            $reduce: {
-              input: "$prescriptions",
-              initialValue: [],
-              in: { $concatArrays: ["$$value", "$$this.Medicines"] }
-            }
+            $concatArrays: [
+              {
+                $reduce: {
+                  input: "$prescriptions",
+                  initialValue: [],
+                  in: { $concatArrays: ["$$value", "$$this.Medicines"] }
+                }
+              },
+              {
+                $reduce: {
+                  input: "$doctorPrescriptions",
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: { $ifNull: ["$$this.data.medicines", []] },
+                          as: "m",
+                          in: {
+                            Medicine_Name: "$$m.Medicine_Name",
+                            Quantity: { $ifNull: ["$$m.Quantity", 0] }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
           },
 
           First_Visit_Date: {
@@ -967,6 +1146,13 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
                     input: "$prescriptions",
                     as: "p",
                     in: "$$p.Timestamp"
+                  }
+                },
+                {
+                  $map: {
+                    input: "$doctorPrescriptions",
+                    as: "dp",
+                    in: "$$dp.created_at"
                   }
                 }
               ]
@@ -988,6 +1174,13 @@ instituteApp.get("/analytics/:instituteId",verifyToken,
                     input: "$prescriptions",
                     as: "p",
                     in: "$$p.Timestamp"
+                  }
+                },
+                {
+                  $map: {
+                    input: "$doctorPrescriptions",
+                    as: "dp",
+                    in: "$$dp.created_at"
                   }
                 }
               ]

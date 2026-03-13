@@ -412,8 +412,15 @@ adminApp.get("/analytics/all", async (req, res) => {
         $project: {
           Role: { $literal: "Employee" },
           Name: "$Name",
-          District: "$Address.District",
+          ABS_NO: { $ifNull: ["$ABS_NO", "N/A"] },
+          Gender: "$Gender",
+          District: { $ifNull: ["$Address.District", "N/A"] },
+          State: { $ifNull: ["$Address.State", "N/A"] },
           Age: 1,
+          Blood_Group: "$Blood_Group",
+          Phone_No: { $ifNull: ["$Phone_No", "N/A"] },
+          Height: { $ifNull: ["$Height", "N/A"] },
+          Weight: { $ifNull: ["$Weight", "N/A"] },
 
           Communicable_Diseases: {
             $map: {
@@ -501,7 +508,11 @@ adminApp.get("/analytics/all", async (req, res) => {
           as: "emp"
         }
       },
-      { $unwind: "$emp" },
+      {
+        $addFields: {
+          emp: { $ifNull: [{ $arrayElemAt: ["$emp", 0] }, {}] }
+        }
+      },
 
       {
         $addFields: {
@@ -519,8 +530,16 @@ adminApp.get("/analytics/all", async (req, res) => {
         $project: {
           Role: { $literal: "Family" },
           Name: "$Name",
-          District: "$emp.Address.District",
+          Linked_Employee_Name: { $ifNull: ["$emp.Name", "N/A"] },
+          ABS_NO: { $ifNull: ["$emp.ABS_NO", "N/A"] },
+          Gender: "$Gender",
+          District: { $ifNull: ["$emp.Address.District", "N/A"] },
+          State: { $ifNull: ["$emp.Address.State", "N/A"] },
           Age: 1,
+          Blood_Group: "$Blood_Group",
+          Phone_No: { $ifNull: ["$Phone_No", "N/A"] },
+          Height: { $ifNull: ["$Height", "N/A"] },
+          Weight: { $ifNull: ["$Weight", "N/A"] },
 
           Communicable_Diseases: {
             $map: {
