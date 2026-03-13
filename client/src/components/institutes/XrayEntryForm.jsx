@@ -41,6 +41,9 @@ const XrayEntryForm = () => {
     ],
     Xray_Notes: "",
   });
+  const [selectedReportFile, setSelectedReportFile] = useState(null);
+  const [uploadingReport, setUploadingReport] = useState(false);
+  const [selectedReportTargetIndex, setSelectedReportTargetIndex] = useState(0);
 
   useEffect(() => {
     const localInstituteId =
@@ -174,6 +177,44 @@ const fetchXrayTypes = async () => {
         "Error fetching past records:",
         err
       );
+    }
+  };
+
+  const handleReportFileChange = (e) => {
+    const f = e.target.files && e.target.files[0];
+    setSelectedReportFile(f || null);
+  };
+
+  const handleUploadXrayReport = async () => {
+    if (!selectedReportFile) return alert('Please choose a file to upload');
+    if (!formData.Employee_ID || !formData.Institute_ID) return alert('Select a patient first');
+
+    try {
+      setUploadingReport(true);
+      const fd = new FormData();
+      fd.append('report', selectedReportFile);
+      fd.append('Employee_ID', formData.Employee_ID);
+      fd.append('Institute_ID', formData.Institute_ID);
+      fd.append('IsFamilyMember', formData.IsFamilyMember);
+      fd.append('FamilyMember_ID', formData.FamilyMember_ID || '');
+        // include which xray (index) inside the record the file should attach to
+        fd.append('Xray_Index', String(selectedReportTargetIndex));
+
+      const token = localStorage.getItem('instituteToken');
+      await axios.post(
+        `http://localhost:${BACKEND_PORT_NO}/xray-api/upload`,
+        fd,
+        { headers: { Authorization: token ? `Bearer ${token}` : '' } }
+      );
+
+      alert('✅ X-ray report uploaded');
+      setSelectedReportFile(null);
+      await fetchPastRecords();
+    } catch (err) {
+      console.error('X-ray upload failed', err?.response?.data || err.message || err);
+      alert('❌ Upload failed');
+    } finally {
+      setUploadingReport(false);
     }
   };
 
@@ -518,6 +559,23 @@ const fetchXrayTypes = async () => {
                 )}
 
                 {/* X-ray Details */}
+                {/* Upload Report (adds report file to X-ray record) */}
+                <div className="mb-4">
+                  <label className="form-label fw-semibold">📎 Upload X-ray Report</label>
+                  <div className="d-flex gap-2 align-items-center">
+                    <input type="file" className="form-control" onChange={handleReportFileChange} />
+                    {formData.Xrays && formData.Xrays.length > 0 && (
+                      <select className="form-select" style={{ width: 220 }} value={selectedReportTargetIndex} onChange={(e) => setSelectedReportTargetIndex(parseInt(e.target.value, 10))}>
+                        {formData.Xrays.map((x, idx) => (
+                          <option key={idx} value={idx}>{`X-ray #${idx+1}: ${x.Xray_Type || x.Body_Part || 'X-ray'}`}</option>
+                        ))}
+                      </select>
+                    )}
+                    <button type="button" className="btn btn-primary" onClick={handleUploadXrayReport} disabled={uploadingReport}>
+                      {uploadingReport ? 'Uploading...' : 'Upload Report'}
+                    </button>
+                  </div>
+                </div>
                 <div className="mb-4">
                   <h6 className="fw-bold text-dark mb-3 border-bottom pb-2">
                     🩻 X-ray Details

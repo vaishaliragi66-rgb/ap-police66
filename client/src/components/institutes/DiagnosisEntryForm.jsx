@@ -18,6 +18,8 @@ const [selectedEmployee, setSelectedEmployee] = useState(null);
 const [pastRecords, setPastRecords] = useState([]);
 const [showHistory, setShowHistory] = useState(false);
 const [tokenNumber, setTokenNumber] = useState(null);
+const [selectedReportFile, setSelectedReportFile] = useState(null);
+const [uploadingReport, setUploadingReport] = useState(false);
 
 
   const [formData, setFormData] = useState({
@@ -345,6 +347,43 @@ const fetchPastRecords = async () => {
   }
 };
 
+const handleReportFileChange = (e) => {
+  const f = e.target.files && e.target.files[0];
+  setSelectedReportFile(f || null);
+};
+
+const handleUploadReport = async () => {
+  if (!selectedReportFile) return alert('Please choose a file to upload');
+  if (!formData.Employee_ID || !formData.Institute_ID) return alert('Select a patient first');
+
+  try {
+    setUploadingReport(true);
+    const fd = new FormData();
+    fd.append('report', selectedReportFile);
+    fd.append('Employee_ID', formData.Employee_ID);
+    fd.append('Institute_ID', formData.Institute_ID);
+    fd.append('IsFamilyMember', formData.IsFamilyMember);
+    fd.append('FamilyMember_ID', formData.FamilyMember_ID || '');
+
+    const token = localStorage.getItem('instituteToken');
+    const res = await axios.post(
+      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/upload`,
+      fd,
+      { headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'multipart/form-data' } }
+    );
+
+    alert('✅ Report uploaded');
+    setSelectedReportFile(null);
+    // refresh past records
+    await fetchPastRecords();
+  } catch (err) {
+    console.error('Upload failed', err?.response?.data || err.message || err);
+    alert('❌ Upload failed');
+  } finally {
+    setUploadingReport(false);
+  }
+};
+
 
 
 
@@ -422,6 +461,21 @@ const fetchPastRecords = async () => {
                       {record?.Diagnosis_Notes && (
                         <div className="mt-2 p-2 bg-light rounded small">
                           📝 Notes: {record.Diagnosis_Notes}
+                        </div>
+                      )}
+                      {record?.Reports && record.Reports.length > 0 && (
+                        <div className="mt-2">
+                          <strong>Uploaded Reports:</strong>
+                          <ul className="list-unstyled mt-2">
+                            {record.Reports.map((r, idx) => (
+                              <li key={idx} className="mb-1">
+                                <a href={`http://localhost:${BACKEND_PORT_NO}${r.url}`} target="_blank" rel="noreferrer" className="me-2">
+                                  {r.originalname || r.filename}
+                                </a>
+                                <a href={`http://localhost:${BACKEND_PORT_NO}${r.url}`} download className="btn btn-sm btn-outline-secondary">Download</a>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       )}
                     </div>
@@ -684,6 +738,17 @@ const fetchPastRecords = async () => {
                     value={formData.Diagnosis_Notes}
                     onChange={e => setFormData(prev => ({ ...prev, Diagnosis_Notes: e.target.value }))}
                   />
+                </div>
+
+                {/* Upload Report (adds report file to diagnosis record) */}
+                <div className="mb-4">
+                  <label className="form-label fw-semibold">📎 Upload Report</label>
+                  <div className="d-flex gap-2">
+                    <input type="file" className="form-control" onChange={handleReportFileChange} />
+                    <button type="button" className="btn btn-primary" onClick={handleUploadReport} disabled={uploadingReport}>
+                      {uploadingReport ? 'Uploading...' : 'Upload Report'}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Submit Button */}

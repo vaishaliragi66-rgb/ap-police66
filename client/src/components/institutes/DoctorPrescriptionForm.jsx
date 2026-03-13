@@ -1329,6 +1329,21 @@ if (validXrays.length === 0) {
                     </div>
                   </div>
                 )}
+
+                {/* Uploaded Reports */}
+                {selectedDiagnosisReport?.Reports && selectedDiagnosisReport.Reports.length > 0 && (
+                  <div className="mt-3">
+                    <h6>Uploaded Reports</h6>
+                    <ul className="list-unstyled">
+                      {selectedDiagnosisReport.Reports.map((r, i) => (
+                        <li key={i} className="mb-2">
+                          <a href={`http://localhost:${BACKEND_PORT}/${r.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r.originalname || r.filename}</a>
+                          <a href={`http://localhost:${BACKEND_PORT}/${r.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <div className="modal-footer">

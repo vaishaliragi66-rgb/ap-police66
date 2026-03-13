@@ -10,6 +10,54 @@ const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
 const MedicalAction = require("../models/medical_action");
 const DailyVisit = require("../models/daily_visit");
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Admin helper: move a record-level report into a specific Xray subdocument.
+xrayApp.post('/migrate-report', async (req, res) => {
+  try {
+    const { Record_ID, filename, xrayIndex } = req.body;
+    if (!Record_ID || !filename) return res.status(400).json({ message: 'Record_ID and filename required' });
+
+    const record = await XrayRecord.findById(Record_ID);
+    if (!record) return res.status(404).json({ message: 'Record not found' });
+
+    const report = (record.Reports || []).find(r => r.filename === filename || r.originalname === filename || String(r._id) === String(filename));
+    if (!report) return res.status(404).json({ message: 'Report not found on record-level', availableReports: (record.Reports || []).map(r => r.filename) });
+
+    let target = null;
+    if (typeof xrayIndex !== 'undefined') {
+      const idx = parseInt(xrayIndex, 10);
+      if (isNaN(idx) || idx < 0 || idx >= (record.Xrays || []).length) return res.status(400).json({ message: 'Invalid xrayIndex' });
+      target = idx;
+    } else {
+      const uploadedAt = report.uploadedAt ? new Date(report.uploadedAt) : null;
+      if (!uploadedAt) return res.status(400).json({ message: 'Report has no uploadedAt; provide xrayIndex' });
+      let best = { idx: -1, diff: Number.POSITIVE_INFINITY };
+      (record.Xrays || []).forEach((x, idx) => {
+        const t = x.Timestamp ? new Date(x.Timestamp) : null;
+        if (!t) return;
+        const diff = Math.abs(t - uploadedAt);
+        if (diff < best.diff) best = { idx, diff };
+      });
+      if (best.idx === -1) return res.status(400).json({ message: 'No xray timestamps found; provide xrayIndex' });
+      target = best.idx;
+    }
+
+    // remove from record-level
+    record.Reports = (record.Reports || []).filter(r => !(r.filename === report.filename && String(r._id) === String(report._id)));
+
+    if (!record.Xrays[target].Reports) record.Xrays[target].Reports = [];
+    record.Xrays[target].Reports.push(report);
+
+    await record.save();
+    return res.json({ message: 'Report moved', recordId: record._id, targetIndex: target });
+  } catch (err) {
+    console.error('migrate-report error', err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
 
 // ✅ GET master test list
 xrayApp.get("/tests", async (req, res) => {
@@ -19,6 +67,143 @@ xrayApp.get("/tests", async (req, res) => {
   } catch (err) {
     console.error("Error fetching tests:", err);
     res.status(500).json({ error: "Failed to fetch tests" });
+  }
+});
+
+// ---------- Upload X-ray report endpoint ----------
+// Stores uploaded files under uploads/xray_reports and records metadata in XrayRecord.Reports
+const xrayReportsDir = path.join(__dirname, '..', 'uploads', 'xray_reports');
+if (!fs.existsSync(xrayReportsDir)) fs.mkdirSync(xrayReportsDir, { recursive: true });
+
+const xrayStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, xrayReportsDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname) || '';
+    const name = 'xray-' + Date.now() + '-' + Math.round(Math.random() * 1e9) + ext;
+    cb(null, name);
+  }
+});
+
+const xrayUpload = multer({ storage: xrayStorage, limits: { fileSize: 20 * 1024 * 1024 } });
+
+xrayApp.post('/upload', verifyToken, allowInstituteRoles('xray'), xrayUpload.single('report'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+    const { Employee_ID, Institute_ID, IsFamilyMember, FamilyMember_ID } = req.body;
+    if (!Institute_ID || !Employee_ID) {
+      fs.unlinkSync(file.path);
+      return res.status(400).json({ message: 'Institute_ID and Employee_ID are required' });
+    }
+
+    const recordQuery = { Institute: Institute_ID, Employee: Employee_ID };
+    if (IsFamilyMember === 'true' || IsFamilyMember === true) {
+      recordQuery.IsFamilyMember = true;
+      recordQuery.FamilyMember = FamilyMember_ID || null;
+    } else {
+      recordQuery.IsFamilyMember = false;
+    }
+
+    // Allow client to target a specific X-ray record by id. Otherwise pick the most
+    // recent matching record (createdAt desc) to avoid attaching to the wrong older record.
+    const { Record_ID } = req.body;
+    let record = null;
+    if (Record_ID && mongoose.Types.ObjectId.isValid(Record_ID)) {
+      record = await XrayRecord.findById(Record_ID);
+    }
+    if (!record) {
+      record = await XrayRecord.findOne(recordQuery).sort({ createdAt: -1 });
+    }
+    if (!record) {
+      record = new XrayRecord({
+        Institute: Institute_ID,
+        Employee: Employee_ID,
+        IsFamilyMember: recordQuery.IsFamilyMember || false,
+        FamilyMember: recordQuery.FamilyMember || null,
+        Xrays: [],
+        Xray_Notes: ''
+      });
+    }
+
+    const fileMeta = {
+      filename: file.filename,
+      originalname: file.originalname,
+      url: `/uploads/xray_reports/${file.filename}`,
+      uploadedBy: req.user?.instituteId || req.user?.id || 'unknown',
+      uploadedAt: new Date()
+    };
+    // Support attaching report to a specific X-ray within the record.
+    // Client may send one of: XrayEntryId, Xray_Index, Xray_Timestamp
+    const { XrayEntryId, Xray_Index, Xray_Timestamp } = req.body;
+
+    let attached = false;
+    if (XrayEntryId) {
+      const xr = record.Xrays && record.Xrays.id ? record.Xrays.id(XrayEntryId) : null;
+      if (xr) {
+        xr.Reports = xr.Reports || [];
+        xr.Reports.push(fileMeta);
+        attached = true;
+      }
+    }
+
+    if (!attached && typeof Xray_Index !== 'undefined') {
+      const idx = parseInt(Xray_Index, 10);
+      if (!isNaN(idx) && Array.isArray(record.Xrays) && record.Xrays[idx]) {
+        record.Xrays[idx].Reports = record.Xrays[idx].Reports || [];
+        record.Xrays[idx].Reports.push(fileMeta);
+        attached = true;
+      }
+    }
+
+    if (!attached && Xray_Timestamp) {
+      const found = (record.Xrays || []).find(x => {
+        if (!x.Timestamp) return false;
+        try {
+          return new Date(x.Timestamp).toISOString() === new Date(Xray_Timestamp).toISOString();
+        } catch { return false; }
+      });
+      if (found) {
+        found.Reports = found.Reports || [];
+        found.Reports.push(fileMeta);
+        attached = true;
+      }
+    }
+
+    if (!attached) {
+      // Fallback to record-level Reports (legacy behavior)
+      record.Reports = record.Reports || [];
+      record.Reports.push(fileMeta);
+    }
+
+    await record.save();
+
+    return res.status(201).json({ message: 'X-ray report uploaded', report: fileMeta, recordId: record._id, attachedToXray: attached });
+  } catch (err) {
+    console.error('X-ray upload error:', err);
+    return res.status(500).json({ message: 'Upload failed', error: err.message });
+  }
+});
+// ---------- DEBUG: Unauthenticated upload (for troubleshooting only) ----------
+// Note: temporary endpoint to verify multer/storage behavior without auth.
+xrayApp.post('/upload-debug', xrayUpload.single('report'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+    const fileMeta = {
+      filename: file.filename,
+      originalname: file.originalname,
+      url: `/uploads/xray_reports/${file.filename}`,
+      uploadedAt: new Date()
+    };
+
+    return res.status(201).json({ message: 'Debug upload saved', file: fileMeta });
+  } catch (err) {
+    console.error('X-ray debug upload error:', err);
+    return res.status(500).json({ message: 'Debug upload failed', error: err.message });
   }
 });
 // GET all X-ray types

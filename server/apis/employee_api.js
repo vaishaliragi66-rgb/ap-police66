@@ -418,7 +418,7 @@ employeeApp.get("/health-report", expressAsyncHandler(async (req, res) => {
         IsFamilyMember: false,
       })
         .populate("Tests.Test_ID", "Test_Name")
-        .select("Tests Diagnosis_Notes Timestamp")
+        .select("Tests Diagnosis_Notes Timestamp Reports")
         .sort({ Timestamp: -1 });
 
       /* =====================================================
@@ -442,7 +442,7 @@ employeeApp.get("/health-report", expressAsyncHandler(async (req, res) => {
         IsFamilyMember: true,
       })
         .populate("FamilyMember", "Name Relationship")
-        .select("Tests FamilyMember Timestamp Diagnosis_Notes")
+        .select("Tests FamilyMember Timestamp Diagnosis_Notes Reports")
         .sort({ Timestamp: -1 });
 
         console.log("Health report generated for employee:", employee.Name);

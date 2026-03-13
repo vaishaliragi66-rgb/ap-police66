@@ -2,6 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const diagnosisApp = express.Router();
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const DiagnosisTest = require("../models/diagnostics_test");
 const DiagnosisRecord = require("../models/diagnostics_record");
 const Institute = require("../models/master_institute");
@@ -315,4 +318,138 @@ diagnosisApp.get("/records/:personId", async (req, res) => {
   }
 });
 
+// ---------- Upload report endpoint ----------
+// Stores uploaded report files under uploads/diagnosis_reports and records metadata in DiagnosisRecord.Reports
+const reportsDir = path.join(__dirname, '..', 'uploads', 'diagnosis_reports');
+if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
+
+const reportStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, reportsDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname) || '';
+    const name = 'diag-' + Date.now() + '-' + Math.round(Math.random() * 1e9) + ext;
+    cb(null, name);
+  }
+});
+
+const reportUpload = multer({
+  storage: reportStorage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+
+diagnosisApp.post('/upload', verifyToken, allowInstituteRoles('diagnosis'), reportUpload.single('report'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+    const { Employee_ID, Institute_ID, IsFamilyMember, FamilyMember_ID } = req.body;
+
+    if (!Institute_ID || !Employee_ID) {
+      // remove uploaded file
+      fs.unlinkSync(file.path);
+      return res.status(400).json({ message: 'Institute_ID and Employee_ID are required' });
+    }
+
+    const recordQuery = { Institute: Institute_ID, Employee: Employee_ID };
+    if (IsFamilyMember === 'true' || IsFamilyMember === true) {
+      recordQuery.IsFamilyMember = true;
+      recordQuery.FamilyMember = FamilyMember_ID || null;
+    } else {
+      recordQuery.IsFamilyMember = false;
+    }
+
+    let record = await DiagnosisRecord.findOne(recordQuery);
+    if (!record) {
+      record = new DiagnosisRecord({
+        Institute: Institute_ID,
+        Employee: Employee_ID,
+        Visit: null,
+        IsFamilyMember: recordQuery.IsFamilyMember || false,
+        FamilyMember: recordQuery.FamilyMember || null,
+        Tests: [],
+        Diagnosis_Notes: ''
+      });
+    }
+
+    const fileMeta = {
+      filename: file.filename,
+      originalname: file.originalname,
+      url: `/uploads/diagnosis_reports/${file.filename}`,
+      uploadedBy: req.user?.instituteId || req.user?.id || 'unknown',
+      uploadedAt: new Date()
+    };
+
+    record.Reports = record.Reports || [];
+    record.Reports.push(fileMeta);
+    await record.save();
+
+    return res.status(201).json({ message: 'Report uploaded', report: fileMeta, recordId: record._id });
+  } catch (err) {
+    console.error('Upload error:', err);
+    return res.status(500).json({ message: 'Upload failed', error: err.message });
+  }
+});
+
 module.exports = diagnosisApp;
+
+// --------- Upload diagnosis report endpoint ----------
+// Note: placed after module.exports to avoid hoisting issues in some setups
+
+// Fetch single diagnosis record by id (returns populated record including Reports)
+diagnosisApp.get('/record/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid record id' });
+    }
+
+    const record = await DiagnosisRecord.findById(id)
+      .populate('Institute', 'Institute_Name')
+      .populate('Employee', 'Name ABS_NO')
+      .populate('FamilyMember', 'Name Relationship')
+      .populate('Tests.Test_ID')
+      .exec();
+
+    if (!record) return res.status(404).json({ message: 'Record not found' });
+
+    res.json(record.toObject());
+  } catch (err) {
+    console.error('Fetch record error:', err);
+    res.status(500).json({ message: 'Failed to fetch record', error: err.message });
+  }
+});
+
+// Debug: list diagnosis records for an employee that have uploaded Reports
+diagnosisApp.get('/records-with-reports/:employeeId', async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const { isFamily, familyId } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(employeeId)) {
+      return res.status(400).json({ message: 'Invalid employee id' });
+    }
+
+    const filter = { Employee: employeeId };
+    if (isFamily === 'true' && familyId) {
+      filter.IsFamilyMember = true;
+      filter.FamilyMember = familyId;
+    } else if (isFamily === 'false') {
+      filter.IsFamilyMember = false;
+    }
+
+    const records = await DiagnosisRecord.find(filter)
+      .select('Tests Diagnosis_Notes Reports Institute IsFamilyMember FamilyMember createdAt updatedAt')
+      .populate('Institute', 'Institute_Name')
+      .populate('FamilyMember', 'Name Relationship')
+      .sort({ updatedAt: -1, createdAt: -1 });
+
+    const withReports = (records || []).filter(r => Array.isArray(r.Reports) && r.Reports.length > 0).map(r => r.toObject());
+
+    res.json({ count: withReports.length, records: withReports });
+  } catch (err) {
+    console.error('Records with reports error:', err);
+    res.status(500).json({ message: 'Failed to fetch records with reports', error: err.message });
+  }
+});
