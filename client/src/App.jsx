@@ -44,6 +44,7 @@ import XrayEntryForm from "./components/institutes/XrayEntryForm";
 import XrayReport from "./components/employee/XrayReport";
 import HealthSummary from "./components/institutes/HealthSummary";
 import AddPasswords from "./components/institutes/AddPasswords ";
+import ForgotPassword from "./components/auth/ForgotPassword";
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -278,8 +279,20 @@ function App() {
         },{
           path:"/admin/ai-insights",
           element:<AIInsights2/>
-        },{path:"/institutes/health-summary" ,
-          element:<HealthSummary />}
+        },        {path:"/institutes/health-summary" ,
+          element:<HealthSummary />},
+        {
+          path: "/admin/forgot-password",
+          element: <ForgotPassword />
+        },
+        {
+          path: "/employee/forgot-password",
+          element: <ForgotPassword />
+        },
+        {
+          path: "/institutes/forgot-password",
+          element: <ForgotPassword />
+        }
 
       ]
     }

@@ -191,6 +191,23 @@ const InstituteLogin = () => {
             />
           </div>
 
+          {/* Forgot Password — only for institute role, not for doctor/pharmacist/etc. */}
+          {formData.role === "institute" && (
+            <div className="text-end mb-3" style={{ marginTop: "-8px" }}>
+              <Link
+                to="/institutes/forgot-password"
+                style={{
+                  fontSize: "13px",
+                  color: "#4A70A9",
+                  textDecoration: "none",
+                  fontWeight: 500,
+                }}
+              >
+                Forgot Password?
+              </Link>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}

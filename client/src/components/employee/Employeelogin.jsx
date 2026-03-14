@@ -180,6 +180,21 @@ const Employeelogin = () => {
               />
             </div>
 
+            {/* Forgot Password */}
+            <div className="text-end mb-3" style={{ marginTop: "-8px" }}>
+              <Link
+                to="/employee/forgot-password"
+                style={{
+                  fontSize: "13px",
+                  color: "#4A70A9",
+                  textDecoration: "none",
+                  fontWeight: 500,
+                }}
+              >
+                Forgot Password?
+              </Link>
+            </div>
+
             {/* Button */}
             <button
               type="submit"
