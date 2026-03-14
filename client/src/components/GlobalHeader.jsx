@@ -12,17 +12,26 @@ function GlobalHeader() {
         <div className="w-10 h-10 rounded-full bg-[#4A70A9] text-white flex items-center justify-center font-semibold shadow-sm">
           AP
         </div>
+
         <div>
-          <h1 className="text-base md:text-2xl font-semibold tracking-tight mb-0">
-            AP Police Medical Inventory System
+          {/* Main Heading */}
+          <h1 className="text-lg md:text-2xl font-bold tracking-tight mb-0">
+            APP-MOHAN
           </h1>
+
+          {/* Increased size */}
+          <p className="text-sm md:text-base text-[#6B7280] mb-0">
+            Andhra Pradesh Police Management of Online Hospital Analytics Network
+          </p>
+
           <p className="text-xs text-[#6B7280] mb-0">
             Department of Health and Welfare
           </p>
         </div>
       </div>
+
       <span className="text-sm text-[#6B7280] hidden md:inline">
-       SARCPL
+        SARCPL
       </span>
     </header>
   );
