@@ -5,13 +5,14 @@ const Groq = require('groq-sdk');
 const { schemaDefinitions } = require('../utils/schemaExtractor');
 const expressAsyncHandler = require("express-async-handler");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
-// Initialize Groq (works with or without API key)
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || undefined
-});
-
-console.log('🤖 Using Groq AI');
-console.log('🔑 API Key:', process.env.GROQ_API_KEY ? 'Provided ✅' : 'Using free tier ✅');
+// Lazy-initialize Groq only when API key is available
+let groq = null;
+if (process.env.GROQ_API_KEY) {
+  groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  console.log('🤖 Groq AI initialized ✅');
+} else {
+  console.warn('⚠️  GROQ_API_KEY not set — AI query endpoints will be disabled');
+}
 
 // Validate query to ensure READ-ONLY operations
 function validateQuery(query) {

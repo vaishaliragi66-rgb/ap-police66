@@ -36,8 +36,10 @@ const aiQueryApp = require('./apis/ai_query_api');
 const xrayApp = require("./apis/xray_api");
 const healthSummaryRoutes = require("./apis/healthSummary");
 const instituteAuth = require("./apis/instituteAuth");
+const passwordResetApp = require("./apis/passwordReset");
 
 app.use("/institute-auth", instituteAuth.router);
+app.use("/auth", passwordResetApp);
 app.use("/institute-api", healthSummaryRoutes);
 app.use("/ai-api", aiQueryApp);
 app.use("/doctor-prescription-api", doctorPrescriptionApi);
