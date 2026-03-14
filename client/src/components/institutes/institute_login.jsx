@@ -152,7 +152,7 @@ const InstituteLogin = () => {
               onChange={handleChange}
               required
             >
-              <option value="institute">Institute</option>
+              <option value="institute">Admin</option>
               <option value="doctor">Doctor</option>
               <option value="pharmacist">Pharmacist</option>
               <option value="diagnosis">Diagnosis</option>

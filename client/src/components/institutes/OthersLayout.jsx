@@ -30,7 +30,8 @@ const OthersLayout = () => {
     { label: "Main Store", path: "/institutions/main-store", icon: <FaWarehouse /> },
     { label: "Substore", path: "/institutes/inventory", icon: <FaBoxOpen /> },
     { label: "AI Insights", path: "/institutes/ai-insights", icon: <FaRobot /> },
-    { label: "Analytics", path: "/institutes/analytics", icon: <FaRobot />}
+    { label: "Analytics", path: "/institutes/analytics", icon: <FaRobot />},
+    { label: "Disease Analytics", path: "/institutes/disease-analytics", icon: <FaRobot />}
   ];
 
   return (

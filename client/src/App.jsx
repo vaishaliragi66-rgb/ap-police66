@@ -45,6 +45,10 @@ import XrayReport from "./components/employee/XrayReport";
 import HealthSummary from "./components/institutes/HealthSummary";
 import AddPasswords from "./components/institutes/AddPasswords ";
 import ForgotPassword from "./components/auth/ForgotPassword";
+import DiseaseAnalyticsHome from "./components/institutes/DiseaseAnalyticsHome";
+import DiseaseAnalyticsTable from "./components/institutes/DiseaseAnalyticsTable";
+import DiseaseAnalyticsDetails from "./components/institutes/DiseaseAnalyticsDetails";
+import RiskHotspots from "./components/institutes/RiskHotspots";
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -70,7 +74,7 @@ function AppShell() {
     path.startsWith("/employee/family/") ||
     path === "/institutions/prescriptions" ||
     path === "/institutes/visit-register" ||
-    path === "/institutions/xray-entry";
+    path === "/institutions/xray-entry"; 
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -198,7 +202,10 @@ function App() {
             {
               path: "/institutes/analytics",
               element: <InstituteAnalytics/>
-
+            },
+            {
+              path: "/institutes/disease-analytics",
+              element: <DiseaseAnalyticsHome />
             }
           ]
         },
@@ -207,10 +214,21 @@ function App() {
           element:<VisitRegister/>
         },
         {
-              path: "/institutes/add-password",
-              element: <AddPasswords/>
-
-            },
+          path: "/institutes/add-password",
+          element: <AddPasswords/>
+        },
+        {
+          path:"/institutes/disease-analytics/:type",
+          element:<DiseaseAnalyticsTable/>
+        },
+        { 
+          path:"/institutes/disease-analytics/:type/:value",
+          element:<DiseaseAnalyticsDetails/>
+        },
+        {
+          path:"/institutes/disease-analytics/risk-hotspots",
+          element:<RiskHotspots/>
+        },
       
         {
           path:"/employee-register",
