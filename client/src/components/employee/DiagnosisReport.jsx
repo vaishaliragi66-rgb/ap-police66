@@ -9,7 +9,7 @@ const DiagnosisReport = () => {
   const [reports, setReports] = useState([]);
   const navigate = useNavigate();
   console.log("EmployeeObjectId from localStorage:", localStorage.getItem("employeeObjectId"));
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
   const employeeObjectId = localStorage.getItem("employeeObjectId")
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -20,7 +20,7 @@ useEffect(() => {
   if (!employeeObjectId) return;
 
   axios
-    .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/records/${employeeObjectId}`)
+    .get(`${BACKEND_API}/diagnosis-api/records/${employeeObjectId}`)
     .then(res => setReports(res.data || []))
     .catch(err => {
       if (err.response?.status === 404) {
@@ -329,7 +329,7 @@ return (
 
                       <td>{formatDate(report)}</td>
 
-                      <td>
+                      
                         <td>
                           <div className="d-flex gap-2">
 
@@ -368,8 +368,6 @@ return (
 
                           </div>
                         </td>
-
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -453,7 +451,7 @@ return (
                         reports.map((r, ri) => (
                           <a
                             key={ri}
-                            href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                            href={`${BACKEND_API}${r.url}`}
                             target="_blank"
                             rel="noreferrer"
                             className="btn btn-sm btn-outline-primary me-1"

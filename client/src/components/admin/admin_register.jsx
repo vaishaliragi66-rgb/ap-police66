@@ -22,7 +22,7 @@ const AdminRegister = () => {
   const [passwordStrength, setPasswordStrength] = useState("");
   const [passwordMatch, setPasswordMatch] = useState(true);
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -138,7 +138,7 @@ const AdminRegister = () => {
       console.log("Submitting admin registration...");
 
       const response = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/admin-api/register`,
+        `${BACKEND_API}/admin-api/register`,
         adminData,
         {
           headers: {

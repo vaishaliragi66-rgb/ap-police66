@@ -6,7 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const PrescriptionReport = () => {
   const [prescriptions, setPrescriptions] = useState([]);
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || "6100";
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
   const employeeId = localStorage.getItem("employeeId");
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -18,7 +18,7 @@ const PrescriptionReport = () => {
   const fetchPrescriptions = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/prescription-api/employee/${employeeId}`
+        `${BACKEND_API}/prescription-api/employee/${employeeId}`
       );
       setPrescriptions(res.data || []);
     } catch (err) {

@@ -12,6 +12,8 @@ import {
 
 export default function AgeAnalyticsDetails() {
 
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
+
   const { ageRange } = useParams();
 
   const [diseaseData, setDiseaseData] = useState([]);
@@ -20,7 +22,7 @@ export default function AgeAnalyticsDetails() {
 
   useEffect(() => {
 
-    fetch(`http://localhost:6100/admin-analytics/age-details/${ageRange}`)
+    fetch(`${BACKEND_API}/admin-analytics/age-details/${ageRange}`)
       .then(res => res.json())
       .then(data => {
 

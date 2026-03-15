@@ -32,7 +32,7 @@ const daysFromToday = (value) => {
 };
 
 function InstituteInventory() {
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
   const [inventory, setInventory] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -64,7 +64,7 @@ function InstituteInventory() {
 
         // Fetch only sub store data (inventory)
         const res = await axios.get(
-          `http://localhost:${BACKEND_PORT_NO}/medicine-api/substore/${instituteId}`
+          `${BACKEND_API}/medicine-api/substore/${instituteId}`
         );
 
         setInventory(res.data || []);
@@ -77,7 +77,7 @@ function InstituteInventory() {
     };
 
     fetchInstituteAndInventory();
-  }, [BACKEND_PORT_NO]);
+  }, [BACKEND_API]);
 
   /* ---------- CHECK IF ANY FILTER IS ACTIVE ---------- */
   const hasActiveFilters = () => {

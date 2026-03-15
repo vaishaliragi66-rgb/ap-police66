@@ -29,7 +29,7 @@ const DiagnosisEntryForm = () => {
     Diagnosis_Notes: ""
   });
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || "6100";
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   const formatDateDMY = (dateValue) => {
   if (!dateValue) return "—";
@@ -47,7 +47,7 @@ const DiagnosisEntryForm = () => {
 const fetchDoctorDiagnosis = async (visitId) => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/visit/${visitId}/doctor`
+      `${BACKEND_API}/diagnosis-api/visit/${visitId}/doctor`
     );
 
     setDoctorDiagnosis(res.data?.tests || []);
@@ -112,7 +112,7 @@ useEffect(() => {
 
   const fetchInstituteName = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/institute-api/institution/${id}`);
+      const res = await axios.get(`${BACKEND_API}/institute-api/institution/${id}`);
       setInstituteName(res.data?.Institute_Name || "");
     } catch (err) {
       console.error("Error fetching institute name:", err);
@@ -124,7 +124,7 @@ useEffect(() => {
 const fetchTests = async () => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/tests`
+      `${BACKEND_API}/diagnosis-api/tests`
     );
 
     setTestsMaster(res.data || []);
@@ -218,7 +218,7 @@ const addTest = () =>
   try {
 
     await axios.post(
-      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/add`,
+      `${BACKEND_API}/diagnosis-api/add`,
       fd,
       {
         headers: {
@@ -288,7 +288,7 @@ const filteredDoctorDiagnosis = (doctorDiagnosis || []).filter(d => {
 
 const fetchVisitDetails = async (visitId) => {
   const res = await axios.get(
-    `http://localhost:${BACKEND_PORT_NO}/visit-api/visit/${visitId}`
+    `${BACKEND_API}/visit-api/visit/${visitId}`
   );
   return res.data;
 };
@@ -297,7 +297,7 @@ const fetchPastRecords = async () => {
 
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
+      `${BACKEND_API}/diagnosis-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
     );
     console.log("Diagnosis Records:", res.data); 
 
@@ -387,7 +387,7 @@ const fetchPastRecords = async () => {
                                   {reports.map((r, ri) => (
                                     <a
                                       key={ri}
-                                      href={`http://localhost:${BACKEND_PORT_NO}${r.url}`}
+                                      href={`${BACKEND_API}${r.url}`}
                                       target="_blank"
                                       rel="noreferrer"
                                       className="btn btn-sm btn-outline-primary me-2"

@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const FamilyMemberRegistration = () => {
   const employeeId = localStorage.getItem("employeeId");
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   const [formData, setFormData] = useState({
     Name: "",
@@ -53,7 +53,7 @@ const FamilyMemberRegistration = () => {
       };
 
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/family-api/register`,
+        `${BACKEND_API}/family-api/register`,
         payload
       );
 

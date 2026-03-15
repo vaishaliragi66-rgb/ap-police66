@@ -7,6 +7,7 @@ const Diseases = () => {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [instituteName, setInstituteName] = useState("");
+  
 
   // Predefined disease lists by category
   const communicableDiseases = [
@@ -51,7 +52,7 @@ const Diseases = () => {
     Notes: "",
   });
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || "6100";
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   // Load institute and employees
   useEffect(() => {
@@ -77,7 +78,7 @@ const Diseases = () => {
   const fetchInstituteName = async (id) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/institution/${id}`
+        `${BACKEND_API}/institute-api/institution/${id}`
       );
       setInstituteName(res.data?.Institute_Name || "Unknown Institute");
     } catch (err) {
@@ -88,7 +89,7 @@ const Diseases = () => {
   const fetchEmployees = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/employee-api/employees`
+        `${BACKEND_API}/employee-api/employees`
       );
       // Use employee-api/all instead of /employees if needed
       setEmployees(res.data || []);
@@ -97,7 +98,7 @@ const Diseases = () => {
       // Try alternative endpoint
       try {
         const altRes = await axios.get(
-          `http://localhost:${BACKEND_PORT_NO}/employee-api/all`
+          `${BACKEND_API}/employee-api/all`
         );
         setEmployees(altRes.data?.employees || []);
       } catch (altErr) {
@@ -133,7 +134,7 @@ const Diseases = () => {
         
         // Try with employee's _id
         const res = await axios.get(
-          `http://localhost:${BACKEND_PORT_NO}/family-api/family/${formData.Employee_ID}`
+          `${BACKEND_API}/family-api/family/${formData.Employee_ID}`
         );
         
         console.log("Family API response:", res.data);
@@ -144,7 +145,7 @@ const Diseases = () => {
           console.log("No family members found via direct API, trying alternative...");
           // Check if employee data includes family members
           const employeeRes = await axios.get(
-            `http://localhost:${BACKEND_PORT_NO}/employee-api/profile/${formData.Employee_ID}`
+            `${BACKEND_API}/employee-api/profile/${formData.Employee_ID}`
           );
           
           if (employeeRes.data?.FamilyMembers) {
@@ -152,7 +153,7 @@ const Diseases = () => {
             const familyPromises = employeeRes.data.FamilyMembers.map(async (familyId) => {
               try {
                 const familyRes = await axios.get(
-                  `http://localhost:${BACKEND_PORT_NO}/family-api/member/${familyId}`
+                  `${BACKEND_API}/family-api/member/${familyId}`
                 );
                 return familyRes.data;
               } catch (err) {
@@ -246,7 +247,7 @@ const Diseases = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/disease-api/diseases`,
+        `${BACKEND_API}/disease-api/diseases`,
         payload
       );
       

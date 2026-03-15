@@ -16,12 +16,14 @@ function RiskHotspots() {
 
   },[]);
 
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
+
   const fetchData = async ()=>{
 
     const institute = JSON.parse(localStorage.getItem("institute"));
 
     const res = await axios.get(
-        "http://localhost:6100/api/analytics/risk-hotspots",
+        `${BACKEND_API}/api/analytics/risk-hotspots`,
         {
             params:{
             instituteId: institute._id,

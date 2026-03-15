@@ -21,6 +21,7 @@ function DiseaseAnalyticsDetails() {
   const [diseaseData, setDiseaseData] = useState([]);
   const [designationData, setDesignationData] = useState([]);
   const [ageData, setAgeData] = useState([]);
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   useEffect(() => {
     fetchData();
@@ -33,7 +34,7 @@ function DiseaseAnalyticsDetails() {
       const institute = JSON.parse(localStorage.getItem("institute"));
 
       const res = await axios.get(
-        `http://localhost:6100/api/analytics/${type}-details/${value}`,
+        `${BACKEND_API}/api/analytics/${type}-details/${value}`,
         {
           params: {
             instituteId: institute._id,

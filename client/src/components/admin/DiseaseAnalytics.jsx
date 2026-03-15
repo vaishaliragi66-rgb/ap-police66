@@ -17,6 +17,7 @@ export default function DiseaseAnalytics() {
   const [type, setType] = useState("");
 
   const [ageFilter, setAgeFilter] = useState("All");
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
 const navigate = useNavigate();
 
@@ -38,7 +39,7 @@ const navigate = useNavigate();
     const query = buildQuery();
   
     const res = await fetch(
-      `http://localhost:6100/admin-analytics/overall/${analyticsType}${query}`
+      `${BACKEND_API}/admin-analytics/overall/${analyticsType}${query}`
     );
   
     const result = await res.json();

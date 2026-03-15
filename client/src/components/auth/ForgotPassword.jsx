@@ -4,8 +4,8 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { FaLock, FaEnvelope, FaShieldAlt, FaCheckCircle } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 5200;
-const BASE_URL = `http://localhost:${BACKEND_PORT}`;
+const BACKEND_API = import.meta.env.VITE_BACKEND_API
+
 
 const ROLE_CONFIG = {
   admin: {
@@ -94,7 +94,7 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const res = await axios.post(`${BASE_URL}/auth/request-password-reset`, {
+      const res = await axios.post(`${BACKEND_API}/auth/request-password-reset`, {
         identifier: trimmedId,
         role,
       });
@@ -156,7 +156,7 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const res = await axios.post(`${BASE_URL}/auth/reset-password`, {
+      const res = await axios.post(`${BACKEND_API}/auth/reset-password`, {
         identifier: identifier.trim(),
         role,
         otp: trimmedOtp,
@@ -186,7 +186,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${BASE_URL}/auth/request-password-reset`, {
+      const res = await axios.post(`${BACKEND_API}/auth/request-password-reset`, {
         identifier: identifier.trim(),
         role,
       });

@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
 /* ===============================
    Utility: Abnormal Test Checker
@@ -163,7 +163,7 @@ export default function EmployeeReports() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/admin-api/analytics/all`)
+      .get(`${BACKEND_API}/admin-api/analytics/all`)
       .then(res => {
         setRows(res.data || []);
         setLoading(false);

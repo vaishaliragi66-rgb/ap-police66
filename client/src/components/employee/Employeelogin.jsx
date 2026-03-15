@@ -12,7 +12,7 @@ const Employeelogin = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -34,7 +34,7 @@ const Employeelogin = () => {
 
     try {
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/employee-api/login`,
+        `${BACKEND_API}/employee-api/login`,
         { ABS_NO: absNo.trim(), Password: password.trim() }
       );
 

@@ -4,7 +4,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const MedicinesIssuedRegister = () => {
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
   const instituteId = localStorage.getItem("instituteId");
 
   const [rows, setRows] = useState([]);
@@ -105,7 +105,7 @@ const uniqueMedicineIds = [
 
     axios
       .get(
-        `http://localhost:${BACKEND_PORT}/prescription-api/institute/${instituteId}`
+        `${BACKEND_API}/prescription-api/institute/${instituteId}`
       )
       .then((res) => {
         const flattened = [];

@@ -50,12 +50,12 @@ const InstituteRegister = () => {
       return;
     }
 
-    const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+    const BACKEND_API = import.meta.env.VITE_BACKEND_API
     const { confirm_password, ...payload } = formData;
 
     try {
       const res = await fetch(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/register/institute`,
+        `${BACKEND_API}/institute-api/register/institute`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

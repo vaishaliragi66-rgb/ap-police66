@@ -5,7 +5,7 @@ import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 
 const DoctorPrescriptionForm = () => {
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
   const navigate = useNavigate();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [lastTwoVisits, setLastTwoVisits] = useState([]);
@@ -18,7 +18,11 @@ const DoctorPrescriptionForm = () => {
   const [diagnosisData, setDiagnosisData] = useState({
     Tests: [{ Test_ID: "", Test_Name: "" }]
   });
-  const [employeeReport, setEmployeeReport] = useState(null);
+  const [employeeReport, setEmployeeReport] = useState({
+    diseases: [],
+    diagnosisRecords: [],
+    xrayRecords: []
+  });
   const [showReports, setShowReports] = useState(false);
   const [selectedDiagnosisReport, setSelectedDiagnosisReport] = useState(null);
   const [selectedXrayReport, setSelectedXrayReport] = useState(null);
@@ -168,14 +172,14 @@ const [xrayData, setXrayData] = useState({
 
     const [diseaseRes, diagnosisRes, xrayRes] = await Promise.all([
       axios.get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${formData.Employee_ID}`
+        `${BACKEND_API}/disease-api/employee/${formData.Employee_ID}`
       ),
       axios.get(
-        `http://localhost:${BACKEND_PORT}/diagnosis-api/records/${formData.Employee_ID}`,
+        `${BACKEND_API}/diagnosis-api/records/${formData.Employee_ID}`,
         { params }
       ),
       axios.get(
-        `http://localhost:${BACKEND_PORT}/xray-api/records/${formData.Employee_ID}`,
+        `${BACKEND_API}/xray-api/records/${formData.Employee_ID}`,
         { params }
       )
     ]);
@@ -210,14 +214,14 @@ const [xrayData, setXrayData] = useState({
 };
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/tests`)
+      .get(`${BACKEND_API}/diagnosis-api/tests`)
       .then(res => setTestsMaster(res.data || []))
       .catch(() => setTestsMaster([]));
   }, []);
   
 useEffect(() => {
   axios
-    .get(`http://localhost:${BACKEND_PORT}/xray-api/types`)
+    .get(`${BACKEND_API}/xray-api/types`)
     .then(res => setXrayMaster(res.data || []))
     .catch(() => setXrayMaster([]));
 }, []);
@@ -229,7 +233,7 @@ useEffect(() => {
     if (!formData.Institute_ID) return;
   
     axios
-      .get(`http://localhost:${BACKEND_PORT}/institute-api/inventory/${formData.Institute_ID}`)
+      .get(`${BACKEND_API}/institute-api/inventory/${formData.Institute_ID}`)
       .then(res => {
         const inventory = res.data || [];
   
@@ -266,7 +270,7 @@ useEffect(() => {
     try {
   
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
+        `${BACKEND_API}/prescription-api/employee/${employeeId}`
       );
   
 
@@ -297,7 +301,7 @@ useEffect(() => {
   /* ================= API CALLS ================= */
   const fetchInstitute = async (id) => {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/institute-api/institution/${id}`
+      `${BACKEND_API}/institute-api/institution/${id}`
     );
     setInstituteName(res.data?.Institute_Name || "");
   };
@@ -306,9 +310,9 @@ useEffect(() => {
   const fetchDiseases = async (employeeId) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
+        `${BACKEND_API}/disease-api/employee/${employeeId}`
       );
-      setDiseases(reportRes.data.employeeDiseases);
+      setDiseases(res.data || []);
     } catch {
       setDiseases([]);
     }
@@ -320,7 +324,7 @@ useEffect(() => {
 
     axios
       .get(
-        `http://localhost:${BACKEND_PORT}/employee-api/profile/${formData.Employee_ID}`
+        `${BACKEND_API}/employee-api/profile/${formData.Employee_ID}`
       )
       .then((res) => setEmployeeProfile(res.data))
       .catch(() => setEmployeeProfile(null));
@@ -335,7 +339,8 @@ const relevantDiseases = diseases.filter((d) => {
   if (formData.IsFamilyMember) {
     return (
       d.IsFamilyMember === true &&
-      String(d.FamilyMember_ID) === String(formData.FamilyMember_ID)
+      String(d.FamilyMember_ID?._id || d.FamilyMember_ID) ===
+      String(formData.FamilyMember_ID)
     );
   }
 
@@ -399,7 +404,7 @@ if (selectedMedicines.length === 0) {
   alert("Please add at least one medicine");
   return;
 }
-    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
+    await axios.post(`${BACKEND_API}/api/medical-actions`, {
       Institute_ID: formData.Institute_ID,
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -423,7 +428,7 @@ if (selectedMedicines.length === 0) {
     // ✅ Save Disease (if selected)
     if (diseaseData.Disease_Name?.trim()) {
       await axios.post(
-  `http://localhost:${BACKEND_PORT}/disease-api/diseases`,
+  `${BACKEND_API}/disease-api/diseases`,
   {
     Institute_ID: formData.Institute_ID,
     Employee_ID: formData.Employee_ID,
@@ -462,7 +467,7 @@ if (validTests.length === 0) {
   alert("Please select at least one test");
   return;
 }
-    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
+    await axios.post(`${BACKEND_API}/api/medical-actions`, {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
       action_type: "DOCTOR_DIAGNOSIS",
@@ -499,7 +504,7 @@ if (validXrays.length === 0) {
 }
 
   await axios.post(
-    `http://localhost:${BACKEND_PORT}/api/medical-actions`,
+    `${BACKEND_API}/api/medical-actions`,
     {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -680,7 +685,7 @@ if (validXrays.length === 0) {
             test.Reports.map((r, ri) => (
               <a
                 key={ri}
-                href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                href={`${BACKEND_API}${r.url}`}
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-sm btn-outline-dark mt-2 me-2"
@@ -1337,7 +1342,7 @@ if (validXrays.length === 0) {
                               xray.Reports.map((r, i) => (
                                 <div key={i} className="mb-1">
                                   <a
-                                    href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                                    href={`${BACKEND_API}${r.url}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="btn btn-sm btn-outline-primary me-1"
@@ -1346,7 +1351,7 @@ if (validXrays.length === 0) {
                                   </a>
 
                                   <a
-                                    href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                                    href={`${BACKEND_API}${r.url}`}
                                     download
                                     className="btn btn-sm btn-outline-secondary"
                                   >

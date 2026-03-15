@@ -17,10 +17,11 @@ export default function DesignationAnalyticsDetails() {
   const [diseaseData, setDiseaseData] = useState([]);
   const [ageData, setAgeData] = useState([]);
   const [areaData, setAreaData] = useState([]);
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   useEffect(() => {
 
-    fetch(`http://localhost:6100/admin-analytics/designation-details/${designation}`)
+    fetch(`${BACKEND_API}/admin-analytics/designation-details/${designation}`)
       .then(res => res.json())
       .then(data => {
 

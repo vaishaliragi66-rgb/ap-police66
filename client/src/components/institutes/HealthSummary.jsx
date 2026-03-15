@@ -46,6 +46,7 @@ const HealthSummary = () => {
   const [diseasePage, setDiseasePage] = useState(1);
   const [medicinePage, setMedicinePage] = useState(1);
   const [exportAll, setExportAll] = useState(false);
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
 const rowsPerPage = 10;
   const formatDateDMY = (isoDate) => {
@@ -73,7 +74,7 @@ const rowsPerPage = 10;
           return;
         }
       
-        const url = `http://localhost:6100/institute-api/health-summary?type=daily&date=${date}&instituteId=${instituteId}`;
+        const url = `${BACKEND_API}/institute-api/health-summary?type=daily&date=${date}&instituteId=${instituteId}`;
       
         const res = await axios.get(url);
         setData(res.data);
@@ -84,7 +85,7 @@ const rowsPerPage = 10;
         const months = [];
         for (let m = 1; m <= 12; m++) months.push({ year: Number(year), month: m });
         const calls = months.map(({ year: y, month: m }) =>
-          axios.get(`http://localhost:6100/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
+          axios.get(`${BACKEND_API}/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
         );
 
         const results = await Promise.allSettled(calls);
@@ -182,10 +183,10 @@ const rowsPerPage = 10;
       if (startYear && startMonth && endYear && endMonth) {
         const months = buildMonthList(startYear, startMonth, endYear, endMonth);
         calls = months.map(({ year: y, month: m }) =>
-          axios.get(`http://localhost:6100/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
+          axios.get(`${BACKEND_API}/institute-api/health-summary?type=monthly&year=${y}&month=${m}&instituteId=${instituteId}`)
         );
       } else if (year && month) {
-        calls = [axios.get(`http://localhost:6100/institute-api/health-summary?type=monthly&year=${year}&month=${month}&instituteId=${instituteId}`)];
+        calls = [axios.get(`${BACKEND_API}/institute-api/health-summary?type=monthly&year=${year}&month=${month}&instituteId=${instituteId}`)];
       } else {
         alert('Please provide a valid month range or year+month');
         return;

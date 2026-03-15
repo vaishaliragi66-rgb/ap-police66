@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const EmployeeDiseaseReport = () => {
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const EmployeeDiseaseReport = () => {  
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
   const employeeId = localStorage.getItem("employeeId");
 
   const [diseases, setDiseases] = useState([]);
@@ -19,7 +19,7 @@ const EmployeeDiseaseReport = () => {
 
     axios
       .get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
+        `${BACKEND_API}/disease-api/employee/${employeeId}`
       )
       .then((res) => {
         setDiseases(res.data || []);

@@ -6,15 +6,15 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const FamilyMemberProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   const [member, setMember] = useState(null);
 
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/family-api/family-report/${id}`)
+      .get(`${BACKEND_API}/family-api/family-report/${id}`)
       .then((res) => setMember(res.data));
-  }, [id, BACKEND_PORT]);
+  }, [id, BACKEND_API]);
 
   if (!member) {
     return <div className="text-center mt-5">Loading...</div>;

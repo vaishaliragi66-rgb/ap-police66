@@ -8,11 +8,12 @@ const AddPasswords = () => {
     pharmacist: "",
     diagnosis: "",
     xray: "",
-    frontdesk: ""
+    front_desk: ""
   });
 
   const [roleStatus, setRoleStatus] = useState({});
   const navigate = useNavigate();
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -20,7 +21,7 @@ const AddPasswords = () => {
         const token = localStorage.getItem("instituteToken");
 
         const res = await axios.get(
-          "http://localhost:6100/institute-auth/get-role-status",
+          `${BACKEND_API}/institute-auth/get-role-status`,
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -49,14 +50,14 @@ const AddPasswords = () => {
       const token = localStorage.getItem("instituteToken");
 
       const endpoint = roleStatus[role]
-        ? "update-role"
+        ? "update-role-passwords"
         : "setup-role";
 
       await axios({
         method: roleStatus[role] ? "put" : "post",
-        url: `http://localhost:6100/institute-auth/${endpoint}`,
+        url: `${BACKEND_API}/institute-auth/${endpoint}`,
         data: {
-  role: role === "frontdesk" ? "front_desk" : role,
+        role: role,
   password: formData[role]
 },
         headers: {

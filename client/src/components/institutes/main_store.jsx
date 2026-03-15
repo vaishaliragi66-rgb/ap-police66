@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const BACKEND_URL = "http://localhost:6100";
+const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
 // Format date to show only MM-YYYY
 const formatExpiryDate = (dateStr) => {
@@ -61,7 +61,7 @@ const getCompressedMedicines = () => {
     }
 
     const res = await axios.get(
-      `${BACKEND_URL}/mainstore/all-medicines/${instituteId}`
+      `${BACKEND_API}/mainstore/all-medicines/${instituteId}`
     );
 
     setMedicines(res.data || []);
@@ -83,7 +83,7 @@ const getCompressedMedicines = () => {
     if (!window.confirm("Are you sure you want to delete this medicine?")) return;
 
     try {
-      await axios.delete(`${BACKEND_URL}/mainstore/delete/${id}`);
+      await axios.delete(`${BACKEND_API}/mainstore/delete/${id}`);
       alert("Medicine deleted successfully");
       fetchMedicines();
       setCurrentPage(1);
@@ -109,7 +109,7 @@ const getCompressedMedicines = () => {
   const updateMedicine = async () => {
     try {
       await axios.put(
-        `${BACKEND_URL}/mainstore/update/${selectedMed._id}`,
+        `${BACKEND_API}/mainstore/update/${selectedMed._id}`,
         selectedMed
       );
 

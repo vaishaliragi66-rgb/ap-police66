@@ -6,7 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const EmployeeProfile = () => {
   const navigate = useNavigate();
   const employeeId = localStorage.getItem("employeeId");
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   const [employee, setEmployee] = useState(null);
   const [family, setFamily] = useState([]);
@@ -15,13 +15,13 @@ const EmployeeProfile = () => {
     if (!employeeId) return;
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/employee-api/profile/${employeeId}`)
+      .get(`${BACKEND_API}/employee-api/profile/${employeeId}`)
       .then((res) => setEmployee(res.data));
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/family-api/family/${employeeId}`)
+      .get(`${BACKEND_API}/family-api/family/${employeeId}`)
       .then((res) => setFamily(res.data || []));
-  }, [employeeId, BACKEND_PORT]);
+  }, [employeeId, BACKEND_API]);
 
   if (!employee)
     return <div className="text-center mt-5">Loading profile...</div>;
@@ -107,9 +107,9 @@ const EmployeeProfile = () => {
               <img
                 src={
                   employee.Profile_Pic
-                    ? `http://localhost:${BACKEND_PORT}${employee.Profile_Pic}`
+                    ? `${BACKEND_API}${employee.Profile_Pic}`
                     : employee.Photo
-                    ? `http://localhost:${BACKEND_PORT}${employee.Photo}`
+                    ? `${BACKEND_API}${employee.Photo}`
                     : "/default-avatar.png"
                 }
                 

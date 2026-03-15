@@ -13,6 +13,7 @@ import {
 export default function AreaAnalyticsDetails() {
 
   const { district } = useParams();
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   const [diseaseData, setDiseaseData] = useState([]);
   const [ageData, setAgeData] = useState([]);
@@ -20,7 +21,7 @@ export default function AreaAnalyticsDetails() {
 
   useEffect(() => {
 
-    fetch(`http://localhost:6100/admin-analytics/area-details/${district}`)
+    fetch(`${BACKEND_API}/admin-analytics/area-details/${district}`)
       .then(res => res.json())
       .then(data => {
 

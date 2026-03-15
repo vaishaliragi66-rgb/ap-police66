@@ -6,7 +6,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
 const InstituteIndent = () => {
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
   const instituteId = localStorage.getItem("instituteId");
   
   const [indentData, setIndentData] = useState(null);
@@ -19,7 +19,7 @@ const InstituteIndent = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/indent-api/generate`,
+        `${BACKEND_API}/indent-api/generate`,
         { params: { instituteId } }
       );
       setIndentData(res.data);

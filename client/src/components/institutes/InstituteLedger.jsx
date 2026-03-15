@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
 const LedgerStore = () => {
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
   const instituteId = localStorage.getItem("instituteId");
 
   // Store type state
@@ -102,7 +102,7 @@ const LedgerStore = () => {
 
       // Fetch COMPLETE ledger (no type filter)
       const ledgerRes = await axios.get(
-          `http://localhost:${BACKEND_PORT}/ledger-api/institute/${instituteId}`
+          `${BACKEND_API}/ledger-api/institute/${instituteId}`
         );
 
       const fullLedger = ledgerRes.data.ledger || [];

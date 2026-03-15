@@ -11,7 +11,7 @@ const XrayReport = () => {
   const [familyFilter, setFamilyFilter] = useState("ALL");
 
   const navigate = useNavigate();
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
   const employeeObjectId = localStorage.getItem("employeeObjectId");
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -21,7 +21,7 @@ const XrayReport = () => {
     if (!employeeObjectId) return;
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/xray-api/records/${employeeObjectId}`)
+      .get(`${BACKEND_API}/xray-api/records/${employeeObjectId}`)
       .then((res) => {
         console.log("X-ray records fetched", res.data);
         setReports(res.data || []);
@@ -351,8 +351,8 @@ const XrayReport = () => {
                           <ul className="list-unstyled mt-1 mb-0">
                             {x.Reports.map((r, j) => (
                               <li key={j} className="mb-1">
-                                <a href={`http://localhost:${BACKEND_PORT}/${r?.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
-                                <a href={`http://localhost:${BACKEND_PORT}/${r?.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
+                                <a href={`${BACKEND_API}/${r?.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
+                                <a href={`${BACKEND_API}/${r?.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
                               </li>
                             ))}
                           </ul>
@@ -369,8 +369,8 @@ const XrayReport = () => {
                     <ul className="list-unstyled mt-2 mb-0">
                       {selectedReport.Reports.map((r, idx) => (
                         <li key={idx} className="mb-1">
-                          <a href={`http://localhost:${BACKEND_PORT}/${r?.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
-                          <a href={`http://localhost:${BACKEND_PORT}/${r?.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
+                          <a href={`${BACKEND_API}/${r?.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
+                          <a href={`${BACKEND_API}/${r?.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
                         </li>
                       ))}
                     </ul>

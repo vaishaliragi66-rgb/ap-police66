@@ -11,6 +11,7 @@ function DiseaseAnalyticsTable() {
   const [data, setData] = useState([]);
 
   const filters = location.state || {};
+  const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
   useEffect(() => {
     fetchData();
@@ -23,7 +24,7 @@ function DiseaseAnalyticsTable() {
       const institute = JSON.parse(localStorage.getItem("institute"));
 
       const res = await axios.get(
-        `http://localhost:6100/api/analytics/${type}-summary`,
+        `${BACKEND_API}/api/analytics/${type}-summary`,
         {
           params: {
             instituteId: institute._id,

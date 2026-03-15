@@ -3,8 +3,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaExchangeAlt } from "react-icons/fa";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
-const BACKEND_URL = `http://localhost:${BACKEND_PORT}`;
+
+const BACKEND_API = import.meta.env.VITE_BACKEND_API
 
 export default function TransferMainStoreMedicine() {
 
@@ -38,7 +38,7 @@ export default function TransferMainStoreMedicine() {
     }
 
     const res = await axios.get(
-      `${BACKEND_URL}/mainstore/all-medicines/${CURRENT_INSTITUTE_ID}`
+      `${BACKEND_API}/mainstore/all-medicines/${CURRENT_INSTITUTE_ID}`
     );
 
     setMedicines(Array.isArray(res.data) ? res.data : []);
@@ -60,11 +60,11 @@ export default function TransferMainStoreMedicine() {
     const CURRENT_ID = current?._id;
     console.log(
   "Fetching institutes from:",
-  `${BACKEND_URL}/institute-api/except/${CURRENT_ID}`
+  `${BACKEND_API}/institute-api/except/${CURRENT_ID}`
 );
 
     const res = await axios.get(
-      `${BACKEND_URL}/institute-api/except/${CURRENT_ID}`
+      `${BACKEND_API}/institute-api/except/${CURRENT_ID}`
     );
 
     const list =
@@ -116,6 +116,7 @@ export default function TransferMainStoreMedicine() {
     setSuccess("");
 
     let endpoint = "";
+
     let payload = {};
 
     // ===============================
@@ -157,7 +158,10 @@ export default function TransferMainStoreMedicine() {
 
     console.log("FINAL TRANSFER PAYLOAD:", payload);
 
-    const res = await axios.post(`${BACKEND_URL}${endpoint}`, payload);
+    const res = await axios.post(
+  `${BACKEND_API}${endpoint}`,
+  payload
+);
 
     setSuccess(res.data.message || "Transfer successful");
 
