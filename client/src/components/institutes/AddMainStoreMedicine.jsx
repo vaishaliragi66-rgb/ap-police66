@@ -160,21 +160,7 @@ const AddMainStoreMedicine = () => {
         {/* FORM */}
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 text-left">
 
-          {/* Medicine Code */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">
-              Medicine Code *
-            </label>
-            <input
-              name="Medicine_Code"
-              value={formData.Medicine_Code}
-              onChange={handleChange}
-              disabled={loading}
-              required
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
-              placeholder="MS-001"
-            />
-          </div>
+          
 
           {/* Medicine Name */}
           <div>
@@ -189,6 +175,22 @@ const AddMainStoreMedicine = () => {
               required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
               placeholder="Paracetamol"
+            />
+          </div>
+
+          {/* Medicine Code */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Batch Number *
+            </label>
+            <input
+              name="Medicine_Code"
+              value={formData.Medicine_Code}
+              onChange={handleChange}
+              disabled={loading}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+              placeholder="MS-001"
             />
           </div>
 
@@ -332,7 +334,7 @@ const AddMainStoreMedicine = () => {
         {/* Footer */}
         <div className="mt-6 pt-4 border-t text-center border-gray-200">
           <p className="text-gray-400 text-xs">
-            © 2025 AP Police Health Division
+            ©️ 2025 AP Police Health Division
           </p>
         </div>
       </div>

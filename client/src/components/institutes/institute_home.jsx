@@ -94,12 +94,15 @@ const Institute_home = () => {
       {/* HEADER */}
 <div className="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center position-relative">
   <div>
-    <h3 className="fw-bold mb-2">Institute Dashboard</h3>
-    <small className="text-muted">
-      Welcome back, {institute?.Institute_Name}
-    </small>
-  </div>
-   
+    <h3 className="fw-bold mb-0">
+    Welcome back, {institute?.Institute_Name}
+  </h3>
+
+  <small className="text-muted d-block mb-1">
+    Institute Dashboard
+  </small>
+</div>
+
 {/* <small className="text-muted center">SARCPL
     </small> */}
   <div style={{ position: "relative" }}>

@@ -27,11 +27,29 @@ const indexOfFirst = indexOfLast - rowsPerPage;
 const currentMedicines = medicines.slice(indexOfFirst, indexOfLast);
 const totalPages = Math.ceil(medicines.length / rowsPerPage);
 
-
+const [compressedView, setCompressedView] = useState(false);
   // modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedMed, setSelectedMed] = useState(null);
+const getCompressedMedicines = () => {
+  const map = {};
 
+  medicines.forEach((med) => {
+    const key = med.Medicine_Name.trim().toLowerCase();
+
+    if (!map[key]) {
+      map[key] = {
+        name: med.Medicine_Name,
+        quantity: 0,
+        threshold: med.Threshold_Qty
+      };
+    }
+
+    map[key].quantity += Number(med.Quantity);
+  });
+
+  return Object.values(map);
+};
  const fetchMedicines = async () => {
   try {
     const institute = JSON.parse(localStorage.getItem("institute"));
@@ -108,16 +126,29 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
       <h3 className="fw-bold mb-3">Main Store</h3>
 
       <div className="d-flex gap-3 mb-3">
-        <button className="btn btn-primary"
-          onClick={() => navigate("/institutes/add")}>
-          ➕ Receipt
-        </button>
 
-        <button className="btn btn-success"
-          onClick={() => navigate("/institutes/transfer")}>
-          🔁 Transfer Medicine
-        </button>
-      </div>
+  <button
+    className="btn btn-primary"
+    onClick={() => navigate("/institutes/add")}
+  >
+    ➕ Receipt
+  </button>
+
+  <button
+    className="btn btn-success"
+    onClick={() => navigate("/institutes/transfer")}
+  >
+    🔁 Transfer Medicine
+  </button>
+
+  <button
+    className="btn btn-dark"
+    onClick={() => setCompressedView(prev => !prev)}
+  >
+    🔄 Convert View
+  </button>
+
+</div>
 
       <div className="card shadow-sm">
         <div className="card-header fw-semibold">
@@ -134,48 +165,73 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
           <div className="table-responsive">
             <table className="table table-striped mb-0">
               <thead className="table-dark">
-                <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Issued By</th>
-                  <th>Qty</th>
-                  <th>Threshold</th>
-                  <th>Expiry</th>
-                  <th className="text-center">Actions</th>
-                </tr>
-              </thead>
+<tr>
+  {compressedView ? (
+    <>
+      <th>S.NO</th>
+      <th>Name</th>
+      <th>Quantity</th>
+      <th>Threshold</th>
+    </>
+  ) : (
+    <>
+      <th>Batch Number</th>
+      <th>Name</th>
+      <th>Issued By</th>
+      <th>Qty</th>
+      <th>Threshold</th>
+      <th>Expiry</th>
+      <th className="text-center">Actions</th>
+    </>
+  )}
+</tr>
+</thead>
 
-              <tbody>
-                {currentMedicines.map(med => (
+<tbody>
 
-                  <tr key={med._id}>
-                    <td>{med.Medicine_Code}</td>
-                    <td>{med.Medicine_Name}</td>
-                    <td>{med.Issued_By}</td>
-                    <td>{med.Quantity}</td>
-                    <td>{med.Threshold_Qty}</td>
-                    <td>{formatExpiryDate(med.Expiry_Date)}</td>
+{!compressedView ? (
 
-                    <td className="text-center">
+  currentMedicines.map(med => (
+    <tr key={med._id}>
+      <td>{med.Medicine_Code}</td>
+      <td>{med.Medicine_Name}</td>
+      <td>{med.Issued_By}</td>
+      <td>{med.Quantity}</td>
+      <td>{med.Threshold_Qty}</td>
+      <td>{formatExpiryDate(med.Expiry_Date)}</td>
 
-                      <button
-                        className="btn btn-sm btn-outline-primary me-2"
-                        onClick={() => openEditModal(med)}
-                      >
-                        ✎ Update
-                      </button>
+      <td className="text-center">
+        <button
+          className="btn btn-sm btn-outline-primary me-2"
+          onClick={() => openEditModal(med)}
+        >
+          ✎ Update
+        </button>
 
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => deleteMedicine(med._id)}
-                      >
-                        🗑 Delete
-                      </button>
+        <button
+          className="btn btn-sm btn-outline-danger"
+          onClick={() => deleteMedicine(med._id)}
+        >
+          🗑 Delete
+        </button>
+      </td>
+    </tr>
+  ))
 
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+) : (
+
+  getCompressedMedicines().map((med, index) => (
+    <tr key={index}>
+      <td>{index + 1}</td>
+      <td className="fw-semibold">{med.name}</td>
+      <td className="text-primary fw-bold">{med.quantity}</td>
+      <td>{med.threshold}</td>
+    </tr>
+  ))
+
+)}
+
+</tbody>
 
             </table>
             {/* Pagination */}

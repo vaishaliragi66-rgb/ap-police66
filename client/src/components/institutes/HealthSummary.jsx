@@ -67,12 +67,18 @@ const rowsPerPage = 10;
     }
     try {
       if (type === "daily") {
+
+        if (!date) {
+          alert("Please select a date first");
+          return;
+        }
+      
         const url = `http://localhost:6100/institute-api/health-summary?type=daily&date=${date}&instituteId=${instituteId}`;
+      
         const res = await axios.get(url);
         setData(res.data);
         return;
       }
-
       if (type === "yearly") {
         // build months 1..12 for the selected year
         const months = [];

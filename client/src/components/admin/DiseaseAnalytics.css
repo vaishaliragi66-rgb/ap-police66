@@ -1,0 +1,45 @@
+.analytics-page{
+    margin-top:40px;
+  }
+  
+  /* HEADER */
+  
+  .analytics-header{
+    margin-bottom:20px;
+  }
+  
+  .analytics-header h2{
+    font-weight:600;
+    color:#2c3e50;
+  }
+  
+  /* FILTER CARD */
+  
+  .analytics-filter-card{
+    border-radius:10px;
+    margin-bottom:30px;
+  }
+  
+  .filter-title{
+    font-weight:600;
+    color:#374151;
+  }
+  
+  /* BUTTONS */
+  
+  .analytics-buttons{
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
+  }
+  
+  .analytics-buttons .btn{
+    padding:10px 20px;
+    font-weight:500;
+    border-radius:8px;
+    transition:all 0.2s ease;
+  }
+  
+  .analytics-buttons .btn:hover{
+    transform:translateY(-2px);
+  }

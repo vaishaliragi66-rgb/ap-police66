@@ -22,6 +22,7 @@ const parseAddressParts = (address) => {
   const parts = address.split(",").map(part => part.trim());
   const district = parts[1] || "";
   const state = (parts[2] || "").split("-")[0].trim();
+  
 
   return { district, state };
 };
@@ -187,13 +188,17 @@ export default function InstituteAnalytics() {
   const [stateFilter, setStateFilter] = useState("");
   const [absFilter, setAbsFilter] = useState("");
   const [diseaseFilter, setDiseaseFilter] = useState("");
+  const [commonDiseases, setCommonDiseases] = useState([]);
   const [medicineFilter, setMedicineFilter] = useState("");
   const [testFilter, setTestFilter] = useState("");
   const [bloodGroupFilter, setBloodGroupFilter] = useState("");
   const [abnormalOnly, setAbnormalOnly] = useState(false);
   const [ageMin, setAgeMin] = useState("");
   const [ageMax, setAgeMax] = useState("");
+  const [heightFilter, setHeightFilter] = useState("");
+const [weightFilter, setWeightFilter] = useState("");
 const [currentPage, setCurrentPage] = useState(1);
+const [showFilters, setShowFilters] = useState(false);
 const rowsPerPage = 10;
   useEffect(() => {
     const institute = JSON.parse(localStorage.getItem("institute"));
@@ -265,26 +270,46 @@ const rowsPerPage = 10;
       (!ageMin || r.Age >= Number(ageMin)) &&
       (!ageMax || r.Age <= Number(ageMax));
 
+      const heightOK = !heightFilter || Number(r.Height) <= Number(heightFilter);
+    const weightOK = !weightFilter || Number(r.Weight) <= Number(weightFilter);
+
     const hasAbnormal =
       r.Tests?.some(t => isAbnormal(t.Result_Value, t.Reference_Range));
 
-    return (
-      (!roleFilter || r.Role === roleFilter) &&
-      (!genderFilter || r.Gender === genderFilter) &&
-      (!bloodGroupFilter || r.Blood_Group === bloodGroupFilter) &&
-      match(r.Name, nameFilter) &&
-      match(r.District, districtFilter) &&
-      match(r.State, stateFilter) &&
-      match(r.ABS_NO, absFilter) &&
-      match(
-        [...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])].join(" "),
-        diseaseFilter
-      ) &&
-      match((r.Medicines || []).map(m => m.Medicine_Name).join(" "), medicineFilter) &&
-      match((r.Tests || []).map(t => t.Test_Name).join(" "), testFilter) &&
-      ageOK &&
-      (!abnormalOnly || hasAbnormal)
-    );
+const diseases = [
+  ...(r.Communicable_Diseases || []),
+  ...(r.NonCommunicable_Diseases || [])
+];
+
+const commonDiseaseMatch =
+  commonDiseases.length === 0 ||
+  commonDiseases.every(d =>
+    diseases.map(x => x.toLowerCase()).includes(d.toLowerCase())
+  );
+
+
+return (
+  (!roleFilter || r.Role === roleFilter) &&
+  (!genderFilter || r.Gender === genderFilter) &&
+  (!bloodGroupFilter || r.Blood_Group === bloodGroupFilter) &&
+  match(r.Name, nameFilter) &&
+  match(r.District, districtFilter) &&
+  match(r.State, stateFilter) &&
+  match(r.ABS_NO, absFilter) &&
+ match(
+  !diseaseFilter ||
+  [...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])]
+    .map(d => d.toLowerCase())
+    .includes(diseaseFilter.toLowerCase())
+)&&
+  commonDiseaseMatch &&
+  match((r.Medicines || []).map(m => m.Medicine_Name).join(" "), medicineFilter) &&
+  match((r.Tests || []).map(t => t.Test_Name).join(" "), testFilter) &&
+  ageOK &&
+  heightOK &&
+  weightOK &&
+  (!abnormalOnly || hasAbnormal)
+);
   });
 
 
@@ -316,17 +341,44 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
   }
 
   return (
-    <div className="container-fluid py-4">
+    <div
+    className="container-fluid py-4"
+    style={{
+      maxWidth: "100%",
+      overflowX: "hidden",
+     
+    }}
+  >
       <div className="mb-4">
         <h2 className="fw-bold">Institute Medical Analytics Dashboard</h2>
         <p className="text-muted">Comprehensive health records and medical data analysis</p>
       </div>
 
+      <div className="d-flex justify-content-between align-items-center mb-3">
+      
+
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          {showFilters ? "Hide Filters" : "Show Filters"}
+        </button>
+      </div>
+
       {/* =============================== FILTER PANEL ================================*/}
-      <div className="card shadow-sm mb-4">
-        <div className="card-body">
-          <h5 className="card-title mb-3">Filters</h5>
-          <div className="row g-3">
+      {showFilters && (
+  <div className="card shadow-sm mb-4">
+    <div className="card-body">
+      <h5 className="card-title mb-3">Filters</h5>
+
+      <div
+        className="row g-3"
+        style={{
+          maxHeight: "350px",
+          overflowY: "auto",
+          overflowX: "hidden"
+        }}
+      >
             {/* Role Filter */}
             <div className="col-md-3">
               <label className="form-label fw-semibold">Role</label>
@@ -354,6 +406,30 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
+            </div>
+
+            {/* Height Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Height ≤</label>
+              <input
+                type="number"
+                className="form-control"
+                placeholder="cm"
+                value={heightFilter}
+                onChange={(e) => setHeightFilter(e.target.value)}
+              />
+            </div>
+
+            {/* Weight Filter */}
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Weight ≤</label>
+              <input
+                type="number"
+                className="form-control"
+                placeholder="kg"
+                value={weightFilter}
+                onChange={(e) => setWeightFilter(e.target.value)}
+              />
             </div>
 
             {/* Blood Group Filter */}
@@ -425,16 +501,55 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
             </div>
 
             {/* Disease Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">Disease</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by disease"
-                value={diseaseFilter}
-                onChange={(e) => setDiseaseFilter(e.target.value)}
-              />
-            </div>
+            {/* Disease Filter */}
+
+
+<div className="col-md-6">
+  <label className="form-label fw-semibold">Common Diseases</label>
+
+  <div
+    style={{
+      maxHeight: "120px",
+      overflowY: "auto",
+      border: "1px solid #ddd",
+      borderRadius: "6px",
+      padding: "8px",
+      background: "#fafafa"
+    }}
+  >
+    {[...new Set(
+      rows.flatMap(r => [
+        ...(r.Communicable_Diseases || []),
+        ...(r.NonCommunicable_Diseases || [])
+      ])
+    )].map((disease, i) => (
+      <div className="form-check" key={i}>
+        <input
+          className="form-check-input"
+          type="checkbox"
+          value={disease}
+          id={`disease-${i}`}
+          checked={commonDiseases.includes(disease)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setCommonDiseases(prev => [...prev, disease]);
+            } else {
+              setCommonDiseases(prev => prev.filter(d => d !== disease));
+            }
+          }}
+        />
+
+        <label className="form-check-label" htmlFor={`disease-${i}`}>
+          {disease}
+        </label>
+      </div>
+    ))}
+  </div>
+
+  <small className="text-muted">
+    Select multiple diseases to find people who have ALL of them
+  </small>
+</div>
 
             {/* Medicine Filter */}
             <div className="col-md-3">
@@ -501,6 +616,30 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
             </div>
           </div>
 
+          <button
+          className="btn btn-outline-secondary btn-sm mt-2"
+          onClick={() => {
+            setRoleFilter("");
+            setGenderFilter("");
+            setNameFilter("");
+            setDistrictFilter("");
+            setStateFilter("");
+            setAbsFilter("");
+            setDiseaseFilter("");
+            setCommonDiseases([]);
+            setMedicineFilter("");
+            setTestFilter("");
+            setBloodGroupFilter("");
+            setAgeMin("");
+            setAgeMax("");
+            setHeightFilter("");
+        setWeightFilter("");
+            setAbnormalOnly(false);
+          }}
+        >
+          Reset Filters
+        </button>
+
           {/* Export Buttons */}
           <div className="mt-3 d-flex gap-2">
             <button 
@@ -523,13 +662,25 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
           </div>
         </div>
       </div>
-
+)}
       {/* =============================== TABLE ================================*/}
       <div className="card shadow-sm">
         <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover table-striped mb-0">
-              <thead className="table-dark">
+        <div
+  style={{
+    width: "100%",
+    overflowX: "auto",
+    overflowY: "hidden"
+  }}
+>
+                    <table
+          className="table table-hover table-striped mb-0"
+          style={{
+            minWidth: "1600px",
+            whiteSpace: "nowrap"
+          }}
+> 
+      <thead className="table-dark sticky-top">
                 <tr>
                   <th>Role</th>
                   <th>ABS Number</th>

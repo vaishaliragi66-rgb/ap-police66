@@ -9,8 +9,11 @@ import {
   FaFileMedical,
   FaBars,
   FaTimes,
-  FaHome
-} from "react-icons/fa";
+  FaHome,
+  FaChartBar,
+  FaFileAlt,
+  FaNotesMedical
+}  from "react-icons/fa";
 import { APP_HEADER_HEIGHT } from "../GlobalHeader";
 
 const OthersLayout = () => {
@@ -30,7 +33,7 @@ const OthersLayout = () => {
     { label: "Main Store", path: "/institutions/main-store", icon: <FaWarehouse /> },
     { label: "Substore", path: "/institutes/inventory", icon: <FaBoxOpen /> },
     { label: "AI Insights", path: "/institutes/ai-insights", icon: <FaRobot /> },
-    { label: "Analytics", path: "/institutes/analytics", icon: <FaRobot />},
+    { label: "Reports", path: "/institutes/analytics", icon: <FaNotesMedical />},
     { label: "Disease Analytics", path: "/institutes/disease-analytics", icon: <FaRobot />}
   ];
 
@@ -96,9 +99,10 @@ const OthersLayout = () => {
       <div
         style={{
           marginLeft: !hideSidebar && open ? "240px" : "0",
-          width: "100%",
-          padding: "20px 100px",
-          transition: "all 0.3s ease"
+          width: !hideSidebar && open ? "calc(100% - 240px)" : "100%",
+          padding: "20px",
+          transition: "all 0.3s ease",
+          overflowX: "hidden"
         }}
       >
         {/* Open Button (when sidebar closed) */}

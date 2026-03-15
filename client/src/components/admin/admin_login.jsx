@@ -59,7 +59,7 @@ const AdminLogin = () => {
         localStorage.removeItem("employeeName");
 
         // Navigate to admin dashboard
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard", { replace: true });
       } else {
         setError(res.data.message || "Login failed");
       }

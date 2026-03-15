@@ -16,7 +16,6 @@ app.use(
   express.static(path.join(__dirname, "uploads"))
 );
 
-
 // import your router here (adjust the path as needed)
 const instituteApp = require('./apis/institute_api');
 const medicineApp = require("./apis/medicines_api");
@@ -37,6 +36,7 @@ const xrayApp = require("./apis/xray_api");
 const healthSummaryRoutes = require("./apis/healthSummary");
 const instituteAuth = require("./apis/instituteAuth");
 const passwordResetApp = require("./apis/passwordReset");
+const adminAnalyticsRoutes = require("./apis/admin_analytics");
 const analyticsRoutes = require("./apis/analyticsRoutes");
 
 app.use("/institute-auth", instituteAuth.router);
@@ -61,6 +61,7 @@ app.use("/medicine-limit-api", require("./apis/medicine_limit_api"));
 app.use("/mainstore", mainStoreApp);
 app.use("/admin-api", adminApp);
 app.use("/xray-api", xrayApp);
+app.use("/admin-analytics", adminAnalyticsRoutes);
 app.use("/api/analytics", analyticsRoutes);
 // Base route
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));

@@ -1,35 +1,50 @@
-import React from "react";
+import React ,{useEffect} from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FaHospital,
-  FaUserMd,
-  FaRobot,
-  FaBuilding,
-  FaUsers,
-  FaFileMedical
-} from "react-icons/fa";
+import { FaHospital, FaUserMd, FaRobot, FaBuilding, FaUsers, FaFileMedical, FaChartBar } from "react-icons/fa";
 import "./AdminDashboard.css";
+
 
 function AdminDashboard() {
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken"); 
+    navigate("/admin/login", { replace: true });   // go to homepage
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+  
+    if (!token) {
+      navigate("/admin/login", { replace: true });
+    }
+  }, [navigate]);
+
   return (
     <div className="admin-dashboard">
       <div style={{ padding: "12px 12px 0" }}>
-        <button
-          className="btn mb-3"
-          onClick={() => navigate(-1)}
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D6E0F0",
-            borderRadius: "8px",
-            padding: "6px 14px",
-            fontSize: "14px",
-            color: "#1F2933",
-          }}
-        >
-          &larr; Back
-        </button>
+        <div
+    style={{
+      display: "flex",
+      justifyContent: "flex-end",   // pushes button to right
+      padding: "12px 20px"
+    }}
+  >
+    <button
+      onClick={handleLogout}
+      style={{
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #1E3A8A",   // dark blue border
+        borderRadius: "8px",
+        padding: "6px 16px",
+        fontSize: "14px",
+        color: "#1E3A8A",              // dark blue text
+        fontWeight: 500
+      }}
+    >
+      Logout
+    </button>
+  </div>
       </div>
 
       {/* HEADER */}
@@ -40,33 +55,7 @@ function AdminDashboard() {
 
 <br />
 <br/>
-      {/* KPI / STATS
-      <div className="admin-stats">
-        <div className="stat-card">
-          <FaBuilding className="stat-icon" />
-          <div>
-            <h4>Institutes</h4>
-            <span>Registered Medical Institutes</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <FaUsers className="stat-icon" />
-          <div>
-            <h4>Employees</h4>
-            <span>Total Employees Covered</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <FaFileMedical className="stat-icon" />
-          <div>
-            <h4>Reports</h4>
-            <span>Medical & Diagnostic Records</span>
-          </div>
-        </div>
-      </div> */}
-
+ 
       {/* MAIN ACTIONS */}
       <div className="admin-actions">
         <div
@@ -95,6 +84,16 @@ function AdminDashboard() {
           <h5>AI Insights</h5>
           <p>Analytics & predictive health insights</p>
         </div>
+
+
+              <div
+        className="admin-action-card"
+        onClick={() => navigate("/admins/disease-analytics")}
+      >
+        <FaChartBar className="action-icon" />
+        <h5>Disease Analytics</h5>
+        <p>Analyze diseases by age, area and designation</p>
+      </div>
       </div>
     </div>
   );

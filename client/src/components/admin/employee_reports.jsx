@@ -12,7 +12,7 @@ const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
 const isAbnormal = (value, range) => {
   if (!value || !range) return false;
   const num = parseFloat(value);
-  if (isNaN(num)) return false;
+  if (isNaN(num)) return false
 
   if (range.includes("–")) {
     const [min, max] = range.split("–").map(parseFloat);
@@ -152,6 +152,10 @@ export default function EmployeeReports() {
   const [ageMax, setAgeMax] = useState("");
   const [abnormalOnly, setAbnormalOnly] = useState(false);
 
+  const [gender, setGender] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+
   /* Pagination & Expand */
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
@@ -170,16 +174,20 @@ export default function EmployeeReports() {
   const filteredRows = rows.filter(r => {
     const match = (v, f) =>
       !f || (v && v.toString().toLowerCase().includes(f.toLowerCase()));
-
+  
     const ageOK =
       (!ageMin || r.Age >= ageMin) &&
       (!ageMax || r.Age <= ageMax);
-
+  
+    const heightOK = !height || Number(r.Height) <= Number(height);
+    const weightOK = !weight || Number(r.Weight) <= Number(weight);
+  
     const hasAbnormal =
       r.Tests?.some(t => isAbnormal(t.Result_Value, t.Reference_Range));
-
+  
     return (
       (!role || r.Role === role) &&
+      (!gender || r.Gender === gender) &&
       match(r.Name, name) &&
       match(r.District, district) &&
       match((r.Communicable_Diseases || []).join(" "), comm) &&
@@ -187,6 +195,8 @@ export default function EmployeeReports() {
       match((r.Medicines || []).map(m => m.Medicine_Name).join(" "), medicine) &&
       match((r.Tests || []).map(t => t.Test_Name).join(" "), test) &&
       ageOK &&
+      heightOK &&
+      weightOK &&
       (!abnormalOnly || hasAbnormal)
     );
   });
@@ -244,6 +254,37 @@ export default function EmployeeReports() {
                   </select>
                 )},
                 { el: <input className="form-control" placeholder="Name" value={name} onChange={e => setName(e.target.value)} /> },
+                { el: (
+                  <select
+                    className="form-control"
+                    value={gender}
+                    onChange={e => setGender(e.target.value)}
+                  >
+                    <option value="">All Genders</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Others">Others</option>
+                  </select>
+                )},
+                { el: (
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="Height ≤ cm"
+                    value={height}
+                    onChange={e => setHeight(e.target.value)}
+                  />
+                )},
+
+                { el: (
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="Weight ≤ kg"
+                    value={weight}
+                    onChange={e => setWeight(e.target.value)}
+                  />
+                )},
                 { el: <input className="form-control" placeholder="District" value={district} onChange={e => setDistrict(e.target.value)} /> },
                 { el: <input className="form-control" placeholder="Communicable Disease" value={comm} onChange={e => setComm(e.target.value)} /> },
                 { el: <input className="form-control" placeholder="Non-Communicable Disease" value={nonComm} onChange={e => setNonComm(e.target.value)} /> },
