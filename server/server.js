@@ -37,7 +37,7 @@ const xrayApp = require("./apis/xray_api");
 const healthSummaryRoutes = require("./apis/healthSummary");
 const instituteAuth = require("./apis/instituteAuth");
 const passwordResetApp = require("./apis/passwordReset");
-const analyticsRoutes = require("./apis/analyticsRoutes");
+const adminAnalyticsRoutes = require("./apis/admin_analytics");
 
 app.use("/institute-auth", instituteAuth.router);
 app.use("/auth", passwordResetApp);
@@ -61,7 +61,8 @@ app.use("/medicine-limit-api", require("./apis/medicine_limit_api"));
 app.use("/mainstore", mainStoreApp);
 app.use("/admin-api", adminApp);
 app.use("/xray-api", xrayApp);
-app.use("/api/analytics", analyticsRoutes);
+app.use("/admin-analytics", adminAnalyticsRoutes);
+
 // Base route
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 

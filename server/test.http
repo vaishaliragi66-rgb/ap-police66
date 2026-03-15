@@ -86,3 +86,21 @@ Content-Type: application/json
 
 ###
 http://localhost:6100/institute-api/analytics/696241bed5066b8df470b6b0
+
+
+
+
+### analytics age
+GET http://localhost:6100/admin-analytics/overall/age
+
+
+### analytics area
+GET http://localhost:6100/admin-analytics/overall/area
+
+
+### analytics designation
+GET http://localhost:6100/admin-analytics/overall/designation
+
+
+### analytics age × designation
+GET http://localhost:6100/admin-analytics/overall/age-designation

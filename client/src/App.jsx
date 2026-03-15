@@ -49,6 +49,10 @@ import DiseaseAnalyticsHome from "./components/institutes/DiseaseAnalyticsHome";
 import DiseaseAnalyticsTable from "./components/institutes/DiseaseAnalyticsTable";
 import DiseaseAnalyticsDetails from "./components/institutes/DiseaseAnalyticsDetails";
 import RiskHotspots from "./components/institutes/RiskHotspots";
+import DiseaseAnalytics from "./components/admin/DiseaseAnalytics"
+import AgeAnalyticsDetails from "./components/admin/AgeAnalyticsDetails"
+import AreaAnalyticsDetails from "./components/admin/AreaAnalyticsDetails";
+import DesignationAnalyticsDetails from "./components/admin/DesignationAnalyticsDetails"
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -297,8 +301,28 @@ function App() {
         },{
           path:"/admin/ai-insights",
           element:<AIInsights2/>
-        },        {path:"/institutes/health-summary" ,
+        },       
+        
+        {path:"/institutes/health-summary" ,
           element:<HealthSummary />},
+
+        {
+          path:"/admins/disease-analytics",
+          element:<DiseaseAnalytics/>
+        },
+
+        {
+          path:"/admin/disease-analytics/age/:ageRange",
+          element:<AgeAnalyticsDetails/>
+        },
+        {
+          path:"/admin/disease-analytics/area/:district",
+          element:<AreaAnalyticsDetails/>
+        },
+        {
+          path:"/admin/disease-analytics/designation/:designation",
+          element:<DesignationAnalyticsDetails/>
+        },
         {
           path: "/admin/forgot-password",
           element: <ForgotPassword />
