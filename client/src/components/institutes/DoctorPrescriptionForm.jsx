@@ -676,14 +676,26 @@ if (validXrays.length === 0) {
             </div>
           )}
 
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-dark mt-2"
-            disabled={status !== "result out"}
-            onClick={() => setSelectedDiagnosisReport(record)}
-          >
-            View
-          </button>
+          {test?.Reports && test.Reports.length > 0 ? (
+            test.Reports.map((r, ri) => (
+              <a
+                key={ri}
+                href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-sm btn-outline-dark mt-2 me-2"
+              >
+                View Report
+              </a>
+            ))
+          ) : (
+            <button
+              className="btn btn-sm btn-outline-secondary mt-2"
+              disabled
+            >
+              No Report
+            </button>
+          )}
         </div>
       );
     })
@@ -1267,99 +1279,6 @@ if (validXrays.length === 0) {
 </div>
 
       </div>
-      {selectedDiagnosisReport && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">Diagnosis Report</h5>
-                <button
-                  type="button"
-                  className="btn-close btn-close-white"
-                  onClick={() => setSelectedDiagnosisReport(null)}
-                />
-              </div>
-
-              <div className="modal-body">
-                <p><strong>Institute:</strong> {selectedDiagnosisReport?.Institute?.Institute_Name || instituteName || "-"}</p>
-                <p><strong>Date:</strong> {formatDateDMY(getDiagnosisReportDate(selectedDiagnosisReport))}</p>
-                {buildVisitNotes(selectedDiagnosisReport?.visitSummary) && (
-                  <p>
-                    <strong>Visit Notes:</strong> {buildVisitNotes(selectedDiagnosisReport?.visitSummary)}
-                  </p>
-                )}
-
-                <table className="table table-bordered">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Test Name</th>
-                      <th>Result</th>
-                      <th>Reference Range</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(selectedDiagnosisReport?.Tests || []).map((test, index) => {
-                      const status = getReportStatus(test?.Result_Value);
-
-                      return (
-                        <tr key={`${test?.Test_ID?._id || test?.Test_ID || index}`}>
-                          <td>{test?.Test_Name || test?.Test_ID?.Test_Name || "-"}</td>
-                          <td>{`${test?.Result_Value || "-"} ${test?.Units || test?.Test_ID?.Units || ""}`.trim()}</td>
-                          <td>{test?.Reference_Range || test?.Test_ID?.Reference_Range || "-"}</td>
-                          <td>
-                            <span className={`badge ${status === "result out" ? "bg-success" : "bg-warning text-dark"}`}>
-                              {status}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-
-                {selectedDiagnosisReport?.Diagnosis_Notes && (
-                  <div className="mt-3">
-                    <strong>Notes:</strong>
-                    <div className="border rounded p-2 bg-light mt-1">
-                      {selectedDiagnosisReport.Diagnosis_Notes}
-                    </div>
-                  </div>
-                )}
-
-                {/* Uploaded Reports */}
-                {selectedDiagnosisReport?.Reports && selectedDiagnosisReport.Reports.length > 0 && (
-                  <div className="mt-3">
-                    <h6>Uploaded Reports</h6>
-                    <ul className="list-unstyled">
-                      {selectedDiagnosisReport.Reports.map((r, i) => (
-                        <li key={i} className="mb-2">
-                          <a href={`http://localhost:${BACKEND_PORT}/${r.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r.originalname || r.filename}</a>
-                          <a href={`http://localhost:${BACKEND_PORT}/${r.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setSelectedDiagnosisReport(null)}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {selectedXrayReport && (
         <div
           className="modal fade show d-block"
@@ -1388,6 +1307,7 @@ if (validXrays.length === 0) {
                       <th>View</th>
                       <th>Findings</th>
                       <th>Impression</th>
+                       <th>Reports</th>
                       <th>Status</th>
                     </tr>
                   </thead>
@@ -1400,18 +1320,60 @@ if (validXrays.length === 0) {
 
                       return (
                         <tr key={`${xray?.Xray_ID || xray?.Xray_Type || index}`}>
+
                           <td>{xray?.Xray_Type || "-"}</td>
+
                           <td>{xray?.Body_Part || "-"}</td>
+
                           <td>{xray?.View || "-"}</td>
+
                           <td>{xray?.Findings || "-"}</td>
+
                           <td>{xray?.Impression || "-"}</td>
+
+                          {/* REPORTS COLUMN */}
                           <td>
-                            <span className={`badge ${status === "result out" ? "bg-success" : "bg-warning text-dark"}`}>
+                            {xray?.Reports && xray.Reports.length > 0 ? (
+                              xray.Reports.map((r, i) => (
+                                <div key={i} className="mb-1">
+                                  <a
+                                    href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn btn-sm btn-outline-primary me-1"
+                                  >
+                                    View
+                                  </a>
+
+                                  <a
+                                    href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                                    download
+                                    className="btn btn-sm btn-outline-secondary"
+                                  >
+                                    Download
+                                  </a>
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-muted">No file</span>
+                            )}
+                          </td>
+
+                          <td>
+                            <span
+                              className={`badge ${
+                                status === "result out"
+                                  ? "bg-success"
+                                  : "bg-warning text-dark"
+                              }`}
+                            >
                               {status}
                             </span>
                           </td>
+
                         </tr>
                       );
+
                     })}
                   </tbody>
                 </table>

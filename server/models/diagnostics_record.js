@@ -1,43 +1,59 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const DiagnosisRecordSchema = new Schema({
+const DiagnosisRecordSchema = new Schema(
+{
   Institute: { type: Schema.Types.ObjectId, ref: "Institute", required: true },
   Employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
+
   IsFamilyMember: { type: Boolean, default: false },
   FamilyMember: { type: Schema.Types.ObjectId, ref: "FamilyMember", default: null },
 
+  Visit: { type: Schema.Types.ObjectId, ref: "DailyVisit", default: null },
+
   Tests: [
     {
-      Test_ID: { type: Schema.Types.ObjectId, ref: "DiagnosisTest" }, // optional link
+      Test_ID: { type: Schema.Types.ObjectId, ref: "DiagnosisTest" },
+
       Test_Name: { type: String, required: true },
-      Group: { type: String },
+
+      Group: String,
+
       Result_Value: { type: String, required: true },
-      Reference_Range: { type: String },
-      Units: { type: String },
-      Remarks: { type: String },
-      Timestamp: { type: Date, default: Date.now }
+
+      Reference_Range: String,
+
+      Units: String,
+
+      Remarks: String,
+
+      Timestamp: {
+        type: Date,
+        default: Date.now
+      },
+
+      // ✅ REPORT FILES FOR THIS TEST
+      Reports: [
+        {
+          filename: String,
+          originalname: String,
+          url: String,
+          uploadedBy: String,
+          uploadedAt: {
+            type: Date,
+            default: Date.now
+          }
+        }
+      ]
     }
   ],
 
-  Diagnosis_Notes: { type: String }
+  Diagnosis_Notes: String
+
 },
 {
-    timestamps: true   // ✅ THIS MAKES IT CONSISTENT
-  }
+  timestamps: true
+}
 );
-
-// Add reports metadata for uploaded diagnosis reports
-DiagnosisRecordSchema.add({
-  Reports: [
-    {
-      filename: { type: String },
-      originalname: { type: String },
-      url: { type: String },
-      uploadedBy: { type: String },
-      uploadedAt: { type: Date, default: Date.now }
-    }
-  ]
-});
 
 module.exports = mongoose.model("DiagnosisRecord", DiagnosisRecordSchema);
