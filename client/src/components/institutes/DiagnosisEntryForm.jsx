@@ -14,12 +14,10 @@ const DiagnosisEntryForm = () => {
   const [familyMembers, setFamilyMembers] = useState([]);
   const navigate = useNavigate();
   const [selectedFamilyMember, setSelectedFamilyMember] = useState(null);
-const [selectedEmployee, setSelectedEmployee] = useState(null);
-const [pastRecords, setPastRecords] = useState([]);
-const [showHistory, setShowHistory] = useState(false);
-const [tokenNumber, setTokenNumber] = useState(null);
-const [selectedReportFile, setSelectedReportFile] = useState(null);
-const [uploadingReport, setUploadingReport] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [pastRecords, setPastRecords] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [tokenNumber, setTokenNumber] = useState(null);
 
 
   const [formData, setFormData] = useState({
@@ -27,7 +25,7 @@ const [uploadingReport, setUploadingReport] = useState(false);
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Tests: [{ Test_ID: "", Test_Name: "", Result_Value: "", Reference_Range: "", Units: "" }],
+    Tests: [{ Test_ID: "", Test_Name: "", Result_Value: "", Reference_Range: "", Units: "",ReportFile: null }],
     Diagnosis_Notes: ""
   });
 
@@ -71,7 +69,8 @@ useEffect(() => {
         Test_Name: "",
         Result_Value: "",
         Reference_Range: "",
-        Units: ""
+        Units: "",
+        ReportFile: null
       }]
     }));
     return;
@@ -86,7 +85,8 @@ useEffect(() => {
       Test_Name: t.Test_Name || "",
       Result_Value: "",
       Reference_Range: master?.Reference_Range || "",
-      Units: master?.Units || ""
+      Units: master?.Units || "",
+    ReportFile: null
     };
 
   });
@@ -134,46 +134,57 @@ const fetchTests = async () => {
   }
 };
 
+const handleTestChange = (index, field, value) => {
+  setFormData(prev => {
 
+    const updated = [...prev.Tests];
 
+    if (field === "Test_ID") {
 
-  const handleTestChange = (index, field, value) => {
-    setFormData(prev => {
-      const updated = [...prev.Tests];
-      if (field === "Test_ID") {
-        const sel = testsMaster.find(t => t._id === value);
-        if (sel) {
-          updated[index] = {
-            Test_ID: sel._id,
-            Test_Name: sel.Test_Name,
-            Result_Value: "",
-            Reference_Range: sel.Reference_Range || "",
-            Units: sel.Units || "",
-            Remarks: ""
-          };
-        } else {
-          updated[index] = { 
-            ...updated[index], 
-            Test_ID: value || "", 
-            Test_Name: value ? updated[index].Test_Name : "" 
-          };
-        }
-      } else {
-        updated[index] = { ...updated[index], [field]: value };
+      const sel = testsMaster.find(t => t._id === value);
+
+      if (sel) {
+        updated[index] = {
+  ...updated[index],
+  Test_ID: sel._id,
+  Test_Name: sel.Test_Name,
+  Reference_Range: sel.Reference_Range || "",
+  Units: sel.Units || "",
+  ReportFile: updated[index].ReportFile || null
+};
       }
-      return { ...prev, Tests: updated };
-    });
-  };
 
-  const addTest = () => setFormData(prev => ({ 
-    ...prev, 
-    Tests: [...prev.Tests, { 
-      Test_ID: "", 
-      Test_Name: "", 
-      Result_Value: "", 
-      Reference_Range: "", 
-      Units: "" 
-    }] 
+    } else {
+
+      updated[index] = {
+        ...updated[index],
+        [field]: value
+      };
+
+    }
+
+    return {
+      ...prev,
+      Tests: updated
+    };
+
+  });
+};
+
+const addTest = () =>
+  setFormData(prev => ({
+    ...prev,
+    Tests: [
+      ...prev.Tests,
+      {
+        Test_ID: "",
+        Test_Name: "",
+        Result_Value: "",
+        Reference_Range: "",
+        Units: "",
+        ReportFile: null
+      }
+    ]
   }));
   
   const removeTest = (i) => setFormData(prev => ({ 
@@ -182,101 +193,50 @@ const fetchTests = async () => {
   }));
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
 
-    
-    // Validation
-    if (!formData.Institute_ID) {
-      alert("Institute ID is missing");
-      return;
-    }
-    
-    if (!formData.Employee_ID) {
-      alert("Please select an employee");
-      return;
-    }
-    
-    if (formData.Tests.length === 0) {
-      alert("Please add at least one test");
-      return;
-    }
-    
-    // Validate each test
-    for (let i = 0; i < formData.Tests.length; i++) {
-      const test = formData.Tests[i];
-      if (!test.Test_Name || test.Test_Name.trim() === "") {
-        alert(`Test name is required for test #${i + 1}`);
-        return;
-      }
-      if (!test.Result_Value || test.Result_Value.trim() === "") {
-        alert(`Result value is required for test #${i + 1}`);
-        return;
-      }
+  e.preventDefault();
+
+  const fd = new FormData();
+
+  fd.append("Institute_ID", formData.Institute_ID);
+  fd.append("Employee_ID", formData.Employee_ID);
+  fd.append("IsFamilyMember", formData.IsFamilyMember);
+  fd.append("FamilyMember_ID", formData.FamilyMember_ID || "");
+  fd.append("Diagnosis_Notes", formData.Diagnosis_Notes || "");
+  fd.append("visit_id", visitId || "");
+
+  fd.append("Tests", JSON.stringify(formData.Tests));
+
+  formData.Tests.forEach((t) => {
+
+    if (t.ReportFile) {
+      fd.append("reports", t.ReportFile);
     }
 
-    // const payload = {
-    //   Institute_ID: formData.Institute_ID,
-    //   Employee_ID: formData.Employee_ID,
-    //   IsFamilyMember: formData.IsFamilyMember,
-    //   FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
-    //   Tests: formData.Tests.map(t => ({
-    //     Test_ID: t.Test_ID || null,
-    //     Test_Name: t.Test_Name,
-    //     Result_Value: t.Result_Value,
-    //     Reference_Range: t.Reference_Range || "",
-    //     Units: t.Units || "",
-    //     Remarks: t.Remarks || ""
-    //   })),
-    //   Diagnosis_Notes: formData.Diagnosis_Notes || ""
-    // };
+  });
 
-    // console.log("Submitting payload:", payload);
+  try {
 
-    try {
-      await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/add`,
-        {
-          Institute_ID: formData.Institute_ID,
-          Employee_ID: formData.Employee_ID,
-          IsFamilyMember: formData.IsFamilyMember,
-          FamilyMember_ID: formData.IsFamilyMember
-            ? formData.FamilyMember_ID
-            : null,
-          Tests: formData.Tests.map(t => ({
-            Test_ID: t.Test_ID,
-            Test_Name: t.Test_Name,
-            Result_Value: t.Result_Value,
-            Reference_Range: t.Reference_Range,
-            Units: t.Units
-          })),
-          Diagnosis_Notes: formData.Diagnosis_Notes,
-          visit_id: visitId
+    await axios.post(
+      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/add`,
+      fd,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data"
         }
-      );
-        alert("✅ Diagnosis record saved successfully!");
-        
-        // Reset form (keep institute ID)
-        setFormData(prev => ({ 
-          ...prev,
-          Employee_ID: "",
-          Tests: [{
-            Test_ID: "",
-            Test_Name: "",
-            Result_Value: "",
-            Reference_Range: "",
-            Units: ""
-          }],
-          Diagnosis_Notes: ""
-        }));
-        // setSearchTerm("");
-        setFamilyMembers([]);
-        setVisitId(null);
-      } catch (err) {
-        console.error("Error saving diagnosis:", err?.response?.data || err);
-        alert("❌ Error saving diagnosis: " + (err?.response?.data?.message || err?.message || "Server error"));
       }
-    };
+    );
 
+    alert("✅ Diagnosis record saved successfully");
+
+  } catch (err) {
+
+    console.error(err);
+    alert("❌ Failed to save diagnosis");
+
+  }
+
+};
   const handlePrint = () => {
     const section = document.getElementById("diagnosis-print-section");
     if (!section) return;
@@ -339,6 +299,7 @@ const fetchPastRecords = async () => {
     const res = await axios.get(
       `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
     );
+    console.log("Diagnosis Records:", res.data); 
 
     setPastRecords(res.data || []);
     setShowHistory(true);   // 👈 open modal
@@ -346,45 +307,6 @@ const fetchPastRecords = async () => {
     console.error("Error fetching past records:", err);
   }
 };
-
-const handleReportFileChange = (e) => {
-  const f = e.target.files && e.target.files[0];
-  setSelectedReportFile(f || null);
-};
-
-const handleUploadReport = async () => {
-  if (!selectedReportFile) return alert('Please choose a file to upload');
-  if (!formData.Employee_ID || !formData.Institute_ID) return alert('Select a patient first');
-
-  try {
-    setUploadingReport(true);
-    const fd = new FormData();
-    fd.append('report', selectedReportFile);
-    fd.append('Employee_ID', formData.Employee_ID);
-    fd.append('Institute_ID', formData.Institute_ID);
-    fd.append('IsFamilyMember', formData.IsFamilyMember);
-    fd.append('FamilyMember_ID', formData.FamilyMember_ID || '');
-
-    const token = localStorage.getItem('instituteToken');
-    const res = await axios.post(
-      `http://localhost:${BACKEND_PORT_NO}/diagnosis-api/upload`,
-      fd,
-      { headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'multipart/form-data' } }
-    );
-
-    alert('✅ Report uploaded');
-    setSelectedReportFile(null);
-    // refresh past records
-    await fetchPastRecords();
-  } catch (err) {
-    console.error('Upload failed', err?.response?.data || err.message || err);
-    alert('❌ Upload failed');
-  } finally {
-    setUploadingReport(false);
-  }
-};
-
-
 
 
   return (
@@ -437,45 +359,52 @@ const handleUploadReport = async () => {
                         📅 Date: {record?.createdAt ? formatDateDMY(record.createdAt) : "—"}
                       </div>
                       {record?.Tests?.length > 0 ? (
-                        record.Tests.map((t, i) => (
-                          <div key={i} className="mb-2 p-2 bg-light rounded">
-                            <div className="fw-semibold text-dark">
-                              {t?.Test_Name || "Test"}
-                            </div>
-                            <small className="text-muted">
-                              Result: {t?.Result_Value || "N/A"}
-                              {t?.Units && ` ${t.Units}`}
-                            </small>
-                            {t?.Reference_Range && (
-                              <div className="small text-secondary mt-1">
-                                Ref Range: {t.Reference_Range}
+                        record.Tests.map((t, i) => {
+
+                          const reports = t.Reports || [];
+
+                          return (
+                            <div key={i} className="mb-2 p-2 bg-light rounded">
+
+                              <div className="fw-semibold text-dark">
+                                {t?.Test_Name || "Test"}
                               </div>
-                            )}
-                          </div>
-                        ))
+
+                              <small className="text-muted">
+                                Result: {t?.Result_Value || "N/A"}
+                                {t?.Units && ` ${t.Units}`}
+                              </small>
+
+                              {t?.Reference_Range && (
+                                <div className="small text-secondary mt-1">
+                                  Ref Range: {t.Reference_Range}
+                                </div>
+                              )}
+
+                              {/* ✅ REPORT BUTTON IN SAME BLOCK */}
+                              {reports.length > 0 && (
+                                <div className="mt-2">
+                                  {reports.map((r, ri) => (
+                                    <a
+                                      key={ri}
+                                      href={`http://localhost:${BACKEND_PORT_NO}${r.url}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="btn btn-sm btn-outline-primary me-2"
+                                    >
+                                      📄 View Report
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
+
+                            </div>
+                          );
+
+                        })
                       ) : (
                         <div className="text-muted small">
                           No test details available
-                        </div>
-                      )}
-                      {record?.Diagnosis_Notes && (
-                        <div className="mt-2 p-2 bg-light rounded small">
-                          📝 Notes: {record.Diagnosis_Notes}
-                        </div>
-                      )}
-                      {record?.Reports && record.Reports.length > 0 && (
-                        <div className="mt-2">
-                          <strong>Uploaded Reports:</strong>
-                          <ul className="list-unstyled mt-2">
-                            {record.Reports.map((r, idx) => (
-                              <li key={idx} className="mb-1">
-                                <a href={`http://localhost:${BACKEND_PORT_NO}${r.url}`} target="_blank" rel="noreferrer" className="me-2">
-                                  {r.originalname || r.filename}
-                                </a>
-                                <a href={`http://localhost:${BACKEND_PORT_NO}${r.url}`} download className="btn btn-sm btn-outline-secondary">Download</a>
-                              </li>
-                            ))}
-                          </ul>
                         </div>
                       )}
                     </div>
@@ -706,7 +635,24 @@ const handleUploadReport = async () => {
                                 onChange={e => handleTestChange(i, "Units", e.target.value)}
                               />
                             </div>
+                            <div className="col-md-12">
+                              <label className="form-label fw-semibold">
+                                Upload Report
+                              </label>
+                              <input
+                                type="file"
+                                className="form-control"
+                                onChange={(e)=>
+                                  handleTestChange(
+                                    i,
+                                    "ReportFile",
+                                    e.target.files[0]
+                                  )
+                                }
+                              />
+                            </div>
                           </div>
+
 
                           {(t.Reference_Range || t.Units) && (
                             <div className="mt-2 p-2 bg-info bg-opacity-10 rounded small">
@@ -738,17 +684,6 @@ const handleUploadReport = async () => {
                     value={formData.Diagnosis_Notes}
                     onChange={e => setFormData(prev => ({ ...prev, Diagnosis_Notes: e.target.value }))}
                   />
-                </div>
-
-                {/* Upload Report (adds report file to diagnosis record) */}
-                <div className="mb-4">
-                  <label className="form-label fw-semibold">📎 Upload Report</label>
-                  <div className="d-flex gap-2">
-                    <input type="file" className="form-control" onChange={handleReportFileChange} />
-                    <button type="button" className="btn btn-primary" onClick={handleUploadReport} disabled={uploadingReport}>
-                      {uploadingReport ? 'Uploading...' : 'Upload Report'}
-                    </button>
-                  </div>
                 </div>
 
                 {/* Submit Button */}

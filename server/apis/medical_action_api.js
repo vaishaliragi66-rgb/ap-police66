@@ -5,8 +5,7 @@ const Diagnosis = require("../models/diagnostics_record");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 
 // CREATE MEDICAL ACTION (Doctor / Pharmacy / Diagnosis)
-router.post("/",verifyToken,
-  allowInstituteRoles("doctor"), async (req, res) => {
+router.post("/", verifyToken, allowInstituteRoles("doctor"), async (req, res) => {
   try {
     const {
       employee_id,
@@ -16,37 +15,21 @@ router.post("/",verifyToken,
       data
     } = req.body;
 
-    // Always log the action
-    const action = await MedicalAction.create(req.body);
+    // Only log the action (doctor prescribing tests)
+    const action = await MedicalAction.create({
+      employee_id,
+      visit_id,
+      action_type,
+      source,
+      data
+    });
 
-    // 🔥 CREATE REAL DIAGNOSIS RECORD
-    if (action_type === "DOCTOR_DIAGNOSIS") {
-      const diagnosis = await Diagnosis.create({
-        Institute: data.Institute_ID || action.institute_id, // be explicit
-        Employee: employee_id,
-        IsFamilyMember: data.IsFamilyMember,
-        FamilyMember: data.IsFamilyMember ? data.FamilyMember_ID : null,
-        Tests: data.tests.map(t => ({
-  ...t,
-  Result_Value: t.Result_Value ?? "PENDING",
-  Timestamp: new Date()
-}))
-,
-        Diagnosis_Notes: data.notes || ""
-      });
+    return res.status(201).json(action);
 
-      return res.status(201).json({
-        action,
-        diagnosis
-      });
-    }
-
-    res.status(201).json(action);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // GET ALL ACTIONS BY EMPLOYEE
 router.get("/employee/:employeeId", async (req, res) => {

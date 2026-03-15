@@ -415,44 +415,67 @@ return (
                 <th>Result</th>
                 <th>Reference</th>
                 <th>Status</th>
+                <th>Report</th>
               </tr>
             </thead>
             <tbody>
-              {selectedReport.Tests.map((t, i) => (
-                <tr key={i}>
-                  <td>{t.Test_Name}</td>
-                  <td>{t.Result_Value} {t.Units}</td>
-                  <td>{t.Test_ID?.Reference_Range || t.Reference_Range}</td>
-                  <td>
-                    <span className={`badge ${
-                      getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range) === "Normal"
-                        ? "bg-success"
-                        : "bg-danger"
-                    }`}>
-                      {getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {selectedReport.Tests.map((t, i) => {
+
+                const reports = t.Reports || [];
+
+                return (
+                  <tr key={i}>
+                    <td>{t.Test_Name}</td>
+
+                    <td>{t.Result_Value} {t.Units}</td>
+
+                    <td>{t.Test_ID?.Reference_Range || t.Reference_Range}</td>
+
+                    <td>
+                      <span className={`badge ${
+                        getStatus(
+                          t.Result_Value,
+                          t.Test_ID?.Reference_Range || t.Reference_Range
+                        ) === "Normal"
+                          ? "bg-success"
+                          : "bg-danger"
+                      }`}>
+                        {getStatus(
+                          t.Result_Value,
+                          t.Test_ID?.Reference_Range || t.Reference_Range
+                        )}
+                      </span>
+                    </td>
+
+                    {/* REPORT BUTTON COLUMN */}
+                    <td>
+                      {reports.length > 0 ? (
+                        reports.map((r, ri) => (
+                          <a
+                            key={ri}
+                            href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-sm btn-outline-primary me-1"
+                          >
+                            View
+                          </a>
+                        ))
+                      ) : (
+                        <button
+                          className="btn btn-sm btn-outline-secondary"
+                          disabled
+                        >
+                          No Report
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+
+              })}
             </tbody>
           </table>
-
-          {/* Uploaded reports (if any) */}
-          {selectedReport.Reports && selectedReport.Reports.length > 0 && (
-            <div className="mt-3">
-              <h6>Uploaded Reports</h6>
-              <ul className="list-unstyled">
-                {selectedReport.Reports.map((r, i) => (
-                  <li key={i} className="mb-2">
-                    <a href={`http://localhost:${BACKEND_PORT}/${r.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">
-                      {r.originalname || r.filename}
-                    </a>
-                    <a href={`http://localhost:${BACKEND_PORT}/${r.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
 
         </div>
 
