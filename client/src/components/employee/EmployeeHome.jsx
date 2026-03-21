@@ -7,6 +7,7 @@ import {
   FaVirus,
   FaSignOutAlt,
   FaImage,
+  FaUser,
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -21,6 +22,13 @@ const EmployeeHome = () => {
 
   // Card data
   const cards = [
+    {
+      icon: <FaUser size={30} />,
+      title: "My Profile",
+      desc: "View and edit your personal profile.",
+      onClick: () => navigate("/employee/profile"),
+      btnText: "View Profile",
+    },
     {
       icon: <FaUserFriends size={30} />,
       title: "Family Members",

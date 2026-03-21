@@ -472,4 +472,43 @@ employeeApp.get("/health-report", expressAsyncHandler(async (req, res) => {
   })
 );
 
+employeeApp.put("/update-profile/:id", expressAsyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Find and update the employee
+    const updatedEmployee = await Employee.findByIdAndUpdate(
+      id,
+      {
+        Name: updateData.Name,
+        Email: updateData.Email,
+        Designation: updateData.Designation,
+        DOB: updateData.DOB,
+        Blood_Group: updateData.Blood_Group,
+        Height: updateData.Height,
+        Weight: updateData.Weight,
+        Phone_No: updateData.Phone_No,
+        Gender: updateData.Gender,
+        Address: updateData.Address
+      },
+      { new: true }
+    );
+
+    if (!updatedEmployee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      employee: updatedEmployee
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to update profile",
+      error: err.message
+    });
+  }
+}));
+
 module.exports = employeeApp;

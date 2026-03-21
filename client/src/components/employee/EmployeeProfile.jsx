@@ -10,18 +10,45 @@ const EmployeeProfile = () => {
 
   const [employee, setEmployee] = useState(null);
   const [family, setFamily] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({});
 
   useEffect(() => {
     if (!employeeId) return;
 
     axios
       .get(`http://localhost:${BACKEND_PORT}/employee-api/profile/${employeeId}`)
-      .then((res) => setEmployee(res.data));
+      .then((res) => {
+        setEmployee(res.data);
+        setEditData(res.data);
+      });
 
     axios
       .get(`http://localhost:${BACKEND_PORT}/family-api/family/${employeeId}`)
       .then((res) => setFamily(res.data || []));
   }, [employeeId, BACKEND_PORT]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    axios.put(`http://localhost:${BACKEND_PORT}/employee-api/update-profile/${employeeId}`, editData)
+      .then((res) => {
+        setEmployee(res.data.employee);
+        setIsEditing(false);
+        alert("Profile updated successfully");
+      })
+      .catch((err) => {
+        alert("Failed to update profile");
+        console.error(err);
+      });
+  };
+
+  const handleCancel = () => {
+    setEditData(employee);
+    setIsEditing(false);
+  };
 
   if (!employee)
     return <div className="text-center mt-5">Loading profile...</div>;
@@ -57,10 +84,10 @@ const EmployeeProfile = () => {
           </p>
         </div>
 
-    
-          {/* Back Button */}
+        {/* Back Button and Edit Button */}
+        <div className="d-flex justify-content-between mb-3">
           <button
-            className="btn mb-3"
+            className="btn"
             onClick={() => navigate(-1)}
             style={{
               backgroundColor: "#FFFFFF",
@@ -73,6 +100,45 @@ const EmployeeProfile = () => {
           >
             ← Back
           </button>
+          {!isEditing ? (
+            <button
+              className="btn btn-primary"
+              onClick={handleEdit}
+              style={{
+                borderRadius: "8px",
+                padding: "6px 14px",
+                fontSize: "14px",
+              }}
+            >
+              Edit Profile
+            </button>
+          ) : (
+            <div>
+              <button
+                className="btn btn-success me-2"
+                onClick={handleSave}
+                style={{
+                  borderRadius: "8px",
+                  padding: "6px 14px",
+                  fontSize: "14px",
+                }}
+              >
+                Save
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={handleCancel}
+                style={{
+                  borderRadius: "8px",
+                  padding: "6px 14px",
+                  fontSize: "14px",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
     
           {/* PROFILE CARD */}
           <div
@@ -182,21 +248,51 @@ const EmployeeProfile = () => {
 
       <p className="mb-2">
         <strong>Email:</strong>{" "}
-        <span style={{ color: "#6B7280" }}>{employee.Email}</span>
+        {isEditing ? (
+          <input
+            type="email"
+            className="form-control d-inline-block"
+            style={{ width: "auto", fontSize: "14px" }}
+            value={editData.Email || ""}
+            onChange={(e) => setEditData({ ...editData, Email: e.target.value })}
+          />
+        ) : (
+          <span style={{ color: "#6B7280" }}>{employee.Email}</span>
+        )}
       </p>
 
       <p className="mb-2">
         <strong>Designation:</strong>{" "}
-        <span style={{ color: "#6B7280" }}>{employee.Designation}</span>
+        {isEditing ? (
+          <input
+            type="text"
+            className="form-control d-inline-block"
+            style={{ width: "auto", fontSize: "14px" }}
+            value={editData.Designation || ""}
+            onChange={(e) => setEditData({ ...editData, Designation: e.target.value })}
+          />
+        ) : (
+          <span style={{ color: "#6B7280" }}>{employee.Designation}</span>
+        )}
       </p>
 
       <p className="mb-0">
         <strong>Date of Birth:</strong>{" "}
-        <span style={{ color: "#6B7280" }}>
-          {employee.DOB
-            ? new Date(employee.DOB).toLocaleDateString()
-            : "-"}
-        </span>
+        {isEditing ? (
+          <input
+            type="date"
+            className="form-control d-inline-block"
+            style={{ width: "auto", fontSize: "14px" }}
+            value={editData.DOB ? new Date(editData.DOB).toISOString().split('T')[0] : ""}
+            onChange={(e) => setEditData({ ...editData, DOB: e.target.value })}
+          />
+        ) : (
+          <span style={{ color: "#6B7280" }}>
+            {employee.DOB
+              ? new Date(employee.DOB).toLocaleDateString()
+              : "-"}
+          </span>
+        )}
       </p>
     </div>
   </div>
@@ -224,23 +320,62 @@ const EmployeeProfile = () => {
 
       <p className="mb-2">
         <strong>Blood Group:</strong>{" "}
-        <span style={{ color: "#6B7280" }}>
-          {employee.Blood_Group}
-        </span>
+        {isEditing ? (
+          <select
+            className="form-control d-inline-block"
+            style={{ width: "auto", fontSize: "14px" }}
+            value={editData.Blood_Group || ""}
+            onChange={(e) => setEditData({ ...editData, Blood_Group: e.target.value })}
+          >
+            <option value="">Select</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+          </select>
+        ) : (
+          <span style={{ color: "#6B7280" }}>
+            {employee.Blood_Group}
+          </span>
+        )}
       </p>
 
       <p className="mb-2">
         <strong>Height:</strong>{" "}
-        <span style={{ color: "#6B7280" }}>
-          {employee.Height} cm
-        </span>
+        {isEditing ? (
+          <input
+            type="number"
+            className="form-control d-inline-block"
+            style={{ width: "auto", fontSize: "14px" }}
+            value={editData.Height || ""}
+            onChange={(e) => setEditData({ ...editData, Height: e.target.value })}
+          />
+        ) : (
+          <span style={{ color: "#6B7280" }}>
+            {employee.Height} cm
+          </span>
+        )}
       </p>
 
       <p className="mb-2">
         <strong>Weight:</strong>{" "}
-        <span style={{ color: "#6B7280" }}>
-          {employee.Weight} kg
-        </span>
+        {isEditing ? (
+          <input
+            type="number"
+            className="form-control d-inline-block"
+            style={{ width: "auto", fontSize: "14px" }}
+            value={editData.Weight || ""}
+            onChange={(e) => setEditData({ ...editData, Weight: e.target.value })}
+          />
+        ) : (
+          <span style={{ color: "#6B7280" }}>
+            {employee.Weight} kg
+          </span>
+        )}
       </p>
 
       <p className="mb-0">
