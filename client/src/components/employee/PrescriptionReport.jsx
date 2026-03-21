@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -6,7 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const PrescriptionReport = () => {
   const [prescriptions, setPrescriptions] = useState([]);
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || "6100";
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const employeeId = localStorage.getItem("employeeId");
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -18,7 +18,7 @@ const PrescriptionReport = () => {
   const fetchPrescriptions = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/prescription-api/employee/${employeeId}`
+        `${BACKEND_URL}/prescription-api/employee/${employeeId}`
       );
       setPrescriptions(res.data || []);
     } catch (err) {

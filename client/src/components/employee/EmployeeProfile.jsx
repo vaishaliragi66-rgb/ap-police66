@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -6,7 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const EmployeeProfile = () => {
   const navigate = useNavigate();
   const employeeId = localStorage.getItem("employeeId");
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [employee, setEmployee] = useState(null);
   const [family, setFamily] = useState([]);
@@ -20,14 +20,14 @@ const EmployeeProfile = () => {
     if (!employeeId) return;
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/employee-api/profile/${employeeId}`)
+      .get(`${BACKEND_URL}/employee-api/profile/${employeeId}`)
       .then((res) => {
         setEmployee(res.data);
         setEditData(res.data);
       });
 
     axios
-      .get(`http://localhost:${BACKEND_PORT}/family-api/family/${employeeId}`)
+      .get(`${BACKEND_URL}/family-api/family/${employeeId}`)
       .then((res) => setFamily(res.data || []));
   }, [employeeId, BACKEND_PORT]);
 
@@ -36,7 +36,7 @@ const EmployeeProfile = () => {
   };
 
   const handleSave = () => {
-    axios.put(`http://localhost:${BACKEND_PORT}/employee-api/update-profile/${employeeId}`, editData)
+    axios.put(`${BACKEND_URL}/employee-api/update-profile/${employeeId}`, editData)
       .then((res) => {
         setEmployee(res.data.employee);
         setIsEditing(false);
@@ -60,7 +60,7 @@ const EmployeeProfile = () => {
 
     axios
       .put(
-        `http://localhost:${BACKEND_PORT}/employee-api/upload-abs-card/${employeeId}`,
+        `${BACKEND_URL}/employee-api/upload-abs-card/${employeeId}`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       )
@@ -92,7 +92,7 @@ const EmployeeProfile = () => {
     setAbsCardDeleting(true);
     axios
       .delete(
-        `http://localhost:${BACKEND_PORT}/employee-api/delete-abs-card/${employeeId}`
+        `${BACKEND_URL}/employee-api/delete-abs-card/${employeeId}`
       )
       .then((res) => {
         setEmployee(res.data.employee);
@@ -122,7 +122,7 @@ const EmployeeProfile = () => {
     return <div className="text-center mt-5">Loading profile...</div>;
 
     const absCardUrl = employee?.ABS_Card
-      ? `http://localhost:${BACKEND_PORT}${employee.ABS_Card}`
+      ? `${BACKEND_URL}${employee.ABS_Card}`
       : null;
     const isAbsCardImage = employee?.ABS_Card
       ? /\.(png|jpe?g|gif)$/i.test(employee.ABS_Card)
@@ -248,9 +248,9 @@ const EmployeeProfile = () => {
               <img
                 src={
                   employee.Profile_Pic
-                    ? `http://localhost:${BACKEND_PORT}${employee.Profile_Pic}`
+                    ? `${BACKEND_URL}${employee.Profile_Pic}`
                     : employee.Photo
-                    ? `http://localhost:${BACKEND_PORT}${employee.Photo}`
+                    ? `${BACKEND_URL}${employee.Photo}`
                     : "/default-avatar.png"
                 }
                 

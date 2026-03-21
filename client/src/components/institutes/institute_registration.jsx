@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaUniversity, FaEye, FaEyeSlash } from "react-icons/fa";
@@ -50,12 +50,12 @@ const InstituteRegister = () => {
       return;
     }
 
-    const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const { confirm_password, ...payload } = formData;
 
     try {
       const res = await fetch(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/register/institute`,
+        `${BACKEND_URL}/institute-api/register/institute`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

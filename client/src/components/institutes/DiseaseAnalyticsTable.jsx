@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -23,7 +23,7 @@ function DiseaseAnalyticsTable() {
       const institute = JSON.parse(localStorage.getItem("institute"));
 
       const res = await axios.get(
-        `http://localhost:6100/api/analytics/${type}-summary`,
+        `${BACKEND_URL}/api/analytics/${type}-summary`,
         {
           params: {
             instituteId: institute._id,

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 /* ===============================
    Utility: Abnormal Test Checker
@@ -159,7 +159,7 @@ export default function EmployeeReports() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/admin-api/analytics/all`)
+      .get(`${BACKEND_URL}/admin-api/analytics/all`)
       .then(res => {
         setRows(res.data || []);
         setLoading(false);

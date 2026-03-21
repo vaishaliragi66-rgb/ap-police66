@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -32,7 +32,7 @@ const daysFromToday = (value) => {
 };
 
 function InstituteInventory() {
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const [inventory, setInventory] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -64,7 +64,7 @@ function InstituteInventory() {
 
         // Fetch only sub store data (inventory)
         const res = await axios.get(
-          `http://localhost:${BACKEND_PORT_NO}/medicine-api/substore/${instituteId}`
+          `${BACKEND_URL}/medicine-api/substore/${instituteId}`
         );
 
         setInventory(res.data || []);

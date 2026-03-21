@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUserShield } from "react-icons/fa";
@@ -12,7 +12,7 @@ const AdminLogin = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -36,7 +36,7 @@ const AdminLogin = () => {
 
     try {
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/admin-api/login`,
+        `${BACKEND_URL}/admin-api/login`,
         { 
           email: email.trim().toLowerCase(), 
           password: password 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { FaUserShield, FaLock } from "react-icons/fa";
@@ -22,7 +22,7 @@ const AdminRegister = () => {
   const [passwordStrength, setPasswordStrength] = useState("");
   const [passwordMatch, setPasswordMatch] = useState(true);
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -138,7 +138,7 @@ const AdminRegister = () => {
       console.log("Submitting admin registration...");
 
       const response = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/admin-api/register`,
+        `${BACKEND_URL}/admin-api/register`,
         adminData,
         {
           headers: {

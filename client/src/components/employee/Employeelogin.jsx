@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUserLock } from "react-icons/fa";
@@ -13,7 +13,7 @@ const Employeelogin = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -35,7 +35,7 @@ const Employeelogin = () => {
 
     try {
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/employee-api/login`,
+        `${BACKEND_URL}/employee-api/login`,
         { ABS_NO: absNo.trim(), Password: password.trim() }
       );
 

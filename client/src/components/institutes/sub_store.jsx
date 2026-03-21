@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function SubStore() {
 
@@ -57,7 +57,7 @@ export default function SubStore() {
   const instituteId = institute._id;
 
   axios
-    .get(`http://localhost:${BACKEND_PORT}/medicine-api/substore/${instituteId}`)
+    .get(`${BACKEND_URL}/medicine-api/substore/${instituteId}`)
     .then(res => {
       setRows(res.data || []);
       setLoading(false);

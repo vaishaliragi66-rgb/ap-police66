@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -6,7 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const FamilyMemberProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [member, setMember] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -14,7 +14,7 @@ const FamilyMemberProfile = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/family-api/family-report/${id}`)
+      .get(`${BACKEND_URL}/family-api/family-report/${id}`)
       .then((res) => {
         setMember(res.data);
         setEditData(res.data);
@@ -26,7 +26,7 @@ const FamilyMemberProfile = () => {
   };
 
   const handleSave = () => {
-    axios.put(`http://localhost:${BACKEND_PORT}/family-api/update/${id}`, editData)
+    axios.put(`${BACKEND_URL}/family-api/update/${id}`, editData)
       .then((res) => {
         setMember(res.data.member);
         setIsEditing(false);
