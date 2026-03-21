@@ -15,6 +15,7 @@ const VisitRegister = () => {
   const [isFamily, setIsFamily] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [selectedFamily, setSelectedFamily] = useState(null);
+  const [familyLoading, setFamilyLoading] = useState(false);
 
   const [previewToken, setPreviewToken] = useState(null);
   const [previewOP, setPreviewOP] = useState(null);
@@ -61,15 +62,17 @@ const VisitRegister = () => {
   /* ================= LOAD FAMILY MEMBERS ================= */
   useEffect(() => {
     if (isFamily && selectedEmployee) {
+      setFamilyLoading(true);
       axios.get(
         `http://localhost:${BACKEND_PORT}/family-api/family/${selectedEmployee._id}`
       )
-      
         .then(res => setFamilyMembers(res.data || []))
-        .catch(() => setFamilyMembers([]));
+        .catch(() => setFamilyMembers([]))
+        .finally(() => setFamilyLoading(false));
     } else {
       setFamilyMembers([]);
       setSelectedFamily(null);
+      setFamilyLoading(false);
     }
   }, [isFamily, selectedEmployee]);
 
@@ -242,7 +245,13 @@ const VisitRegister = () => {
             </div>
 
             {/* FAMILY DROPDOWN */}
-            {isFamily && familyMembers.length > 0 && (
+            {isFamily && familyLoading && (
+              <div className="mt-3 text-muted" style={{ fontSize: "14px" }}>
+                Loading family members...
+              </div>
+            )}
+
+            {isFamily && !familyLoading && familyMembers.length > 0 && (
               <div className="mt-3">
                 <label className="fw-semibold">Family Member</label>
                 <select
@@ -264,7 +273,7 @@ const VisitRegister = () => {
               </div>
             )}
 
-            {isFamily && familyMembers.length === 0 && (
+            {isFamily && !familyLoading && familyMembers.length === 0 && (
               <div className="alert alert-warning mt-3">
                 No family members found
               </div>
