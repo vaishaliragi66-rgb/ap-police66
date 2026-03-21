@@ -30,31 +30,10 @@ const [xrayData, setXrayData] = useState({
 
   
   
-  const communicableDiseases = [
-    "Tuberculosis",
-    "Malaria",
-    "Dengue",
-    "COVID-19",
-    "Cholera",
-    "Typhoid",
-    "Hepatitis A",
-    "Hepatitis B",
-    "Influenza",
-    "Chickenpox",
-  ];
-  
-  const nonCommunicableDiseases = [
-    "Diabetes",
-    "Hypertension",
-    "Asthma",
-    "Cancer",
-    "Heart Disease",
-    "Arthritis",
-    "Kidney Disease",
-    "Migraine",
-    "Obesity",
-    "Stroke",
-  ];
+  // load disease lists from server (small local fallback kept)
+  const [communicableDiseases, setCommunicableDiseases] = useState(["Tuberculosis", "Malaria", "Dengue"]);
+  const [nonCommunicableDiseases, setNonCommunicableDiseases] = useState(["Diabetes", "Hypertension", "Asthma"]);
+  const [allDiseases, setAllDiseases] = useState([]);
   
   const [diseaseData, setDiseaseData] = useState({
     Category: "Communicable",
@@ -99,6 +78,23 @@ const [xrayData, setXrayData] = useState({
 
     return `${dd}-${mm}-${yyyy}`;
   };
+
+  // fetch full disease lists from server (if available)
+  useEffect(() => {
+    const fetchLists = async () => {
+      try {
+        const res = await axios.get(`http://localhost:${BACKEND_PORT}/disease-list/static`);
+        const body = res.data || {};
+        const sort = (arr) => (Array.isArray(arr) ? arr.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase())) : []);
+        if (Array.isArray(body.communicable) && body.communicable.length) setCommunicableDiseases(sort(body.communicable));
+        if (Array.isArray(body.nonCommunicable) && body.nonCommunicable.length) setNonCommunicableDiseases(sort(body.nonCommunicable));
+        if (Array.isArray(body.all) && body.all.length) setAllDiseases(sort(body.all));
+      } catch (err) {
+        console.warn('Could not load disease lists, using defaults', err?.message || err);
+      }
+    };
+    fetchLists();
+  }, []);
 
   const getReportStatus = (value) => {
     if (!value) return "pending";
@@ -911,9 +907,12 @@ if (validXrays.length === 0) {
       }}
     >
       <option value="">Select Disease</option>
-      {(diseaseData.Category === "Communicable"
-        ? communicableDiseases
-        : nonCommunicableDiseases
+      {(allDiseases && allDiseases.length > 0
+        ? allDiseases
+        : (diseaseData.Category === "Communicable"
+            ? communicableDiseases
+            : nonCommunicableDiseases
+          )
       ).map((d, i) => (
         <option key={i} value={d}>{d}</option>
       ))}

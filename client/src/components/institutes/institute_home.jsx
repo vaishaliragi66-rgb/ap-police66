@@ -63,7 +63,7 @@ const Institute_home = () => {
     return cardAccess[role]?.includes(card);
   };
 
-  const dashboardTitle = role === "front_desk" ? "Front Desk Dashboard" : "Institute Dashboard";
+  const dashboardTitle = "Front Desk";
   const welcomeMessage = role === "front_desk" ? "Welcome back, Front Desk" : `Welcome back, ${institute?.Institute_Name}`;
 
   const QuickCard = ({ icon, title, desc, onClick }) => (
