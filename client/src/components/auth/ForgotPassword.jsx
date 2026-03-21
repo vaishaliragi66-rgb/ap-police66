@@ -1,11 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useLocation, useNavigate, Link } from "react-router-dom";
-import { FaLock, FaEnvelope, FaShieldAlt, FaCheckCircle } from "react-icons/fa";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  FaCheckCircle,
+  FaEnvelope,
+  FaLock,
+  FaPhoneAlt,
+  FaShieldAlt,
+} from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 5200;
 const BASE_URL = `http://localhost:${BACKEND_PORT}`;
+const EMAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
+const PHONE_REGEX = /^[6-9]\d{9}$/;
 
 const ROLE_CONFIG = {
   admin: {
@@ -13,27 +21,59 @@ const ROLE_CONFIG = {
     loginPath: "/admin/login",
     color: "#4A70A9",
     placeholder: "Enter your admin email address",
+    identifierLabel: "Email Address",
+    identifierIcon: FaEnvelope,
+    inputType: "email",
+    helpText: "Enter your registered email to receive an OTP",
+    sentMessage: "OTP sent to your registered email. Please check your inbox.",
+    resendMessage: "A new OTP has been sent to your email.",
+    invalidMessage: "Please enter a valid email address.",
+    missingMessage: "Please enter your email address.",
   },
   employee: {
     label: "Employee",
     loginPath: "/employee-login",
     color: "#4A70A9",
-    placeholder: "Enter your registered email address",
+    placeholder: "Enter your registered phone number",
+    identifierLabel: "Phone Number",
+    identifierIcon: FaPhoneAlt,
+    inputType: "tel",
+    helpText: "Enter your registered phone number to receive an OTP",
+    sentMessage: "OTP sent to your registered phone number.",
+    resendMessage: "A new OTP has been sent to your registered phone number.",
+    invalidMessage: "Please enter a valid 10-digit phone number.",
+    missingMessage: "Please enter your phone number.",
   },
   institute: {
     label: "Institute",
     loginPath: "/institutes/login",
     color: "#4A70A9",
     placeholder: "Enter your institute email address",
+    identifierLabel: "Email Address",
+    identifierIcon: FaEnvelope,
+    inputType: "email",
+    helpText: "Enter your registered email to receive an OTP",
+    sentMessage: "OTP sent to your registered email. Please check your inbox.",
+    resendMessage: "A new OTP has been sent to your email.",
+    invalidMessage: "Please enter a valid email address.",
+    missingMessage: "Please enter your email address.",
   },
 };
 
-// Derive role from URL path
 const getRoleFromPath = (pathname) => {
   if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/employee")) return "employee";
   if (pathname.startsWith("/institutes")) return "institute";
   return null;
+};
+
+const normalizeIdentifier = (value, role) => {
+  const trimmed = value.trim();
+  if (role === "employee") {
+    return trimmed.replace(/\D/g, "").slice(-10);
+  }
+
+  return trimmed.toLowerCase();
 };
 
 const ForgotPassword = () => {
@@ -42,8 +82,10 @@ const ForgotPassword = () => {
 
   const role = getRoleFromPath(location.pathname);
   const config = ROLE_CONFIG[role];
+  const isEmployee = role === "employee";
+  const IdentifierIcon = config?.identifierIcon || FaEnvelope;
 
-  const [step, setStep] = useState(1); // 1 = request OTP, 2 = reset password
+  const [step, setStep] = useState(1);
   const [identifier, setIdentifier] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -53,15 +95,14 @@ const ForgotPassword = () => {
   const [success, setSuccess] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [resetDone, setResetDone] = useState(false);
+  const [debugOtp, setDebugOtp] = useState("");
 
-  // Countdown timer for resend cooldown
   useEffect(() => {
-    if (countdown <= 0) return;
-    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    if (countdown <= 0) return undefined;
+    const timer = setTimeout(() => setCountdown((current) => current - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Redirect if invalid role
   useEffect(() => {
     if (!role || !config) {
       navigate("/");
@@ -75,34 +116,48 @@ const ForgotPassword = () => {
     setSuccess("");
   };
 
-  // ── Step 1: Request OTP ──────────────────────────────────────────────────
+  const validateIdentifier = (value) => {
+    if (!value) {
+      return config.missingMessage;
+    }
+
+    if (isEmployee) {
+      return PHONE_REGEX.test(value) ? "" : config.invalidMessage;
+    }
+
+    return EMAIL_REGEX.test(value) ? "" : config.invalidMessage;
+  };
+
+  const applyOtpResponse = (responseData, fallbackMessage) => {
+    const message = responseData.message || fallbackMessage;
+    setSuccess(message);
+    setDebugOtp(responseData.debugOtp || "");
+    setStep(2);
+    setCountdown(60);
+  };
+
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     clearMessages();
+    setDebugOtp("");
 
-    const trimmedId = identifier.trim();
-    if (!trimmedId) {
-      setError("Please enter your email address.");
-      return;
-    }
+    const normalizedIdentifier = normalizeIdentifier(identifier, role);
+    const validationError = validateIdentifier(normalizedIdentifier);
 
-    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
-    if (!emailRegex.test(trimmedId)) {
-      setError("Please enter a valid email address.");
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     setLoading(true);
     try {
       const res = await axios.post(`${BASE_URL}/auth/request-password-reset`, {
-        identifier: trimmedId,
+        identifier: normalizedIdentifier,
         role,
       });
 
       if (res.data.success) {
-        setSuccess("OTP sent to your registered email. Please check your inbox.");
-        setStep(2);
-        setCountdown(60);
+        applyOtpResponse(res.data, config.sentMessage);
       } else {
         setError(res.data.message || "Failed to send OTP.");
       }
@@ -111,7 +166,7 @@ const ForgotPassword = () => {
       if (err.response?.status === 429) {
         setError(msg || "Too many requests. Please wait before trying again.");
         const match = msg?.match(/(\d+) second/);
-        if (match) setCountdown(parseInt(match[1]));
+        if (match) setCountdown(parseInt(match[1], 10));
       } else {
         setError(msg || "Failed to send OTP. Please check your connection.");
       }
@@ -120,7 +175,6 @@ const ForgotPassword = () => {
     }
   };
 
-  // ── Step 2: Reset Password ────────────────────────────────────────────────
   const handleResetPassword = async (e) => {
     e.preventDefault();
     clearMessages();
@@ -128,6 +182,7 @@ const ForgotPassword = () => {
     const trimmedOtp = otp.trim();
     const trimmedPwd = newPassword.trim();
     const trimmedConfirm = confirmPassword.trim();
+    const normalizedIdentifier = normalizeIdentifier(identifier, role);
 
     if (!trimmedOtp) {
       setError("Please enter the OTP.");
@@ -157,7 +212,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const res = await axios.post(`${BASE_URL}/auth/reset-password`, {
-        identifier: identifier.trim(),
+        identifier: normalizedIdentifier,
         role,
         otp: trimmedOtp,
         newPassword: trimmedPwd,
@@ -166,6 +221,7 @@ const ForgotPassword = () => {
       if (res.data.success) {
         setSuccess(res.data.message);
         setResetDone(true);
+        setDebugOtp("");
       } else {
         setError(res.data.message || "Failed to reset password.");
       }
@@ -178,22 +234,22 @@ const ForgotPassword = () => {
     }
   };
 
-  // ── Resend OTP ────────────────────────────────────────────────────────────
   const handleResendOtp = async () => {
     if (countdown > 0) return;
+
     clearMessages();
     setOtp("");
+    setDebugOtp("");
     setLoading(true);
 
     try {
       const res = await axios.post(`${BASE_URL}/auth/request-password-reset`, {
-        identifier: identifier.trim(),
+        identifier: normalizeIdentifier(identifier, role),
         role,
       });
 
       if (res.data.success) {
-        setSuccess("A new OTP has been sent to your email.");
-        setCountdown(60);
+        applyOtpResponse(res.data, config.resendMessage);
       } else {
         setError(res.data.message || "Failed to resend OTP.");
       }
@@ -202,7 +258,7 @@ const ForgotPassword = () => {
       if (err.response?.status === 429) {
         setError(msg || "Please wait before requesting another OTP.");
         const match = msg?.match(/(\d+) second/);
-        if (match) setCountdown(parseInt(match[1]));
+        if (match) setCountdown(parseInt(match[1], 10));
       } else {
         setError(msg || "Failed to resend OTP.");
       }
@@ -220,7 +276,6 @@ const ForgotPassword = () => {
         padding: "30px 20px",
       }}
     >
-      {/* Header */}
       <div className="text-center mb-4">
         <div
           className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
@@ -234,9 +289,7 @@ const ForgotPassword = () => {
           <FaLock size={28} />
         </div>
 
-        <h3 className="fw-bold text-dark mb-1">
-          {config.label} — Forgot Password
-        </h3>
+        <h3 className="fw-bold text-dark mb-1">{config.label} - Forgot Password</h3>
 
         <div
           style={{
@@ -250,13 +303,10 @@ const ForgotPassword = () => {
         />
 
         <p className="text-muted" style={{ fontSize: "0.9rem" }}>
-          {step === 1
-            ? "Enter your registered email to receive an OTP"
-            : "Enter the OTP and your new password"}
+          {step === 1 ? config.helpText : "Enter the OTP and your new password"}
         </p>
       </div>
 
-      {/* Step indicator */}
       <div className="d-flex align-items-center gap-2 mb-4">
         {[1, 2].map((s) => (
           <React.Fragment key={s}>
@@ -266,8 +316,7 @@ const ForgotPassword = () => {
                 width: "32px",
                 height: "32px",
                 fontSize: "13px",
-                backgroundColor:
-                  step >= s ? config.color : "#E2E8F0",
+                backgroundColor: step >= s ? config.color : "#E2E8F0",
                 color: step >= s ? "#fff" : "#94A3B8",
                 transition: "all 0.3s ease",
               }}
@@ -288,26 +337,29 @@ const ForgotPassword = () => {
         ))}
       </div>
 
-      {/* Alerts */}
       {error && (
         <div
-          className="alert alert-danger w-100 mb-3 d-flex align-items-center gap-2"
+          className="alert alert-danger w-100 mb-3"
           style={{ maxWidth: "420px", borderRadius: "10px", fontSize: "14px" }}
         >
-          <span>⚠️</span> {error}
+          {error}
         </div>
       )}
 
       {success && !resetDone && (
         <div
-          className="alert alert-success w-100 mb-3 d-flex align-items-center gap-2"
+          className="alert alert-success w-100 mb-3"
           style={{ maxWidth: "420px", borderRadius: "10px", fontSize: "14px" }}
         >
-          <span>✅</span> {success}
+          <div>{success}</div>
+          {debugOtp && (
+            <div className="mt-2" style={{ fontSize: "13px", fontWeight: 600 }}>
+              Local dev OTP: {debugOtp}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Success screen ─────────────────────────────────────────────────── */}
       {resetDone ? (
         <div
           className="bg-white w-100 text-center"
@@ -333,8 +385,7 @@ const ForgotPassword = () => {
 
           <h5 className="fw-bold text-dark mb-2">Password Reset Successful</h5>
           <p className="text-muted mb-4" style={{ fontSize: "14px" }}>
-            Your password has been updated. You can now log in with your new
-            password.
+            Your password has been updated. You can now log in with your new password.
           </p>
 
           <Link
@@ -353,7 +404,6 @@ const ForgotPassword = () => {
           </Link>
         </div>
       ) : (
-        /* ── Main card ──────────────────────────────────────────────────── */
         <div
           className="bg-white w-100"
           style={{
@@ -364,7 +414,6 @@ const ForgotPassword = () => {
             boxShadow: "0 8px 24px rgba(0,0,0,0.07)",
           }}
         >
-          {/* ─── STEP 1: Request OTP ─── */}
           {step === 1 && (
             <form onSubmit={handleRequestOtp}>
               <div className="mb-4">
@@ -372,19 +421,23 @@ const ForgotPassword = () => {
                   className="form-label text-muted"
                   style={{ fontSize: "13px", fontWeight: 600 }}
                 >
-                  <FaEnvelope className="me-1" /> Email Address
+                  <IdentifierIcon className="me-1" /> {config.identifierLabel}
                 </label>
                 <input
-                  type="email"
+                  type={config.inputType}
                   className="form-control"
                   placeholder={config.placeholder}
                   value={identifier}
                   onChange={(e) => {
-                    setIdentifier(e.target.value);
+                    const nextValue = isEmployee
+                      ? e.target.value.replace(/\D/g, "").slice(0, 10)
+                      : e.target.value;
+                    setIdentifier(nextValue);
                     clearMessages();
                   }}
                   disabled={loading}
                   required
+                  inputMode={isEmployee ? "numeric" : undefined}
                   style={{
                     backgroundColor: "#F8FAFC",
                     borderRadius: "10px",
@@ -413,21 +466,19 @@ const ForgotPassword = () => {
             </form>
           )}
 
-          {/* ─── STEP 2: Reset Password ─── */}
           {step === 2 && (
             <form onSubmit={handleResetPassword}>
-              {/* Email display (readonly) */}
               <div className="mb-3">
                 <label
                   className="form-label text-muted"
                   style={{ fontSize: "13px", fontWeight: 600 }}
                 >
-                  Email Address
+                  {config.identifierLabel}
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   className="form-control"
-                  value={identifier}
+                  value={normalizeIdentifier(identifier, role)}
                   readOnly
                   style={{
                     backgroundColor: "#F1F5F9",
@@ -440,7 +491,6 @@ const ForgotPassword = () => {
                 />
               </div>
 
-              {/* OTP */}
               <div className="mb-3">
                 <label
                   className="form-label text-muted"
@@ -495,7 +545,6 @@ const ForgotPassword = () => {
                 </div>
               </div>
 
-              {/* New Password */}
               <div className="mb-3">
                 <label
                   className="form-label text-muted"
@@ -525,7 +574,6 @@ const ForgotPassword = () => {
                 />
               </div>
 
-              {/* Confirm Password */}
               <div className="mb-4">
                 <label
                   className="form-label text-muted"
@@ -580,7 +628,6 @@ const ForgotPassword = () => {
             </form>
           )}
 
-          {/* Back to login link */}
           <div className="text-center mt-4">
             <Link
               to={config.loginPath}
@@ -590,13 +637,12 @@ const ForgotPassword = () => {
                 textDecoration: "none",
               }}
             >
-              ← Back to {config.label} Login
+              {"<-"} Back to {config.label} Login
             </Link>
           </div>
         </div>
       )}
 
-      {/* Security note */}
       <div
         className="text-center mt-4"
         style={{
@@ -608,7 +654,7 @@ const ForgotPassword = () => {
         }}
       >
         <p className="text-muted mb-0" style={{ fontSize: "12px" }}>
-          🔒 OTP is valid for 5 minutes and can only be used once
+          OTP is valid for 5 minutes and can only be used once
         </p>
       </div>
     </div>
