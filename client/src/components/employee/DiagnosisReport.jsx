@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
@@ -9,7 +9,7 @@ const DiagnosisReport = () => {
   const [reports, setReports] = useState([]);
   const navigate = useNavigate();
   console.log("EmployeeObjectId from localStorage:", localStorage.getItem("employeeObjectId"));
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const employeeObjectId = localStorage.getItem("employeeObjectId")
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -20,7 +20,7 @@ useEffect(() => {
   if (!employeeObjectId) return;
 
   axios
-    .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/records/${employeeObjectId}`)
+    .get(`${BACKEND_URL}/diagnosis-api/records/${employeeObjectId}`)
     .then(res => setReports(res.data || []))
     .catch(err => {
       if (err.response?.status === 404) {
@@ -453,7 +453,7 @@ return (
                         reports.map((r, ri) => (
                           <a
                             key={ri}
-                            href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                            href={`${BACKEND_URL}${r.url}`}
                             target="_blank"
                             rel="noreferrer"
                             className="btn btn-sm btn-outline-primary me-1"

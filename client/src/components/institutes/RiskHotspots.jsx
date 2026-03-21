@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import { useLocation } from "react-router-dom";
@@ -21,7 +21,7 @@ function RiskHotspots() {
     const institute = JSON.parse(localStorage.getItem("institute"));
 
     const res = await axios.get(
-        "http://localhost:6100/api/analytics/risk-hotspots",
+        "${BACKEND_URL}/api/analytics/risk-hotspots",
         {
             params:{
             instituteId: institute._id,

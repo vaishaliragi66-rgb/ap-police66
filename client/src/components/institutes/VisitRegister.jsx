@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 
 const VisitRegister = () => {
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
   const [employees, setEmployees] = useState([]);
@@ -36,7 +36,7 @@ const VisitRegister = () => {
   /* ================= FETCH EMPLOYEES ================= */
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
+      .get(`${BACKEND_URL}/employee-api/all`)
       .then(res => setEmployees(res.data.employees || []))
       .catch(err => console.error(err));
   }, []);
@@ -64,7 +64,7 @@ const VisitRegister = () => {
     if (isFamily && selectedEmployee) {
       setFamilyLoading(true);
       axios.get(
-        `http://localhost:${BACKEND_PORT}/family-api/family/${selectedEmployee._id}`
+        `${BACKEND_URL}/family-api/family/${selectedEmployee._id}`
       )
         .then(res => setFamilyMembers(res.data || []))
         .catch(() => setFamilyMembers([]))
@@ -80,7 +80,7 @@ const VisitRegister = () => {
     if (selectedEmployee) {
       axios
         .get(
-          `http://localhost:${BACKEND_PORT}/api/visits/next-numbers/${instituteId}`
+          `${BACKEND_URL}/api/visits/next-numbers/${instituteId}`
         )
         .then(res => {
           setPreviewToken(res.data.nextToken);
@@ -110,7 +110,7 @@ const VisitRegister = () => {
   
     try {
       await axios.post(
-        `http://localhost:${BACKEND_PORT}/api/visits/register`,
+        `${BACKEND_URL}/api/visits/register`,
         {
           Institute_ID: instituteId,
           employee_id: selectedEmployee._id,
@@ -395,7 +395,7 @@ const VisitRegister = () => {
       {
       <div className="d-flex justify-content-center mb-3">
       <img
-        src={`http://localhost:${BACKEND_PORT}${selectedEmployee.Photo}`}
+        src={`${BACKEND_URL}${selectedEmployee.Photo}`}
         alt="Employee"
         style={{
           width: "120px",
@@ -443,7 +443,7 @@ const VisitRegister = () => {
       {/*
       <div className="text-center mb-3">
         <img
-          src={`http://localhost:${BACKEND_PORT}${selectedFamily.Photo}`}
+          src={`${BACKEND_URL}${selectedFamily.Photo}`}
           alt="Family Member"
           className="rounded-circle"
           width="120"

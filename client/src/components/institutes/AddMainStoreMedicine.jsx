@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import axios from "axios";
 import { FaPills, FaCalendarAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 const AddMainStoreMedicine = () => {
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState("");
@@ -73,7 +73,7 @@ const AddMainStoreMedicine = () => {
       setSuccess("");
 
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/mainstore/add`,
+        `${BACKEND_URL}/mainstore/add`,
         {
           ...formData,
           Quantity: Number(formData.Quantity),

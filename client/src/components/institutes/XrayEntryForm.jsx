@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -19,8 +19,7 @@ const XrayEntryForm = () => {
 
 
 
-  const BACKEND_PORT_NO =
-    import.meta.env.VITE_BACKEND_PORT || "6100";
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [formData, setFormData] = useState({
     Institute_ID: "",
@@ -59,7 +58,7 @@ const XrayEntryForm = () => {
   const fetchDoctorXrays = async (visitId) => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT_NO}/xray-api/visit/${visitId}/doctor`
+      `${BACKEND_URL}/xray-api/visit/${visitId}/doctor`
     );
 
     setDoctorXrays(res.data?.xrays || []);
@@ -73,7 +72,7 @@ const XrayEntryForm = () => {
   const fetchInstituteName = async (id) => {
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/institute-api/institution/${id}`
+        `${BACKEND_URL}/institute-api/institution/${id}`
       );
       setInstituteName(res.data?.Institute_Name || "");
     } catch (err) {
@@ -83,7 +82,7 @@ const XrayEntryForm = () => {
 const fetchXrayTypes = async () => {
   try {
     const res = await axios.get(
-      `http://localhost:${BACKEND_PORT_NO}/xray-api/types`
+      `${BACKEND_URL}/xray-api/types`
     );
 
     setXrayMaster(res.data || []);
@@ -165,7 +164,7 @@ const fetchXrayTypes = async () => {
 
     try {
       const res = await axios.get(
-        `http://localhost:${BACKEND_PORT_NO}/xray-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
+        `${BACKEND_URL}/xray-api/records/${formData.Employee_ID}?isFamily=${formData.IsFamilyMember}&familyId=${formData.FamilyMember_ID}`
       );
       setPastRecords(res.data || []);
       setShowHistory(true);
@@ -203,7 +202,7 @@ fd.append("reports",x.ReportFile);
 });
 
 await axios.post(
-`http://localhost:${BACKEND_PORT_NO}/xray-api/add`,
+`${BACKEND_URL}/xray-api/add`,
 fd,
 {
 headers:{
@@ -365,7 +364,7 @@ alert("✅ Xray saved");
                               {x.Reports.map((r,ri)=>(
                               <a
                               key={ri}
-                              href={`http://localhost:${BACKEND_PORT_NO}${r.url}`}
+                              href={`${BACKEND_URL}${r.url}`}
                               target="_blank"
                               rel="noreferrer"
                               className="btn btn-sm btn-outline-primary me-2"

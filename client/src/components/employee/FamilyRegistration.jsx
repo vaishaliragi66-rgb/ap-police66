@@ -1,11 +1,11 @@
-import React, { useState, useRef } from "react";
+﻿import React, { useState, useRef } from "react";
 import axios from "axios";
 import { FaCamera, FaUser } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const FamilyMemberRegistration = () => {
   const employeeId = localStorage.getItem("employeeId");
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [formData, setFormData] = useState({
     Name: "",
@@ -87,7 +87,7 @@ const FamilyMemberRegistration = () => {
       if (photoFile) data.append("Photo", photoFile);
 
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/family-api/register`,
+        `${BACKEND_URL}/family-api/register`,
         data,
         { headers: { "Content-Type": "multipart/form-data" } }
       );

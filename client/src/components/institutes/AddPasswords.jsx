@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -20,7 +20,7 @@ const AddPasswords = () => {
         const token = localStorage.getItem("instituteToken");
 
         const res = await axios.get(
-          "http://localhost:6100/institute-auth/get-role-status",
+          "${BACKEND_URL}/institute-auth/get-role-status",
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -54,7 +54,7 @@ const AddPasswords = () => {
 
       await axios({
         method: roleStatus[role] ? "put" : "post",
-        url: `http://localhost:6100/institute-auth/${endpoint}`,
+        url: `${BACKEND_URL}/institute-auth/${endpoint}`,
         data: {
   role: role === "frontdesk" ? "front_desk" : role,
   password: formData[role]

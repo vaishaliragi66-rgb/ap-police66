@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+﻿import React, { useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { FaUserPlus, FaCamera, FaUser } from "react-icons/fa";
@@ -34,7 +34,7 @@ const EmployeeRegister = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -178,7 +178,7 @@ if (validationErrors.length > 0) {
       console.log("Submitting registration...");
 
       const response = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}/employee-api/register`,
+        `${BACKEND_URL}/employee-api/register`,
         formPayload,
         
       );
