@@ -17,11 +17,14 @@ const employeeApp = express.Router();
 
 /* ================= MULTER CONFIG ================= */
 
-// Create uploads directory if it doesn't exist
+// Create uploads directories if they don't exist
 const uploadDir = path.join(__dirname, '..', 'uploads', 'profile-pics');
+const absCardDir = path.join(__dirname, '..', 'uploads', 'abs-cards');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
-  
+}
+if (!fs.existsSync(absCardDir)) {
+  fs.mkdirSync(absCardDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
@@ -50,6 +53,41 @@ const upload = multer({
     }
   }
 });
+
+const absCardStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, absCardDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'abs-card-' + uniqueSuffix + ext);
+  }
+});
+
+const absCardUpload = multer({
+  storage: absCardStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedExt = /jpeg|jpg|png|gif|pdf/;
+    const extname = allowedExt.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = /image\/(jpeg|png|gif)|application\/pdf/.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Only image or PDF files are allowed (jpeg, jpg, png, gif, pdf)"));
+  }
+});
+
+const absCardUploadSingle = (req, res, next) => {
+  absCardUpload.single("ABS_Card")(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+};
 
 /* ================= REGISTER ================= */
 employeeApp.get(
@@ -510,5 +548,93 @@ employeeApp.put("/update-profile/:id", expressAsyncHandler(async (req, res) => {
     });
   }
 }));
+
+employeeApp.put(
+  "/upload-abs-card/:id",
+  absCardUploadSingle,
+  expressAsyncHandler(async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!req.file) {
+        return res.status(400).json({ message: "ABS card file is required" });
+      }
+
+      const employee = await Employee.findById(id);
+      if (!employee) {
+        if (req.file && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      // Remove old ABS card file if present
+      if (employee.ABS_Card) {
+        const safeRelPath = employee.ABS_Card.replace(/^[\\/]/, "");
+        const oldPath = path.join(__dirname, "..", safeRelPath);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+
+      employee.ABS_Card = `/uploads/abs-cards/${req.file.filename}`;
+      await employee.save();
+
+      const responseData = employee.toObject();
+      delete responseData.Password;
+
+      res.status(200).json({
+        message: "ABS card uploaded successfully",
+        employee: responseData
+      });
+    } catch (err) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({
+        message: err.message || "Failed to upload ABS card",
+        error: err.message
+      });
+    }
+  })
+);
+
+employeeApp.delete(
+  "/delete-abs-card/:id",
+  expressAsyncHandler(async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const employee = await Employee.findById(id);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      if (employee.ABS_Card) {
+        const safeRelPath = employee.ABS_Card.replace(/^[\\/]/, "");
+        const absPath = path.join(__dirname, "..", safeRelPath);
+        if (fs.existsSync(absPath)) {
+          fs.unlinkSync(absPath);
+        }
+      }
+
+      employee.ABS_Card = "";
+      await employee.save();
+
+      const responseData = employee.toObject();
+      delete responseData.Password;
+
+      res.status(200).json({
+        message: "ABS card deleted successfully",
+        employee: responseData
+      });
+    } catch (err) {
+      res.status(500).json({
+        message: err.message || "Failed to delete ABS card",
+        error: err.message
+      });
+    }
+  })
+);
 
 module.exports = employeeApp;
