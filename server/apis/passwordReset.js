@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const axios = require("axios");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
@@ -14,7 +13,6 @@ const ALLOWED_ROLES = ["admin", "institute", "employee"];
 const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_RATE_LIMIT_MS = 60 * 1000;
 const EMAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
-const PHONE_REGEX = /^[6-9]\d{9}$/;
 
 const createTransporter = () =>
   nodemailer.createTransport({
@@ -31,40 +29,11 @@ const generateOtp = () => {
   return String(num);
 };
 
-const normalizeEmployeePhone = (value = "") => {
-  const digits = String(value).replace(/\D/g, "");
-
-  if (digits.length === 10) return digits;
-  if (digits.length === 12 && digits.startsWith("91")) return digits.slice(2);
-
-  return digits;
-};
-
 const normalizeIdentifier = (identifier, role) => {
-  if (role === "employee") {
-    return normalizeEmployeePhone(identifier);
-  }
-
   return String(identifier).toLowerCase().trim();
 };
 
-const isValidIdentifier = (identifier, role) => {
-  if (role === "employee") {
-    return PHONE_REGEX.test(identifier);
-  }
-
-  return EMAIL_REGEX.test(identifier);
-};
-
-const maskPhoneNumber = (phoneNumber) => {
-  if (!phoneNumber || phoneNumber.length < 4) {
-    return "your registered phone number";
-  }
-
-  return `XXXXXX${phoneNumber.slice(-4)}`;
-};
-
-const formatIndianPhoneForSms = (phoneNumber) => `+91${phoneNumber}`;
+const isValidIdentifier = (identifier) => EMAIL_REGEX.test(identifier);
 
 const sendOtpEmail = async ({ role, user, otp }) => {
   const emailUser = process.env.ADMIN_EMAIL;
@@ -137,62 +106,7 @@ const sendOtpEmail = async ({ role, user, otp }) => {
   };
 };
 
-const sendOtpSms = async ({ phoneNumber, otp }) => {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-
-  if (!accountSid || !authToken || !fromNumber) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("Twilio SMS configuration is missing.");
-    }
-
-    console.warn(
-      `[password-reset] Twilio credentials are missing. OTP for ${phoneNumber}: ${otp}`
-    );
-
-    return {
-      deliveryMessage: `OTP generated for ${maskPhoneNumber(phoneNumber)}.`,
-      debugOtp: otp,
-    };
-  }
-
-  const params = new URLSearchParams({
-    To: formatIndianPhoneForSms(phoneNumber),
-    From: fromNumber,
-    Body: `AP Police Medical System OTP: ${otp}. Valid for 5 minutes. Do not share it with anyone.`,
-  });
-
-  await axios.post(
-    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-    params.toString(),
-    {
-      auth: {
-        username: accountSid,
-        password: authToken,
-      },
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    }
-  );
-
-  return {
-    deliveryMessage: `OTP sent to ${maskPhoneNumber(phoneNumber)}.`,
-  };
-};
-
 const sendOtpForUser = async ({ role, user, otp }) => {
-  if (role === "employee") {
-    const normalizedPhone = normalizeEmployeePhone(user.Phone_No || "");
-
-    if (!PHONE_REGEX.test(normalizedPhone)) {
-      throw new Error("Employee does not have a valid registered phone number.");
-    }
-
-    return sendOtpSms({ phoneNumber: normalizedPhone, otp });
-  }
-
   return sendOtpEmail({ role, user, otp });
 };
 
@@ -208,13 +122,7 @@ const findUserByIdentifier = async (identifier, role) => {
   }
 
   if (role === "employee") {
-    return Employee.findOne({
-      $or: [
-        { Phone_No: id },
-        { Phone_No: `+91${id}` },
-        { Phone_No: `91${id}` },
-      ],
-    });
+    return Employee.findOne({ Email: id });
   }
 
   return null;
@@ -240,13 +148,10 @@ router.post("/request-password-reset", async (req, res) => {
 
     const normalizedId = normalizeIdentifier(identifier, role);
 
-    if (!isValidIdentifier(normalizedId, role)) {
+    if (!isValidIdentifier(normalizedId)) {
       return res.status(400).json({
         success: false,
-        message:
-          role === "employee"
-            ? "Please enter a valid 10-digit phone number."
-            : "Please enter a valid email address.",
+        message: "Please enter a valid email address.",
       });
     }
 
@@ -255,10 +160,7 @@ router.post("/request-password-reset", async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message:
-          role === "employee"
-            ? "No account found with this phone number."
-            : "No account found with this email address.",
+        message: "No account found with this email address.",
       });
     }
 
@@ -342,13 +244,10 @@ router.post("/reset-password", async (req, res) => {
 
     const normalizedId = normalizeIdentifier(identifier, role);
 
-    if (!isValidIdentifier(normalizedId, role)) {
+    if (!isValidIdentifier(normalizedId)) {
       return res.status(400).json({
         success: false,
-        message:
-          role === "employee"
-            ? "Please enter a valid 10-digit phone number."
-            : "Please enter a valid email address.",
+        message: "Please enter a valid email address.",
       });
     }
 

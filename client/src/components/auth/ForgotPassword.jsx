@@ -5,7 +5,6 @@ import {
   FaCheckCircle,
   FaEnvelope,
   FaLock,
-  FaPhoneAlt,
   FaShieldAlt,
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -13,7 +12,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 5200;
 const BASE_URL = `http://localhost:${BACKEND_PORT}`;
 const EMAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
-const PHONE_REGEX = /^[6-9]\d{9}$/;
 
 const ROLE_CONFIG = {
   admin: {
@@ -34,15 +32,15 @@ const ROLE_CONFIG = {
     label: "Employee",
     loginPath: "/employee-login",
     color: "#4A70A9",
-    placeholder: "Enter your registered phone number",
-    identifierLabel: "Phone Number",
-    identifierIcon: FaPhoneAlt,
-    inputType: "tel",
-    helpText: "Enter your registered phone number to receive an OTP",
-    sentMessage: "OTP sent to your registered phone number.",
-    resendMessage: "A new OTP has been sent to your registered phone number.",
-    invalidMessage: "Please enter a valid 10-digit phone number.",
-    missingMessage: "Please enter your phone number.",
+    placeholder: "Enter your registered email address",
+    identifierLabel: "Email Address",
+    identifierIcon: FaEnvelope,
+    inputType: "email",
+    helpText: "Enter your registered email to receive an OTP",
+    sentMessage: "OTP sent to your registered email. Please check your inbox.",
+    resendMessage: "A new OTP has been sent to your email.",
+    invalidMessage: "Please enter a valid email address.",
+    missingMessage: "Please enter your email address.",
   },
   institute: {
     label: "Institute",
@@ -69,10 +67,6 @@ const getRoleFromPath = (pathname) => {
 
 const normalizeIdentifier = (value, role) => {
   const trimmed = value.trim();
-  if (role === "employee") {
-    return trimmed.replace(/\D/g, "").slice(-10);
-  }
-
   return trimmed.toLowerCase();
 };
 
@@ -82,7 +76,6 @@ const ForgotPassword = () => {
 
   const role = getRoleFromPath(location.pathname);
   const config = ROLE_CONFIG[role];
-  const isEmployee = role === "employee";
   const IdentifierIcon = config?.identifierIcon || FaEnvelope;
 
   const [step, setStep] = useState(1);
@@ -119,10 +112,6 @@ const ForgotPassword = () => {
   const validateIdentifier = (value) => {
     if (!value) {
       return config.missingMessage;
-    }
-
-    if (isEmployee) {
-      return PHONE_REGEX.test(value) ? "" : config.invalidMessage;
     }
 
     return EMAIL_REGEX.test(value) ? "" : config.invalidMessage;
@@ -429,15 +418,11 @@ const ForgotPassword = () => {
                   placeholder={config.placeholder}
                   value={identifier}
                   onChange={(e) => {
-                    const nextValue = isEmployee
-                      ? e.target.value.replace(/\D/g, "").slice(0, 10)
-                      : e.target.value;
-                    setIdentifier(nextValue);
+                    setIdentifier(e.target.value);
                     clearMessages();
                   }}
                   disabled={loading}
                   required
-                  inputMode={isEmployee ? "numeric" : undefined}
                   style={{
                     backgroundColor: "#F8FAFC",
                     borderRadius: "10px",
