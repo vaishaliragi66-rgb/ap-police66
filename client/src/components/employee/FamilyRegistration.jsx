@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
+import { FaCamera, FaUser } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const FamilyMemberRegistration = () => {
@@ -23,19 +24,43 @@ const FamilyMemberRegistration = () => {
     },
   });
 
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    // Handle Address nested object separately
     if (name.startsWith("Address.")) {
       const key = name.split(".")[1];
-      setFormData({
-        ...formData,
-        Address: { ...formData.Address, [key]: value },
-      });
+      setFormData({ ...formData, Address: { ...formData.Address, [key]: value } });
     } else {
       setFormData({ ...formData, [name]: value });
     }
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      alert("Only JPEG, PNG, or WebP images are allowed.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be smaller than 5 MB.");
+      return;
+    }
+
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = async (e) => {
@@ -46,15 +71,25 @@ const FamilyMemberRegistration = () => {
       return;
     }
 
+    setLoading(true);
     try {
-      const payload = {
-        ...formData,
-        EmployeeId: employeeId,
-      };
+      const data = new FormData();
+      data.append("EmployeeId", employeeId);
+      data.append("Name", formData.Name);
+      data.append("Gender", formData.Gender);
+      data.append("Relationship", formData.Relationship);
+      data.append("DOB", formData.DOB);
+      data.append("Blood_Group", formData.Blood_Group);
+      data.append("Height", formData.Height);
+      data.append("Weight", formData.Weight);
+      data.append("Phone_No", formData.Phone_No);
+      data.append("Address", JSON.stringify(formData.Address));
+      if (photoFile) data.append("Photo", photoFile);
 
       const res = await axios.post(
         `http://localhost:${BACKEND_PORT_NO}/family-api/register`,
-        payload
+        data,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
       alert(res.data.message);
@@ -68,15 +103,13 @@ const FamilyMemberRegistration = () => {
         Height: "",
         Weight: "",
         Phone_No: "",
-        Address: {
-          Street: "",
-          District: "",
-          State: "",
-          Pincode: "",
-        },
+        Address: { Street: "", District: "", State: "", Pincode: "" },
       });
+      handleRemovePhoto();
     } catch (err) {
       alert(err.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -114,6 +147,107 @@ const FamilyMemberRegistration = () => {
       </h3>
 
         <form onSubmit={handleSubmit}>
+
+          {/* Photo Upload */}
+          <div className="d-flex flex-column align-items-center mb-4">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: "110px",
+                height: "110px",
+                borderRadius: "50%",
+                border: "2px dashed #4A70A9",
+                backgroundColor: "#EAF2FF",
+                cursor: "pointer",
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+              }}
+            >
+              {photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                <div className="text-center" style={{ color: "#4A70A9" }}>
+                  <FaUser size={32} style={{ marginBottom: "4px" }} />
+                  <div style={{ fontSize: "11px", fontWeight: 500 }}>Add Photo</div>
+                </div>
+              )}
+
+              {/* Camera badge */}
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "6px",
+                  right: "6px",
+                  width: "26px",
+                  height: "26px",
+                  borderRadius: "50%",
+                  backgroundColor: "#4A70A9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                }}
+              >
+                <FaCamera size={12} color="#fff" />
+              </div>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              style={{ display: "none" }}
+              onChange={handlePhotoChange}
+            />
+
+            <div className="mt-2 d-flex gap-2 align-items-center">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn btn-sm"
+                style={{
+                  backgroundColor: "#EAF2FF",
+                  color: "#4A70A9",
+                  border: "1px solid #4A70A9",
+                  borderRadius: "999px",
+                  fontSize: "12px",
+                  padding: "3px 14px",
+                }}
+              >
+                {photoPreview ? "Change Photo" : "Upload Photo"}
+              </button>
+
+              {photoPreview && (
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: "#FEE2E2",
+                    color: "#DC2626",
+                    border: "1px solid #FCA5A5",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    padding: "3px 14px",
+                  }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+
+            <p style={{ fontSize: "11px", color: "#94A3B8", marginTop: "4px" }}>
+              JPEG, PNG or WebP · Max 5 MB · Optional
+            </p>
+          </div>
+
           {/* Name */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Name</label>
@@ -162,7 +296,8 @@ const FamilyMemberRegistration = () => {
               <option value="Father">Father</option>
               <option value="Mother">Mother</option>
               <option value="Wife">Wife</option>
-              <option value="Child">Child</option>
+              <option value="Son">Son</option>
+              <option value="Daughter">Daughter</option>
             </select>
           </div>
   
@@ -271,6 +406,7 @@ const FamilyMemberRegistration = () => {
           {/* Submit */}
           <button
             type="submit"
+            disabled={loading}
             className="btn w-100 mt-3"
             style={{
               backgroundColor: "#4A70A9",
@@ -279,7 +415,7 @@ const FamilyMemberRegistration = () => {
               borderRadius: "999px",
             }}
           >
-            Register Family Member
+            {loading ? "Registering..." : "Register Family Member"}
           </button>
         </form>
       </div>
