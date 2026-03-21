@@ -1,14 +1,44 @@
 const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const FamilyMember = require("../models/family_member");
 const Employee = require("../models/employee");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const FamilyApp = express.Router();
 
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, "..", "uploads", "family-pics");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `family_${Date.now()}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp/;
+    if (allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPEG, PNG, or WebP images are allowed"));
+    }
+  },
+});
 
 // Register Family Member
 FamilyApp.post(
   "/register",
+  upload.single("Photo"),
   expressAsyncHandler(async (req, res) => {
     const {
       Name,
@@ -25,6 +55,7 @@ FamilyApp.post(
     } = req.body;
 
     if (!Name || !Gender || !Relationship || !EmployeeId) {
+      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({
         message: "Name, Gender, Relationship, and EmployeeId are required",
       });
@@ -32,11 +63,18 @@ FamilyApp.post(
 
     // Check Employee Exists
     const employee = await Employee.findById(EmployeeId);
-    if (!employee)
+    if (!employee) {
+      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(404).json({ message: "Employee not found" });
+    }
 
-    // Create Family Member
-    const member = new FamilyMember({
+    // Parse Address if sent as JSON string (FormData)
+    let parsedAddress = Address;
+    if (typeof Address === "string") {
+      try { parsedAddress = JSON.parse(Address); } catch { parsedAddress = {}; }
+    }
+
+    const memberData = {
       Employee: EmployeeId,
       Name,
       Gender,
@@ -46,19 +84,22 @@ FamilyApp.post(
       Height,
       Weight,
       Phone_No,
-      Address,
+      Address: parsedAddress,
       Medical_History,
-    });
+    };
 
+    if (req.file) {
+      memberData.Photo = `/uploads/family-pics/${req.file.filename}`;
+    }
+
+    const member = new FamilyMember(memberData);
     const saved = await member.save();
 
     // Push to Employee
     employee.FamilyMembers.push(saved._id);
     await employee.save();
 
-    res
-      .status(201)
-      .json({ message: "Family member registered", payload: saved });
+    res.status(201).json({ message: "Family member registered", payload: saved });
   })
 );
 
