@@ -520,6 +520,7 @@ if (validationErrors.length > 0) {
                     <option value="CLASS IV">CLASS IV</option>
                     <option value="Record Assistant">Record Assistant</option>
                     <option value="COOK">CooK</option>
+                    <option value="OTHERS & PC">Others & PC</option>
                   </select>
                 </div>
                 <div className="col-md-6 mb-3">
