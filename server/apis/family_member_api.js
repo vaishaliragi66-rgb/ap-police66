@@ -96,4 +96,43 @@ FamilyApp.get(
     res.json(fam);
   })
 );
+
+FamilyApp.put("/update/:id", expressAsyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const updatedMember = await FamilyMember.findByIdAndUpdate(
+      id,
+      {
+        Name: updateData.Name,
+        Gender: updateData.Gender,
+        Relationship: updateData.Relationship,
+        DOB: updateData.DOB,
+        Blood_Group: updateData.Blood_Group,
+        Height: updateData.Height,
+        Weight: updateData.Weight,
+        Phone_No: updateData.Phone_No,
+        Address: updateData.Address,
+        Medical_History: updateData.Medical_History
+      },
+      { new: true }
+    );
+
+    if (!updatedMember) {
+      return res.status(404).json({ message: "Family member not found" });
+    }
+
+    res.status(200).json({
+      message: "Family member updated successfully",
+      member: updatedMember
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to update family member",
+      error: err.message
+    });
+  }
+}));
+
 module.exports = FamilyApp;

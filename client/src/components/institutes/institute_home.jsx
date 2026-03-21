@@ -63,6 +63,9 @@ const Institute_home = () => {
     return cardAccess[role]?.includes(card);
   };
 
+  const dashboardTitle = role === "front_desk" ? "Front Desk Dashboard" : "Institute Dashboard";
+  const welcomeMessage = role === "front_desk" ? "Welcome back, Front Desk" : `Welcome back, ${institute?.Institute_Name}`;
+
   const QuickCard = ({ icon, title, desc, onClick }) => (
     <div className="col-lg-4 col-md-6">
       <div
@@ -94,9 +97,9 @@ const Institute_home = () => {
       {/* HEADER */}
 <div className="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center position-relative">
   <div>
-    <h3 className="fw-bold mb-2">Institute Dashboard</h3>
+    <h3 className="fw-bold mb-2">{dashboardTitle}</h3>
     <small className="text-muted">
-      Welcome back, {institute?.Institute_Name}
+      {welcomeMessage}
     </small>
   </div>
    
