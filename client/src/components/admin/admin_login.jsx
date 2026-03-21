@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import { FaUserShield } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaUserShield } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -181,20 +182,36 @@ const AdminLogin = () => {
             <label className="form-label text-muted small fw-semibold">
               Password
             </label>
-            <input
-              type="password"
-              className="form-control border-0 shadow-sm"
-              placeholder="Enter your password"
-              value={password}
-              onChange={handlePasswordChange}
-              disabled={loading}
-              required
-              style={{
-                backgroundColor: "#F8FAFC",
-                borderRadius: "10px",
-                height: "42px",
-              }}
-            />
+            <div className="input-group shadow-sm">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control border-0"
+                placeholder="Enter your password"
+                value={password}
+                onChange={handlePasswordChange}
+                disabled={loading}
+                required
+                style={{
+                  backgroundColor: "#F8FAFC",
+                  borderRadius: "10px 0 0 10px",
+                  height: "42px",
+                }}
+              />
+              <button
+                type="button"
+                className="btn border-0"
+                onClick={() => setShowPassword((prev) => !prev)}
+                disabled={loading}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  backgroundColor: "#F8FAFC",
+                  borderRadius: "0 10px 10px 0",
+                  color: "#4A70A9",
+                }}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
           </div>
   
           {/* Forgot Password */}
