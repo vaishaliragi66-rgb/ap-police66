@@ -50,6 +50,11 @@ const FamilyMemberSchema = new Schema({
     trim: true 
   },
 
+  Photo: {
+    type: String,
+    default: null
+  },
+
   Address: {
     Street: { type: String, trim: true },
     District: { type: String, trim: true },
