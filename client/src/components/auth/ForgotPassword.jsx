@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -9,8 +9,8 @@ import {
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 5200;
-const BASE_URL = `http://localhost:${BACKEND_PORT}`;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const BASE_URL = `${BACKEND_URL}`;
 const EMAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
 
 const ROLE_CONFIG = {

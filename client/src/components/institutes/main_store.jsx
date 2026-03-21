@@ -1,9 +1,9 @@
-// src/pages/MainStore.jsx
+﻿// src/pages/MainStore.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const BACKEND_URL = "http://localhost:6100";
+const BACKEND_URL = "${BACKEND_URL}";
 
 // Format date to show only MM-YYYY
 const formatExpiryDate = (dateStr) => {

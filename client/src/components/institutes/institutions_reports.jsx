@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 const InstituteReports = () => {
 
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -33,7 +33,7 @@ const InstituteReports = () => {
 
       // Fetch records for this employee (these include Reports)
       const recordsRes = await axios.get(
-        `http://localhost:${BACKEND_PORT}/diagnosis-api/records/${empId}`,
+        `${BACKEND_URL}/diagnosis-api/records/${empId}`,
         { params: { isFamily: isFamily, familyId: familyId } }
       );
 
@@ -60,7 +60,7 @@ const InstituteReports = () => {
   -------------------------------------------------- */
  useEffect(() => {
   axios
-    .get(`http://localhost:${BACKEND_PORT}/employee-api/all`)
+    .get(`${BACKEND_URL}/employee-api/all`)
     .then(res => {
       const list =
         Array.isArray(res.data?.employees)
@@ -79,7 +79,7 @@ const InstituteReports = () => {
   if (!instituteId) return;
 
   axios
-    .get(`http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`)
+    .get(`${BACKEND_URL}/api/visits/today/${instituteId}`)
     .then(res => {
       const visits = Array.isArray(res.data) ? res.data : [];
 
@@ -124,7 +124,7 @@ const InstituteReports = () => {
   const loadHealthReport = async (absNo) => {
     try {
       const res = await axios.get(
-  `http://localhost:${BACKEND_PORT}/employee-api/health-report`,
+  `${BACKEND_URL}/employee-api/health-report`,
   { params: { absNo } }
 );
 
@@ -405,8 +405,8 @@ const InstituteReports = () => {
                     <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
                       {allReports.map((rep, idx) => (
                         <li key={idx} style={{ marginBottom: 8 }}>
-                          <a href={`http://localhost:${BACKEND_PORT}/${rep.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{rep.originalname || rep.filename}</a>
-                          <a href={`http://localhost:${BACKEND_PORT}/${rep.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
+                          <a href={`${BACKEND_URL}/${rep.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{rep.originalname || rep.filename}</a>
+                          <a href={`${BACKEND_URL}/${rep.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
                         </li>
                       ))}
                     </ul>
@@ -454,7 +454,7 @@ const InstituteReports = () => {
                           <ul className="list-unstyled">
                             {selectedDiagnosisRec.Reports.map((r, i) => {
                               const urlPath = r.url ? r.url.replace(/^\/+/, '') : '';
-                              const href = `http://localhost:${BACKEND_PORT}/${urlPath}`;
+                              const href = `${BACKEND_URL}/${urlPath}`;
                               return (
                                 <li key={i} className="mb-2">
                                   <a href={href} target="_blank" rel="noreferrer" className="me-2">{r.originalname || r.filename}</a>

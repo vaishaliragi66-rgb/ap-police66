@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function InstituteReports() {
   const [rows, setRows] = useState([]);
@@ -32,7 +32,7 @@ export default function InstituteReports() {
   ================================*/
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/admin-api/analytics/institutes`)
+      .get(`${BACKEND_URL}/admin-api/analytics/institutes`)
       .then(res => {
         setRows(res.data || []);
         setFiltered(res.data || []);
@@ -317,7 +317,7 @@ export default function InstituteReports() {
                     try {
                       setSending(true);
                       await axios.post(
-                        `http://localhost:${BACKEND_PORT}/admin-api/send-mail`,
+                        `${BACKEND_URL}/admin-api/send-mail`,
                         {
                           from: adminEmail,
                           to: mailInstitute.Email_ID,

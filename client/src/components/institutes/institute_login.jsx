@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaEye, FaEyeSlash, FaUniversity } from "react-icons/fa";
@@ -17,7 +17,7 @@ const InstituteLogin = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const BACKEND_PORT_NO = import.meta.env.VITE_BACKEND_PORT;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -54,7 +54,7 @@ const InstituteLogin = () => {
       }
 
       const res = await axios.post(
-        `http://localhost:${BACKEND_PORT_NO}${endpoint}`,
+        `${BACKEND_URL}${endpoint}`,
         {
           ...formData,
           Email_ID: normalizedEmail,

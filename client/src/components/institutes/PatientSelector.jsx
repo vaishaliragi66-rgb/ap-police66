@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+﻿import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function PatientSelector({ onSelect, instituteId, onlyDiagnosisQueue = false, onlyXrayQueue = false, onlyPharmacyQueue = false }) {
   const [todayVisits, setTodayVisits] = useState([]);
@@ -16,12 +16,12 @@ useEffect(() => {
 
   const endpoint =
   onlyDiagnosisQueue
-    ? `http://localhost:${BACKEND_PORT}/diagnosis-api/queue/${instituteId}`
+    ? `${BACKEND_URL}/diagnosis-api/queue/${instituteId}`
     : onlyXrayQueue
-    ? `http://localhost:${BACKEND_PORT}/xray-api/queue/${instituteId}`
+    ? `${BACKEND_URL}/xray-api/queue/${instituteId}`
     : onlyPharmacyQueue
-    ? `http://localhost:${BACKEND_PORT}/prescription-api/queue/${instituteId}`
-    : `http://localhost:${BACKEND_PORT}/api/visits/today/${instituteId}`;
+    ? `${BACKEND_URL}/prescription-api/queue/${instituteId}`
+    : `${BACKEND_URL}/api/visits/today/${instituteId}`;
 
   axios
     .get(endpoint)

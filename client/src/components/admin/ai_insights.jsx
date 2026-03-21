@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar, Line, Pie } from 'react-chartjs-2';
 import jsPDF from 'jspdf';
@@ -36,7 +36,7 @@ const AIInsights2 = () => {
     try {
       const instituteId = getInstituteId();
       
-      const response = await fetch('http://localhost:6100/ai-api/query', {
+      const response = await fetch('${BACKEND_URL}/ai-api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

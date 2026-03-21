@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const isPresent = (value) => {
   if (value === null || value === undefined) return false;
@@ -206,8 +206,8 @@ const rowsPerPage = 10;
     const loadAnalytics = async () => {
       try {
         const [analyticsRes, employeesRes] = await Promise.all([
-          axios.get(`http://localhost:${BACKEND_PORT}/institute-api/analytics/${institute._id}`),
-          axios.get(`http://localhost:${BACKEND_PORT}/institute-api/employees-detailed`).catch(() => ({ data: { employees: [] } }))
+          axios.get(`${BACKEND_URL}/institute-api/analytics/${institute._id}`),
+          axios.get(`${BACKEND_URL}/institute-api/employees-detailed`).catch(() => ({ data: { employees: [] } }))
         ]);
 
         const employees = employeesRes?.data?.employees || [];
