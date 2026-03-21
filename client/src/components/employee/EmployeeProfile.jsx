@@ -12,6 +12,9 @@ const EmployeeProfile = () => {
   const [family, setFamily] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  const [absCardFile, setAbsCardFile] = useState(null);
+  const [absCardUploading, setAbsCardUploading] = useState(false);
+  const [absCardDeleting, setAbsCardDeleting] = useState(false);
 
   useEffect(() => {
     if (!employeeId) return;
@@ -45,6 +48,71 @@ const EmployeeProfile = () => {
       });
   };
 
+  const handleAbsCardUpload = () => {
+    if (!absCardFile) {
+      alert("Please choose an ABS card file first.");
+      return;
+    }
+
+    setAbsCardUploading(true);
+    const formData = new FormData();
+    formData.append("ABS_Card", absCardFile);
+
+    axios
+      .put(
+        `http://localhost:${BACKEND_PORT}/employee-api/upload-abs-card/${employeeId}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      )
+      .then((res) => {
+        setEmployee(res.data.employee);
+        setEditData(res.data.employee);
+        setAbsCardFile(null);
+        alert("ABS card uploaded successfully");
+      })
+      .catch((err) => {
+        const resp = err?.response?.data;
+        const msg =
+          resp?.message ||
+          (typeof resp === "string" ? resp : "") ||
+          err?.message ||
+          "Failed to upload ABS card";
+        alert(msg);
+        console.error(err);
+      })
+      .finally(() => setAbsCardUploading(false));
+  };
+
+  const handleAbsCardDelete = () => {
+    if (!employee?.ABS_Card) return;
+
+    const ok = window.confirm("Delete the uploaded ABS card?");
+    if (!ok) return;
+
+    setAbsCardDeleting(true);
+    axios
+      .delete(
+        `http://localhost:${BACKEND_PORT}/employee-api/delete-abs-card/${employeeId}`
+      )
+      .then((res) => {
+        setEmployee(res.data.employee);
+        setEditData(res.data.employee);
+        setAbsCardFile(null);
+        alert("ABS card deleted successfully");
+      })
+      .catch((err) => {
+        const resp = err?.response?.data;
+        const msg =
+          resp?.message ||
+          (typeof resp === "string" ? resp : "") ||
+          err?.message ||
+          "Failed to delete ABS card";
+        alert(msg);
+        console.error(err);
+      })
+      .finally(() => setAbsCardDeleting(false));
+  };
+
   const handleCancel = () => {
     setEditData(employee);
     setIsEditing(false);
@@ -52,6 +120,13 @@ const EmployeeProfile = () => {
 
   if (!employee)
     return <div className="text-center mt-5">Loading profile...</div>;
+
+    const absCardUrl = employee?.ABS_Card
+      ? `http://localhost:${BACKEND_PORT}${employee.ABS_Card}`
+      : null;
+    const isAbsCardImage = employee?.ABS_Card
+      ? /\.(png|jpe?g|gif)$/i.test(employee.ABS_Card)
+      : false;
 
     return (
             <div
@@ -294,6 +369,72 @@ const EmployeeProfile = () => {
           </span>
         )}
       </p>
+
+      <div className="mt-3">
+        <strong>ABS Card:</strong>{" "}
+        {absCardUrl ? (
+          <span style={{ color: "#6B7280" }}>
+            Uploaded
+            <span style={{ marginLeft: "8px" }}>
+              <a
+                href={absCardUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ textDecoration: "none" }}
+              >
+                View
+              </a>
+            </span>
+            {isEditing && (
+              <button
+                className="btn btn-outline-danger btn-sm"
+                onClick={handleAbsCardDelete}
+                disabled={absCardDeleting}
+                style={{ marginLeft: "10px", borderRadius: "8px" }}
+              >
+                {absCardDeleting ? "Deleting..." : "Delete"}
+              </button>
+            )}
+          </span>
+        ) : (
+          <span style={{ color: "#6B7280" }}>Not uploaded</span>
+        )}
+
+        {isEditing && (
+          <div className="mt-2">
+            <input
+              type="file"
+              className="form-control"
+              style={{ maxWidth: "320px", fontSize: "14px" }}
+              accept="image/*,application/pdf"
+              onChange={(e) => setAbsCardFile(e.target.files?.[0] || null)}
+            />
+            <button
+              className="btn btn-outline-primary mt-2"
+              onClick={handleAbsCardUpload}
+              disabled={absCardUploading}
+              style={{ borderRadius: "8px", padding: "6px 14px", fontSize: "14px" }}
+            >
+              {absCardUploading ? "Uploading..." : "Upload ABS Card"}
+            </button>
+          </div>
+        )}
+
+        {absCardUrl && isAbsCardImage && (
+          <div className="mt-2">
+            <img
+              src={absCardUrl}
+              alt="ABS Card"
+              style={{
+                width: "100%",
+                maxWidth: "260px",
+                borderRadius: "8px",
+                border: "1px solid #D6E0F0",
+              }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   </div>
 

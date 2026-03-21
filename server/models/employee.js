@@ -24,6 +24,7 @@ const EmployeeSchema = new Schema(
     Phone_No: { type: String,required: true, default: "" },
 
     Photo: { type: String,required: true, default: "" },
+    ABS_Card: { type: String, default: "" },
 
     Address: {
       Street: { type: String,required: true, default: "" },
