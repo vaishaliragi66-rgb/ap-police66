@@ -124,7 +124,7 @@ const InstituteLogin = () => {
           Institute Login
         </h3>
         <p style={{ color: "#6B7280", fontSize: "14px" }}>
-          Access your institute dashboard
+          Access Front Desk
         </p>
       </div>
 

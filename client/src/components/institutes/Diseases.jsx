@@ -8,32 +8,10 @@ const Diseases = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [instituteName, setInstituteName] = useState("");
 
-  // Predefined disease lists by category
-  const communicableDiseases = [
-    "Tuberculosis",
-    "Malaria",
-    "Dengue",
-    "COVID-19",
-    "Cholera",
-    "Typhoid",
-    "Hepatitis A",
-    "Hepatitis B",
-    "Influenza",
-    "Chickenpox",
-  ];
-
-  const nonCommunicableDiseases = [
-    "Diabetes",
-    "Hypertension",
-    "Asthma",
-    "Cancer",
-    "Heart Disease",
-    "Arthritis",
-    "Kidney Disease",
-    "Migraine",
-    "Obesity",
-    "Stroke",
-  ];
+  // disease lists will be loaded from server (fallback to small builtin lists if fetch fails)
+  const [communicableDiseases, setCommunicableDiseases] = useState(["Tuberculosis", "Malaria", "Dengue"]);
+  const [nonCommunicableDiseases, setNonCommunicableDiseases] = useState(["Diabetes", "Hypertension", "Asthma"]);
+  const [allDiseases, setAllDiseases] = useState([]);
 
   const [showOtherDiseaseInput, setShowOtherDiseaseInput] = useState(false);
 
@@ -61,6 +39,23 @@ const Diseases = () => {
       fetchInstituteName(localInstituteId);
     }
     fetchEmployees();
+  }, []);
+
+  // fetch full disease lists extracted from DOCX on server
+  useEffect(() => {
+    const fetchDiseaseLists = async () => {
+      try {
+        const res = await axios.get(`http://localhost:${BACKEND_PORT_NO}/disease-list/static`);
+        const body = res.data || {};
+        const sort = (arr) => (Array.isArray(arr) ? arr.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase())) : []);
+        if (body.communicable && Array.isArray(body.communicable)) setCommunicableDiseases(sort(body.communicable));
+        if (body.nonCommunicable && Array.isArray(body.nonCommunicable)) setNonCommunicableDiseases(sort(body.nonCommunicable));
+        if (body.all && Array.isArray(body.all)) setAllDiseases(sort(body.all));
+      } catch (err) {
+        console.warn('Could not fetch disease lists from server, using local defaults', err?.message || err);
+      }
+    };
+    fetchDiseaseLists();
   }, []);
   const formatDateDMY = (dateValue) => {
   if (!dateValue) return "—";
