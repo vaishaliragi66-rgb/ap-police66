@@ -29,7 +29,7 @@ const EmployeeProfile = () => {
     axios
       .get(`${BACKEND_URL}/family-api/family/${employeeId}`)
       .then((res) => setFamily(res.data || []));
-  }, [employeeId, BACKEND_PORT]);
+  }, [employeeId, BACKEND_URL]);
 
   const handleEdit = () => {
     setIsEditing(true);

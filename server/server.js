@@ -38,6 +38,7 @@ const healthSummaryRoutes = require("./apis/healthSummary");
 const instituteAuth = require("./apis/instituteAuth");
 const passwordResetApp = require("./apis/passwordReset");
 const analyticsRoutes = require("./apis/analyticsRoutes");
+const diseaseMasterRoutes = require("./apis/disease-fetch");
 
 app.use("/institute-auth", instituteAuth.router);
 app.use("/auth", passwordResetApp);
@@ -56,14 +57,14 @@ app.use("/disease-api",diseaseApp)
 app.use("/uploads", express.static("uploads"));
 app.use("/ledger-api", ledgerApp);
 app.use("/indent-api", indentApp);
-app.use("/disease-list", require("./apis/disease_list"));
 app.use("/disease-api", require("./apis/disease-api"));
 app.use("/medicine-limit-api", require("./apis/medicine_limit_api"));
 app.use("/mainstore", mainStoreApp);
 app.use("/admin-api", adminApp);
 app.use("/xray-api", xrayApp);
 app.use("/api/analytics", analyticsRoutes);
-// Base route
+app.use("/disease-master-api", diseaseMasterRoutes);
+
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 
 const getResolver = () => {

@@ -5,7 +5,7 @@ import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 
 const DoctorPrescriptionForm = () => {
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
   const navigate = useNavigate();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [lastTwoVisits, setLastTwoVisits] = useState([]);
@@ -28,18 +28,53 @@ const [xrayData, setXrayData] = useState({
   Xrays: [{ Xray_ID: "", Xray_Type: "" }]
 });
 
+const [diseaseSearch, setDiseaseSearch] = useState("");
+const [filteredDiseases, setFilteredDiseases] = useState([]);
+
+const [diseaseMaster, setDiseaseMaster] = useState([]);
+const [cdDiseases, setCdDiseases] = useState([]);
+const [ncdDiseases, setNcdDiseases] = useState([]);
+const [selectedType, setSelectedType] = useState("");
+const [selectedSubgroup, setSelectedSubgroup] = useState("");
   
   
-  // load disease lists from server (small local fallback kept)
-  const [communicableDiseases, setCommunicableDiseases] = useState(["Tuberculosis", "Malaria", "Dengue"]);
-  const [nonCommunicableDiseases, setNonCommunicableDiseases] = useState(["Diabetes", "Hypertension", "Asthma"]);
-  const [allDiseases, setAllDiseases] = useState([]);
+  const communicableDiseases = [
+    "Tuberculosis",
+    "Malaria",
+    "Dengue",
+    "COVID-19",
+    "Cholera",
+    "Typhoid",
+    "Hepatitis A",
+    "Hepatitis B",
+    "Influenza",
+    "Chickenpox",
+  ];
+  
+  const nonCommunicableDiseases = [
+    "Diabetes",
+    "Hypertension",
+    "Asthma",
+    "Cancer",
+    "Heart Disease",
+    "Arthritis",
+    "Kidney Disease",
+    "Migraine",
+    "Obesity",
+    "Stroke",
+  ];
   
   const [diseaseData, setDiseaseData] = useState({
     Category: "Communicable",
     Disease_Name: "",
     Severity_Level: "Mild"
   });
+
+
+  const currentDiseaseList =
+  diseaseData.Category === "Communicable"
+    ? communicableDiseases
+    : nonCommunicableDiseases;
   
   const [showOtherDiseaseInput, setShowOtherDiseaseInput] = useState(false);
   
@@ -78,23 +113,6 @@ const [xrayData, setXrayData] = useState({
 
     return `${dd}-${mm}-${yyyy}`;
   };
-
-  // fetch full disease lists from server (if available)
-  useEffect(() => {
-    const fetchLists = async () => {
-      try {
-        const res = await axios.get(`${BACKEND_URL}/disease-list/static`);
-        const body = res.data || {};
-        const sort = (arr) => (Array.isArray(arr) ? arr.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase())) : []);
-        if (Array.isArray(body.communicable) && body.communicable.length) setCommunicableDiseases(sort(body.communicable));
-        if (Array.isArray(body.nonCommunicable) && body.nonCommunicable.length) setNonCommunicableDiseases(sort(body.nonCommunicable));
-        if (Array.isArray(body.all) && body.all.length) setAllDiseases(sort(body.all));
-      } catch (err) {
-        console.warn('Could not load disease lists, using defaults', err?.message || err);
-      }
-    };
-    fetchLists();
-  }, []);
 
   const getReportStatus = (value) => {
     if (!value) return "pending";
@@ -164,19 +182,23 @@ const [xrayData, setXrayData] = useState({
 
     const [diseaseRes, diagnosisRes, xrayRes] = await Promise.all([
       axios.get(
-        `${BACKEND_URL}/disease-api/employee/${formData.Employee_ID}`
+        `http://localhost:${BACKEND_PORT}/disease-api/employee/${formData.Employee_ID}`
       ),
       axios.get(
-        `${BACKEND_URL}/diagnosis-api/records/${formData.Employee_ID}`,
+        `http://localhost:${BACKEND_PORT}/diagnosis-api/records/${formData.Employee_ID}`,
         { params }
       ),
       axios.get(
-        `${BACKEND_URL}/xray-api/records/${formData.Employee_ID}`,
+        `http://localhost:${BACKEND_PORT}/xray-api/records/${formData.Employee_ID}`,
         { params }
       )
     ]);
 
-    const allDiseases = diseaseRes.data || [];
+    const allDiseases =
+  diseaseData.Category === "Communicable"
+    ? cdDiseases
+    : ncdDiseases;
+
     const filteredDiseases = allDiseases.filter((disease) => {
       if (formData.IsFamilyMember) {
         return (
@@ -206,14 +228,14 @@ const [xrayData, setXrayData] = useState({
 };
   useEffect(() => {
     axios
-      .get(`${BACKEND_URL}/diagnosis-api/tests`)
+      .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/tests`)
       .then(res => setTestsMaster(res.data || []))
       .catch(() => setTestsMaster([]));
   }, []);
   
 useEffect(() => {
   axios
-    .get(`${BACKEND_URL}/xray-api/types`)
+    .get(`http://localhost:${BACKEND_PORT}/xray-api/types`)
     .then(res => setXrayMaster(res.data || []))
     .catch(() => setXrayMaster([]));
 }, []);
@@ -225,7 +247,7 @@ useEffect(() => {
     if (!formData.Institute_ID) return;
   
     axios
-      .get(`${BACKEND_URL}/institute-api/inventory/${formData.Institute_ID}`)
+      .get(`http://localhost:${BACKEND_PORT}/institute-api/inventory/${formData.Institute_ID}`)
       .then(res => {
         const inventory = res.data || [];
   
@@ -262,7 +284,7 @@ useEffect(() => {
     try {
   
       const res = await axios.get(
-        `${BACKEND_URL}/prescription-api/employee/${employeeId}`
+        `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
       );
   
 
@@ -293,7 +315,7 @@ useEffect(() => {
   /* ================= API CALLS ================= */
   const fetchInstitute = async (id) => {
     const res = await axios.get(
-      `${BACKEND_URL}/institute-api/institution/${id}`
+      `http://localhost:${BACKEND_PORT}/institute-api/institution/${id}`
     );
     setInstituteName(res.data?.Institute_Name || "");
   };
@@ -302,7 +324,7 @@ useEffect(() => {
   const fetchDiseases = async (employeeId) => {
     try {
       const res = await axios.get(
-        `${BACKEND_URL}/disease-api/employee/${employeeId}`
+        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
       );
       setDiseases(reportRes.data.employeeDiseases);
     } catch {
@@ -316,11 +338,48 @@ useEffect(() => {
 
     axios
       .get(
-        `${BACKEND_URL}/employee-api/profile/${formData.Employee_ID}`
+        `http://localhost:${BACKEND_PORT}/employee-api/profile/${formData.Employee_ID}`
       )
       .then((res) => setEmployeeProfile(res.data))
       .catch(() => setEmployeeProfile(null));
   }, [formData.Employee_ID]);
+
+  useEffect(() => {
+    axios.get(`http://localhost:${BACKEND_PORT}/disease-master-api/cd`)
+      .then(res => setCdDiseases(res.data || []))
+      .catch(() => setCdDiseases([]));
+  
+    axios.get(`http://localhost:${BACKEND_PORT}/disease-master-api/ncd`)
+      .then(res => setNcdDiseases(res.data || []))
+      .catch(() => setNcdDiseases([]));
+  }, []);
+
+  const allDiseases = [...cdDiseases, ...ncdDiseases];
+
+  useEffect(() => {
+  if (!diseaseSearch.trim()) {
+    setFilteredDiseases([]);
+    return;
+  }
+
+  const search = diseaseSearch.toLowerCase();
+
+  const source =
+    diseaseData.Category === "Communicable"
+      ? cdDiseases
+      : ncdDiseases;
+
+  const filtered = source.filter(d => {
+    return (
+      d.name?.toLowerCase().includes(search) ||
+      d.type?.toLowerCase().includes(search) ||
+      d.subgroup?.toLowerCase().includes(search)
+    );
+  });
+
+  setFilteredDiseases(filtered.slice(0, 20));
+
+}, [diseaseSearch, cdDiseases, ncdDiseases, diseaseData.Category]);
 
 
   /* ================= DISEASE FILTER ================= */
@@ -336,7 +395,7 @@ const relevantDiseases = diseases.filter((d) => {
   }
 
   return d.IsFamilyMember === false;
-});
+}); 
 
   const communicableRecent = relevantDiseases.filter(
     (d) =>
@@ -395,7 +454,7 @@ if (selectedMedicines.length === 0) {
   alert("Please add at least one medicine");
   return;
 }
-    await axios.post(`${BACKEND_URL}/api/medical-actions`, {
+    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
       Institute_ID: formData.Institute_ID,
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -419,7 +478,7 @@ if (selectedMedicines.length === 0) {
     // ✅ Save Disease (if selected)
     if (diseaseData.Disease_Name?.trim()) {
       await axios.post(
-  `${BACKEND_URL}/disease-api/diseases`,
+  `http://localhost:${BACKEND_PORT}/disease-api/diseases`,
   {
     Institute_ID: formData.Institute_ID,
     Employee_ID: formData.Employee_ID,
@@ -458,7 +517,7 @@ if (validTests.length === 0) {
   alert("Please select at least one test");
   return;
 }
-    await axios.post(`${BACKEND_URL}/api/medical-actions`, {
+    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
       action_type: "DOCTOR_DIAGNOSIS",
@@ -495,7 +554,7 @@ if (validXrays.length === 0) {
 }
 
   await axios.post(
-    `${BACKEND_URL}/api/medical-actions`,
+    `http://localhost:${BACKEND_PORT}/api/medical-actions`,
     {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -676,7 +735,7 @@ if (validXrays.length === 0) {
             test.Reports.map((r, ri) => (
               <a
                 key={ri}
-                href={`${BACKEND_URL}${r.url}`}
+                href={`http://localhost:${BACKEND_PORT}${r.url}`}
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-sm btn-outline-dark mt-2 me-2"
@@ -889,36 +948,52 @@ if (validXrays.length === 0) {
 
   {/* Disease Name */}
   <div className="col-md-4">
-    <label className="form-label fw-semibold">Disease Name</label>
-    <select
-      className="form-select"
-      value={diseaseData.Disease_Name}
+  <label className="form-label fw-semibold">Disease Name</label>
+
+  <div className="position-relative">
+
+    {/* ✅ INPUT FIELD (YOU MISSED THIS) */}
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Search disease..."
+      value={diseaseSearch}
       onChange={(e) => {
-        if (e.target.value === "Other") {
-          setShowOtherDiseaseInput(true);
-          setDiseaseData(prev => ({ ...prev, Disease_Name: "" }));
-        } else {
-          setShowOtherDiseaseInput(false);
-          setDiseaseData(prev => ({
-            ...prev,
-            Disease_Name: e.target.value
-          }));
-        }
+        setDiseaseSearch(e.target.value);
       }}
-    >
-      <option value="">Select Disease</option>
-      {(allDiseases && allDiseases.length > 0
-        ? allDiseases
-        : (diseaseData.Category === "Communicable"
-            ? communicableDiseases
-            : nonCommunicableDiseases
-          )
-      ).map((d, i) => (
-        <option key={i} value={d}>{d}</option>
-      ))}
-      <option value="Other">Other</option>
-    </select>
+    />
+
+    {/* ✅ SUGGESTIONS */}
+    {filteredDiseases.length > 0 && (
+      <ul
+        className="list-group position-absolute w-100"
+        style={{ zIndex: 1000, maxHeight: "200px", overflowY: "auto" }}
+      >
+        {filteredDiseases.map((d, i) => (
+          <li
+            key={i}
+            className="list-group-item list-group-item-action"
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              setDiseaseSearch(d.name);
+              setDiseaseData(prev => ({
+                ...prev,
+                Disease_Name: d.name
+              }));
+              setFilteredDiseases([]);
+            }}
+          >
+            {/* 🔥 FINAL FORMAT */}
+            {d.subgroup
+              ? `${d.type} - ${d.subgroup} - ${d.name}`
+              : `${d.type} - ${d.name}`}
+          </li>
+        ))}
+      </ul>
+    )}
+
   </div>
+</div>
 
   {/* Severity */}
   <div className="col-md-4">
@@ -1336,7 +1411,7 @@ if (validXrays.length === 0) {
                               xray.Reports.map((r, i) => (
                                 <div key={i} className="mb-1">
                                   <a
-                                    href={`${BACKEND_URL}${r.url}`}
+                                    href={`http://localhost:${BACKEND_PORT}${r.url}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="btn btn-sm btn-outline-primary me-1"
@@ -1345,7 +1420,7 @@ if (validXrays.length === 0) {
                                   </a>
 
                                   <a
-                                    href={`${BACKEND_URL}${r.url}`}
+                                    href={`http://localhost:${BACKEND_PORT}${r.url}`}
                                     download
                                     className="btn btn-sm btn-outline-secondary"
                                   >
