@@ -86,25 +86,37 @@ exports.ageSummary = async (req, res) => {
         }
       },
 
-      {
-        $group: {
-          _id: {
-            ageRange: "$ageRange",
-            disease: "$_id.disease"
-          },
-          count: { $sum: 1 }
-        }
-      },
+{
+  $group: {
+    _id: {
+      ageRange: "$ageRange",
+      disease: "$_id.disease"
+    },
+    count: { $sum: 1 }
+  }
+},
+{
+  $project: {
+    _id: "$_id.ageRange",
+    disease: "$_id.disease",
+    count: 1
+  }
+},
+{ $sort: { _id: 1, count: -1 } }, // sort inside each age group
 
-      { $sort: { count: -1 } },
-
-      {
-        $group: {
-          _id: "$_id.ageRange",
-          disease: { $first: "$_id.disease" },
-          count: { $first: "$count" }
-        }
+// 🔥 ADD THIS
+{
+  $group: {
+    _id: "$_id",
+    diseases: {
+      $push: {
+        disease: "$disease",
+        count: "$count"
       }
+    }
+  }
+},
+{ $sort: { count: -1 } }
 
     ]);
 
@@ -187,7 +199,26 @@ exports.ageDetails = async (req, res) => {
 
     const designationDistribution = await Disease.aggregate([
       ...pipeline,
-      { $group: { _id: "$employee.Designation", count: { $sum: 1 } } },
+     {
+  $group: {
+    _id: {
+      designation: "$employee.Designation",
+      disease: "$Disease_Name"
+    },
+    count: { $sum: 1 }
+  }
+},
+
+{ $sort: { count: -1 } },
+
+{
+  $group: {
+    _id: "$_id.designation",
+    count: { $first: "$count" },
+    topDisease: { $first: "$_id.disease" }
+  }
+},
+
       { $sort: { count: -1 } }
     ]);
 
@@ -340,7 +371,26 @@ exports.designationDetails = async (req, res) => {
 
     const ageDistribution = await Disease.aggregate([
       ...pipeline,
-      { $group: { _id: "$ageRange", count: { $sum: 1 } } },
+      {
+  $group: {
+    _id: {
+      ageRange: "$ageRange",
+      disease: "$Disease_Name"
+    },
+    count: { $sum: 1 }
+  }
+},
+
+{ $sort: { count: -1 } },
+
+{
+  $group: {
+    _id: "$_id.ageRange",
+    count: { $first: "$count" },
+    topDisease: { $first: "$_id.disease" }
+  }
+},
+
       { $sort: { count: -1 } }
     ]);
 
@@ -365,25 +415,42 @@ exports.riskHotspots = async (req, res) => {
 
     const filter = buildFilter(instituteId, category, fromDate, toDate);
 
-    const designationRisk = await Disease.aggregate([
-      { $match: filter },
-      {
-        $lookup: {
-          from: "employees",
-          localField: "Employee_ID",
-          foreignField: "_id",
-          as: "employee"
-        }
+const designationRisk = await Disease.aggregate([
+  { $match: filter },
+
+  {
+    $lookup: {
+      from: "employees",
+      localField: "Employee_ID",
+      foreignField: "_id",
+      as: "employee"
+    }
+  },
+
+  { $unwind: "$employee" },
+
+  {
+    $group: {
+      _id: {
+        designation: "$employee.Designation",
+        disease: "$Disease_Name"
       },
-      { $unwind: "$employee" },
-      {
-        $group: {
-          _id: "$employee.Designation",
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { count: -1 } }
-    ]);
+      count: { $sum: 1 }
+    }
+  },
+
+  { $sort: { count: -1 } },
+
+  {
+    $group: {
+      _id: "$_id.designation",
+      count: { $first: "$count" },
+      topDisease: { $first: "$_id.disease" }
+    }
+  },
+
+  { $sort: { count: -1 } }
+]);
 
     const ageRisk = await Disease.aggregate([
 
@@ -429,12 +496,26 @@ exports.riskHotspots = async (req, res) => {
             }
         },
 
-        {
-            $group: {
-            _id: "$ageRange",
-            count: { $sum: 1 }
-            }
-        },
+       {
+  $group: {
+    _id: {
+      ageRange: "$ageRange",
+      disease: "$Disease_Name"
+    },
+    count: { $sum: 1 }
+  }
+},
+
+{ $sort: { count: -1 } },
+
+{
+  $group: {
+    _id: "$_id.ageRange",
+    count: { $first: "$count" },
+    topDisease: { $first: "$_id.disease" }
+  }
+},
+
 
         { $sort: { count: -1 } }
 
@@ -451,26 +532,77 @@ exports.riskHotspots = async (req, res) => {
       { $sort: { count: -1 } },
       { $limit: 10 }
     ]);
-    const severityDistribution = await Disease.aggregate([
+const severityDistribution = await Disease.aggregate([
+  { $match: filter },
 
-    { $match: filter },
-
-    {
+  {
     $group: {
-    _id: "$Severity_Level",
-    count: { $sum: 1 }
+      _id: {
+        severity: "$Severity_Level",
+        disease: "$Disease_Name"
+      },
+      count: { $sum: 1 }
     }
-    },
+  },
 
-    { $sort: { count: -1 } }
+  { $sort: { count: -1 } },
 
-    ]);
+  {
+    $group: {
+      _id: "$_id.severity",
+      count: { $sum: "$count" }, // total cases
+      topDisease: { $first: "$_id.disease" } // most common disease
+    }
+  },
+
+  { $sort: { count: -1 } }
+]);
+
+// ✅ ADD HERE (NOT BELOW res.json)
+const districtRisk = await Disease.aggregate([
+  { $match: filter },
+
+  {
+    $lookup: {
+      from: "employees",
+      localField: "Employee_ID",
+      foreignField: "_id",
+      as: "employee"
+    }
+  },
+
+  { $unwind: "$employee" },
+
+  {
+    $group: {
+      _id: {
+        district: "$employee.Address.District",
+        disease: "$Disease_Name"
+      },
+      count: { $sum: 1 }
+    }
+  },
+
+  { $sort: { count: -1 } },
+
+  {
+    $group: {
+      _id: "$_id.district",
+      count: { $first: "$count" },
+      topDisease: { $first: "$_id.disease" }
+    }
+  },
+
+  { $sort: { count: -1 } }
+]);
+
 
     res.json({
       designationRisk,
       ageRisk,
       diseaseRisk,
-      severityData: severityDistribution
+      severityData: severityDistribution,
+      districtRisk 
     });
 
   } catch (err) {
