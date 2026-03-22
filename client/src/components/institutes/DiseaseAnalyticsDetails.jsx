@@ -10,7 +10,7 @@ import {
   CartesianGrid,
   ResponsiveContainer
 } from "recharts";
-
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 function DiseaseAnalyticsDetails() {
 
   const { type, value } = useParams();
