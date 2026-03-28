@@ -49,6 +49,7 @@ import DiseaseAnalyticsHome from "./components/institutes/DiseaseAnalyticsHome";
 import DiseaseAnalyticsTable from "./components/institutes/DiseaseAnalyticsTable";
 import DiseaseAnalyticsDetails from "./components/institutes/DiseaseAnalyticsDetails";
 import RiskHotspots from "./components/institutes/RiskHotspots";
+import Predict from "./components/institutes/Predict";
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -224,6 +225,10 @@ function App() {
         { 
           path:"/institutes/disease-analytics/:type/:value",
           element:<DiseaseAnalyticsDetails/>
+        },
+        { 
+          path:"/institutes/predict",
+          element:<Predict/>
         },
         {
           path:"/institutes/disease-analytics/risk-hotspots",
