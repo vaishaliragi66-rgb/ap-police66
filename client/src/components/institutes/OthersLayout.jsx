@@ -31,7 +31,8 @@ const OthersLayout = () => {
     { label: "Substore", path: "/institutes/inventory", icon: <FaBoxOpen /> },
     { label: "AI Insights", path: "/institutes/ai-insights", icon: <FaRobot /> },
     { label: "Analytics", path: "/institutes/analytics", icon: <FaRobot />},
-    { label: "Disease Analytics", path: "/institutes/disease-analytics", icon: <FaRobot />}
+    { label: "Disease Analytics", path: "/institutes/disease-analytics", icon: <FaRobot />},
+    { label: "Predict", path: "/institutes/predict", icon: <FaRobot /> }
   ];
 
   return (

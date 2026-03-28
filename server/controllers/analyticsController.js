@@ -556,7 +556,7 @@ const severityDistribution = await Disease.aggregate([
   },
 
   { $sort: { count: -1 } }
-]);
+])
 
 // ✅ ADD HERE (NOT BELOW res.json)
 const districtRisk = await Disease.aggregate([
