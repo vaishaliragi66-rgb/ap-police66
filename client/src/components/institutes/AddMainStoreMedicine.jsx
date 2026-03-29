@@ -139,7 +139,7 @@ const AddMainStoreMedicine = () => {
       {/* Header */}
       <div className="text-center mb-5">
         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Add Medicine � Main Store
+          Add Medicine — Main Store
         </h2>
         <p className="text-gray-500 mt-1 text-sm">
           Register a new medicine into the central store inventory
@@ -285,29 +285,29 @@ const AddMainStoreMedicine = () => {
             >
               <option value="">Select Issued From</option>
               {[
-                "Chief Office, Hyderabad",
-                "1st Battalion, Yousufguda",
-                "2nd Battalion, Asifabad",
-                "3rd Battalion, Ibrahimpatnam",
-                "4th Battalion, Nampally",
-                "5th Battalion, Bhoopalapally",
-                "6th Battalion, Kothagudem",
-                "7th Battalion, Dichpally",
-                "8th Battalion, Kondapur",
+                "Chief Office-Hyderabad",
+                "1st Battalion-Yousufguda",
+                "2nd Battalion-Asifabad",
+                "3rd Battalion-Ibrahimpatnam",
+                "4th Battalion-Nampally",
+                "5th Battalion-Bhoopalapally",
+                "6th Battalion-Kothagudem",
+                "7th Battalion-Dichpally",
+                "8th Battalion-Kondapur",
                 "9th Battalion",
-                "10th Battalion, Beechupally",
+                "10th Battalion-Bachupally",
                 "11th Battalion",
-                "12th Battalion, Anantapur",
-                "13th Battalion, Mancherial",
+                "12th Battalion-Anantapur",
+                "13th Battalion-Mancherial",
                 "14th Battalion",
-                "15th Battalion, Sattupally",
+                "15th Battalion-Sattupally",
                 "16th Battalion",
-                "17th Battalion, Siricilla",
+                "17th Battalion-Siricilla",
                 "PTC - Warangal",
                 "PTC - Karimnagar",
                 "PTC - Medchal",
-                "SAR CPL, Amberpet",
-                "CAR, Gachibowli",
+                "SAR CPL-Amberpet",
+                "CAR-Gachibowli",
                 "RBVRR TSPA",
                 "GREYHOUNDS",
                 "OCTOPUS"
@@ -391,7 +391,7 @@ const AddMainStoreMedicine = () => {
         {/* Footer */}
         <div className="mt-6 pt-4 border-t text-center border-gray-200">
           <p className="text-gray-400 text-xs">
-            � 2025 AP Police Health Division
+            2025 AP Police Health Division
           </p>
         </div>
       </div>

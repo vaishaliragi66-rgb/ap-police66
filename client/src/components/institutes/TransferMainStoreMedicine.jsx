@@ -10,11 +10,7 @@ export default function TransferMainStoreMedicine() {
 
   const [medicines, setMedicines] = useState([]);
   const [institutes, setInstitutes] = useState([]);
-    // Sanitize display name to remove replacement characters
-    const sanitizeName = (s) => {
-      if (!s && s !== 0) return "";
-      return String(s).replace(/\uFFFD/g, "").replace(/�/g, "").trim();
-    };
+
 
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState("");
@@ -37,29 +33,29 @@ export default function TransferMainStoreMedicine() {
 
   // Frontend-only institutes list to show in the dropdown (won't create server records)
   const FRONTEND_INSTITUTES = [
-    "Chief Office, Hyderabad",
-    "1st Battalion, Yousufguda",
-    "2nd Battalion, Asifabad",
-    "3rd Battalion, Ibrahimpatnam",
-    "4th Battalion, Nampally",
-    "5th Battalion, Bhoopalapally",
-    "6th Battalion, Kothagudem",
-    "7th Battalion, Dichpally",
-    "8th Battalion, Kondapur",
+    "Chief Office-Hyderabad",
+    "1st Battalion-Yousufguda",
+    "2nd Battalion-Asifabad",
+    "3rd Battalion-Ibrahimpatnam",
+    "4th Battalion-Nampally",
+    "5th Battalion-Bhoopalapally",
+    "6th Battalion-Kothagudem",
+    "7th Battalion-Dichpally",
+    "8th Battalion-Kondapur",
     "9th Battalion",
-    "10th Battalion, Beechupally",
+    "10th Battalion-Bachupally",
     "11th Battalion",
-    "12th Battalion, Anantapur",
-    "13th Battalion, Mancherial",
+    "12th Battalion-Anantapur",
+    "13th Battalion-Mancherial",
     "14th Battalion",
-    "15th Battalion, Sattupally",
+    "15th Battalion-Sattupally",
     "16th Battalion",
-    "17th Battalion, Siricilla",
+    "17th Battalion-Siricilla",
     "PTC - Warangal",
     "PTC - Karimnagar",
     "PTC - Medchal",
-    "SAR CPL, Amberpet",
-    "CAR, Gachibowli",
+    "SAR CPL-Amberpet",
+    "CAR-Gachibowli",
     "RBVRR TSPA",
     "GREYHOUNDS",
     "OCTOPUS"
@@ -240,7 +236,7 @@ export default function TransferMainStoreMedicine() {
 
       {/* Header */}
       <div className="text-center mb-3">
-        <h3 className="fw-bold">Transfer Medicine � Main Store</h3>
+        <h3 className="fw-bold">Transfer Medicine — Main Store</h3>
         <p className="text-muted">
           Move stock from Main Store to Institute or Sub-Store
         </p>
@@ -290,7 +286,7 @@ export default function TransferMainStoreMedicine() {
 
                 {medicines.map(m => (
                   <option key={m._id} value={m._id}>
-                    {m.Medicine_Name} ({m.Medicine_Code}) � Stock {m.Quantity}
+                    {sanitizeName(m.Medicine_Name)} ({sanitizeName(m.Medicine_Code)}) — Stock {m.Quantity}
                   </option>
                 ))}
               </select>
@@ -348,7 +344,7 @@ export default function TransferMainStoreMedicine() {
 
                   {institutes.map(inst => (
                     <option key={inst._id} value={inst._id}>
-                      {inst.Institute_Name} � {inst.Address?.District}
+                      {sanitizeName(inst.Institute_Name)}{inst.Address?.District ? ` — ${sanitizeName(inst.Address.District)}` : ""}
                     </option>
                   ))}
                 </select>
