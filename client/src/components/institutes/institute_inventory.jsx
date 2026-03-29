@@ -77,7 +77,7 @@ function InstituteInventory() {
     };
 
     fetchInstituteAndInventory();
-  }, [BACKEND_PORT_NO]);
+  }, []);
 
   /* ---------- CHECK IF ANY FILTER IS ACTIVE ---------- */
   const hasActiveFilters = () => {
