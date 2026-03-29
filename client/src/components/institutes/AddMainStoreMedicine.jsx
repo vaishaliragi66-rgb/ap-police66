@@ -21,6 +21,8 @@ const AddMainStoreMedicine = () => {
     Expiry_Date: ""
   });
 
+  const [existingMeds, setExistingMeds] = useState([]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -32,12 +34,13 @@ const AddMainStoreMedicine = () => {
 
     // Auto-generate Medicine_Code from Medicine_Name when name is entered
     if (name === "Medicine_Name") {
-      const newName = value.toUpperCase();
-      const generatedCode = generateMedicineCode(newName);
-      setFormData(prev => ({ ...prev, Medicine_Name: newName, Medicine_Code: generatedCode }));
-      if (error) setError("");
-      return;
-    }
+        const newName = value.toUpperCase();
+        // if an exact medicine exists already in main store, prefill its correct code
+        const found = existingMeds.find(m => (m.Medicine_Name || "").toUpperCase() === newName);
+        setFormData(prev => ({ ...prev, Medicine_Name: newName, Medicine_Code: found ? found.Medicine_Code : "" }));
+        if (error) setError("");
+        return;
+      }
 
     setFormData(prev => ({ ...prev, [name]: value }));
     if (error) setError("");
@@ -51,6 +54,21 @@ const AddMainStoreMedicine = () => {
     const suffix = String(Date.now()).slice(-3);
     return `MS-${prefix}-${suffix}`;
   };
+
+  // Load existing main store medicines for institute to assist code lookup
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const instId = localStorage.getItem("instituteId");
+        if (!instId) return;
+        const res = await axios.get(`${BACKEND_URL}/mainstore/all-medicines/${instId}`);
+        setExistingMeds(Array.isArray(res.data) ? res.data : []);
+      } catch (e) {
+        setExistingMeds([]);
+      }
+    };
+    load();
+  }, []);
 
   // tomorrow = min expiry
   const getMinDate = () => {
