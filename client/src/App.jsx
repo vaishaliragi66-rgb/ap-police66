@@ -78,10 +78,17 @@ function AppShell() {
     path === "/institutions/xray-entry"; 
 
   const handleBack = () => {
+    // If user is on admin login page, always go to main dashboard
+    if (location.pathname === "/admin/login") {
+      navigate("/");
+      return;
+    }
+
     if (window.history.length > 1) {
       navigate(-1);
       return;
     }
+
     navigate("/");
   };
 
