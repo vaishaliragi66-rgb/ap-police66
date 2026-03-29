@@ -110,12 +110,12 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
       <div className="d-flex gap-3 mb-3">
         <button className="btn btn-primary"
           onClick={() => navigate("/institutes/add")}>
-          ? Receipt
+          Receipt
         </button>
 
         <button className="btn btn-success"
           onClick={() => navigate("/institutes/transfer")}>
-          ?? Transfer Medicine
+          Transfer Medicine
         </button>
       </div>
 
@@ -162,14 +162,14 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                         className="btn btn-sm btn-outline-primary me-2"
                         onClick={() => openEditModal(med)}
                       >
-                        ? Update
+                        Update
                       </button>
 
                       <button
                         className="btn btn-sm btn-outline-danger"
                         onClick={() => deleteMedicine(med._id)}
                       >
-                        ?? Delete
+                        Delete
                       </button>
 
                     </td>
@@ -241,7 +241,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
 
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title">
-                  Update Medicine — {selectedMed.Medicine_Name}
+                  Update Medicine ï¿½ {selectedMed.Medicine_Name}
                 </h5>
 
                 <button className="btn-close btn-close-white"
