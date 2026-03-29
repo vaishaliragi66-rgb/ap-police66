@@ -97,10 +97,11 @@ const Institute_home = () => {
       {/* HEADER */}
 <div className="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center position-relative">
   <div>
-    <h3 className="fw-bold mb-2">{dashboardTitle}</h3>
     <small className="text-muted">
       {welcomeMessage}
     </small>
+    <h3 className="fw-bold mb-2">{dashboardTitle}</h3>
+    
   </div>
    
 {/* <small className="text-muted center">SARCPL
