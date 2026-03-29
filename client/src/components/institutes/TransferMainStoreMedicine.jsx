@@ -192,27 +192,24 @@ export default function TransferMainStoreMedicine() {
     // ===============================
     // INSTITUTE ? SUBSTORE
     // ===============================
-                <select
-                  name="To_Institute_ID"
-                  value={formData.To_Institute_ID}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                  className="form-select"
-                >
-                  <option value="">Choose Institute</option>
+    // Handle institute -> institute or mainstore -> substore transfers
+    if (formData.Transfer_To === "substore") {
+      endpoint = "/mainstore/transfer/substore";
+      payload = {
+        Medicine_ID: formData.Medicine_ID,
+        Transfer_Qty: formData.Transfer_Qty,
+        Institute_ID: CURRENT_INSTITUTE_ID
+      };
+    }
 
-                  {institutes.map(inst => (
-                    <option key={inst._id} value={inst._id}>
-                      {sanitizeName(inst.Institute_Name)}{inst.Address?.District ? ` — ${sanitizeName(inst.Address.District)}` : ""}
-                    </option>
-                  ))}
+    // perform transfer request
+    const res = await axios.post(`${BACKEND_URL}${endpoint}`, payload);
 
-                </select>
     setSuccess(res.data.message || "Transfer successful");
 
     setFormData(prev => ({
       ...prev,
+      Medicine_ID: "",
       Transfer_Qty: "",
       To_Institute_ID: "",
       Remarks: ""

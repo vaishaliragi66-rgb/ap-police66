@@ -158,7 +158,7 @@ const Institute_home = () => {
           {hasAccess("doctorCard") && (
             <QuickCard
               icon={<FaHistory size={35} />}
-              title="Doctor Prescription"
+              title="Doctor"
               desc="View & manage doctor prescriptions"
               onClick={() => navigate("/institutes/doctor-prescription")}
             />
@@ -194,7 +194,7 @@ const Institute_home = () => {
           {hasAccess("visitCard") && (
             <QuickCard
               icon={<FaUsers size={35} />}
-              title="Visit Register"
+              title="Registration"
               desc="Register daily visits"
               onClick={() => navigate("/institutes/visit-register")}
             />
