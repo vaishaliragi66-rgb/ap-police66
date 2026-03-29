@@ -18,6 +18,11 @@ const formatExpiryDate = (dateStr) => {
 export default function MainStore() {
 
   const navigate = useNavigate();
+  // Sanitize display name to remove replacement characters
+  const sanitizeName = (s) => {
+    if (!s && s !== 0) return "";
+    return String(s).replace(/\uFFFD/g, "").replace(/�/g, "").trim();
+  };
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
 const [currentPage, setCurrentPage] = useState(1);
@@ -149,9 +154,9 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                 {currentMedicines.map(med => (
 
                   <tr key={med._id}>
-                    <td className="text-uppercase">{med.Medicine_Code}</td>
-                    <td className="text-uppercase">{med.Medicine_Name}</td>
-                    <td className="text-uppercase">{med.Issued_By}</td>
+                    <td className="text-uppercase">{sanitizeName(med.Medicine_Code)}</td>
+                    <td className="text-uppercase">{sanitizeName(med.Medicine_Name)}</td>
+                    <td className="text-uppercase">{sanitizeName(med.Issued_By)}</td>
                     <td>{med.Quantity}</td>
                     <td>{med.Threshold_Qty}</td>
                     <td>{formatExpiryDate(med.Expiry_Date)}</td>
@@ -241,7 +246,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
 
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title">
-                  Update Medicine � {selectedMed.Medicine_Name}
+                  Update Medicine — {sanitizeName(selectedMed.Medicine_Name)}
                 </h5>
 
                 <button className="btn-close btn-close-white"
