@@ -1,4 +1,4 @@
-﻿// src/pages/TransferMainStoreMedicine.jsx
+// src/pages/TransferMainStoreMedicine.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaExchangeAlt } from "react-icons/fa";
@@ -15,21 +15,22 @@ export default function TransferMainStoreMedicine() {
   const [error, setError]   = useState("");
   const [success, setSuccess] = useState("");
  const institute = JSON.parse(localStorage.getItem("institute"));
-  const CURRENT_INSTITUTE_ID = institute?._id;   // ✅ FIXED
+  const CURRENT_INSTITUTE_ID = institute?._id;   // ? FIXED
 
   const [formData, setFormData] = useState({
     Medicine_ID: "",
     Transfer_Qty: "",
     Transfer_To: "institute",
 
-    // for institute → institute
+    // for institute ? institute
     To_Institute_ID: "",
 
     // for substore
-    Institute_ID: CURRENT_INSTITUTE_ID
+    Institute_ID: CURRENT_INSTITUTE_ID,
+    Remarks: ""
   });
 
-  // ✅ Load Main Store Medicines
+  // ? Load Main Store Medicines
   const loadMedicines = async () => {
   try {
     if (!CURRENT_INSTITUTE_ID) {
@@ -50,7 +51,7 @@ export default function TransferMainStoreMedicine() {
 
 
 
-  // ✅ Load Institutes EXCEPT currently opened one
+  // ? Load Institutes EXCEPT currently opened one
  const loadInstitutes = async () => {
   try {
     const stored = localStorage.getItem("institute");
@@ -119,7 +120,7 @@ export default function TransferMainStoreMedicine() {
     let payload = {};
 
     // ===============================
-    // INSTITUTE → INSTITUTE
+    // INSTITUTE ? INSTITUTE
     // ===============================
     if (formData.Transfer_To === "institute") {
       if (!formData.To_Institute_ID) {
@@ -134,14 +135,15 @@ export default function TransferMainStoreMedicine() {
         Medicine_ID: formData.Medicine_ID,
         Transfer_Qty: formData.Transfer_Qty,
 
-        // 🔑 BOTH INSTITUTES
+        // ?? BOTH INSTITUTES
         From_Institute_ID: CURRENT_INSTITUTE_ID,
-        To_Institute_ID: formData.To_Institute_ID
+        To_Institute_ID: formData.To_Institute_ID,
+        Remarks: formData.Remarks
       };
     }
 
     // ===============================
-    // INSTITUTE → SUBSTORE
+    // INSTITUTE ? SUBSTORE
     // ===============================
     else {
       endpoint = "/mainstore/transfer/substore";
@@ -150,8 +152,9 @@ export default function TransferMainStoreMedicine() {
         Medicine_ID: formData.Medicine_ID,
         Transfer_Qty: formData.Transfer_Qty,
 
-        // 🔑 SAME INSTITUTE
-        Institute_ID: CURRENT_INSTITUTE_ID
+        // ?? SAME INSTITUTE
+        Institute_ID: CURRENT_INSTITUTE_ID,
+        Remarks: formData.Remarks
       };
     }
 
@@ -164,7 +167,8 @@ export default function TransferMainStoreMedicine() {
     setFormData(prev => ({
       ...prev,
       Transfer_Qty: "",
-      To_Institute_ID: ""
+      To_Institute_ID: "",
+      Remarks: ""
     }));
 
     loadMedicines();
@@ -185,7 +189,7 @@ export default function TransferMainStoreMedicine() {
 
       {/* Header */}
       <div className="text-center mb-3">
-        <h3 className="fw-bold">Transfer Medicine — Main Store</h3>
+        <h3 className="fw-bold">Transfer Medicine � Main Store</h3>
         <p className="text-muted">
           Move stock from Main Store to Institute or Sub-Store
         </p>
@@ -235,7 +239,7 @@ export default function TransferMainStoreMedicine() {
 
                 {medicines.map(m => (
                   <option key={m._id} value={m._id}>
-                    {m.Medicine_Name} ({m.Medicine_Code}) — Stock {m.Quantity}
+                    {m.Medicine_Name} ({m.Medicine_Code}) � Stock {m.Quantity}
                   </option>
                 ))}
               </select>
@@ -293,10 +297,23 @@ export default function TransferMainStoreMedicine() {
 
                   {institutes.map(inst => (
                     <option key={inst._id} value={inst._id}>
-                      {inst.Institute_Name} — {inst.Address?.District}
+                      {inst.Institute_Name} � {inst.Address?.District}
                     </option>
                   ))}
                 </select>
+              </div>
+            )}
+            {formData.Transfer_To === "institute" && (
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Remarks</label>
+                <input
+                  name="Remarks"
+                  value={formData.Remarks}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className="form-control"
+                  placeholder="Optional"
+                />
               </div>
             )}
             {/* Substore note */}
