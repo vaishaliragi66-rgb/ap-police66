@@ -284,32 +284,36 @@ const AddMainStoreMedicine = () => {
               className="w-full border border-gray-300 rounded-md p-2 bg-white text-sm"
             >
               <option value="">Select Issued From</option>
-              <option value="Chief Office, Hyderabad">Chief Office, Hyderabad</option>
-              <option value="1st Battalion, Yousufguda">1st Battalion, Yousufguda</option>
-              <option value="2nd Battalion, Asifabad">2nd Battalion, Asifabad</option>
-              <option value="3rd Battalion, Ibrahimpatnam">3rd Battalion, Ibrahimpatnam</option>
-              <option value="4th Battalion, Nampally">4th Battalion, Nampally</option>
-              <option value="5th Battalion, Bhoopalapally">5th Battalion, Bhoopalapally</option>
-              <option value="6th Battalion, Kothagudem">6th Battalion, Kothagudem</option>
-              <option value="7th Battalion, Dichpally">7th Battalion, Dichpally</option>
-              <option value="8th Battalion, Kondapur">8th Battalion, Kondapur</option>
-              <option value="9th Battalion">9th Battalion</option>
-              <option value="10th Battalion, Beechupally">10th Battalion, Beechupally</option>
-              <option value="11th Battalion">11th Battalion</option>
-              <option value="12th Battalion, Anantapur">12th Battalion, Anantapur</option>
-              <option value="13th Battalion, Mancherial">13th Battalion, Mancherial</option>
-              <option value="14th Battalion">14th Battalion</option>
-              <option value="15th Battalion, Sattupally">15th Battalion, Sattupally</option>
-              <option value="16th Battalion">16th Battalion</option>
-              <option value="17th Battalion, Siricilla">17th Battalion, Siricilla</option>
-              <option value="PTC - Warangal">PTC - Warangal</option>
-              <option value="PTC - Karimnagar">PTC - Karimnagar</option>
-              <option value="PTC - Medchal">PTC - Medchal</option>
-              <option value="SAR CPL, Amberpet">SAR CPL, Amberpet</option>
-              <option value="CAR, Gachibowli">CAR, Gachibowli</option>
-              <option value="RBVRR TSPA">RBVRR TSPA</option>
-              <option value="GREYHOUNDS">GREYHOUNDS</option>
-              <option value="OCTOPUS">OCTOPUS</option>
+              {[
+                "Chief Office, Hyderabad",
+                "1st Battalion, Yousufguda",
+                "2nd Battalion, Asifabad",
+                "3rd Battalion, Ibrahimpatnam",
+                "4th Battalion, Nampally",
+                "5th Battalion, Bhoopalapally",
+                "6th Battalion, Kothagudem",
+                "7th Battalion, Dichpally",
+                "8th Battalion, Kondapur",
+                "9th Battalion",
+                "10th Battalion, Beechupally",
+                "11th Battalion",
+                "12th Battalion, Anantapur",
+                "13th Battalion, Mancherial",
+                "14th Battalion",
+                "15th Battalion, Sattupally",
+                "16th Battalion",
+                "17th Battalion, Siricilla",
+                "PTC - Warangal",
+                "PTC - Karimnagar",
+                "PTC - Medchal",
+                "SAR CPL, Amberpet",
+                "CAR, Gachibowli",
+                "RBVRR TSPA",
+                "GREYHOUNDS",
+                "OCTOPUS"
+              ].map((n, i) => (
+                <option key={i} value={n}>{n.replace(/\uFFFD/g, '').replace(/�/g,'').trim()}</option>
+              ))}
             </select>
           </div>
 
