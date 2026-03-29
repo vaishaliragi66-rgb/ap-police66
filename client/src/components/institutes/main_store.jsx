@@ -24,6 +24,7 @@ export default function MainStore() {
     return String(s).replace(/\uFFFD/g, "").replace(/�/g, "").trim();
   };
   const [medicines, setMedicines] = useState([]);
+  const [nonDeletable, setNonDeletable] = useState(new Set());
   const [loading, setLoading] = useState(true);
 const [currentPage, setCurrentPage] = useState(1);
 const rowsPerPage = 8;
@@ -52,6 +53,16 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
     );
 
     setMedicines(res.data || []);
+    // after loading medicines, also fetch ledger to determine non-deletable medicines
+    try {
+      const ledgerRes = await axios.get(`${BACKEND_URL}/ledger-api/institute/${instituteId}`);
+      const ledger = Array.isArray(ledgerRes.data?.ledger) ? ledgerRes.data.ledger : [];
+      const ids = new Set(ledger.map(l => (l.Medicine_ID && l.Medicine_ID._id) ? l.Medicine_ID._id.toString() : (l.Medicine_ID ? String(l.Medicine_ID) : null)).filter(Boolean));
+      setNonDeletable(ids);
+    } catch (e) {
+      console.warn('Could not load ledger for delete-protection', e);
+      setNonDeletable(new Set());
+    }
   } catch (err) {
     console.error(err);
     alert("Failed to load medicines");
@@ -67,6 +78,12 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
 
   // -------- DELETE MEDICINE ----------
   const deleteMedicine = async (id) => {
+    // Prevent deletion if ledger shows transactions for this medicine
+    if (nonDeletable.has(String(id))) {
+      alert("Cannot delete medicine that has transaction history or remaining stock.");
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this medicine?")) return;
 
     try {
