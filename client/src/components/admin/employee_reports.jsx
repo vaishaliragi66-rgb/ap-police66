@@ -150,6 +150,10 @@ export default function EmployeeReports() {
   const [test, setTest] = useState("");
   const [ageMin, setAgeMin] = useState("");
   const [ageMax, setAgeMax] = useState("");
+  const [heightMin, setHeightMin] = useState("");
+  const [heightMax, setHeightMax] = useState("");
+  const [weightMin, setWeightMin] = useState("");
+  const [weightMax, setWeightMax] = useState("");
   const [abnormalOnly, setAbnormalOnly] = useState(false);
 
   /* Pagination & Expand */
@@ -175,6 +179,25 @@ export default function EmployeeReports() {
       (!ageMin || r.Age >= ageMin) &&
       (!ageMax || r.Age <= ageMax);
 
+    const toNumber = (v) => {
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(v);
+      return isNaN(n) ? null : n;
+    };
+
+    const hMin = toNumber(heightMin);
+    const hMax = toNumber(heightMax);
+    const wMin = toNumber(weightMin);
+    const wMax = toNumber(weightMax);
+
+    const heightOK =
+      (hMin === null || (r.Height !== undefined && r.Height !== null && Number(r.Height) >= hMin)) &&
+      (hMax === null || (r.Height !== undefined && r.Height !== null && Number(r.Height) <= hMax));
+
+    const weightOK =
+      (wMin === null || (r.Weight !== undefined && r.Weight !== null && Number(r.Weight) >= wMin)) &&
+      (wMax === null || (r.Weight !== undefined && r.Weight !== null && Number(r.Weight) <= wMax));
+
     const hasAbnormal =
       r.Tests?.some(t => isAbnormal(t.Result_Value, t.Reference_Range));
 
@@ -187,6 +210,8 @@ export default function EmployeeReports() {
       match((r.Medicines || []).map(m => m.Medicine_Name).join(" "), medicine) &&
       match((r.Tests || []).map(t => t.Test_Name).join(" "), test) &&
       ageOK &&
+      heightOK &&
+      weightOK &&
       (!abnormalOnly || hasAbnormal)
     );
   });
@@ -270,6 +295,30 @@ export default function EmployeeReports() {
               <div className="col-md-1">
                 <input className="form-control" placeholder="Age ≤" value={ageMax}
                   onChange={e => setAgeMax(e.target.value)}
+                  style={{ height: 42, borderRadius: 10 }} />
+              </div>
+
+              <div className="col-md-1">
+                <input className="form-control" placeholder="Height ≥ (cm)" value={heightMin}
+                  onChange={e => setHeightMin(e.target.value)}
+                  style={{ height: 42, borderRadius: 10 }} />
+              </div>
+
+              <div className="col-md-1">
+                <input className="form-control" placeholder="Height ≤ (cm)" value={heightMax}
+                  onChange={e => setHeightMax(e.target.value)}
+                  style={{ height: 42, borderRadius: 10 }} />
+              </div>
+
+              <div className="col-md-1">
+                <input className="form-control" placeholder="Weight ≥ (kg)" value={weightMin}
+                  onChange={e => setWeightMin(e.target.value)}
+                  style={{ height: 42, borderRadius: 10 }} />
+              </div>
+
+              <div className="col-md-1">
+                <input className="form-control" placeholder="Weight ≤ (kg)" value={weightMax}
+                  onChange={e => setWeightMax(e.target.value)}
                   style={{ height: 42, borderRadius: 10 }} />
               </div>
   
