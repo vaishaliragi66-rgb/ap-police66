@@ -24,13 +24,32 @@ const AddMainStoreMedicine = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // Prevent invalid year input for expiry
     if (name === "Expiry_Date" && value) {
       const year = (value.split("-")[0] || "");
       if (year.length > 4) return;
     }
 
+    // Auto-generate Medicine_Code from Medicine_Name when name is entered
+    if (name === "Medicine_Name") {
+      const newName = value.toUpperCase();
+      const generatedCode = generateMedicineCode(newName);
+      setFormData(prev => ({ ...prev, Medicine_Name: newName, Medicine_Code: generatedCode }));
+      if (error) setError("");
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
     if (error) setError("");
+  };
+
+  // Generate a basic medicine code from name: MS-XXX-123 (deterministic prefix with timestamp suffix)
+  const generateMedicineCode = (name) => {
+    if (!name) return "";
+    const clean = name.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    const prefix = (clean.slice(0, 3) || "XXX").padEnd(3, "X");
+    const suffix = String(Date.now()).slice(-3);
+    return `MS-${prefix}-${suffix}`;
   };
 
   // tomorrow = min expiry
@@ -120,7 +139,7 @@ const AddMainStoreMedicine = () => {
       {/* Header */}
       <div className="text-center mb-5">
         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Add Medicine — Main Store
+          Add Medicine ï¿½ Main Store
         </h2>
         <p className="text-gray-500 mt-1 text-sm">
           Register a new medicine into the central store inventory
@@ -166,24 +185,7 @@ const AddMainStoreMedicine = () => {
         {/* FORM */}
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 text-left">
 
-          {/* Medicine Code */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">
-              Medicine Code *
-            </label>
-            <input
-              name="Medicine_Code"
-              value={formData.Medicine_Code}
-              onChange={handleChange}
-              disabled={loading}
-              required
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
-              style={{ textTransform: "uppercase" }}
-              placeholder="MS-001"
-            />
-          </div>
-
-          {/* Medicine Name */}
+          {/* Medicine Name (ask first) */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Medicine Name *
@@ -198,6 +200,24 @@ const AddMainStoreMedicine = () => {
               style={{ textTransform: "uppercase" }}
               placeholder="Paracetamol"
             />
+          </div>
+
+          {/* Medicine Code (auto-filled from name, editable) */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Medicine Code *
+            </label>
+            <input
+              name="Medicine_Code"
+              value={formData.Medicine_Code}
+              onChange={handleChange}
+              disabled={loading}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+              style={{ textTransform: "uppercase" }}
+              placeholder="MS-001"
+            />
+            <p className="text-xs text-gray-500 mt-1">Auto-generated from name â€” you can edit it.</p>
           </div>
 
           {/* Type Dropdown */}
@@ -341,7 +361,7 @@ const AddMainStoreMedicine = () => {
         {/* Footer */}
         <div className="mt-6 pt-4 border-t text-center border-gray-200">
           <p className="text-gray-400 text-xs">
-            © 2025 AP Police Health Division
+            ï¿½ 2025 AP Police Health Division
           </p>
         </div>
       </div>
