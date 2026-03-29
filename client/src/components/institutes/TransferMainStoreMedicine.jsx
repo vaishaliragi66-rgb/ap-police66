@@ -10,6 +10,11 @@ export default function TransferMainStoreMedicine() {
 
   const [medicines, setMedicines] = useState([]);
   const [institutes, setInstitutes] = useState([]);
+    // Sanitize display name to remove replacement characters
+    const sanitizeName = (s) => {
+      if (!s && s !== 0) return "";
+      return String(s).replace(/\uFFFD/g, "").replace(/�/g, "").trim();
+    };
 
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState("");
@@ -59,6 +64,12 @@ export default function TransferMainStoreMedicine() {
     "GREYHOUNDS",
     "OCTOPUS"
   ];
+
+  // Sanitize display name to remove replacement characters
+  const sanitizeName = (s) => {
+    if (!s && s !== 0) return "";
+    return String(s).replace(/\uFFFD/g, "").replace(/�/g, "").trim();
+  };
 
   // ? Load Main Store Medicines
   const loadMedicines = async () => {
@@ -185,23 +196,23 @@ export default function TransferMainStoreMedicine() {
     // ===============================
     // INSTITUTE ? SUBSTORE
     // ===============================
-    else {
-      endpoint = "/mainstore/transfer/substore";
+                <select
+                  name="To_Institute_ID"
+                  value={formData.To_Institute_ID}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                  className="form-select"
+                >
+                  <option value="">Choose Institute</option>
 
-      payload = {
-        Medicine_ID: formData.Medicine_ID,
-        Transfer_Qty: formData.Transfer_Qty,
+                  {institutes.map(inst => (
+                    <option key={inst._id} value={inst._id}>
+                      {sanitizeName(inst.Institute_Name)}{inst.Address?.District ? ` — ${sanitizeName(inst.Address.District)}` : ""}
+                    </option>
+                  ))}
 
-        // ?? SAME INSTITUTE
-        Institute_ID: CURRENT_INSTITUTE_ID,
-        Remarks: formData.Remarks
-      };
-    }
-
-    console.log("FINAL TRANSFER PAYLOAD:", payload);
-
-    const res = await axios.post(`${BACKEND_URL}${endpoint}`, payload);
-
+                </select>
     setSuccess(res.data.message || "Transfer successful");
 
     setFormData(prev => ({
