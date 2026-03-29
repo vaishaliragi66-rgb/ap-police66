@@ -217,7 +217,7 @@ const AddMainStoreMedicine = () => {
               style={{ textTransform: "uppercase" }}
               placeholder="MS-001"
             />
-            <p className="text-xs text-gray-500 mt-1">Auto-generated from name — you can edit it.</p>
+            
           </div>
 
           {/* Type Dropdown */}
