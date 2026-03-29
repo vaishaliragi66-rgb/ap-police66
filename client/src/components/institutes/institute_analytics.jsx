@@ -38,6 +38,7 @@ const normalizeAnalyticsRow = (row, employeeIndex) => {
     ...row,
     ABS_NO: pickFirstPresent(row.ABS_NO, employee?.ABS_NO) || "",
     Name: pickFirstPresent(row.Name, employee?.Name) || "",
+    Designation: pickFirstPresent(row.Designation, employee?.Designation) || "",
     District: pickFirstPresent(row.District, row.Address?.District, parsedAddress.district) || "",
     State: pickFirstPresent(row.State, row.Address?.State, parsedAddress.state) || "",
     Gender: pickFirstPresent(row.Gender, employee?.Gender) || "",
@@ -74,7 +75,7 @@ const downloadCSV = (data) => {
   if (!data.length) return;
 
   const headers = [
-    "Role",
+    "Designation",
     "ABS Number",
     "Name",
     "Gender",
@@ -93,7 +94,7 @@ const downloadCSV = (data) => {
   ];
 
   const rows = data.map(r => [
-    r.Role,
+    r.Designation,
     r.ABS_NO || "",
     r.Name,
     r.Gender || "",
@@ -129,7 +130,7 @@ const downloadPDF = (data) => {
   autoTable(doc, {
     startY: 22,
     head: [[
-      "Role",
+      "Designation",
       "ABS Number",
       "Name",
       "Gender",
@@ -147,7 +148,7 @@ const downloadPDF = (data) => {
       "Last Visit"
     ]],
     body: data.map(r => [
-      r.Role,
+      r.Designation,
       r.ABS_NO || "—",
       r.Name,
       r.Gender || "—",
@@ -180,7 +181,7 @@ export default function InstituteAnalytics() {
   const [error, setError] = useState(null);
 
   /* -------- Filters -------- */
-  const [roleFilter, setRoleFilter] = useState("");
+  const [designationFilter, setDesignationFilter] = useState("");
   const [genderFilter, setGenderFilter] = useState("");
   const [nameFilter, setNameFilter] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
@@ -240,7 +241,7 @@ const rowsPerPage = 10;
   useEffect(() => {
     setCurrentPage(1);
   }, [
-    roleFilter,
+    designationFilter,
     genderFilter,
     nameFilter,
     districtFilter,
@@ -269,7 +270,7 @@ const rowsPerPage = 10;
       r.Tests?.some(t => isAbnormal(t.Result_Value, t.Reference_Range));
 
     return (
-      (!roleFilter || r.Role === roleFilter) &&
+      (!designationFilter || r.Designation === designationFilter) &&
       (!genderFilter || r.Gender === genderFilter) &&
       (!bloodGroupFilter || r.Blood_Group === bloodGroupFilter) &&
       match(r.Name, nameFilter) &&
@@ -327,17 +328,40 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
         <div className="card-body">
           <h5 className="card-title mb-3">Filters</h5>
           <div className="row g-3">
-            {/* Role Filter */}
+            {/* Designation Filter */}
             <div className="col-md-3">
-              <label className="form-label fw-semibold">Role</label>
+              <label className="form-label fw-semibold">Designation</label>
               <select 
                 className="form-select" 
-                value={roleFilter} 
-                onChange={(e) => setRoleFilter(e.target.value)}
+                value={designationFilter} 
+                onChange={(e) => setDesignationFilter(e.target.value)}
               >
-                <option value="">All Roles</option>
-                <option value="Employee">Employee</option>
-                <option value="Family">Family</option>
+                <option value="">All Designations</option>
+                <option value="HC">HC</option>
+                <option value="ARSI">ARSI</option>
+                <option value="ASI">ASI</option>
+                <option value="RSI">RSI</option>
+                <option value="SI">SI</option>
+                <option value="RI">RI</option>
+                <option value="CI">CI</option>
+                <option value="DSP">DSP</option>
+                <option value="AC">AC</option>
+                <option value="Adl.Commandant">Adl.Commandant</option>
+                <option value="Adl.SP">Adl.SP</option>
+                <option value="SP">SP</option>
+                <option value="COMMANDANT">COMMANDANT</option>
+                <option value="DIG">DIG</option>
+                <option value="IG">IG</option>
+                <option value="ADGP">ADGP</option>
+                <option value="DGP">DGP</option>
+                <option value="AO">AO</option>
+                <option value="SR.Assistant">SR.Assistant</option>
+                <option value="Jr.Assistant">Jr.Assistant</option>
+                <option value="Superintendent">Superintendent</option>
+                <option value="CLASS IV">CLASS IV</option>
+                <option value="Record Assistant">Record Assistant</option>
+                <option value="COOK">CooK</option>
+                <option value="OTHERS & PC">Others & PC</option>
               </select>
             </div>
 
@@ -531,7 +555,7 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
             <table className="table table-hover table-striped mb-0">
               <thead className="table-dark">
                 <tr>
-                  <th>Role</th>
+                  <th>Designation</th>
                   <th>ABS Number</th>
                   <th>Name</th>
                   <th>Gender</th>
@@ -561,8 +585,8 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
 
                   <tr key={i}>
                     <td>
-                      <span className={`badge ${r.Role === "Employee" ? "bg-primary" : "bg-info"}`}>
-                        {r.Role}
+                      <span className="badge bg-primary">
+                        {r.Designation || "—"}
                       </span>
                     </td>
                     <td>{r.ABS_NO || "—"}</td>
