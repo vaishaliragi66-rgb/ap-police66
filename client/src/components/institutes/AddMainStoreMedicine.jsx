@@ -1,4 +1,4 @@
-ï»¿import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaPills, FaCalendarAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -23,6 +23,12 @@ const AddMainStoreMedicine = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "Expiry_Date" && value) {
+      const year = (value.split("-")[0] || "");
+      if (year.length > 4) return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
@@ -52,8 +58,8 @@ const AddMainStoreMedicine = () => {
       return;
     }
 
-    if (Number(formData.Quantity) <= 0 || Number(formData.Threshold_Qty) <= 0) {
-      setError("Quantity & Threshold must be positive numbers");
+    if (Number(formData.Quantity) <= 0 || Number(formData.Threshold_Qty) < 0) {
+      setError("Quantity must be positive and Threshold can be 0 or more");
       return;
     }
 
@@ -114,7 +120,7 @@ const AddMainStoreMedicine = () => {
       {/* Header */}
       <div className="text-center mb-5">
         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Add Medicine â€” Main Store
+          Add Medicine — Main Store
         </h2>
         <p className="text-gray-500 mt-1 text-sm">
           Register a new medicine into the central store inventory
@@ -172,6 +178,7 @@ const AddMainStoreMedicine = () => {
               disabled={loading}
               required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+              style={{ textTransform: "uppercase" }}
               placeholder="MS-001"
             />
           </div>
@@ -188,6 +195,7 @@ const AddMainStoreMedicine = () => {
               disabled={loading}
               required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+              style={{ textTransform: "uppercase" }}
               placeholder="Paracetamol"
             />
           </div>
@@ -242,10 +250,10 @@ const AddMainStoreMedicine = () => {
             </select>
           </div>
 
-          {/* Issued By */}
+          {/* Received From */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              Issued By *
+              Received From *
             </label>
             <input
               name="Issued_By"
@@ -254,6 +262,7 @@ const AddMainStoreMedicine = () => {
               disabled={loading}
               required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
+              style={{ textTransform: "uppercase" }}
               placeholder="AP Police HQ"
             />
           </div>
@@ -268,7 +277,7 @@ const AddMainStoreMedicine = () => {
               name="Quantity"
               value={formData.Quantity}
               onChange={handleChange}
-              min="1"
+              min="0"
               required
               disabled={loading}
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
@@ -285,7 +294,7 @@ const AddMainStoreMedicine = () => {
               name="Threshold_Qty"
               value={formData.Threshold_Qty}
               onChange={handleChange}
-              min="1"
+              min="0"
               required
               disabled={loading}
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
@@ -332,7 +341,7 @@ const AddMainStoreMedicine = () => {
         {/* Footer */}
         <div className="mt-6 pt-4 border-t text-center border-gray-200">
           <p className="text-gray-400 text-xs">
-            Â© 2025 AP Police Health Division
+            © 2025 AP Police Health Division
           </p>
         </div>
       </div>
