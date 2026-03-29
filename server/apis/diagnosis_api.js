@@ -160,6 +160,93 @@ diagnosisApp.post(
       }
 
       /* -------------------------
+         Fetch reference data from DB
+      ------------------------- */
+
+      const testIds = [
+        ...new Set(
+          Tests.map((t) => t.Test_ID).filter((id) =>
+            mongoose.Types.ObjectId.isValid(id)
+          )
+        )
+      ];
+
+      const testNames = [
+        ...new Set(
+          Tests.map((t) => (t.Test_Name || "").trim()).filter((n) => n)
+        )
+      ];
+
+      const masterTests = [
+        ...(testIds.length
+          ? await DiagnosisTest.find({ _id: { $in: testIds } }).lean()
+          : []),
+        ...(testNames.length
+          ? await DiagnosisTest.find({ Test_Name: { $in: testNames } })
+              .collation({ locale: "en", strength: 2 })
+              .lean()
+          : [])
+      ];
+
+      const masterById = new Map(
+        masterTests.map((t) => [t._id.toString(), t])
+      );
+      const masterByName = new Map(
+        masterTests.map((t) => [(t.Test_Name || "").toLowerCase(), t])
+      );
+
+      Tests = Tests.map((test) => {
+        const key = test.Test_ID ? String(test.Test_ID) : null;
+        const master =
+          (key ? masterById.get(key) : null) ||
+          masterByName.get((test.Test_Name || "").toLowerCase()) ||
+          null;
+
+        return {
+          ...test,
+          Test_Name: master?.Test_Name || test.Test_Name,
+          Group: master?.Group || test.Group || "",
+          Reference_Range: master?.Reference_Range || test.Reference_Range || "",
+          Units: master?.Units || test.Units || ""
+        };
+      });
+
+      // Partial name fallback: if no exact match, try a contains match only when unique
+      if (testNames.length) {
+        for (let i = 0; i < Tests.length; i++) {
+          const test = Tests[i];
+          if (!test.Test_Name) continue;
+
+          const hasExact =
+            (test.Test_ID && masterById.has(String(test.Test_ID))) ||
+            masterByName.has((test.Test_Name || "").toLowerCase());
+
+          if (hasExact) continue;
+
+          const safeName = (test.Test_Name || "").replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          );
+          const matches = await DiagnosisTest.find({
+            Test_Name: { $regex: safeName, $options: "i" }
+          })
+            .limit(2)
+            .lean();
+
+          if (matches.length === 1) {
+            const m = matches[0];
+            Tests[i] = {
+              ...test,
+              Test_Name: m.Test_Name,
+              Group: m.Group || test.Group || "",
+              Reference_Range: m.Reference_Range || test.Reference_Range || "",
+              Units: m.Units || test.Units || ""
+            };
+          }
+        }
+      }
+
+      /* -------------------------
          Attach uploaded reports
       ------------------------- */
 
