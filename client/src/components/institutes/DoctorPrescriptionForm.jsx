@@ -21,7 +21,7 @@ const DoctorPrescriptionForm = () => {
   const [employeeReport, setEmployeeReport] = useState(null);
   const [showReports, setShowReports] = useState(false);
   const [selectedDiagnosisReport, setSelectedDiagnosisReport] = useState(null);
-  const [selectedXrayReport, setSelectedXrayReport] = useState(null);
+  const [selectedXrayReport, setSelectedXrayReport] = useState(null); // { record, xray }
   const [uniqueMedicines, setUniqueMedicines] = useState([]);
 const [xrayMaster, setXrayMaster] = useState([]);
 const [xrayData, setXrayData] = useState({
@@ -777,6 +777,11 @@ if (validXrays.length === 0) {
     .sort(
       (a, b) => new Date(b.reportDate || 0) - new Date(a.reportDate || 0)
     )
+    .filter(({ xray }) => {
+      // only show xrays where results are out
+      const status = xray?.Findings || xray?.Impression || xray?.Remarks ? "result out" : "pending";
+      return status === "result out";
+    })
     .slice(0, 5);
 
   return recentXrays.length > 0 ? (
@@ -810,7 +815,17 @@ if (validXrays.length === 0) {
             type="button"
             className="btn btn-sm btn-outline-dark mt-2"
             disabled={status !== "result out"}
-            onClick={() => setSelectedXrayReport(record)}
+            onClick={() => {
+              // remove any other modal elements from the DOM so they don't appear behind
+              try {
+                document.querySelectorAll('.modal').forEach(el => {
+                  el.remove();
+                });
+              } catch (e) {
+                // ignore
+              }
+              setSelectedXrayReport({ record, xray });
+            }}
           >
             View
           </button>
@@ -826,6 +841,93 @@ if (validXrays.length === 0) {
             </div>
           </div>
         )}
+
+          {/* X-ray single-item modal */}
+          {selectedXrayReport && (
+            <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", zIndex: 2050 }}>
+              <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060, maxWidth: '90%' }}>
+                <div className="modal-content">
+                  <div className="modal-header bg-primary text-white">
+                    <h5 className="modal-title">X‑ray Detail</h5>
+                    <button className="btn-close btn-close-white" onClick={() => setSelectedXrayReport(null)} />
+                  </div>
+
+                  <div className="modal-body">
+                    {(() => {
+                      const { record, xray } = selectedXrayReport;
+                      const status = xray?.Findings || xray?.Impression || xray?.Remarks ? "result out" : "pending";
+
+                      return (
+                        <>
+                          <p><strong>Employee:</strong> {record?.Employee?.Name}</p>
+                          <p><strong>Report For:</strong> {record?.IsFamilyMember ? `${record?.FamilyMember?.Name} (${record?.FamilyMember?.Relationship})` : 'Self'}</p>
+                          <p><strong>Institute:</strong> {record?.Institute?.Institute_Name || ''}</p>
+                          <p><strong>Date:</strong> {formatDateDMY(xray?.Timestamp || getXrayReportDate(record))}</p>
+
+                          <hr />
+
+                          <table className="table table-bordered">
+                            <thead className="table-light">
+                              <tr>
+                                <th>Type</th>
+                                <th>Body Part</th>
+                                <th>Side</th>
+                                <th>View</th>
+                                <th>Size</th>
+                                <th>Findings</th>
+                                <th>Impression</th>
+                                <th>Remarks</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td>{xray?.Xray_Type || '-'}</td>
+                                <td>{xray?.Body_Part || '-'}</td>
+                                <td>{xray?.Side || '-'}</td>
+                                <td>{xray?.View || '-'}</td>
+                                <td>{xray?.Film_Size || '-'}</td>
+                                <td>{xray?.Findings || '-'}</td>
+                                <td>{xray?.Impression || '-'}</td>
+                                <td>{xray?.Remarks || '-'}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+
+                          <div className="mt-3">
+                            {/* Show report links only when results are out and report exists */}
+                            {status === 'result out' && xray?.Reports && xray.Reports.length > 0 ? (
+                              xray.Reports.map((r, idx) => (
+                                <div key={idx} className="mb-2 d-flex align-items-center gap-2">
+                                  <div className="flex-grow-1">{r?.originalname || r?.filename}</div>
+                                  <button className="btn btn-sm btn-outline-primary" onClick={async () => {
+                                    try {
+                                      // open report in new tab
+                                      const url = `http://localhost:${BACKEND_PORT}${r.url}`;
+                                      window.open(url, '_blank');
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert('Unable to open report');
+                                    }
+                                  }}>View</button>
+                                  <a className="btn btn-sm btn-outline-secondary" href={`http://localhost:${BACKEND_PORT}${r.url}`} download>Download</a>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-muted">No report file available.</div>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="modal-footer">
+                    <button className="btn btn-secondary" onClick={() => setSelectedXrayReport(null)}>Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* FORM */}
         <div
