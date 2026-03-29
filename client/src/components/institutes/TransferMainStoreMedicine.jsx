@@ -30,6 +30,36 @@ export default function TransferMainStoreMedicine() {
     Remarks: ""
   });
 
+  // Frontend-only institutes list to show in the dropdown (won't create server records)
+  const FRONTEND_INSTITUTES = [
+    "Chief Office, Hyderabad",
+    "1st Battalion, Yousufguda",
+    "2nd Battalion, Asifabad",
+    "3rd Battalion, Ibrahimpatnam",
+    "4th Battalion, Nampally",
+    "5th Battalion, Bhoopalapally",
+    "6th Battalion, Kothagudem",
+    "7th Battalion, Dichpally",
+    "8th Battalion, Kondapur",
+    "9th Battalion",
+    "10th Battalion, Beechupally",
+    "11th Battalion",
+    "12th Battalion, Anantapur",
+    "13th Battalion, Mancherial",
+    "14th Battalion",
+    "15th Battalion, Sattupally",
+    "16th Battalion",
+    "17th Battalion, Siricilla",
+    "PTC - Warangal",
+    "PTC - Karimnagar",
+    "PTC - Medchal",
+    "SAR CPL, Amberpet",
+    "CAR, Gachibowli",
+    "RBVRR TSPA",
+    "GREYHOUNDS",
+    "OCTOPUS"
+  ];
+
   // ? Load Main Store Medicines
   const loadMedicines = async () => {
   try {
@@ -76,6 +106,16 @@ export default function TransferMainStoreMedicine() {
         : [];
 
     setInstitutes(list);
+
+    // Append frontend-only institutes if they are not already present (avoid duplicates by name)
+    const existingNames = new Set((Array.isArray(list) ? list : []).map(i => (i.Institute_Name || "").toString().trim()));
+    const toAppend = FRONTEND_INSTITUTES
+      .filter(n => !existingNames.has(n))
+      .map((n, idx) => ({ _id: `frontend-${idx}-${n.replace(/\s+/g,'-')}`, Institute_Name: n }));
+
+    if (toAppend.length > 0) {
+      setInstitutes(prev => ([...prev, ...toAppend]));
+    }
 
   } catch (err) {
     console.error("Institute load error", err);
@@ -189,7 +229,7 @@ export default function TransferMainStoreMedicine() {
 
       {/* Header */}
       <div className="text-center mb-3">
-        <h3 className="fw-bold">Transfer Medicine — Main Store</h3>
+        <h3 className="fw-bold">Transfer Medicine ï¿½ Main Store</h3>
         <p className="text-muted">
           Move stock from Main Store to Institute or Sub-Store
         </p>
@@ -239,7 +279,7 @@ export default function TransferMainStoreMedicine() {
 
                 {medicines.map(m => (
                   <option key={m._id} value={m._id}>
-                    {m.Medicine_Name} ({m.Medicine_Code}) — Stock {m.Quantity}
+                    {m.Medicine_Name} ({m.Medicine_Code}) ï¿½ Stock {m.Quantity}
                   </option>
                 ))}
               </select>
@@ -297,7 +337,7 @@ export default function TransferMainStoreMedicine() {
 
                   {institutes.map(inst => (
                     <option key={inst._id} value={inst._id}>
-                      {inst.Institute_Name} — {inst.Address?.District}
+                      {inst.Institute_Name} ï¿½ {inst.Address?.District}
                     </option>
                   ))}
                 </select>
