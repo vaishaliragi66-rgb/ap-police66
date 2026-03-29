@@ -22,6 +22,14 @@ const AddMainStoreMedicine = () => {
   });
 
   const [existingMeds, setExistingMeds] = useState([]);
+  
+  // Get unique medicine names filtered by category
+  const getFilteredMedicineNames = () => {
+    if (!formData.Category) {
+      return existingMeds;
+    }
+    return existingMeds.filter(med => med.Category === formData.Category);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,16 +39,36 @@ const AddMainStoreMedicine = () => {
       const year = (value.split("-")[0] || "");
       if (year.length > 4) return;
     }
+    
+    // When category changes, reset medicine selection
+    if (name === "Category") {
+      setFormData(prev => ({ 
+        ...prev, 
+        Category: value,
+        Medicine_Name: "",
+        Medicine_Code: "",
+        Type: ""
+      }));
+      if (error) setError("");
+      return;
+    }
 
-    // Auto-generate Medicine_Code from Medicine_Name when name is entered
+    // When medicine name is selected from dropdown, auto-fill code and type
     if (name === "Medicine_Name") {
-        const newName = value.toUpperCase();
-        // if an exact medicine exists already in main store, prefill its correct code
-        const found = existingMeds.find(m => (m.Medicine_Name || "").toUpperCase() === newName);
-        setFormData(prev => ({ ...prev, Medicine_Name: newName, Medicine_Code: found ? found.Medicine_Code : "" }));
-        if (error) setError("");
-        return;
+      const selected = existingMeds.find(m => m.Medicine_Name === value);
+      if (selected) {
+        setFormData(prev => ({ 
+          ...prev, 
+          Medicine_Name: value,
+          Medicine_Code: selected.Medicine_Code || "",
+          Type: selected.Type || ""
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, Medicine_Name: value }));
       }
+      if (error) setError("");
+      return;
+    }
 
     setFormData(prev => ({ ...prev, [name]: value }));
     if (error) setError("");
@@ -203,24 +231,57 @@ const AddMainStoreMedicine = () => {
         {/* FORM */}
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 text-left">
 
-          {/* Medicine Name (ask first) */}
+          {/* Category Dropdown - FIRST */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              Medicine Name *
+              Category *
             </label>
-            <input
-              name="Medicine_Name"
-              value={formData.Medicine_Name}
+            <select
+              name="Category"
+              value={formData.Category}
               onChange={handleChange}
               disabled={loading}
               required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
-              style={{ textTransform: "uppercase" }}
-              placeholder="Paracetamol"
-            />
+            >
+              <option value="">Select Category</option>
+              <option value="Antibiotic">Antibiotic</option>
+              <option value="Analgesic">Analgesic</option>
+              <option value="Antipyretic">Antipyretic</option>
+              <option value="Antihistamine">Antihistamine</option>
+              <option value="Antacid">Antacid</option>
+              <option value="Vitamin">Vitamin</option>
+              <option value="Cardiac">Cardiac</option>
+              <option value="Diabetic">Diabetic</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
 
-          {/* Medicine Code (auto-filled from name, editable) */}
+          {/* Medicine Name Dropdown - SECOND (filtered by category) */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Medicine Name *
+            </label>
+            <select
+              name="Medicine_Name"
+              value={formData.Medicine_Name}
+              onChange={handleChange}
+              disabled={loading || !formData.Category}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+            >
+              <option value="">
+                {!formData.Category ? "Select Category First" : "Select Medicine"}
+              </option>
+              {getFilteredMedicineNames().map((med, idx) => (
+                <option key={idx} value={med.Medicine_Name}>
+                  {med.Medicine_Name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Medicine Code - THIRD (auto-filled) */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Medicine Code *
@@ -231,23 +292,24 @@ const AddMainStoreMedicine = () => {
               onChange={handleChange}
               disabled={loading}
               required
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-sm focus:ring-2 focus:ring-black"
               style={{ textTransform: "uppercase" }}
-              placeholder="MS-001"
+              placeholder="Auto-filled from selection"
             />
             
           </div>
 
-          {/* Type Dropdown */}
+          {/* Type Dropdown - FOURTH (auto-filled, but editable) */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              Type
+              Type *
             </label>
             <select
               name="Type"
               value={formData.Type}
               onChange={handleChange}
               disabled={loading}
+              required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
             >
               <option value="">Select Type</option>
@@ -259,31 +321,6 @@ const AddMainStoreMedicine = () => {
               <option value="Drops">Drops</option>
               <option value="Inhaler">Inhaler</option>
               <option value="Powder">Powder</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          {/* Category Dropdown */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">
-              Category
-            </label>
-            <select
-              name="Category"
-              value={formData.Category}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
-            >
-              <option value="">Select Category</option>
-              <option value="Antibiotic">Antibiotic</option>
-              <option value="Analgesic">Analgesic</option>
-              <option value="Antipyretic">Antipyretic</option>
-              <option value="Antihistamine">Antihistamine</option>
-              <option value="Antacid">Antacid</option>
-              <option value="Vitamin">Vitamin</option>
-              <option value="Cardiac">Cardiac</option>
-              <option value="Diabetic">Diabetic</option>
               <option value="Other">Other</option>
             </select>
           </div>
