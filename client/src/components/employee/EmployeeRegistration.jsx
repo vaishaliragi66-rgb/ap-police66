@@ -13,6 +13,7 @@ const EmployeeRegister = () => {
     Name: "",
     Email: "",
     Password: "",
+    ConfirmPassword: "",
     Designation: "",
     DOB: "",
     Blood_Group: "",
@@ -101,6 +102,11 @@ const validateForm = () => {
     errors.push("Password must be at least 6 characters long");
   }
 
+  // Confirm password must match
+  if (formData.Password !== formData.ConfirmPassword) {
+    errors.push("Passwords do not match");
+  }
+
   if (!formData.Gender) {
     errors.push("Gender is required");
   }
@@ -159,7 +165,8 @@ if (validationErrors.length > 0) {
       formPayload.append("Email", formData.Email);
       formPayload.append("Password", formData.Password);
       formPayload.append("Designation", formData.Designation || "");
-      formPayload.append("DOB", formData.DOB || "");
+      // Send DOB as ISO string to ensure backend Date casting succeeds
+      formPayload.append("DOB", formData.DOB ? new Date(formData.DOB).toISOString() : "");
       formPayload.append("Blood_Group", formData.Blood_Group || "");
       formPayload.append("Height", formData.Height || "");
       formPayload.append("Weight", formData.Weight || "");
@@ -191,6 +198,7 @@ if (validationErrors.length > 0) {
         Name: "",
         Email: "",
         Password: "",
+        ConfirmPassword: "",
         Designation: "",
         DOB: "",
         Blood_Group: "",
@@ -213,12 +221,13 @@ if (validationErrors.length > 0) {
       }, 2000);
 
     } catch (error) {
-      console.error("Registration error:", error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.errors?.join(", ") ||
-                          error.response?.data?.error || 
-                          error.message || 
-                          "❌ Registration failed!";
+      console.error("Registration error:", error.response?.data || error.message || error);
+      // Prefer explicit validation errors returned by server
+      const resp = error.response?.data;
+      let errorMessage = resp?.message || error.message || "❌ Registration failed!";
+      if (Array.isArray(resp?.errors) && resp.errors.length) {
+        errorMessage = resp.errors.join(", ");
+      }
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -482,6 +491,23 @@ if (validationErrors.length > 0) {
                     required
                     disabled={loading}
                   />
+
+                  <div style={{ height: 12 }} />
+
+                  <label className="form-label fw-semibold">Confirm Password *</label>
+                  <input
+                    type="password"
+                    name="ConfirmPassword"
+                    className="form-control"
+                    placeholder="Re-enter password"
+                    value={formData.ConfirmPassword}
+                    onChange={handleChange}
+                    required
+                    disabled={loading}
+                  />
+                  {formData.ConfirmPassword && formData.Password !== formData.ConfirmPassword && (
+                    <div className="text-danger small mt-1">Passwords do not match</div>
+                  )}
                 </div>
               </div>
 
