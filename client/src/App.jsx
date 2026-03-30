@@ -43,7 +43,7 @@ import OthersLayout from "./components/institutes/OthersLayout";
 import XrayEntryForm from "./components/institutes/XrayEntryForm";
 import XrayReport from "./components/employee/XrayReport";
 import HealthSummary from "./components/institutes/HealthSummary";
-import AddPasswords from "./components/institutes/AddPasswords ";
+import AddPasswords from "./components/institutes/AddPasswords";
 import ForgotPassword from "./components/auth/ForgotPassword";
 import DiseaseAnalyticsHome from "./components/institutes/DiseaseAnalyticsHome";
 import DiseaseAnalyticsTable from "./components/institutes/DiseaseAnalyticsTable";
