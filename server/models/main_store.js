@@ -9,6 +9,7 @@ const MainStoreMedicineSchema = new Schema({
   },
   Medicine_Code: { type: String, required: true },
   Medicine_Name: { type: String, required: true },
+  Strength: { type: String, trim: true },
 
   Type: { type: String },
   Category: { type: String },

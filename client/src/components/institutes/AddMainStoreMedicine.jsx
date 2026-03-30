@@ -1,33 +1,127 @@
-﻿import React, { useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaPills, FaCalendarAlt } from "react-icons/fa";
+import { FaCalendarAlt, FaPills } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+
 const AddMainStoreMedicine = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState("");
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [existingMeds, setExistingMeds] = useState([]);
 
   const [formData, setFormData] = useState({
     Institute_ID: localStorage.getItem("instituteId"),
     Medicine_Code: "",
     Medicine_Name: "",
+    Strength: "",
     Type: "",
     Category: "",
     Quantity: "",
     Threshold_Qty: "",
     Issued_By: "",
-    Expiry_Date: ""
+    Expiry_Date: "",
   });
+
+  const getFilteredMedicineNames = () => {
+    if (!formData.Category) {
+      return existingMeds;
+    }
+
+    return existingMeds.filter((med) => med.Category === formData.Category);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+    if (name === "Expiry_Date" && value) {
+      const year = value.split("-")[0] || "";
+      if (year.length > 4) return;
+    }
+
+    if (name === "Category") {
+      setFormData((prev) => ({
+        ...prev,
+        Category: value,
+        Medicine_Name: "",
+        Medicine_Code: "",
+        Strength: "",
+        Type: "",
+      }));
+      if (error) setError("");
+      return;
+    }
+
+    if (name === "Medicine_Name") {
+      const matches = existingMeds.filter(
+        (m) => m.Medicine_Name === value && m.Category === formData.Category
+      );
+      const selected = matches.length === 1 ? matches[0] : null;
+
+      if (selected) {
+        setFormData((prev) => ({
+          ...prev,
+          Medicine_Name: value,
+          Medicine_Code: selected.Medicine_Code || "",
+          Strength: selected.Strength || "",
+          Type: selected.Type || "",
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          Medicine_Name: value,
+          Medicine_Code: "",
+          Strength: "",
+          Type: "",
+        }));
+      }
+
+      if (error) setError("");
+      return;
+    }
+
+    if (name === "Strength") {
+      const selected = existingMeds.find(
+        (m) =>
+          m.Medicine_Name === formData.Medicine_Name &&
+          m.Category === formData.Category &&
+          (m.Strength || "") === value
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        Strength: value,
+        Medicine_Code: selected?.Medicine_Code || prev.Medicine_Code,
+        Type: selected?.Type || prev.Type,
+      }));
+
+      if (error) setError("");
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
 
-  // tomorrow = min expiry
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const instId = localStorage.getItem("instituteId");
+        if (!instId) return;
+
+        const res = await axios.get(
+          `${BACKEND_URL}/mainstore/all-medicines/${instId}`
+        );
+        setExistingMeds(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        setExistingMeds([]);
+      }
+    };
+
+    load();
+  }, [BACKEND_URL]);
+
   const getMinDate = () => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -43,24 +137,24 @@ const AddMainStoreMedicine = () => {
       "Quantity",
       "Threshold_Qty",
       "Issued_By",
-      "Expiry_Date"
+      "Expiry_Date",
     ];
 
-    const missing = required.filter(f => !formData[f]);
+    const missing = required.filter((f) => !formData[f]);
     if (missing.length > 0) {
-      setError("Please fill required fields: " + missing.join(", "));
+      setError(`Please fill required fields: ${missing.join(", ")}`);
       return;
     }
 
-    if (Number(formData.Quantity) <= 0 || Number(formData.Threshold_Qty) <= 0) {
-      setError("Quantity & Threshold must be positive numbers");
+    if (Number(formData.Quantity) <= 0 || Number(formData.Threshold_Qty) < 0) {
+      setError("Quantity must be positive and Threshold can be 0 or more");
       return;
     }
 
     const expiry = new Date(formData.Expiry_Date);
     const today = new Date();
-    today.setHours(0,0,0,0);
-    expiry.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
+    expiry.setHours(0, 0, 0, 0);
 
     if (expiry <= today) {
       setError("Expiry date must be in the future (tomorrow or later)");
@@ -72,14 +166,11 @@ const AddMainStoreMedicine = () => {
       setError("");
       setSuccess("");
 
-      const res = await axios.post(
-        `${BACKEND_URL}/mainstore/add`,
-        {
-          ...formData,
-          Quantity: Number(formData.Quantity),
-          Threshold_Qty: Number(formData.Threshold_Qty)
-        }
-      );
+      const res = await axios.post(`${BACKEND_URL}/mainstore/add`, {
+        ...formData,
+        Quantity: Number(formData.Quantity),
+        Threshold_Qty: Number(formData.Threshold_Qty),
+      });
 
       setSuccess(res.data.message || "Medicine added to Main Store");
 
@@ -87,14 +178,14 @@ const AddMainStoreMedicine = () => {
         Institute_ID: localStorage.getItem("instituteId"),
         Medicine_Code: "",
         Medicine_Name: "",
+        Strength: "",
         Type: "",
         Category: "",
         Quantity: "",
         Threshold_Qty: "",
         Issued_By: "",
-        Expiry_Date: ""
+        Expiry_Date: "",
       });
-
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -110,26 +201,21 @@ const AddMainStoreMedicine = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start bg-[#f7f7f7] px-4 pt-16">
-
-      {/* Header */}
       <div className="text-center mb-5">
         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Add Medicine — Main Store
+          Add Medicine - Main Store
         </h2>
         <p className="text-gray-500 mt-1 text-sm">
           Register a new medicine into the central store inventory
         </p>
       </div>
 
-      {/* Card */}
       <div
         className="bg-white shadow-lg border border-gray-200 rounded-xl p-6 w-full max-w-lg"
         style={{
           boxShadow: "0 8px 25px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.06)",
         }}
       >
-
-        {/* Icon */}
         <div
           className="flex justify-center items-center mb-4 mx-auto"
           style={{
@@ -143,24 +229,82 @@ const AddMainStoreMedicine = () => {
           <FaPills size={35} color="#333" />
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
 
-        {/* Success */}
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
             <p className="text-green-700 text-sm">{success}</p>
           </div>
         )}
 
-        {/* FORM */}
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 text-left">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Category *
+            </label>
+            <select
+              name="Category"
+              value={formData.Category}
+              onChange={handleChange}
+              disabled={loading}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+            >
+              <option value="">Select Category</option>
+              <option value="Antibiotic">Antibiotic</option>
+              <option value="Analgesic">Analgesic</option>
+              <option value="Antipyretic">Antipyretic</option>
+              <option value="Antihistamine">Antihistamine</option>
+              <option value="Antacid">Antacid</option>
+              <option value="Vitamin">Vitamin</option>
+              <option value="Cardiac">Cardiac</option>
+              <option value="Diabetic">Diabetic</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
 
-          {/* Medicine Code */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Medicine Name *
+            </label>
+            <select
+              name="Medicine_Name"
+              value={formData.Medicine_Name}
+              onChange={handleChange}
+              disabled={loading || !formData.Category}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+            >
+              <option value="">
+                {!formData.Category ? "Select Category First" : "Select Medicine"}
+              </option>
+              {getFilteredMedicineNames().map((med, idx) => (
+                <option key={idx} value={med.Medicine_Name}>
+                  {med.Medicine_Name}
+                  {med.Strength ? ` (${med.Strength})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Strength
+            </label>
+            <input
+              name="Strength"
+              value={formData.Strength}
+              onChange={handleChange}
+              disabled={loading || !formData.Medicine_Name}
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
+              placeholder="500mg"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Medicine Code *
@@ -171,37 +315,22 @@ const AddMainStoreMedicine = () => {
               onChange={handleChange}
               disabled={loading}
               required
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
-              placeholder="MS-001"
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-sm focus:ring-2 focus:ring-black"
+              style={{ textTransform: "uppercase" }}
+              placeholder="Auto-filled from selection"
             />
           </div>
 
-          {/* Medicine Name */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              Medicine Name *
-            </label>
-            <input
-              name="Medicine_Name"
-              value={formData.Medicine_Name}
-              onChange={handleChange}
-              disabled={loading}
-              required
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
-              placeholder="Paracetamol"
-            />
-          </div>
-
-          {/* Type Dropdown */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">
-              Type
+              Type *
             </label>
             <select
               name="Type"
               value={formData.Type}
               onChange={handleChange}
               disabled={loading}
+              required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
             >
               <option value="">Select Type</option>
@@ -217,48 +346,54 @@ const AddMainStoreMedicine = () => {
             </select>
           </div>
 
-          {/* Category Dropdown */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">
-              Category
-            </label>
-            <select
-              name="Category"
-              value={formData.Category}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
-            >
-              <option value="">Select Category</option>
-              <option value="Antibiotic">Antibiotic</option>
-              <option value="Analgesic">Analgesic</option>
-              <option value="Antipyretic">Antipyretic</option>
-              <option value="Antihistamine">Antihistamine</option>
-              <option value="Antacid">Antacid</option>
-              <option value="Vitamin">Vitamin</option>
-              <option value="Cardiac">Cardiac</option>
-              <option value="Diabetic">Diabetic</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          {/* Issued By */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              Issued By *
+              Received From *
             </label>
-            <input
+            <select
               name="Issued_By"
               value={formData.Issued_By}
               onChange={handleChange}
               disabled={loading}
               required
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
-              placeholder="AP Police HQ"
-            />
+              className="w-full border border-gray-300 rounded-md p-2 bg-white text-sm"
+            >
+              <option value="">Select Issued From</option>
+              {[
+                "Chief Office-Hyderabad",
+                "1st Battalion-Yousufguda",
+                "2nd Battalion-Asifabad",
+                "3rd Battalion-Ibrahimpatnam",
+                "4th Battalion-Nampally",
+                "5th Battalion-Bhoopalapally",
+                "6th Battalion-Kothagudem",
+                "7th Battalion-Dichpally",
+                "8th Battalion-Kondapur",
+                "9th Battalion",
+                "10th Battalion-Bachupally",
+                "11th Battalion",
+                "12th Battalion-Anantapur",
+                "13th Battalion-Mancherial",
+                "14th Battalion",
+                "15th Battalion-Sattupally",
+                "16th Battalion",
+                "17th Battalion-Siricilla",
+                "PTC - Warangal",
+                "PTC - Karimnagar",
+                "PTC - Medchal",
+                "SAR CPL-Amberpet",
+                "CAR-Gachibowli",
+                "RBVRR TSPA",
+                "GREYHOUNDS",
+                "OCTOPUS",
+              ].map((n, i) => (
+                <option key={i} value={n}>
+                  {n.replace(/\uFFFD/g, "").trim()}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Quantity */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Quantity *
@@ -268,14 +403,13 @@ const AddMainStoreMedicine = () => {
               name="Quantity"
               value={formData.Quantity}
               onChange={handleChange}
-              min="1"
+              min="0"
               required
               disabled={loading}
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
             />
           </div>
 
-          {/* Threshold */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Threshold Qty *
@@ -285,14 +419,13 @@ const AddMainStoreMedicine = () => {
               name="Threshold_Qty"
               value={formData.Threshold_Qty}
               onChange={handleChange}
-              min="1"
+              min="0"
               required
               disabled={loading}
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
             />
           </div>
 
-          {/* Expiry Date */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-1 text-gray-700 flex items-center gap-1">
               <FaCalendarAlt className="text-gray-400" />
@@ -315,7 +448,6 @@ const AddMainStoreMedicine = () => {
             </p>
           </div>
 
-          {/* Submit */}
           <div className="col-span-2 mt-3">
             <button
               type="submit"
@@ -329,11 +461,8 @@ const AddMainStoreMedicine = () => {
           </div>
         </form>
 
-        {/* Footer */}
         <div className="mt-6 pt-4 border-t text-center border-gray-200">
-          <p className="text-gray-400 text-xs">
-            © 2025 AP Police Health Division
-          </p>
+          <p className="text-gray-400 text-xs">2025 AP Police Health Division</p>
         </div>
       </div>
     </div>
