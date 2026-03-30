@@ -23,6 +23,6 @@ exports.predictDisease = (req, res) => {
 
   py.on("close", (code) => {
     console.log("Python exited with:", code);
-    res.json({ prediction: result.trim() });
+    res.json(JSON.parse(result));
   });
 };
