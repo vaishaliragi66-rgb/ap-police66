@@ -40,7 +40,7 @@ const passwordResetApp = require("./apis/passwordReset");
 const analyticsRoutes = require("./apis/analyticsRoutes");
 const diseaseMasterRoutes = require("./apis/disease-fetch");
 const predictRoute = require("./apis/predict");
-
+const forecastRoutes = require("./apis/forecast");
 app.use("/institute-auth", instituteAuth.router);
 app.use("/auth", passwordResetApp);
 app.use("/institute-api", healthSummaryRoutes);
@@ -66,7 +66,7 @@ app.use("/xray-api", xrayApp);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/disease-master-api", diseaseMasterRoutes);
 app.use("/api", predictRoute);
-
+app.use("/api/forecast", forecastRoutes);
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 
 const getResolver = () => {
