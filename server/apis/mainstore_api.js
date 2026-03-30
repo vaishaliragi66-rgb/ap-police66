@@ -17,6 +17,7 @@ mainStoreApp.post(
         Institute_ID,
         Medicine_Code,
         Medicine_Name,
+        Strength,
         Type,
         Category,
         Quantity,
@@ -72,6 +73,7 @@ mainStoreApp.post(
         Institute_ID,
         Medicine_Code,
         Medicine_Name,
+        Strength: (Strength || "").trim() || undefined,
         Type,
         Category,
         Quantity: Number(Quantity),
@@ -215,18 +217,30 @@ mainStoreApp.post("/transfer/institute",verifyToken,
     if (receivingMed) {
       await MainStoreMedicine.updateOne(
         { _id: receivingMed._id },
-        {
-          $inc: { Quantity: qty },
-          $set: { Source: receivingMed.Source || "institute_transfer" }
-        }
+        (() => {
+          const update = {
+            $inc: { Quantity: qty },
+            $set: { Source: receivingMed.Source || "institute_transfer" }
+          };
+
+          if (sendingMed.Strength && !receivingMed.Strength) {
+            update.$set.Strength = sendingMed.Strength;
+          }
+
+          return update;
+        })()
       );
 
+      if (sendingMed.Strength && !receivingMed.Strength) {
+        receivingMed.Strength = sendingMed.Strength;
+      }
       receiverBalanceAfter = receivingMed.Quantity + qty;
     } else {
       receivingMed = await MainStoreMedicine.create({
         Institute_ID: To_Institute_ID,
         Medicine_Code: sendingMed.Medicine_Code,
         Medicine_Name: sendingMed.Medicine_Name,
+        Strength: sendingMed.Strength,
         Type: sendingMed.Type,
         Category: sendingMed.Category,
         Quantity: qty,
@@ -329,15 +343,27 @@ mainStoreApp.post("/transfer/substore", verifyToken,
     if (subMed) {
       await Medicine.updateOne(
         { _id: subMed._id },
-        { $inc: { Quantity: qty } }
+        (() => {
+          const update = { $inc: { Quantity: qty } };
+
+          if (mainMed.Strength && !subMed.Strength) {
+            update.$set = { Strength: mainMed.Strength };
+          }
+
+          return update;
+        })()
       );
 
+      if (mainMed.Strength && !subMed.Strength) {
+        subMed.Strength = mainMed.Strength;
+      }
       receiverBalanceAfter = subMed.Quantity + qty;
     } else {
       subMed = await Medicine.create({
         Institute_ID,
         Medicine_Code: mainMed.Medicine_Code,
         Medicine_Name: mainMed.Medicine_Name,
+        Strength: mainMed.Strength,
         Type: mainMed.Type,
         Category: mainMed.Category,
         Quantity: qty,

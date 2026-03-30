@@ -28,12 +28,17 @@ router.post("/add", async (req, res) => {
       return res.status(400).json({ message: "Invalid Employee ID" });
     }
 
+    const normalizedMedicines = Medicines.map((med) => ({
+      ...med,
+      Strength: (med?.Strength || "").trim() || undefined
+    }));
+
     const prescription = await DoctorPrescription.create({
       Institute: Institute_ID,
       Employee: Employee_ID,
       IsFamilyMember,
       FamilyMember: IsFamilyMember ? FamilyMember_ID : null,
-      Medicines,
+      Medicines: normalizedMedicines,
       Notes
     });
 
@@ -44,7 +49,7 @@ router.post("/add", async (req, res) => {
       source: "DOCTOR",
       data: {
         doctor_prescription_id: prescription._id,
-        medicines: Medicines
+        medicines: normalizedMedicines
       },
       remarks: Notes || ""
     });

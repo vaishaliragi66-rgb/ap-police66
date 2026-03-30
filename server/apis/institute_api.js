@@ -310,8 +310,10 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
     // MAIN STORE
     for (const m of mainStoreMeds) {
       inventoryMap[m.Medicine_Code] = {
+        _id: null,
         Medicine_Code: m.Medicine_Code,
         Medicine_Name: m.Medicine_Name,
+        Strength: m.Strength || "",
         mainQty: m.Quantity,
         subQty: 0,
         mainExpiry: m.Expiry_Date,
@@ -323,16 +325,21 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
     for (const m of subStoreMeds) {
       if (!inventoryMap[m.Medicine_Code]) {
         inventoryMap[m.Medicine_Code] = {
+          _id: m._id,
           Medicine_Code: m.Medicine_Code,
           Medicine_Name: m.Medicine_Name,
+          Strength: m.Strength || "",
           mainQty: 0,
           subQty: m.Quantity,
           mainExpiry: null,
           subExpiry: m.Expiry_Date
         };
       } else {
+        inventoryMap[m.Medicine_Code]._id = m._id;
         inventoryMap[m.Medicine_Code].subQty = m.Quantity;
         inventoryMap[m.Medicine_Code].subExpiry = m.Expiry_Date;
+        inventoryMap[m.Medicine_Code].Strength =
+          m.Strength || inventoryMap[m.Medicine_Code].Strength || "";
       }
     }
 
@@ -356,8 +363,10 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
       }
 
       return {
+        _id: item._id,
         Medicine_Code: item.Medicine_Code,
         Medicine_Name: item.Medicine_Name,
+        Strength: item.Strength || "",
         Quantity: quantity,
         Status: status,
         Expiry_Date: expiry

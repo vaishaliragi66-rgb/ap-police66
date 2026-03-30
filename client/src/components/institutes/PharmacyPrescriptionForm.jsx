@@ -31,7 +31,7 @@ const PharmacyPrescriptionForm = () => {
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Medicines: [{ medicineId: "", medicineName: "", expiryDate: "", quantity: 0 }],
+    Medicines: [{ medicineId: "", medicineName: "", strength: "", expiryDate: "", quantity: 0 }],
     Notes: ""
   });
 
@@ -229,12 +229,26 @@ const results = inventory.filter(m =>
   m.Medicine_Name?.toLowerCase().includes(searchText.toLowerCase())
 );
 
+  const selectedStrength =
+    activeMedicineIndex !== null
+      ? (formData.Medicines[activeMedicineIndex]?.strength || "").trim().toLowerCase()
+      : "";
 
-  setFilteredMedicines(results);
+  const filteredByStrength = results.filter((m) => {
+    if (!selectedStrength) {
+      return true;
+    }
+
+    const inventoryStrength = (m.Strength || "").trim().toLowerCase();
+    return !inventoryStrength || inventoryStrength === selectedStrength;
+  });
+
+
+  setFilteredMedicines(filteredByStrength);
   console.log("Search text:", searchText);
-console.log("Results:", results);
+console.log("Results:", filteredByStrength);
 
-}, [medicineSearch, activeMedicineIndex, inventory]);
+}, [medicineSearch, activeMedicineIndex, inventory, formData.Medicines]);
 
 
   /* ================= DISEASE FILTER ================= */
@@ -291,6 +305,7 @@ const handleMedicineChange = (index, field, value) => {
         ...updated[index],   // 🔥 keep existing quantity
         medicineId: selected.Medicine_Code,
         medicineName: selected.Medicine_Name,
+        strength: selected.Strength || updated[index].strength || "",
         expiryDate: selected.Expiry_Date
       };
     }
@@ -335,6 +350,7 @@ else {
         ...updated[index],
         medicineId: "",
         medicineName: "",
+        strength: "",
         expiryDate: ""
       };
     }
@@ -377,6 +393,7 @@ const addDoctorPrescribedMedicine = (medicine) => {
       medicinesCopy[emptyIndex] = {
         ...medicinesCopy[emptyIndex],
         medicineName: baseName,
+        strength: medicine.Strength || "",
         quantity: calculatedQty
       };
 
@@ -392,6 +409,7 @@ const addDoctorPrescribedMedicine = (medicine) => {
       medicinesCopy.push({
         medicineId: "",
         medicineName: baseName,
+        strength: medicine.Strength || "",
         expiryDate: "",
         quantity: calculatedQty
       });
@@ -444,6 +462,7 @@ const addMedicineToForm = (inventoryItem, quantity) => {
       {
         medicineId: itemCode,
         medicineName: itemName,
+        strength: inventoryItem.Strength || "",
         expiryDate: inventoryItem.Expiry_Date,
         quantity: quantity || 1
       }
@@ -457,7 +476,7 @@ const addMedicineToForm = (inventoryItem, quantity) => {
       ...prev,
       Medicines: [
         ...prev.Medicines,
-        { medicineId: "", medicineName: "", quantity: 0 }
+        { medicineId: "", medicineName: "", strength: "", quantity: 0 }
       ]
     }));
 
@@ -517,6 +536,7 @@ const handleSubmit = async (e) => {
         Medicine_ID: invItem?._id || null,  // THIS MUST BE THE _id FROM DATABASE
         Medicine_Code: m.medicineId,
         Medicine_Name: m.medicineName,
+        Strength: m.strength || invItem?.Strength || "",
         Quantity: Number(m.quantity),
         source: "PHARMACY"
       };
@@ -539,7 +559,7 @@ const handleSubmit = async (e) => {
       Employee_ID: "",
       IsFamilyMember: false,
       FamilyMember_ID: "",
-      Medicines: [{ medicineId: "", medicineName: "", expiryDate: "", quantity: 0 }],
+      Medicines: [{ medicineId: "", medicineName: "", strength: "", expiryDate: "", quantity: 0 }],
       Notes: ""
     });
     setSelectedEmployee(null);  
@@ -790,6 +810,7 @@ const handleSubmit = async (e) => {
                               <thead>
                                 <tr>
                                   <th>Medicine</th>
+                                  <th>Strength</th>
                                   <th>Dosage</th>
                                   <th>Duration</th>
                                   <th>Action</th>
@@ -799,6 +820,7 @@ const handleSubmit = async (e) => {
                                 {prescription.data.medicines.map((medicine, mIdx) => (
                                   <tr key={mIdx}>
                                     <td>{medicine.Medicine_Name}</td>
+                                    <td>{medicine.Strength || "-"}</td>
                                     <td>{medicine.Dosage || "-"}</td>
                                     <td>{medicine.Duration || "-"}</td>
                                     <td>
@@ -854,7 +876,7 @@ const handleSubmit = async (e) => {
                                 }
 
                                 return med.medicineName
-                                  ? `${med.medicineName.trim()} (Exp: ${formatExpiryMY(med.expiryDate)})`
+                                  ? `${med.medicineName.trim()}${med.strength ? ` (${med.strength})` : ""} (Exp: ${formatExpiryMY(med.expiryDate)})`
                                   : "";
                               })()
                             }
@@ -906,6 +928,7 @@ const handleSubmit = async (e) => {
                               <div>
                                 <strong>{displayName}</strong>
                                 <div className="small text-muted">
+                                  {m.Strength ? `Strength: ${m.Strength} | ` : ""}
                                   Exp: {formatExpiryMY(m.Expiry_Date)}
                                 </div>
                               </div>
@@ -923,6 +946,14 @@ const handleSubmit = async (e) => {
                           );
                         })}
                       </div>
+
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={med.strength || ""}
+                        placeholder="Strength"
+                        readOnly
+                      />
 
                       <input
                         type="number"
@@ -1027,6 +1058,7 @@ const handleSubmit = async (e) => {
                           {p.Medicines?.map((m, i) => (
                             <li key={i}>
                               {m.Medicine_Name || m.Medicine_ID?.Medicine_Name}
+                              {m.Strength ? ` (${m.Strength})` : ""}
                               {" — "}
                               Qty: {m.Quantity}
                             </li>

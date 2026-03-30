@@ -34,6 +34,7 @@ const DoctorPrescriptionSchema = new Schema(
     Medicines: [
       {
         Medicine_Name: { type: String, required: true },
+        Strength: { type: String, trim: true },
         Dosage: { type: String },          // optional (1-0-1 etc.)
         Duration: { type: String },        // optional (5 days)
       }
