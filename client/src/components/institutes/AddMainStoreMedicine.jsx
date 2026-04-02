@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaPills, FaCalendarAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -13,6 +13,7 @@ const AddMainStoreMedicine = () => {
     Institute_ID: localStorage.getItem("instituteId"),
     Medicine_Code: "",
     Medicine_Name: "",
+    Strength: "",
     Type: "",
     Category: "",
     Quantity: "",
@@ -47,6 +48,7 @@ const AddMainStoreMedicine = () => {
         Category: value,
         Medicine_Name: "",
         Medicine_Code: "",
+        Strength: "",
         Type: ""
       }));
       if (error) setError("");
@@ -55,17 +57,46 @@ const AddMainStoreMedicine = () => {
 
     // When medicine name is selected from dropdown, auto-fill code and type
     if (name === "Medicine_Name") {
-      const selected = existingMeds.find(m => m.Medicine_Name === value);
+      const matches = existingMeds.filter(
+        (m) => m.Medicine_Name === value && m.Category === formData.Category
+      );
+      const selected = matches.length === 1 ? matches[0] : null;
+
       if (selected) {
         setFormData(prev => ({ 
           ...prev, 
           Medicine_Name: value,
           Medicine_Code: selected.Medicine_Code || "",
+          Strength: selected.Strength || "",
           Type: selected.Type || ""
         }));
       } else {
-        setFormData(prev => ({ ...prev, Medicine_Name: value }));
+        setFormData(prev => ({
+          ...prev,
+          Medicine_Name: value,
+          Medicine_Code: "",
+          Strength: "",
+          Type: ""
+        }));
       }
+      if (error) setError("");
+      return;
+    }
+
+    if (name === "Strength") {
+      const selected = existingMeds.find(
+        (m) =>
+          m.Medicine_Name === formData.Medicine_Name &&
+          m.Category === formData.Category &&
+          (m.Strength || "") === value
+      );
+
+      setFormData(prev => ({
+        ...prev,
+        Strength: value,
+        Medicine_Code: selected?.Medicine_Code || prev.Medicine_Code,
+        Type: selected?.Type || prev.Type
+      }));
       if (error) setError("");
       return;
     }
@@ -158,6 +189,7 @@ const AddMainStoreMedicine = () => {
         Institute_ID: localStorage.getItem("instituteId"),
         Medicine_Code: "",
         Medicine_Name: "",
+        Strength: "",
         Type: "",
         Category: "",
         Quantity: "",
@@ -276,9 +308,24 @@ const AddMainStoreMedicine = () => {
               {getFilteredMedicineNames().map((med, idx) => (
                 <option key={idx} value={med.Medicine_Name}>
                   {med.Medicine_Name}
+                  {med.Strength ? ` (${med.Strength})` : ""}
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Strength
+            </label>
+            <input
+              name="Strength"
+              value={formData.Strength}
+              onChange={handleChange}
+              disabled={loading || !formData.Medicine_Name}
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
+              placeholder="500mg"
+            />
           </div>
 
           {/* Medicine Code - THIRD (auto-filled) */}
