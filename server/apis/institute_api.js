@@ -7,11 +7,11 @@ const axios = require('axios');
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const instituteApp = express.Router();
 const Institute = require('../models/master_institute');
-const Medicine = require("../models/master_medicine");  
-const Employee = require("../models/employee"); 
+const Medicine = require("../models/master_medicine");
+const Employee = require("../models/employee");
 const InstituteLedger = require("../models/InstituteLedger");
 const MainStoreMedicine = require("../models/main_store");
-const DiagnosisRecord = require("../models/diagnostics_record"); 
+const DiagnosisRecord = require("../models/diagnostics_record");
 const FamilyMember = require("../models/family_member");
 const Disease = require("../models/disease");
 
@@ -33,7 +33,7 @@ instituteApp.get("/except/:id", verifyToken,
   try {
     const { id } = req.params;
     console.log(id)
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid institute ID" });
     }
@@ -92,17 +92,17 @@ instituteApp.post(
       }
 
       // Check if institute already exists
-      const existingInstitute = await Institute.findOne({ 
+      const existingInstitute = await Institute.findOne({
         $or: [
           { Institute_Name },
           { Email_ID }
         ]
       });
-      
+
       if (existingInstitute) {
-        return res.status(409).send({ 
-          message: existingInstitute.Institute_Name === Institute_Name 
-            ? "Institute name already exists" 
+        return res.status(409).send({
+          message: existingInstitute.Institute_Name === Institute_Name
+            ? "Institute name already exists"
             : "Email already registered"
         });
       }
@@ -132,24 +132,24 @@ instituteApp.post(
       });
     } catch (err) {
       console.error("Institute registration error:", err);
-      
+
       if (err.code === 11000) {
-        return res.status(409).json({ 
-          message: "Duplicate entry. Institute name or email already exists." 
+        return res.status(409).json({
+          message: "Duplicate entry. Institute name or email already exists."
         });
       }
-      
+
       if (err.name === 'ValidationError') {
         const errors = Object.values(err.errors).map(e => e.message);
-        return res.status(400).json({ 
-          message: "Validation failed", 
-          errors 
+        return res.status(400).json({
+          message: "Validation failed",
+          errors
         });
       }
-      
-      res.status(500).json({ 
-        message: "Registration failed", 
-        error: err.message 
+
+      res.status(500).json({
+        message: "Registration failed",
+        error: err.message
       });
     }
   })
@@ -162,8 +162,8 @@ instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
   try {
 
     if (req.user.instituteId !== req.params.id && req.user.role !== "admin") {
-      return res.status(403).json({ 
-        message: "Access denied. Not authorized to view this profile." 
+      return res.status(403).json({
+        message: "Access denied. Not authorized to view this profile."
       });
     }
 
@@ -172,8 +172,8 @@ instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
       .select('-password');
 
     if (!institute) {
-      return res.status(404).json({ 
-        message: 'Institute not found' 
+      return res.status(404).json({
+        message: 'Institute not found'
       });
     }
 
@@ -210,9 +210,9 @@ instituteApp.get('/profile/:id', verifyToken, async (req, res) => {
 
   } catch (err) {
     console.error('Error in GET /profile/:id', err);
-    return res.status(500).json({ 
-      message: 'Server error', 
-      error: err.message 
+    return res.status(500).json({
+      message: 'Server error',
+      error: err.message
     });
   }
 });
@@ -221,14 +221,14 @@ instituteApp.put('/profile/:id', verifyToken,allowInstituteRoles(), async (req, 
   try {
     // Authorization check
     if (req.user.id !== req.params.id) {
-      return res.status(403).json({ 
-        message: "Access denied. Can only update own profile." 
+      return res.status(403).json({
+        message: "Access denied. Can only update own profile."
       });
     }
 
     const allowed = ['Institute_Name', 'Address', 'Email_ID', 'Contact_No'];
     const update = {};
-    
+
     allowed.forEach(field => {
       if (req.body[field] !== undefined) update[field] = req.body[field];
     });
@@ -236,55 +236,55 @@ instituteApp.put('/profile/:id', verifyToken,allowInstituteRoles(), async (req, 
     // Handle password update separately
     if (req.body.password && req.body.confirm_password) {
       if (req.body.password !== req.body.confirm_password) {
-        return res.status(400).json({ 
-          message: 'Passwords do not match' 
+        return res.status(400).json({
+          message: 'Passwords do not match'
         });
       }
-      
+
       const salt = await bcrypt.genSalt(10);
       update.password = await bcrypt.hash(req.body.password, salt);
     } else if (req.body.password && !req.body.confirm_password) {
-      return res.status(400).json({ 
-        message: 'Confirm password is required when changing password' 
+      return res.status(400).json({
+        message: 'Confirm password is required when changing password'
       });
     }
 
     if (Object.keys(update).length === 0) {
-      return res.status(400).json({ 
-        message: 'No valid fields to update' 
+      return res.status(400).json({
+        message: 'No valid fields to update'
       });
     }
 
     const institute = await Institute.findByIdAndUpdate(
-      req.params.id, 
-      update, 
+      req.params.id,
+      update,
       { new: true, runValidators: true }
     )
     .populate('Medicine_Inventory.Medicine_ID', 'Medicine_Name Threshold_Qty')
     .select('-password');
 
     if (!institute) {
-      return res.status(404).json({ 
-        message: 'Institute not found' 
+      return res.status(404).json({
+        message: 'Institute not found'
       });
     }
 
-    return res.json({ 
-      message: 'Profile updated successfully', 
-      profile: institute 
+    return res.json({
+      message: 'Profile updated successfully',
+      profile: institute
     });
   } catch (err) {
     console.error('Error in PUT /profile/:id', err);
-    
+
     if (err.code === 11000) {
-      return res.status(409).json({ 
-        message: 'Email or Institute Name already exists' 
+      return res.status(409).json({
+        message: 'Email or Institute Name already exists'
       });
     }
-    
-    return res.status(500).json({ 
-      message: 'Server error', 
-      error: err.message 
+
+    return res.status(500).json({
+      message: 'Server error',
+      error: err.message
     });
   }
 });
@@ -310,8 +310,10 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
     // MAIN STORE
     for (const m of mainStoreMeds) {
       inventoryMap[m.Medicine_Code] = {
+        _id: null,
         Medicine_Code: m.Medicine_Code,
         Medicine_Name: m.Medicine_Name,
+        Strength: m.Strength || "",
         mainQty: m.Quantity,
         subQty: 0,
         mainExpiry: m.Expiry_Date,
@@ -323,16 +325,21 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
     for (const m of subStoreMeds) {
       if (!inventoryMap[m.Medicine_Code]) {
         inventoryMap[m.Medicine_Code] = {
+          _id: m._id,
           Medicine_Code: m.Medicine_Code,
           Medicine_Name: m.Medicine_Name,
+          Strength: m.Strength || "",
           mainQty: 0,
           subQty: m.Quantity,
           mainExpiry: null,
           subExpiry: m.Expiry_Date
         };
       } else {
+        inventoryMap[m.Medicine_Code]._id = m._id;
         inventoryMap[m.Medicine_Code].subQty = m.Quantity;
         inventoryMap[m.Medicine_Code].subExpiry = m.Expiry_Date;
+        inventoryMap[m.Medicine_Code].Strength =
+          m.Strength || inventoryMap[m.Medicine_Code].Strength || "";
       }
     }
 
@@ -356,8 +363,10 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
       }
 
       return {
+        _id: item._id,
         Medicine_Code: item.Medicine_Code,
         Medicine_Name: item.Medicine_Name,
+        Strength: item.Strength || "",
         Quantity: quantity,
         Status: status,
         Expiry_Date: expiry
@@ -379,14 +388,14 @@ instituteApp.get("/institution/:id", verifyToken,
   try {
     const institute = await Institute.findById(req.params.id).select('-password');
     if (!institute) {
-      return res.status(404).json({ 
-        message: "Institute not found" 
+      return res.status(404).json({
+        message: "Institute not found"
       });
     }
     res.json(institute);
   } catch (err) {
-    res.status(500).json({ 
-      error: err.message 
+    res.status(500).json({
+      error: err.message
     });
   }
 });
@@ -399,36 +408,36 @@ instituteApp.get("/dashboard-stats/:instituteId",verifyToken,
 
     // Authorization check
     if (req.user.id !== instituteId && req.user.role !== "admin") {
-      return res.status(403).json({ 
-        message: "Access denied. Not authorized to view dashboard." 
+      return res.status(403).json({
+        message: "Access denied. Not authorized to view dashboard."
       });
     }
 
     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
-      return res.status(400).json({ 
-        message: "Invalid institute ID" 
+      return res.status(400).json({
+        message: "Invalid institute ID"
       });
     }
 
-    // 1️⃣ Total Employees
+    // 1⃣ Total Employees
     const totalEmployees = await Employee.countDocuments();
 
-    // 2️⃣ Registered Employees (same as total employees for now)
+    // 2⃣ Registered Employees (same as total employees for now)
     const registeredEmployees = totalEmployees;
 
-    // 3️⃣ Fetch institute
+    // 3⃣ Fetch institute
     const institute = await Institute.findById(instituteId).lean();
     if (!institute) {
-      return res.status(404).json({ 
-        message: "Institute not found" 
+      return res.status(404).json({
+        message: "Institute not found"
       });
     }
 
-    // 4️⃣ Total medicines in inventory
-    const totalMedicinesInInventory = institute.Medicine_Inventory?.reduce((sum, item) => 
+    // 4⃣ Total medicines in inventory
+    const totalMedicinesInInventory = institute.Medicine_Inventory?.reduce((sum, item) =>
       sum + (item.Quantity || 0), 0) || 0;
 
-    // 5️⃣ Low stock medicines
+    // 5⃣ Low stock medicines
     const lowStockMedicines = institute.Medicine_Inventory?.filter(item => {
       const threshold = item.Medicine_ID?.Threshold_Qty || 0;
       return (item.Quantity || 0) < threshold;
@@ -443,9 +452,9 @@ instituteApp.get("/dashboard-stats/:instituteId",verifyToken,
     });
   } catch (err) {
     console.error("Dashboard stats error:", err);
-    return res.status(500).json({ 
-      message: "Server error", 
-      error: err.message 
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message
     });
   }
 });
@@ -471,8 +480,8 @@ instituteApp.get("/employees-detailed", verifyToken,
       Phone_No: emp.Phone_No || "-",
       Height: emp.Height || "-",
       Weight: emp.Weight || "-",
-      Address: emp.Address ? 
-        `${emp.Address.Street || ""}, ${emp.Address.District || ""}, ${emp.Address.State || ""} - ${emp.Address.Pincode || ""}`.trim() 
+      Address: emp.Address ?
+        `${emp.Address.Street || ""}, ${emp.Address.District || ""}, ${emp.Address.State || ""} - ${emp.Address.Pincode || ""}`.trim()
         : "-",
       Blood_Group: emp.Blood_Group || "-",
       Photo: emp.Photo || null,
@@ -486,9 +495,9 @@ instituteApp.get("/employees-detailed", verifyToken,
     });
   } catch (err) {
     console.error("Error fetching detailed employees:", err);
-    res.status(500).json({ 
-      message: "Failed to fetch employees", 
-      error: err.message 
+    res.status(500).json({
+      message: "Failed to fetch employees",
+      error: err.message
     });
   }
 });
@@ -498,10 +507,10 @@ instituteApp.get("/employee/:id", verifyToken,
   allowInstituteRoles("doctor", "pharmacist", "diagnosis", "xray","front_desk"), async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ 
-        message: "Invalid employee ID" 
+      return res.status(400).json({
+        message: "Invalid employee ID"
       });
     }
 
@@ -510,8 +519,8 @@ instituteApp.get("/employee/:id", verifyToken,
       .lean();
 
     if (!employee) {
-      return res.status(404).json({ 
-        message: "Employee not found" 
+      return res.status(404).json({
+        message: "Employee not found"
       });
     }
 
@@ -519,8 +528,8 @@ instituteApp.get("/employee/:id", verifyToken,
     const formattedEmployee = {
       ...employee,
       DOB: employee.DOB ? new Date(employee.DOB).toISOString().split('T')[0] : null,
-      Address: employee.Address ? 
-        `${employee.Address.Street || ""}, ${employee.Address.District || ""}, ${employee.Address.State || ""} - ${employee.Address.Pincode || ""}`.trim() 
+      Address: employee.Address ?
+        `${employee.Address.Street || ""}, ${employee.Address.District || ""}, ${employee.Address.State || ""} - ${employee.Address.Pincode || ""}`.trim()
         : null,
       Medical_History_Count: employee.Medical_History?.length || 0
     };
@@ -528,9 +537,9 @@ instituteApp.get("/employee/:id", verifyToken,
     res.status(200).json(formattedEmployee);
   } catch (err) {
     console.error("Error fetching employee details:", err);
-    res.status(500).json({ 
-      message: "Failed to fetch employee details", 
-      error: err.message 
+    res.status(500).json({
+      message: "Failed to fetch employee details",
+      error: err.message
     });
   }
 });

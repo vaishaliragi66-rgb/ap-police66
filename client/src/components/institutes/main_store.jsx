@@ -159,6 +159,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                 <tr>
                   <th>Code</th>
                   <th>Name</th>
+                  <th>Strength</th>
                   <th>Received From</th>
                   <th>Qty</th>
                   <th>Threshold</th>
@@ -173,6 +174,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                   <tr key={med._id}>
                     <td className="text-uppercase">{sanitizeName(med.Medicine_Code)}</td>
                     <td className="text-uppercase">{sanitizeName(med.Medicine_Name)}</td>
+                    <td>{sanitizeName(med.Strength) || "-"}</td>
                     <td className="text-uppercase">{sanitizeName(med.Issued_By)}</td>
                     <td>{med.Quantity}</td>
                     <td>{med.Threshold_Qty}</td>
@@ -282,6 +284,17 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                       style={{ textTransform: "uppercase" }}
                       value={selectedMed.Medicine_Name}
                       onChange={handleEditChange}
+                    />
+                  </div>
+
+                  <div className="col-md-3">
+                    <label>Strength</label>
+                    <input
+                      name="Strength"
+                      className="form-control"
+                      value={selectedMed.Strength || ""}
+                      onChange={handleEditChange}
+                      placeholder="500mg"
                     />
                   </div>
 

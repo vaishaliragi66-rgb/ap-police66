@@ -84,6 +84,7 @@ export default function SubStore() {
       search === "" ||
       r.Medicine_Code?.toLowerCase().includes(search) ||
       r.Medicine_Name?.toLowerCase().includes(search) ||
+      r.Strength?.toLowerCase().includes(search) ||
       r.Type?.toLowerCase().includes(search) ||
       r.Category?.toLowerCase().includes(search);
 
@@ -229,6 +230,7 @@ export default function SubStore() {
                 <tr>
                   <th onClick={() => handleSort("Medicine_Code")} style={{cursor:"pointer"}}>Code {sortIcon("Medicine_Code")}</th>
                   <th onClick={() => handleSort("Medicine_Name")} style={{cursor:"pointer"}}>Medicine {sortIcon("Medicine_Name")}</th>
+                  <th onClick={() => handleSort("Strength")} style={{cursor:"pointer"}}>Strength {sortIcon("Strength")}</th>
                   <th onClick={() => handleSort("Type")} style={{cursor:"pointer"}}>Type {sortIcon("Type")}</th>
                   <th onClick={() => handleSort("Category")} style={{cursor:"pointer"}}>Category {sortIcon("Category")}</th>
                   <th onClick={() => handleSort("Quantity")} style={{cursor:"pointer"}}>Qty {sortIcon("Quantity")}</th>
@@ -240,7 +242,7 @@ export default function SubStore() {
               <tbody>
                 {currentRows.length === 0 && (
                   <tr>
-                    <td colSpan="7" className="text-center">No matching records</td>
+                    <td colSpan="8" className="text-center">No matching records</td>
                   </tr>
                 )}
 
@@ -248,6 +250,7 @@ export default function SubStore() {
                   <tr key={i}>
                     <td>{r.Medicine_Code}</td>
                     <td>{r.Medicine_Name}</td>
+                    <td>{r.Strength || "-"}</td>
                     <td>{r.Type || "-"}</td>
                     <td>{r.Category || "-"}</td>
                     <td className={r.Quantity <= r.Threshold_Qty ? "text-danger fw-bold" : ""}>
