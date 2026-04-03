@@ -5,11 +5,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import resample
 from sklearn.metrics import classification_report
-
+from diseaseMapper import map_disease
 # -------------------------------
 # LOAD DATA
 # -------------------------------
-df = pd.read_excel("./data/AP_Police_ML_Training_Dataset_5000.xlsx", header=2)
+df = pd.read_excel(r"C:\Users\A SARIKA REDDY\ap-police\server\data\AP_Police_ML_Training_Dataset_5000.xlsx", header=2)
 
 # -------------------------------
 # CLEAN COLUMN NAMES
@@ -43,7 +43,7 @@ HEIGHT_COL = find_col(["height"])
 WEIGHT_COL = find_col(["weight"])
 AGE_COL = find_col(["age_years", "age"])
 GENDER_COL = find_col(["gender"])
-TARGET_COL = "diabetes_risk_category"
+TARGET_COL = "ml_target_–_disease_prediction"
 
 print("\nDetected Columns:")
 print("TEMP:", TEMP_COL)
@@ -64,21 +64,31 @@ if None in required:
 # -------------------------------
 # FEATURE ENGINEERING
 # -------------------------------
-df['fever'] = (df[TEMP_COL] > 37.5).astype(int)
-df['high_pulse'] = (df[PULSE_COL] > 100).astype(int)
+df['systolic_bp'] = df['sbp_mmhg']
+df['diastolic_bp'] = df['dbp_mmhg']
 df['bmi'] = df[WEIGHT_COL] / ((df[HEIGHT_COL] / 100) ** 2)
 
 # -------------------------------
 # SELECT FINAL COLUMNS
 # -------------------------------
-features = [AGE_COL, GENDER_COL, 'bmi', 'fever', 'high_pulse']
+features = [
+    AGE_COL,
+    GENDER_COL,
+    "designation",
+    "bmi",
+    TEMP_COL,
+    PULSE_COL,
+    "systolic_bp",
+    "diastolic_bp",
+    "comorbidity_count",
+]
 
 df = df[features + [TARGET_COL]]
 
 # -------------------------------
 # HANDLE MISSING VALUES
 # -------------------------------
-df = df.dropna()
+df = df.dropna(subset=features + [TARGET_COL])
 
 print("\nRows after cleaning:", len(df))
 
@@ -89,7 +99,7 @@ if len(df) == 0:
 # ENCODE FEATURES
 # -------------------------------
 le_dict = {}
-
+df[TARGET_COL] = df[TARGET_COL].apply(map_disease)
 X = df[features].copy()
 
 for col in X.columns:
@@ -107,34 +117,13 @@ y = target_le.fit_transform(df[TARGET_COL])
 print("\nClass Distribution BEFORE balancing:")
 print(df[TARGET_COL].value_counts())
 
-# -------------------------------
-# HANDLE CLASS IMBALANCE
-# -------------------------------
-majority_class = df[TARGET_COL].value_counts().idxmax()
-
-df_majority = df[df[TARGET_COL] == majority_class]
-df_minority = df[df[TARGET_COL] != majority_class]
-
-df_majority_downsampled = resample(
-    df_majority,
-    replace=False,
-    n_samples=len(df_minority),
-    random_state=42
-)
-
-df_balanced = pd.concat([df_majority_downsampled, df_minority])
-
-print("\nClass Distribution AFTER balancing:")
-print(df_balanced[TARGET_COL].value_counts())
-
-# recreate X and y
-X = df_balanced[features].copy()
+X = df[features].copy()
 
 for col in X.columns:
     if col in le_dict:
         X.loc[:, col] = le_dict[col].transform(X[col])
 
-y = target_le.fit_transform(df_balanced[TARGET_COL])
+y = target_le.transform(df[TARGET_COL])
 
 # -------------------------------
 # TRAIN TEST SPLIT
@@ -164,8 +153,16 @@ print(classification_report(y_test, y_pred))
 # -------------------------------
 # SAVE MODEL
 # -------------------------------
-pickle.dump(model, open("./models/model.pkl", "wb"))
-pickle.dump(target_le, open("./models/target_encoder.pkl", "wb"))
-pickle.dump(le_dict, open("./models/feature_encoders.pkl", "wb"))
+import os
+import pickle
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
+
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+pickle.dump(model, open(os.path.join(MODEL_DIR, "model.pkl"), "wb"))
+pickle.dump(target_le, open(os.path.join(MODEL_DIR, "target_encoder.pkl"), "wb"))
+pickle.dump(le_dict, open(os.path.join(MODEL_DIR, "feature_encoders.pkl"), "wb"))
 
 print("\nMODEL TRAINED & SAVED SUCCESSFULLY")

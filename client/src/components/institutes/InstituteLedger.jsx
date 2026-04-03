@@ -748,7 +748,7 @@ const downloadCSV = () => {
             ? "Destination" 
             : storeType === "SUB" ? "Issued To" : ""}
         </th>
-        <th>Remarks</th> {/* Removed Reference ID column */}
+        <th>Remarks</th> 
       </tr>
     </thead>
     <tbody>
@@ -787,7 +787,6 @@ const downloadCSV = () => {
                   {l.Transaction_Type}
                 </span>
               </td>
-              
               <td>
                 <span
                   className={`badge ${
@@ -860,7 +859,6 @@ const downloadCSV = () => {
                     )
                     }
               </td>
-              {/* Removed Reference ID cell */}
               <td>
                 <small className="text-muted">{l.Remarks || "—"}</small>
               </td>
