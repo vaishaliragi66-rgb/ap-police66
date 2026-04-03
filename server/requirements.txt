@@ -1,0 +1,13 @@
+# Data Processing and Analysis
+pandas==2.2.2
+numpy==1.26.4
+openpyxl==3.1.2
+
+# Machine Learning
+scikit-learn==1.4.2
+
+# Database
+pymongo==4.6.3
+
+# Environment Variables
+python-dotenv==1.0.1
