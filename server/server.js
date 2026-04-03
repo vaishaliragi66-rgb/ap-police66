@@ -7,7 +7,26 @@ const dns = require("dns");
 
 
 const app = express();
-app.use(cors());
+
+// Configure CORS to allow Vercel frontend
+const corsOptions = {
+  origin: [
+    'https://ap-police66.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5174'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // ✅ Serve uploads folder statically
@@ -68,6 +87,20 @@ app.use("/disease-master-api", diseaseMasterRoutes);
 app.use("/api", predictRoute);
 app.use("/api/forecast", forecastRoutes);
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
+
+// Global error handler - ensures CORS headers are sent even on errors
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err);
+  
+  // Ensure CORS headers are present
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error',
+    details: process.env.NODE_ENV === 'production' ? undefined : err.stack
+  });
+});
 
 const getResolver = () => {
   const resolver = new dns.promises.Resolver();
