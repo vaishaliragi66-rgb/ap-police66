@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+ï»¿import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaPills, FaCalendarAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -13,6 +13,7 @@ const AddMainStoreMedicine = () => {
     Institute_ID: localStorage.getItem("instituteId"),
     Medicine_Code: "",
     Medicine_Name: "",
+    Strength: "",
     Type: "",
     Category: "",
     Quantity: "",
@@ -21,17 +22,112 @@ const AddMainStoreMedicine = () => {
     Expiry_Date: ""
   });
 
+  const [existingMeds, setExistingMeds] = useState([]);
+  
+  // Get unique medicine names filtered by category
+  const getFilteredMedicineNames = () => {
+    if (!formData.Category) {
+      return existingMeds;
+    }
+    return existingMeds.filter(med => med.Category === formData.Category);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // Prevent invalid year input for expiry
     if (name === "Expiry_Date" && value) {
       const year = (value.split("-")[0] || "");
       if (year.length > 4) return;
+    }
+    
+    // When category changes, reset medicine selection
+    if (name === "Category") {
+      setFormData(prev => ({ 
+        ...prev, 
+        Category: value,
+        Medicine_Name: "",
+        Medicine_Code: "",
+        Strength: "",
+        Type: ""
+      }));
+      if (error) setError("");
+      return;
+    }
+
+    // When medicine name is selected from dropdown, auto-fill code and type
+    if (name === "Medicine_Name") {
+      const matches = existingMeds.filter(
+        (m) => m.Medicine_Name === value && m.Category === formData.Category
+      );
+      const selected = matches.length === 1 ? matches[0] : null;
+
+      if (selected) {
+        setFormData(prev => ({ 
+          ...prev, 
+          Medicine_Name: value,
+          Medicine_Code: selected.Medicine_Code || "",
+          Strength: selected.Strength || "",
+          Type: selected.Type || ""
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          Medicine_Name: value,
+          Medicine_Code: "",
+          Strength: "",
+          Type: ""
+        }));
+      }
+      if (error) setError("");
+      return;
+    }
+
+    if (name === "Strength") {
+      const selected = existingMeds.find(
+        (m) =>
+          m.Medicine_Name === formData.Medicine_Name &&
+          m.Category === formData.Category &&
+          (m.Strength || "") === value
+      );
+
+      setFormData(prev => ({
+        ...prev,
+        Strength: value,
+        Medicine_Code: selected?.Medicine_Code || prev.Medicine_Code,
+        Type: selected?.Type || prev.Type
+      }));
+      if (error) setError("");
+      return;
     }
 
     setFormData(prev => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
+
+  // Generate a basic medicine code from name: MS-XXX-123 (deterministic prefix with timestamp suffix)
+  const generateMedicineCode = (name) => {
+    if (!name) return "";
+    const clean = name.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    const prefix = (clean.slice(0, 3) || "XXX").padEnd(3, "X");
+    const suffix = String(Date.now()).slice(-3);
+    return `MS-${prefix}-${suffix}`;
+  };
+
+  // Load existing main store medicines for institute to assist code lookup
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const instId = localStorage.getItem("instituteId");
+        if (!instId) return;
+        const res = await axios.get(`${BACKEND_URL}/mainstore/all-medicines/${instId}`);
+        setExistingMeds(Array.isArray(res.data) ? res.data : []);
+      } catch (e) {
+        setExistingMeds([]);
+      }
+    };
+    load();
+  }, []);
 
   // tomorrow = min expiry
   const getMinDate = () => {
@@ -93,6 +189,7 @@ const AddMainStoreMedicine = () => {
         Institute_ID: localStorage.getItem("instituteId"),
         Medicine_Code: "",
         Medicine_Name: "",
+        Strength: "",
         Type: "",
         Category: "",
         Quantity: "",
@@ -120,7 +217,7 @@ const AddMainStoreMedicine = () => {
       {/* Header */}
       <div className="text-center mb-5">
         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Add Medicine — Main Store
+          Add Medicine â€” Main Store
         </h2>
         <p className="text-gray-500 mt-1 text-sm">
           Register a new medicine into the central store inventory
@@ -166,7 +263,72 @@ const AddMainStoreMedicine = () => {
         {/* FORM */}
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 text-left">
 
-          {/* Medicine Code */}
+          {/* Category Dropdown - FIRST */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Category *
+            </label>
+            <select
+              name="Category"
+              value={formData.Category}
+              onChange={handleChange}
+              disabled={loading}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+            >
+              <option value="">Select Category</option>
+              <option value="Antibiotic">Antibiotic</option>
+              <option value="Analgesic">Analgesic</option>
+              <option value="Antipyretic">Antipyretic</option>
+              <option value="Antihistamine">Antihistamine</option>
+              <option value="Antacid">Antacid</option>
+              <option value="Vitamin">Vitamin</option>
+              <option value="Cardiac">Cardiac</option>
+              <option value="Diabetic">Diabetic</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          {/* Medicine Name Dropdown - SECOND (filtered by category) */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Medicine Name *
+            </label>
+            <select
+              name="Medicine_Name"
+              value={formData.Medicine_Name}
+              onChange={handleChange}
+              disabled={loading || !formData.Category}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+            >
+              <option value="">
+                {!formData.Category ? "Select Category First" : "Select Medicine"}
+              </option>
+              {getFilteredMedicineNames().map((med, idx) => (
+                <option key={idx} value={med.Medicine_Name}>
+                  {med.Medicine_Name}
+                  {med.Strength ? ` (${med.Strength})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Strength
+            </label>
+            <input
+              name="Strength"
+              value={formData.Strength}
+              onChange={handleChange}
+              disabled={loading || !formData.Medicine_Name}
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
+              placeholder="500mg"
+            />
+          </div>
+
+          {/* Medicine Code - THIRD (auto-filled) */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Medicine Code *
@@ -177,39 +339,24 @@ const AddMainStoreMedicine = () => {
               onChange={handleChange}
               disabled={loading}
               required
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-sm focus:ring-2 focus:ring-black"
               style={{ textTransform: "uppercase" }}
-              placeholder="MS-001"
+              placeholder="Auto-filled from selection"
             />
+            
           </div>
 
-          {/* Medicine Name */}
+          {/* Type Dropdown - FOURTH (auto-filled, but editable) */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              Medicine Name *
-            </label>
-            <input
-              name="Medicine_Name"
-              value={formData.Medicine_Name}
-              onChange={handleChange}
-              disabled={loading}
-              required
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
-              style={{ textTransform: "uppercase" }}
-              placeholder="Paracetamol"
-            />
-          </div>
-
-          {/* Type Dropdown */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">
-              Type
+              Type *
             </label>
             <select
               name="Type"
               value={formData.Type}
               onChange={handleChange}
               disabled={loading}
+              required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
             >
               <option value="">Select Type</option>
@@ -225,46 +372,51 @@ const AddMainStoreMedicine = () => {
             </select>
           </div>
 
-          {/* Category Dropdown */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">
-              Category
-            </label>
-            <select
-              name="Category"
-              value={formData.Category}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
-            >
-              <option value="">Select Category</option>
-              <option value="Antibiotic">Antibiotic</option>
-              <option value="Analgesic">Analgesic</option>
-              <option value="Antipyretic">Antipyretic</option>
-              <option value="Antihistamine">Antihistamine</option>
-              <option value="Antacid">Antacid</option>
-              <option value="Vitamin">Vitamin</option>
-              <option value="Cardiac">Cardiac</option>
-              <option value="Diabetic">Diabetic</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          {/* Received From */}
+          {/* Received From (dropdown) */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Received From *
             </label>
-            <input
+            <select
               name="Issued_By"
               value={formData.Issued_By}
               onChange={handleChange}
               disabled={loading}
               required
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
-              style={{ textTransform: "uppercase" }}
-              placeholder="AP Police HQ"
-            />
+              className="w-full border border-gray-300 rounded-md p-2 bg-white text-sm"
+            >
+              <option value="">Select Issued From</option>
+              {[
+                "Chief Office-Hyderabad",
+                "1st Battalion-Yousufguda",
+                "2nd Battalion-Asifabad",
+                "3rd Battalion-Ibrahimpatnam",
+                "4th Battalion-Nampally",
+                "5th Battalion-Bhoopalapally",
+                "6th Battalion-Kothagudem",
+                "7th Battalion-Dichpally",
+                "8th Battalion-Kondapur",
+                "9th Battalion",
+                "10th Battalion-Bachupally",
+                "11th Battalion",
+                "12th Battalion-Anantapur",
+                "13th Battalion-Mancherial",
+                "14th Battalion",
+                "15th Battalion-Sattupally",
+                "16th Battalion",
+                "17th Battalion-Siricilla",
+                "PTC - Warangal",
+                "PTC - Karimnagar",
+                "PTC - Medchal",
+                "SAR CPL-Amberpet",
+                "CAR-Gachibowli",
+                "RBVRR TSPA",
+                "GREYHOUNDS",
+                "OCTOPUS"
+              ].map((n, i) => (
+                <option key={i} value={n}>{n.replace(/\uFFFD/g, '').replace(/ï¿½/g,'').trim()}</option>
+              ))}
+            </select>
           </div>
 
           {/* Quantity */}
@@ -341,7 +493,7 @@ const AddMainStoreMedicine = () => {
         {/* Footer */}
         <div className="mt-6 pt-4 border-t text-center border-gray-200">
           <p className="text-gray-400 text-xs">
-            © 2025 AP Police Health Division
+            2025 AP Police Health Division
           </p>
         </div>
       </div>

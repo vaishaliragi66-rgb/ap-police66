@@ -296,6 +296,10 @@ const InstituteReports = () => {
             <h5 style={{ fontWeight: 700, color: "#000", marginBottom: 12 }}>
               🧑‍💼 Employee: {report.employee.Name} ({report.employee.ABS_NO})
             </h5>
+            <div style={{ color: "#374151", marginBottom: 8 }}>
+              <strong>Height:</strong> {report.employee.Height ? `${report.employee.Height} cm` : '—'} &nbsp;|&nbsp;
+              <strong>Weight:</strong> {report.employee.Weight ? `${report.employee.Weight} kg` : '—'}
+            </div>
   
             {/* EMPLOYEE DISEASES */}
             <h6 style={{ fontWeight: 600, marginTop: 20 }}>🦠 Diseases</h6>

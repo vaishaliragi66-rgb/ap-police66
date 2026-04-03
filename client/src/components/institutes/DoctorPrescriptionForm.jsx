@@ -5,7 +5,14 @@ import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 
 const DoctorPrescriptionForm = () => {
-  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || 6100;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
+
+  const resolveUrl = (u) => {
+    if (!u) return null;
+    if (/^https?:\/\//i.test(u)) return u;
+    const base = (BACKEND_URL || '').replace(/\/$/, '');
+    return `${base}/${String(u).replace(/^\/+/, '')}`;
+  };
   const navigate = useNavigate();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [lastTwoVisits, setLastTwoVisits] = useState([]);
@@ -21,8 +28,9 @@ const DoctorPrescriptionForm = () => {
   const [employeeReport, setEmployeeReport] = useState(null);
   const [showReports, setShowReports] = useState(false);
   const [selectedDiagnosisReport, setSelectedDiagnosisReport] = useState(null);
-  const [selectedXrayReport, setSelectedXrayReport] = useState(null);
+  const [selectedXrayReport, setSelectedXrayReport] = useState(null); // { record, xray }
   const [uniqueMedicines, setUniqueMedicines] = useState([]);
+  const [medicineStrengths, setMedicineStrengths] = useState({});
 const [xrayMaster, setXrayMaster] = useState([]);
 const [xrayData, setXrayData] = useState({
   Xrays: [{ Xray_ID: "", Xray_Type: "" }]
@@ -36,8 +44,8 @@ const [cdDiseases, setCdDiseases] = useState([]);
 const [ncdDiseases, setNcdDiseases] = useState([]);
 const [selectedType, setSelectedType] = useState("");
 const [selectedSubgroup, setSelectedSubgroup] = useState("");
-  
-  
+
+
   const communicableDiseases = [
     "Tuberculosis",
     "Malaria",
@@ -50,7 +58,7 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     "Influenza",
     "Chickenpox",
   ];
-  
+
   const nonCommunicableDiseases = [
     "Diabetes",
     "Hypertension",
@@ -63,7 +71,7 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     "Obesity",
     "Stroke",
   ];
-  
+
   const [diseaseData, setDiseaseData] = useState({
     Category: "Communicable",
     Disease_Name: "",
@@ -75,19 +83,22 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
   diseaseData.Category === "Communicable"
     ? communicableDiseases
     : nonCommunicableDiseases;
-  
+
   const [showOtherDiseaseInput, setShowOtherDiseaseInput] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     Institute_ID: "",
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Medicines: [{ Medicine_Name: "", Dosage: "", Duration: "", Quantity: 0 }],
+    Medicines: [{ Medicine_Name: "", Strength: "", Dosage: "", Duration: "", Quantity: 0 }],
     Notes: "",
-    Disease_Name: "" 
+    Disease_Name: ""
   });
-  
+
+  const getStrengthOptions = (medicineName) =>
+    medicineName ? medicineStrengths[medicineName] || [] : [];
+
   const calculateQuantity = (dosage, duration) => {
     if (!dosage || !duration) return 0;
 
@@ -172,7 +183,7 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     alert("No employee selected");
     return;
   }
-  
+
 
   try {
     const params = {
@@ -181,17 +192,9 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     };
 
     const [diseaseRes, diagnosisRes, xrayRes] = await Promise.all([
-      axios.get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${formData.Employee_ID}`
-      ),
-      axios.get(
-        `http://localhost:${BACKEND_PORT}/diagnosis-api/records/${formData.Employee_ID}`,
-        { params }
-      ),
-      axios.get(
-        `http://localhost:${BACKEND_PORT}/xray-api/records/${formData.Employee_ID}`,
-        { params }
-      )
+      axios.get(`${BACKEND_URL}/disease-api/employee/${formData.Employee_ID}`),
+      axios.get(`${BACKEND_URL}/diagnosis-api/records/${formData.Employee_ID}`, { params }),
+      axios.get(`${BACKEND_URL}/xray-api/records/${formData.Employee_ID}`, { params })
     ]);
 
     const allDiseases =
@@ -228,14 +231,14 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
 };
   useEffect(() => {
     axios
-      .get(`http://localhost:${BACKEND_PORT}/diagnosis-api/tests`)
+      .get(`${BACKEND_URL}/diagnosis-api/tests`)
       .then(res => setTestsMaster(res.data || []))
       .catch(() => setTestsMaster([]));
   }, []);
-  
+
 useEffect(() => {
   axios
-    .get(`http://localhost:${BACKEND_PORT}/xray-api/types`)
+    .get(`${BACKEND_URL}/xray-api/types`)
     .then(res => setXrayMaster(res.data || []))
     .catch(() => setXrayMaster([]));
 }, []);
@@ -245,32 +248,48 @@ useEffect(() => {
 
   useEffect(() => {
     if (!formData.Institute_ID) return;
-  
+
     axios
-      .get(`http://localhost:${BACKEND_PORT}/institute-api/inventory/${formData.Institute_ID}`)
+      .get(`${BACKEND_URL}/institute-api/inventory/${formData.Institute_ID}`)
       .then(res => {
         const inventory = res.data || [];
-  
-        const grouped = {};
-  
+
+        const names = [];
+        const seenNames = new Set();
+        const strengthMap = {};
+
         inventory.forEach(med => {
-          const name = med.Medicine_Name;
-  
-          // Remove only trailing numbers like " 200ml"
-          const base = name.replace(/\s\d+.*$/, "").trim().toLowerCase();
-  
-          if (!grouped[base]) {
-            grouped[base] = name.replace(/\s\d+.*$/, "").trim();
+          const name = med.Medicine_Name?.trim();
+          const strength = (med.Strength || "").trim();
+
+          if (!name) {
+            return;
+          }
+
+          if (!seenNames.has(name)) {
+            seenNames.add(name);
+            names.push(name);
+          }
+
+          if (strength) {
+            strengthMap[name] = strengthMap[name] || [];
+            if (!strengthMap[name].includes(strength)) {
+              strengthMap[name].push(strength);
+            }
           }
         });
-  
-        setUniqueMedicines(Object.values(grouped));
+
+        setUniqueMedicines(names);
+        setMedicineStrengths(strengthMap);
       })
-      .catch(() => setUniqueMedicines([]));
-  
+      .catch(() => {
+        setUniqueMedicines([]);
+        setMedicineStrengths({});
+      });
+
   }, [formData.Institute_ID]);
-  
-  
+
+
   useEffect(() => {
     const instituteId = localStorage.getItem("instituteId");
     if (!instituteId) return;
@@ -282,14 +301,12 @@ useEffect(() => {
   }, []);
   const fetchTopTwoPrescriptions = async (employeeId, familyId = null) => {
     try {
-  
-      const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/prescription-api/employee/${employeeId}`
-      );
-  
+
+      const res = await axios.get(`${BACKEND_URL}/prescription-api/employee/${employeeId}`);
+
 
       let data = res.data || [];
-  
+
       // 🔥 FILTER PROPERLY HERE
       if (familyId) {
         data = data.filter(p =>
@@ -299,14 +316,14 @@ useEffect(() => {
       } else {
         data = data.filter(p => !p.IsFamilyMember);
       }
-  
+
       // 🔥 SORT USING Timestamp (NOT createdAt)
       data.sort(
         (a, b) => new Date(b.Timestamp) - new Date(a.Timestamp)
       );
-  
+
       setLastTwoVisits(data.slice(0, 2));
-  
+
     } catch (err) {
       console.error(err);
       setLastTwoVisits([]);
@@ -314,18 +331,14 @@ useEffect(() => {
   };
   /* ================= API CALLS ================= */
   const fetchInstitute = async (id) => {
-    const res = await axios.get(
-      `http://localhost:${BACKEND_PORT}/institute-api/institution/${id}`
-    );
+    const res = await axios.get(`${BACKEND_URL}/institute-api/institution/${id}`);
     setInstituteName(res.data?.Institute_Name || "");
   };
 
 
   const fetchDiseases = async (employeeId) => {
     try {
-      const res = await axios.get(
-        `http://localhost:${BACKEND_PORT}/disease-api/employee/${employeeId}`
-      );
+      const res = await axios.get(`${BACKEND_URL}/disease-api/employee/${employeeId}`);
       setDiseases(reportRes.data.employeeDiseases);
     } catch {
       setDiseases([]);
@@ -337,21 +350,19 @@ useEffect(() => {
     if (!formData.Employee_ID) return;
 
     axios
-      .get(
-        `http://localhost:${BACKEND_PORT}/employee-api/profile/${formData.Employee_ID}`
-      )
+      .get(`${BACKEND_URL}/employee-api/profile/${formData.Employee_ID}`)
       .then((res) => setEmployeeProfile(res.data))
       .catch(() => setEmployeeProfile(null));
   }, [formData.Employee_ID]);
 
   useEffect(() => {
-    axios.get(`http://localhost:${BACKEND_PORT}/disease-master-api/cd`)
-      .then(res => setCdDiseases(res.data || []))
-      .catch(() => setCdDiseases([]));
-  
-    axios.get(`http://localhost:${BACKEND_PORT}/disease-master-api/ncd`)
-      .then(res => setNcdDiseases(res.data || []))
-      .catch(() => setNcdDiseases([]));
+    axios.get(`${BACKEND_URL}/disease-master-api/cd`)
+        .then(res => setCdDiseases(res.data || []))
+        .catch(() => setCdDiseases([]));
+
+      axios.get(`${BACKEND_URL}/disease-master-api/ncd`)
+        .then(res => setNcdDiseases(res.data || []))
+        .catch(() => setNcdDiseases([]));
   }, []);
 
   const allDiseases = [...cdDiseases, ...ncdDiseases];
@@ -395,7 +406,7 @@ const relevantDiseases = diseases.filter((d) => {
   }
 
   return d.IsFamilyMember === false;
-}); 
+});
 
   const communicableRecent = relevantDiseases.filter(
     (d) =>
@@ -408,7 +419,7 @@ const relevantDiseases = diseases.filter((d) => {
       ...prev,
       Medicines: [
         ...prev.Medicines,
-        { Medicine_Name: "", Dosage: "", Duration: "", Quantity: 0 }
+        { Medicine_Name: "", Strength: "", Dosage: "", Duration: "", Quantity: 0 }
       ]
     }));
 
@@ -418,7 +429,7 @@ const relevantDiseases = diseases.filter((d) => {
       Medicines: prev.Medicines.filter((_, i) => i !== index)
     }));
 
-    
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -438,6 +449,7 @@ const relevantDiseases = diseases.filter((d) => {
       .filter((med) => med.Medicine_Name?.trim())
       .map((med) => ({
         Medicine_Name: med.Medicine_Name,
+        Strength: med.Strength,
         Dosage: med.Dosage,
         Duration: med.Duration,
         Quantity: med.Quantity
@@ -449,12 +461,12 @@ const relevantDiseases = diseases.filter((d) => {
         return;
       }
     }
-    
+
 if (selectedMedicines.length === 0) {
   alert("Please add at least one medicine");
   return;
 }
-    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
+    await axios.post(`${BACKEND_URL}/api/medical-actions`, {
       Institute_ID: formData.Institute_ID,
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -467,6 +479,7 @@ if (selectedMedicines.length === 0) {
           : null,
           medicines: selectedMedicines.map(m => ({
             Medicine_Name: m.Medicine_Name,
+            Strength: m.Strength,
             Dosage: m.Dosage,
             Duration: m.Duration,
             Quantity: m.Quantity
@@ -477,8 +490,8 @@ if (selectedMedicines.length === 0) {
 
     // ✅ Save Disease (if selected)
     if (diseaseData.Disease_Name?.trim()) {
-      await axios.post(
-  `http://localhost:${BACKEND_PORT}/disease-api/diseases`,
+        await axios.post(
+      `${BACKEND_URL}/disease-api/diseases`,
   {
     Institute_ID: formData.Institute_ID,
     Employee_ID: formData.Employee_ID,
@@ -502,22 +515,22 @@ if (selectedMedicines.length === 0) {
     alert("✅ Prescription saved successfully");
   };
 
- 
-  
+
+
 
   const handleDiagnosisSubmit = async () => {
     if (!formData.Employee_ID) {
       alert("Please select employee first");
       return;
     }
-  
+
   const validTests = diagnosisData.Tests.filter(t => t.Test_ID);
 
 if (validTests.length === 0) {
   alert("Please select at least one test");
   return;
 }
-    await axios.post(`http://localhost:${BACKEND_PORT}/api/medical-actions`, {
+    await axios.post(`${BACKEND_URL}/api/medical-actions`, {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
       action_type: "DOCTOR_DIAGNOSIS",
@@ -532,14 +545,14 @@ if (validTests.length === 0) {
         notes: formData.Notes   // 🔥 SAME NOTES USED
       }
     });
-  
+
     alert("✅ Diagnosis saved successfully");
-  
+
     setDiagnosisData({
       Tests: [{ Test_ID: "", Test_Name: "" }]
     });
   };
-  
+
 const handleXraySubmit = async () => {
   if (!formData.Employee_ID) {
     alert("Please select employee first");
@@ -554,7 +567,7 @@ if (validXrays.length === 0) {
 }
 
   await axios.post(
-    `http://localhost:${BACKEND_PORT}/api/medical-actions`,
+  `${BACKEND_URL}/api/medical-actions`,
     {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -582,7 +595,7 @@ if (validXrays.length === 0) {
 
   /* ================= UI ================= */
   return (
-    
+
     <div className="container-fluid mt-1">
       {/* Back Button */}
       <button
@@ -732,17 +745,20 @@ if (validXrays.length === 0) {
           )}
 
           {test?.Reports && test.Reports.length > 0 ? (
-            test.Reports.map((r, ri) => (
-              <a
-                key={ri}
-                href={`http://localhost:${BACKEND_PORT}${r.url}`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-sm btn-outline-dark mt-2 me-2"
-              >
-                View Report
-              </a>
-            ))
+            test.Reports.map((r, ri) => {
+              const url = resolveUrl(r.url);
+              return (
+                <a
+                  key={ri}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-sm btn-outline-dark mt-2 me-2"
+                >
+                  View Report
+                </a>
+              );
+            })
           ) : (
             <button
               className="btn btn-sm btn-outline-secondary mt-2"
@@ -777,6 +793,11 @@ if (validXrays.length === 0) {
     .sort(
       (a, b) => new Date(b.reportDate || 0) - new Date(a.reportDate || 0)
     )
+    .filter(({ xray }) => {
+      // only show xrays where results are out
+      const status = xray?.Findings || xray?.Impression || xray?.Remarks ? "result out" : "pending";
+      return status === "result out";
+    })
     .slice(0, 5);
 
   return recentXrays.length > 0 ? (
@@ -810,7 +831,17 @@ if (validXrays.length === 0) {
             type="button"
             className="btn btn-sm btn-outline-dark mt-2"
             disabled={status !== "result out"}
-            onClick={() => setSelectedXrayReport(record)}
+            onClick={() => {
+              // remove any other modal elements from the DOM so they don't appear behind
+              try {
+                document.querySelectorAll('.modal').forEach(el => {
+                  el.remove();
+                });
+              } catch (e) {
+                // ignore
+              }
+              setSelectedXrayReport({ record, xray });
+            }}
           >
             View
           </button>
@@ -826,6 +857,94 @@ if (validXrays.length === 0) {
             </div>
           </div>
         )}
+
+          {/* X-ray single-item modal */}
+          {selectedXrayReport && (
+            <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", zIndex: 2050 }}>
+              <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060, maxWidth: '90%' }}>
+                <div className="modal-content">
+                  <div className="modal-header bg-primary text-white">
+                    <h5 className="modal-title">X‑ray Detail</h5>
+                    <button className="btn-close btn-close-white" onClick={() => setSelectedXrayReport(null)} />
+                  </div>
+
+                  <div className="modal-body">
+                    {(() => {
+                      const { record, xray } = selectedXrayReport;
+                      const status = xray?.Findings || xray?.Impression || xray?.Remarks ? "result out" : "pending";
+
+                      return (
+                        <>
+                          <p><strong>Employee:</strong> {record?.Employee?.Name}</p>
+                          <p><strong>Report For:</strong> {record?.IsFamilyMember ? `${record?.FamilyMember?.Name} (${record?.FamilyMember?.Relationship})` : 'Self'}</p>
+                          <p><strong>Institute:</strong> {record?.Institute?.Institute_Name || ''}</p>
+                          <p><strong>Date:</strong> {formatDateDMY(xray?.Timestamp || getXrayReportDate(record))}</p>
+
+                          <hr />
+
+                          <table className="table table-bordered">
+                            <thead className="table-light">
+                              <tr>
+                                <th>Type</th>
+                                <th>Body Part</th>
+                                <th>Side</th>
+                                <th>View</th>
+                                <th>Size</th>
+                                <th>Findings</th>
+                                <th>Impression</th>
+                                <th>Remarks</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td>{xray?.Xray_Type || '-'}</td>
+                                <td>{xray?.Body_Part || '-'}</td>
+                                <td>{xray?.Side || '-'}</td>
+                                <td>{xray?.View || '-'}</td>
+                                <td>{xray?.Film_Size || '-'}</td>
+                                <td>{xray?.Findings || '-'}</td>
+                                <td>{xray?.Impression || '-'}</td>
+                                <td>{xray?.Remarks || '-'}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+
+                          <div className="mt-3">
+                            {/* Show report links only when results are out and report exists */}
+                            {status === 'result out' && xray?.Reports && xray.Reports.length > 0 ? (
+                              xray.Reports.map((r, idx) => (
+                                <div key={idx} className="mb-2 d-flex align-items-center gap-2">
+                                  <div className="flex-grow-1">{r?.originalname || r?.filename}</div>
+                                  <button className="btn btn-sm btn-outline-primary" onClick={async () => {
+                                    try {
+                                      // open report in new tab
+                                      const url = resolveUrl(r.url);
+                                      if (url) window.open(url, '_blank');
+                                      else throw new Error('No URL');
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert('Unable to open report');
+                                    }
+                                  }}>View</button>
+                                  <a className="btn btn-sm btn-outline-secondary" href={resolveUrl(r.url)} download>Download</a>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-muted">No report file available.</div>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="modal-footer">
+                    <button className="btn btn-secondary" onClick={() => setSelectedXrayReport(null)}>Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* FORM */}
         <div
@@ -853,7 +972,7 @@ if (validXrays.length === 0) {
                   onSelect={({ employee, visit }) => {
 
                     setSelectedEmployee(employee);
-                    setSelectedVisit(visit); 
+                    setSelectedVisit(visit);
                     const isFamily = visit?.IsFamilyMember || false;
                     const familyId = visit?.FamilyMember?._id || null;
 
@@ -1048,7 +1167,7 @@ if (validXrays.length === 0) {
                 <h6 className="fw-bold mt-4">Medicines</h6>
 
                 {formData.Medicines.map((med, i) => (
-  <div key={i} className="mb-3">
+      <div key={i} className="mb-3">
     <div className="row g-2 align-items-end">
 
       <div className="col-md-3">
@@ -1059,6 +1178,9 @@ if (validXrays.length === 0) {
           onChange={(e) => {
             const copy = [...formData.Medicines];
             copy[i].Medicine_Name = e.target.value;
+            if (!getStrengthOptions(e.target.value).includes(copy[i].Strength)) {
+              copy[i].Strength = "";
+            }
             setFormData(prev => ({ ...prev, Medicines: copy }));
           }}
         >
@@ -1074,7 +1196,32 @@ if (validXrays.length === 0) {
 
       </div>
 
-      <div className="col-md-3">
+      <div className="col-md-2">
+        <label className="form-label">Strength</label>
+        <select
+          className="form-select"
+          value={med.Strength || ""}
+          disabled={!med.Medicine_Name}
+          onChange={(e) => {
+            const copy = [...formData.Medicines];
+            copy[i].Strength = e.target.value;
+            setFormData(prev => ({ ...prev, Medicines: copy }));
+          }}
+        >
+          <option value="">
+            {getStrengthOptions(med.Medicine_Name).length > 0
+              ? "Select Strength"
+              : "Not specified"}
+          </option>
+          {getStrengthOptions(med.Medicine_Name).map((strength, idx) => (
+            <option key={idx} value={strength}>
+              {strength}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="col-md-2">
         <label className="form-label">Dosage</label>
         <input
           type="text"
@@ -1106,7 +1253,7 @@ if (validXrays.length === 0) {
         />
       </div>
 
-      <div className="col-md-2">
+      <div className="col-md-1">
         <label className="form-label">Quantity</label>
         <input
           type="number"
@@ -1173,7 +1320,10 @@ if (validXrays.length === 0) {
               </div>
               <ul className="small mb-2">
                 {p.Medicines?.map((m, i) => (
-                  <li key={i}>{m.Medicine_Name}</li>
+                  <li key={i}>
+                    {m.Medicine_Name}
+                    {m.Strength ? ` (${m.Strength})` : ""}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -1411,7 +1561,7 @@ if (validXrays.length === 0) {
                               xray.Reports.map((r, i) => (
                                 <div key={i} className="mb-1">
                                   <a
-                                    href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                                    href={resolveUrl(r.url)}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="btn btn-sm btn-outline-primary me-1"
@@ -1420,7 +1570,7 @@ if (validXrays.length === 0) {
                                   </a>
 
                                   <a
-                                    href={`http://localhost:${BACKEND_PORT}${r.url}`}
+                                    href={resolveUrl(r.url)}
                                     download
                                     className="btn btn-sm btn-outline-secondary"
                                   >

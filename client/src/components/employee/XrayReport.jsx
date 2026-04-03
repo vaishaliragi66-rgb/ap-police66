@@ -11,7 +11,14 @@ const XrayReport = () => {
   const [familyFilter, setFamilyFilter] = useState("ALL");
 
   const navigate = useNavigate();
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
+
+  const resolveUrl = (u) => {
+    if (!u) return null;
+    if (/^https?:\/\//i.test(u)) return u;
+    const base = (BACKEND_URL || '').replace(/\/$/, '');
+    return `${base}/${String(u).replace(/^\/+/, '')}`;
+  };
   const employeeObjectId = localStorage.getItem("employeeObjectId");
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -349,12 +356,21 @@ const XrayReport = () => {
                         <div key={idx} className="mt-2">
                           <div className="fw-semibold">X‑ray #{idx + 1}: {x.Xray_Type || x.Body_Part || 'X‑ray'}</div>
                           <ul className="list-unstyled mt-1 mb-0">
-                            {x.Reports.map((r, j) => (
-                              <li key={j} className="mb-1">
-                                <a href={`${BACKEND_URL}/${r?.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
-                                <a href={`${BACKEND_URL}/${r?.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
-                              </li>
-                            ))}
+                            {x.Reports.map((r, j) => {
+                              const url = resolveUrl(r?.url);
+                              return (
+                                <li key={j} className="mb-1">
+                                  {url ? (
+                                    <>
+                                      <a href={url} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
+                                      <a href={url} download className="btn btn-sm btn-outline-secondary">Download</a>
+                                    </>
+                                  ) : (
+                                    <span className="text-muted">{r?.originalname || r?.filename}</span>
+                                  )}
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                       ) : null
@@ -367,12 +383,21 @@ const XrayReport = () => {
                   <div className="mt-3">
                     <strong>Uploaded Reports (record-level):</strong>
                     <ul className="list-unstyled mt-2 mb-0">
-                      {selectedReport.Reports.map((r, idx) => (
-                        <li key={idx} className="mb-1">
-                          <a href={`${BACKEND_URL}/${r?.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
-                          <a href={`${BACKEND_URL}/${r?.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
-                        </li>
-                      ))}
+                      {selectedReport.Reports.map((r, idx) => {
+                        const url = resolveUrl(r?.url);
+                        return (
+                          <li key={idx} className="mb-1">
+                            {url ? (
+                              <>
+                                <a href={url} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
+                                <a href={url} download className="btn btn-sm btn-outline-secondary">Download</a>
+                              </>
+                            ) : (
+                              <span className="text-muted">{r?.originalname || r?.filename}</span>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 )}

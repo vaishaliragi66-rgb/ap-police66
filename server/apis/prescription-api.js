@@ -18,7 +18,7 @@ const Medicine = require("../models/master_medicine");
 prescriptionApp.get("/debug-medicines", async (req, res) => {
   try {
     const medicines = await Medicine.find({}).limit(10);
-    
+
     res.json({
       totalMedicines: await Medicine.countDocuments(),
       sampleMedicines: medicines.map(m => ({
@@ -75,6 +75,7 @@ prescriptionApp.post("/add",verifyToken,
 
       const Medicine_Code = med.Medicine_Code || med.Medicine_ID;
       const Medicine_Name = (med.Medicine_Name || "").trim();
+      const Strength = (med.Strength || "").trim();
       const qty = Number(med.Quantity);
 
       if (!Medicine_Code || qty <= 0) {
@@ -121,6 +122,7 @@ prescriptionApp.post("/add",verifyToken,
       prescriptionMedicines.push({
         Medicine_ID: substoreMed._id,
         Medicine_Name: substoreMed.Medicine_Name,
+        Strength: Strength || substoreMed.Strength || undefined,
         Quantity: qty
       });
 
@@ -208,7 +210,7 @@ prescriptionApp.get("/employee/:employeeId", async (req, res) => {
   .populate("Institute", "Institute_Name")
   .populate("Employee", "Name ABS_NO")
   .populate("FamilyMember", "Name Relationship")
-  .populate("Medicines.Medicine_ID", "Medicine_Code Expiry_Date")  // 🔥 ADD THIS
+  .populate("Medicines.Medicine_ID", "Medicine_Code Expiry_Date Strength")  // 🔥 ADD THIS
   .sort({ Timestamp: -1 });
 
     return res.status(200).json(prescriptions);
@@ -245,6 +247,7 @@ prescriptionApp.get("/institute/:instituteId", async (req, res) => {
         path: "Medicines.Medicine_ID",
         select: `
           Medicine_Name
+          Strength
           Type
           Category
           Expiry_Date
@@ -268,18 +271,18 @@ prescriptionApp.get("/institute/:instituteId", async (req, res) => {
 prescriptionApp.get("/debug-medicine/:code/:instituteId", async (req, res) => {
   try {
     const { code, instituteId } = req.params;
-    
+
     const medicine = await Medicine.findOne({
       Medicine_Code: code,
       Institute_ID: instituteId
     });
-    
+
     if (!medicine) {
       // Check if it exists without institute filter
       const anyMedicine = await Medicine.findOne({
         Medicine_Code: code
       });
-      
+
       return res.json({
         found: false,
         message: "Medicine not found for this institute",
@@ -289,13 +292,14 @@ prescriptionApp.get("/debug-medicine/:code/:instituteId", async (req, res) => {
         anyMedicine: anyMedicine
       });
     }
-    
+
     res.json({
       found: true,
       medicine: {
         _id: medicine._id,
         Medicine_Code: medicine.Medicine_Code,
         Medicine_Name: medicine.Medicine_Name,
+        Strength: medicine.Strength,
         Institute_ID: medicine.Institute_ID,
         Quantity: medicine.Quantity
       }
