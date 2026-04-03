@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ap-police66-backend
+    env: node
+    region: singapore
+    buildCommand: |
+      cd server
+      npm install
+      pip install -r requirements.txt
+    startCommand: cd server && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5200
