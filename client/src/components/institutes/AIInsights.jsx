@@ -7,6 +7,9 @@ import autoTable from 'jspdf-autotable';
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
 
 const AIInsights = () => {
+  const BACKEND_URL =
+    import.meta.env.VITE_BACKEND_URL ||
+    `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -36,7 +39,7 @@ const AIInsights = () => {
     try {
       const instituteId = getInstituteId();
       
-      const response = await fetch('${BACKEND_URL}/ai-api/query', {
+      const response = await fetch(`${BACKEND_URL}/ai-api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -45,7 +48,14 @@ const AIInsights = () => {
         })
       });
 
-      const data = await response.json();
+      const raw = await response.text();
+      let data = {};
+
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { error: raw || 'Server returned an invalid response' };
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Query failed');
