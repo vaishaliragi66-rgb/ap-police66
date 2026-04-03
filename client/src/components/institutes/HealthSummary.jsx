@@ -26,15 +26,19 @@ ChartJS.register(
 );
 
 const HealthSummary = () => {
+  const BACKEND_URL =
+    import.meta.env.VITE_BACKEND_URL ||
+    `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
   const institute = JSON.parse(localStorage.getItem("institute") || "{}");
   // prefer full object _id, fallback to standalone instituteId (older flows)
   const instituteId = institute?._id || localStorage.getItem("instituteId");
   const navigate = useNavigate();
   const [type, setType] = useState("daily");
-  const [date, setDate] = useState("");
   const [month, setMonth] = useState("");
   // compute current year/month before using them to initialize state
   const today = new Date();
+  const currentDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const [date, setDate] = useState(currentDate);
   const currYear = today.getFullYear();
   const currMonth = today.getMonth() + 1;
   const [year, setYear] = useState(currYear);
