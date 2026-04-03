@@ -1,13 +1,15 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaPills, FaCalendarAlt } from "react-icons/fa";
+import { FaCalendarAlt, FaPills } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+
 const AddMainStoreMedicine = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState("");
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [existingMeds, setExistingMeds] = useState([]);
 
   const [formData, setFormData] = useState({
     Institute_ID: localStorage.getItem("instituteId"),
@@ -19,7 +21,7 @@ const AddMainStoreMedicine = () => {
     Quantity: "",
     Threshold_Qty: "",
     Issued_By: "",
-    Expiry_Date: ""
+    Expiry_Date: "",
   });
 
   const [existingMeds, setExistingMeds] = useState([]);
@@ -145,12 +147,12 @@ const AddMainStoreMedicine = () => {
       "Quantity",
       "Threshold_Qty",
       "Issued_By",
-      "Expiry_Date"
+      "Expiry_Date",
     ];
 
-    const missing = required.filter(f => !formData[f]);
+    const missing = required.filter((f) => !formData[f]);
     if (missing.length > 0) {
-      setError("Please fill required fields: " + missing.join(", "));
+      setError(`Please fill required fields: ${missing.join(", ")}`);
       return;
     }
 
@@ -161,8 +163,8 @@ const AddMainStoreMedicine = () => {
 
     const expiry = new Date(formData.Expiry_Date);
     const today = new Date();
-    today.setHours(0,0,0,0);
-    expiry.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
+    expiry.setHours(0, 0, 0, 0);
 
     if (expiry <= today) {
       setError("Expiry date must be in the future (tomorrow or later)");
@@ -174,14 +176,11 @@ const AddMainStoreMedicine = () => {
       setError("");
       setSuccess("");
 
-      const res = await axios.post(
-        `${BACKEND_URL}/mainstore/add`,
-        {
-          ...formData,
-          Quantity: Number(formData.Quantity),
-          Threshold_Qty: Number(formData.Threshold_Qty)
-        }
-      );
+      const res = await axios.post(`${BACKEND_URL}/mainstore/add`, {
+        ...formData,
+        Quantity: Number(formData.Quantity),
+        Threshold_Qty: Number(formData.Threshold_Qty),
+      });
 
       setSuccess(res.data.message || "Medicine added to Main Store");
 
@@ -195,9 +194,8 @@ const AddMainStoreMedicine = () => {
         Quantity: "",
         Threshold_Qty: "",
         Issued_By: "",
-        Expiry_Date: ""
+        Expiry_Date: "",
       });
-
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -213,26 +211,21 @@ const AddMainStoreMedicine = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start bg-[#f7f7f7] px-4 pt-16">
-
-      {/* Header */}
       <div className="text-center mb-5">
         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Add Medicine — Main Store
+          Add Medicine - Main Store
         </h2>
         <p className="text-gray-500 mt-1 text-sm">
           Register a new medicine into the central store inventory
         </p>
       </div>
 
-      {/* Card */}
       <div
         className="bg-white shadow-lg border border-gray-200 rounded-xl p-6 w-full max-w-lg"
         style={{
           boxShadow: "0 8px 25px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.06)",
         }}
       >
-
-        {/* Icon */}
         <div
           className="flex justify-center items-center mb-4 mx-auto"
           style={{
@@ -246,21 +239,18 @@ const AddMainStoreMedicine = () => {
           <FaPills size={35} color="#333" />
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
 
-        {/* Success */}
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
             <p className="text-green-700 text-sm">{success}</p>
           </div>
         )}
 
-        {/* FORM */}
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 text-left">
 
           {/* Category Dropdown - FIRST */}
@@ -419,7 +409,6 @@ const AddMainStoreMedicine = () => {
             </select>
           </div>
 
-          {/* Quantity */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Quantity *
@@ -436,7 +425,6 @@ const AddMainStoreMedicine = () => {
             />
           </div>
 
-          {/* Threshold */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Threshold Qty *
@@ -453,7 +441,6 @@ const AddMainStoreMedicine = () => {
             />
           </div>
 
-          {/* Expiry Date */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-1 text-gray-700 flex items-center gap-1">
               <FaCalendarAlt className="text-gray-400" />
@@ -476,7 +463,6 @@ const AddMainStoreMedicine = () => {
             </p>
           </div>
 
-          {/* Submit */}
           <div className="col-span-2 mt-3">
             <button
               type="submit"
@@ -490,7 +476,6 @@ const AddMainStoreMedicine = () => {
           </div>
         </form>
 
-        {/* Footer */}
         <div className="mt-6 pt-4 border-t text-center border-gray-200">
           <p className="text-gray-400 text-xs">
             2025 AP Police Health Division
