@@ -92,6 +92,12 @@ Structured:`;
 // Main query endpoint
 router.post('/query', async (req, res) => {
   try {
+if (!groq) {
+  return res.status(503).json({
+    error: 'AI Insights is not configured on the server. Please set GROQ_API_KEY and restart the server.'
+  });
+}
+
 const { userQuery, instituteId } = req.body;
 
 if (!userQuery) {

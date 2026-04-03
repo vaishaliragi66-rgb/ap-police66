@@ -217,6 +217,10 @@ function App() {
               element: <DiseaseAnalyticsHome />
             },
             {
+              path: "/institutes/predict",
+              element: <Predict/>
+            },
+            {
               path:"/institutes/forecast",
               element:<ForecastDashboard/>
             }
@@ -237,10 +241,6 @@ function App() {
         { 
           path:"/institutes/disease-analytics/:type/:value",
           element:<DiseaseAnalyticsDetails/>
-        },
-        { 
-          path:"/institutes/predict",
-          element:<Predict/>
         },
         {
           path:"/institutes/disease-analytics/risk-hotspots",
