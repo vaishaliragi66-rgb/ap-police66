@@ -6,10 +6,19 @@ function Predict() {
   const [formData, setFormData] = useState({
     age: "",
     gender: "",
-    bmi: "",
-    fever: "",
-    high_pulse: "",
+    designation: "",
+    height: "",
+    weight: "",
+    temperature: "",
+    pulse: "",
+    systolic_bp: "",
+    diastolic_bp: "",
+    comorbidity_count: "",
   });
+  const calculateBMI = () => {
+    const heightM = formData.height / 100;
+    return formData.weight / (heightM * heightM);
+  };
 
   const [prediction, setPrediction] = useState(null);
 
@@ -36,9 +45,13 @@ function Predict() {
         body: JSON.stringify({
           age: Number(formData.age),
           gender: Number(formData.gender),
-          bmi: Number(formData.bmi),
-          fever: Number(formData.fever),
-          high_pulse: Number(formData.high_pulse),
+          designation: Number(formData.designation),
+          bmi: calculateBMI(),
+          temperature: Number(formData.temperature),
+          pulse: Number(formData.pulse),
+          systolic_bp: Number(formData.systolic_bp),
+          diastolic_bp: Number(formData.diastolic_bp),
+          comorbidity_count: Number(formData.comorbidity_count),
         }),
       });
 
@@ -76,37 +89,44 @@ function Predict() {
             onChange={handleChange}
           />
         </div>
-
         <div className="mb-3">
-          <label>BMI</label>
-          <input
-            type="number"
-            name="bmi"
-            className="form-control"
-            onChange={handleChange}
-          />
-        </div>
+            <label>Designation (Encoded)</label>
+            <input
+              type="number"
+              name="designation"
+              className="form-control"
+              onChange={handleChange}
+            />
+          </div>
+          <div className="mb-3">
+            <label>Height (cm)</label>
+            <input type="number" name="height" className="form-control" onChange={handleChange} />
+          </div>
 
-        <div className="mb-3">
-          <label>Fever (0 = No, 1 = Yes)</label>
-          <input
-            type="number"
-            name="fever"
-            className="form-control"
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="mb-3">
-          <label>High Pulse (0 = No, 1 = Yes)</label>
-          <input
-            type="number"
-            name="high_pulse"
-            className="form-control"
-            onChange={handleChange}
-          />
-        </div>
-
+          <div className="mb-3">
+            <label>Weight (kg)</label>
+            <input type="number" name="weight" className="form-control" onChange={handleChange} />
+          </div>
+          <div className="mb-3">
+            <label>Temperature (°C)</label>
+            <input type="number" name="temperature" className="form-control" onChange={handleChange} />
+          </div>
+          <div className="mb-3">
+            <label>Pulse</label>
+            <input type="number" name="pulse" className="form-control" onChange={handleChange} />
+          </div>
+          <div className="mb-3">
+            <label>Systolic BP</label>
+            <input type="number" name="systolic_bp" className="form-control" onChange={handleChange} />
+          </div>
+          <div className="mb-3">
+            <label>Diastolic BP</label>
+            <input type="number" name="diastolic_bp" className="form-control" onChange={handleChange} />
+          </div>
+          <div className="mb-3">
+            <label>Comorbidity Count</label>
+            <input type="number" name="comorbidity_count" className="form-control" onChange={handleChange} />
+          </div>
         <button type="submit" className="btn btn-primary">
           Predict
         </button>
@@ -116,8 +136,37 @@ function Predict() {
       {prediction && (
         <div className="mt-4">
           <h5>Prediction Result</h5>
-          <pre>{JSON.stringify(prediction, null, 2)}</pre>
-        </div>
+          {prediction && prediction.length === 0 && (
+            <div className="alert alert-success mt-3">
+              No significant disease risk detected ✅
+            </div>
+          )}
+
+            {prediction.map((item, index) => (
+              <div
+                key={index}
+                className="card p-3 mb-2 shadow-sm"
+                style={{ borderLeft: "5px solid #0d6efd" }}
+              >
+                <h6>{item.disease}</h6>
+                <p>Probability: {(item.probability * 100).toFixed(1)}%</p>
+                <p>
+                  Risk:{" "}
+                  <span
+                    className={
+                      item.risk === "High"
+                        ? "text-danger"
+                        : item.risk === "Medium"
+                        ? "text-warning"
+                        : "text-success"
+                    }
+                  >
+                    {item.risk}
+                  </span>
+                </p>
+              </div>
+            ))}
+          </div>
       )}
     </div>
   );

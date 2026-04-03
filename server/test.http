@@ -86,3 +86,23 @@ Content-Type: application/json
 
 ###
 http://localhost:6100/institute-api/analytics/696241bed5066b8df470b6b0
+
+
+###
+POST http://localhost:6100/api/predict
+Content-Type: application/json
+
+{
+  "age": 35,
+  "gender": 1,
+  "designation": 2,
+  "bmi": 24,
+  "temperature": 98.6,
+  "pulse": 80,
+  "systolic_bp": 120,
+  "diastolic_bp": 80,
+  "comorbidity_count": 1
+}
+
+###
+GET http://localhost:6100/api/forecast/next-month
