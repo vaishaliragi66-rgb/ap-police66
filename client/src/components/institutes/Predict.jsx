@@ -59,9 +59,22 @@ function Predict() {
 
       console.log("response:", data);
 
+      // Check if response is an error
+      if (!res.ok || data.error) {
+        setPrediction({ error: data.error || data.details || "Prediction failed" });
+        return;
+      }
+
+      // Check if response is an array
+      if (!Array.isArray(data)) {
+        setPrediction({ error: "Invalid response format from server" });
+        return;
+      }
+
       setPrediction(data);
     } catch (error) {
       console.error("Error:", error);
+      setPrediction({ error: "Failed to connect to prediction service" });
     }
   };
 
@@ -136,37 +149,47 @@ function Predict() {
       {prediction && (
         <div className="mt-4">
           <h5>Prediction Result</h5>
-          {prediction && prediction.length === 0 && (
+          
+          {/* Error case */}
+          {prediction.error && (
+            <div className="alert alert-danger mt-3">
+              <strong>Error:</strong> {prediction.error}
+            </div>
+          )}
+
+          {/* Success - no disease risk */}
+          {Array.isArray(prediction) && prediction.length === 0 && (
             <div className="alert alert-success mt-3">
               No significant disease risk detected ✅
             </div>
           )}
 
-            {prediction.map((item, index) => (
-              <div
-                key={index}
-                className="card p-3 mb-2 shadow-sm"
-                style={{ borderLeft: "5px solid #0d6efd" }}
-              >
-                <h6>{item.disease}</h6>
-                <p>Probability: {(item.probability * 100).toFixed(1)}%</p>
-                <p>
-                  Risk:{" "}
-                  <span
-                    className={
-                      item.risk === "High"
-                        ? "text-danger"
-                        : item.risk === "Medium"
-                        ? "text-warning"
-                        : "text-success"
-                    }
-                  >
-                    {item.risk}
-                  </span>
-                </p>
-              </div>
-            ))}
-          </div>
+          {/* Success - diseases detected */}
+          {Array.isArray(prediction) && prediction.length > 0 && prediction.map((item, index) => (
+            <div
+              key={index}
+              className="card p-3 mb-2 shadow-sm"
+              style={{ borderLeft: "5px solid #0d6efd" }}
+            >
+              <h6>{item.disease}</h6>
+              <p>Probability: {(item.probability * 100).toFixed(1)}%</p>
+              <p>
+                Risk:{" "}
+                <span
+                  className={
+                    item.risk === "High"
+                      ? "text-danger"
+                      : item.risk === "Medium"
+                      ? "text-warning"
+                      : "text-success"
+                  }
+                >
+                  {item.risk}
+                </span>
+              </p>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

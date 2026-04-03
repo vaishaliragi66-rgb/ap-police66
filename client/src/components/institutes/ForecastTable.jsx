@@ -12,22 +12,41 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const ForecastDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     axios
       .get(`${BACKEND_URL}/api/forecast/next-month`)
       .then((res) => {
-        setData(res.data);
+        // Check if response has expected structure
+        if (res.data && res.data.age_groups && res.data.designations) {
+          setData(res.data);
+        } else if (res.data && res.data.error) {
+          setError(res.data.error);
+        } else {
+          setError("Invalid response format from server");
+        }
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
+        setError(err.response?.data?.error || err.message || "Failed to load forecast data");
         setLoading(false);
       });
   }, []);
 
   if (loading) {
     return <div className="p-6 text-lg">Loading AI Forecast...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <strong>Error:</strong> {error}
+        </div>
+      </div>
+    );
   }
 
   if (!data) {
