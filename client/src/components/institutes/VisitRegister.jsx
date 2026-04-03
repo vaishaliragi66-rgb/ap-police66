@@ -184,7 +184,7 @@ const VisitRegister = () => {
 
             {/* CENTER */}
             <div style={{ fontWeight: 600 }}>
-              Register Visit
+              Registration
             </div>
 
             {/* RIGHT - OP */}
@@ -379,7 +379,7 @@ const VisitRegister = () => {
               onClick={registerVisit}
               disabled={loading}
             >
-              {loading ? "Registering..." : "Register Visit"}
+              {loading ? "Registering..." : "Register"}
             </button>
           </div>
         </div>

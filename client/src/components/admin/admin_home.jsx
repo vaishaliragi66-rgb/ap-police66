@@ -12,30 +12,39 @@ import "./AdminDashboard.css";
 
 function AdminDashboard() {
   const navigate = useNavigate();
+  const adminName = localStorage.getItem("adminName") || "Admin";
+
+  const handleLogout = () => {
+    // remove admin-related keys
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminId");
+    localStorage.removeItem("adminName");
+    localStorage.removeItem("adminEmail");
+    localStorage.removeItem("adminRole");
+    localStorage.removeItem("adminPermissions");
+    // optionally clear any employee/institute tokens
+    localStorage.removeItem("employeeToken");
+    localStorage.removeItem("instituteToken");
+    navigate("/admin/login", { replace: true });
+  };
 
   return (
     <div className="admin-dashboard">
-      <div style={{ padding: "12px 12px 0" }}>
-        <button
-          className="btn mb-3"
-          onClick={() => navigate(-1)}
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D6E0F0",
-            borderRadius: "8px",
-            padding: "6px 14px",
-            fontSize: "14px",
-            color: "#1F2933",
-          }}
-        >
-          &larr; Back
-        </button>
-      </div>
+      {/* back button removed per request */}
 
       {/* HEADER */}
       <div className="admin-header">
-        <h1>Admin Dashboard</h1>
-        <p>Manage institutes, employees, and system insights</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div>
+            <h1>Admin Dashboard</h1>
+            <p>Manage institutes, employees, and system insights</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <button className="btn btn-outline-secondary" onClick={handleLogout} style={{ borderRadius: 8 }}>
+              Logout
+            </button>
+          </div>
+        </div>
       </div>
 
 <br />

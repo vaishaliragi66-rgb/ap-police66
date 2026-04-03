@@ -97,10 +97,11 @@ const Institute_home = () => {
       {/* HEADER */}
 <div className="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center position-relative">
   <div>
-    <h3 className="fw-bold mb-2">{dashboardTitle}</h3>
     <small className="text-muted">
       {welcomeMessage}
     </small>
+    <h3 className="fw-bold mb-2">{dashboardTitle}</h3>
+    
   </div>
    
 {/* <small className="text-muted center">SARCPL
@@ -158,7 +159,7 @@ const Institute_home = () => {
           {hasAccess("doctorCard") && (
             <QuickCard
               icon={<FaHistory size={35} />}
-              title="Doctor Prescription"
+              title="Doctor"
               desc="View & manage doctor prescriptions"
               onClick={() => navigate("/institutes/doctor-prescription")}
             />
@@ -194,7 +195,7 @@ const Institute_home = () => {
           {hasAccess("visitCard") && (
             <QuickCard
               icon={<FaUsers size={35} />}
-              title="Visit Register"
+              title="Registration"
               desc="Register daily visits"
               onClick={() => navigate("/institutes/visit-register")}
             />

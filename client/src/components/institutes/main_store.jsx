@@ -18,7 +18,13 @@ const formatExpiryDate = (dateStr) => {
 export default function MainStore() {
 
   const navigate = useNavigate();
+  // Sanitize display name to remove replacement characters
+  const sanitizeName = (s) => {
+    if (!s && s !== 0) return "";
+    return String(s).replace(/\uFFFD/g, "").replace(/ï¿½/g, "").trim();
+  };
   const [medicines, setMedicines] = useState([]);
+  const [nonDeletable, setNonDeletable] = useState(new Set());
   const [loading, setLoading] = useState(true);
 const [currentPage, setCurrentPage] = useState(1);
 const rowsPerPage = 8;
@@ -47,6 +53,16 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
     );
 
     setMedicines(res.data || []);
+    // after loading medicines, also fetch ledger to determine non-deletable medicines
+    try {
+      const ledgerRes = await axios.get(`${BACKEND_URL}/ledger-api/institute/${instituteId}`);
+      const ledger = Array.isArray(ledgerRes.data?.ledger) ? ledgerRes.data.ledger : [];
+      const ids = new Set(ledger.map(l => (l.Medicine_ID && l.Medicine_ID._id) ? l.Medicine_ID._id.toString() : (l.Medicine_ID ? String(l.Medicine_ID) : null)).filter(Boolean));
+      setNonDeletable(ids);
+    } catch (e) {
+      console.warn('Could not load ledger for delete-protection', e);
+      setNonDeletable(new Set());
+    }
   } catch (err) {
     console.error(err);
     alert("Failed to load medicines");
@@ -62,6 +78,12 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
 
   // -------- DELETE MEDICINE ----------
   const deleteMedicine = async (id) => {
+    // Prevent deletion if ledger shows transactions for this medicine
+    if (nonDeletable.has(String(id))) {
+      alert("Cannot delete medicine that has transaction history or remaining stock.");
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this medicine?")) return;
 
     try {
@@ -110,12 +132,12 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
       <div className="d-flex gap-3 mb-3">
         <button className="btn btn-primary"
           onClick={() => navigate("/institutes/add")}>
-          ? Receipt
+          Receipt
         </button>
 
         <button className="btn btn-success"
           onClick={() => navigate("/institutes/transfer")}>
-          ?? Transfer Medicine
+          Transfer Medicine
         </button>
       </div>
 
@@ -137,6 +159,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                 <tr>
                   <th>Code</th>
                   <th>Name</th>
+                  <th>Strength</th>
                   <th>Received From</th>
                   <th>Qty</th>
                   <th>Threshold</th>
@@ -149,9 +172,10 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                 {currentMedicines.map(med => (
 
                   <tr key={med._id}>
-                    <td className="text-uppercase">{med.Medicine_Code}</td>
-                    <td className="text-uppercase">{med.Medicine_Name}</td>
-                    <td className="text-uppercase">{med.Issued_By}</td>
+                    <td className="text-uppercase">{sanitizeName(med.Medicine_Code)}</td>
+                    <td className="text-uppercase">{sanitizeName(med.Medicine_Name)}</td>
+                    <td>{sanitizeName(med.Strength) || "-"}</td>
+                    <td className="text-uppercase">{sanitizeName(med.Issued_By)}</td>
                     <td>{med.Quantity}</td>
                     <td>{med.Threshold_Qty}</td>
                     <td>{formatExpiryDate(med.Expiry_Date)}</td>
@@ -162,14 +186,14 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                         className="btn btn-sm btn-outline-primary me-2"
                         onClick={() => openEditModal(med)}
                       >
-                        ? Update
+                        Update
                       </button>
 
                       <button
                         className="btn btn-sm btn-outline-danger"
                         onClick={() => deleteMedicine(med._id)}
                       >
-                        ?? Delete
+                        Delete
                       </button>
 
                     </td>
@@ -241,7 +265,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
 
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title">
-                  Update Medicine — {selectedMed.Medicine_Name}
+                  Update Medicine â€” {sanitizeName(selectedMed.Medicine_Name)}
                 </h5>
 
                 <button className="btn-close btn-close-white"
@@ -260,6 +284,17 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
                       style={{ textTransform: "uppercase" }}
                       value={selectedMed.Medicine_Name}
                       onChange={handleEditChange}
+                    />
+                  </div>
+
+                  <div className="col-md-3">
+                    <label>Strength</label>
+                    <input
+                      name="Strength"
+                      className="form-control"
+                      value={selectedMed.Strength || ""}
+                      onChange={handleEditChange}
+                      placeholder="500mg"
                     />
                   </div>
 

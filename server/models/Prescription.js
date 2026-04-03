@@ -10,6 +10,7 @@ const PrescriptionSchema = new Schema({
     {
       Medicine_ID: { type: Schema.Types.ObjectId, ref: "Medicine", required: true },
       Medicine_Name: { type: String, required: true },
+      Strength: { type: String, trim: true },
       Quantity: { type: Number, required: true, min: 1 }
     }
   ],
