@@ -21,6 +21,7 @@ function Predict() {
   };
 
   const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // handle input change
   const handleChange = (e) => {
@@ -35,6 +36,8 @@ function Predict() {
     e.preventDefault();
 
     console.log("clicked");
+    setLoading(true);
+    setPrediction(null);
 
     try {
       const res = await fetch(`${BACKEND_URL}/api/predict`, {
@@ -75,6 +78,8 @@ function Predict() {
     } catch (error) {
       console.error("Error:", error);
       setPrediction({ error: "Failed to connect to prediction service" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,13 +145,30 @@ function Predict() {
             <label>Comorbidity Count</label>
             <input type="number" name="comorbidity_count" className="form-control" onChange={handleChange} />
           </div>
-        <button type="submit" className="btn btn-primary">
-          Predict
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Predicting...
+            </>
+          ) : (
+            "Predict"
+          )}
         </button>
       </form>
 
+      {/* LOADING STATE */}
+      {loading && (
+        <div className="mt-4 text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2 text-muted">Analyzing health data...</p>
+        </div>
+      )}
+
       {/* RESULT */}
-      {prediction && (
+      {!loading && prediction && (
         <div className="mt-4">
           <h5>Prediction Result</h5>
           

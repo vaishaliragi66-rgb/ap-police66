@@ -36,7 +36,14 @@ const ForecastDashboard = () => {
   }, []);
 
   if (loading) {
-    return <div className="p-6 text-lg">Loading AI Forecast...</div>;
+    return (
+      <div className="p-6 min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-lg text-gray-600">Loading AI Forecast...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
