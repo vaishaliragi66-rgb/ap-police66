@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const DiagnosisReport = () => {
@@ -93,6 +94,21 @@ useEffect(() => {
   }
 };
 
+  // determine category for a test object
+  const getCategoryForTest = (t) => {
+    if (!t) return "";
+    if (t.Category) return t.Category;
+    if (t.Test_ID && t.Test_ID.Group) return t.Test_ID.Group;
+    try {
+      const allCats = Object.keys(diagnosticTestsByCategory || {});
+      for (const c of allCats) {
+        const found = (diagnosticTestsByCategory[c] || []).find(x => x.name === t.Test_Name);
+        if (found) return c;
+      }
+    } catch (e) {}
+    return "";
+  };
+
 
   /* ================= LAB REPORT PDF ================= */
   const downloadLabReport = (report) => {
@@ -136,16 +152,31 @@ useEffect(() => {
     doc.text(`Report Date: ${reportDate}`, left, 54);
 
     /* ---------- TEST TABLE ---------- */
-    const tableData = report.Tests.map((t) => [
-      t.Test_Name,
-      `${t.Result_Value} ${t.Units || ""}`,
-      t.Test_ID?.Reference_Range || t.Reference_Range || "-",
-      getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range)
-    ]);
+    const tableData = report.Tests.map((t) => {
+      // determine category: prefer saved Category, else use Test_ID.group, else try to infer from test name
+      const category = t.Category || t.Test_ID?.Group || (() => {
+        try {
+          const allCats = Object.keys(diagnosticTestsByCategory || {});
+          for (const c of allCats) {
+            const found = (diagnosticTestsByCategory[c] || []).find(x => x.name === t.Test_Name);
+            if (found) return c;
+          }
+        } catch (e) {}
+        return "";
+      })();
+
+      return [
+        category,
+        t.Test_Name,
+        `${t.Result_Value} ${t.Units || ""}`,
+        t.Test_ID?.Reference_Range || t.Reference_Range || "-",
+        getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range)
+      ];
+    });
 
     autoTable(doc, {
       startY: 62,
-      head: [["Test Name", "Result", "Reference Range", "Status"]],
+      head: [["Category", "Test Name", "Result", "Reference Range", "Status"]],
       body: tableData,
       styles: { fontSize: 9 },
       headStyles: { fillColor: [40, 40, 40] },
@@ -411,6 +442,7 @@ return (
           <table className="table table-bordered">
             <thead className="table-light">
               <tr>
+                <th>Category</th>
                 <th>Test Name</th>
                 <th>Result</th>
                 <th>Reference</th>
@@ -423,8 +455,11 @@ return (
 
                 const reports = t.Reports || [];
 
+                const category = getCategoryForTest(t);
+
                 return (
                   <tr key={i}>
+                    <td>{category}</td>
                     <td>{t.Test_Name}</td>
 
                     <td>{t.Result_Value} {t.Units}</td>
