@@ -29,8 +29,10 @@ const DoctorPrescriptionForm = () => {
   const [showReports, setShowReports] = useState(false);
   const [selectedDiagnosisReport, setSelectedDiagnosisReport] = useState(null);
   const [selectedXrayReport, setSelectedXrayReport] = useState(null); // { record, xray }
+  const [selectedPrescriptionReport, setSelectedPrescriptionReport] = useState(null);
   const [uniqueMedicines, setUniqueMedicines] = useState([]);
   const [medicineStrengths, setMedicineStrengths] = useState({});
+  const notesTextareaRef = React.useRef(null);
 const [xrayMaster, setXrayMaster] = useState([]);
 const [xrayData, setXrayData] = useState({
   Xrays: [{ Xray_ID: "", Xray_Type: "" }]
@@ -125,12 +127,35 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     return `${dd}-${mm}-${yyyy}`;
   };
 
+  const formatDateTime = (value) => {
+    if (!value) return "—";
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return "—";
+
+    return date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
   const getReportStatus = (value) => {
     if (!value) return "pending";
 
     return String(value).trim().toUpperCase() === "PENDING"
       ? "pending"
       : "result out";
+  };
+
+  const isTestResultOut = (test) => {
+    return getReportStatus(test?.Result_Value) === "result out";
+  };
+
+  const isXrayResultOut = (xray) => {
+    return !!(xray?.Findings || xray?.Impression || xray?.Remarks);
   };
 
   const getDiagnosisReportDate = (record) => {
@@ -147,6 +172,68 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     )[0];
 
     return latestXray?.Timestamp || record?.updatedAt || record?.createdAt || null;
+  };
+
+  const getMatchingDiagnosisResult = (orderedTest, diagnosisRecords = [], prescriptionTime) => {
+    const matches = diagnosisRecords
+      .flatMap((record) =>
+        (record?.Tests || []).map((test) => ({
+          ...test,
+          recordId: record?._id
+        }))
+      )
+      .filter((test) => {
+        const sameId =
+          orderedTest?.Test_ID &&
+          test?.Test_ID &&
+          String(test.Test_ID?._id || test.Test_ID) === String(orderedTest.Test_ID);
+
+        const sameName =
+          (test?.Test_Name || test?.Test_ID?.Test_Name || "").trim().toLowerCase() ===
+          (orderedTest?.Test_Name || orderedTest?.Test_ID?.Test_Name || "").trim().toLowerCase();
+
+        const testTime = new Date(test?.Timestamp || 0).getTime();
+        const orderTime = new Date(prescriptionTime || 0).getTime();
+
+        return (sameId || sameName) && testTime >= orderTime;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a?.Timestamp || 0).getTime() - new Date(b?.Timestamp || 0).getTime()
+      );
+
+    return matches[0] || null;
+  };
+
+  const getMatchingXrayResult = (orderedXray, xrayRecords = [], prescriptionTime) => {
+    const matches = xrayRecords
+      .flatMap((record) =>
+        (record?.Xrays || []).map((xray) => ({
+          ...xray,
+          recordId: record?._id
+        }))
+      )
+      .filter((xray) => {
+        const sameId =
+          orderedXray?.Xray_ID &&
+          xray?.Xray_ID &&
+          String(xray.Xray_ID?._id || xray.Xray_ID) === String(orderedXray.Xray_ID);
+
+        const sameType =
+          (xray?.Xray_Type || "").trim().toLowerCase() ===
+          (orderedXray?.Xray_Type || "").trim().toLowerCase();
+
+        const xrayTime = new Date(xray?.Timestamp || 0).getTime();
+        const orderTime = new Date(prescriptionTime || 0).getTime();
+
+        return (sameId || sameType) && xrayTime >= orderTime;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a?.Timestamp || 0).getTime() - new Date(b?.Timestamp || 0).getTime()
+      );
+
+    return matches[0] || null;
   };
 
   const buildVisitNotes = (visitSummary) => {
@@ -178,6 +265,146 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     return noteParts.join(" | ");
   };
 
+  const actionMatchesSelectedPatient = (action, familyId = null) => {
+    const isFamilyAction = action?.data?.IsFamilyMember === true;
+    const actionFamilyId = action?.data?.FamilyMember_ID || null;
+
+    if (familyId) {
+      return isFamilyAction && String(actionFamilyId) === String(familyId);
+    }
+
+    return !isFamilyAction;
+  };
+
+  const getEnrichedDoctorPrescriptions = (
+    actions = [],
+    diagnosisRecords = [],
+    xrayRecords = [],
+    familyId = null
+  ) => {
+    const patientActions = actions.filter((action) =>
+      actionMatchesSelectedPatient(action, familyId)
+    );
+
+    const relatedOrdersByVisit = new Map();
+
+    patientActions.forEach((action) => {
+      const visitKey = action?.visit_id ? String(action.visit_id) : null;
+      if (!visitKey) return;
+
+      if (!relatedOrdersByVisit.has(visitKey)) {
+        relatedOrdersByVisit.set(visitKey, {
+          tests: [],
+          xrays: []
+        });
+      }
+
+      const visitOrders = relatedOrdersByVisit.get(visitKey);
+
+      if (action?.action_type === "DOCTOR_DIAGNOSIS") {
+        visitOrders.tests.push(...(action?.data?.tests || []));
+      }
+
+      if (action?.action_type === "DOCTOR_XRAY") {
+        visitOrders.xrays.push(...(action?.data?.xrays || []));
+      }
+    });
+
+    return patientActions
+      .filter((action) => action?.action_type === "DOCTOR_PRESCRIPTION")
+      .sort((a, b) => new Date(b?.created_at || 0) - new Date(a?.created_at || 0))
+      .map((prescription) => {
+        const visitKey = prescription?.visit_id ? String(prescription.visit_id) : null;
+        const relatedOrders = visitKey
+          ? relatedOrdersByVisit.get(visitKey) || { tests: [], xrays: [] }
+          : { tests: [], xrays: [] };
+
+        return {
+          ...prescription,
+          relatedTests: relatedOrders.tests.map((test) => ({
+            ...test,
+            matchedResult: getMatchingDiagnosisResult(
+              test,
+              diagnosisRecords,
+              prescription?.created_at
+            )
+          })),
+          relatedXrays: relatedOrders.xrays.map((xray) => ({
+            ...xray,
+            matchedResult: getMatchingXrayResult(
+              xray,
+              xrayRecords,
+              prescription?.created_at
+            )
+          }))
+        };
+      });
+  };
+
+  const getPrescriptionReportForLabel = (prescription) => {
+    if (prescription?.data?.IsFamilyMember) {
+      const familyName = selectedVisit?.FamilyMember?.Name || "Family Member";
+      const relationship = selectedVisit?.FamilyMember?.Relationship;
+      return relationship ? `${familyName} (${relationship})` : familyName;
+    }
+
+    return selectedEmployee?.Name || employeeProfile?.Name || "Employee";
+  };
+
+  const renderPrescriptionHistoryCard = (prescription, keyPrefix = "prescription") => {
+    const medicines = prescription?.data?.medicines || [];
+    const tests = prescription?.relatedTests || [];
+    const xrays = prescription?.relatedXrays || [];
+    const medicinesPreview = medicines
+      .slice(0, 2)
+      .map((medicine) => medicine?.Medicine_Name || "Medicine")
+      .join(", ");
+
+    return (
+      <div
+        key={`${keyPrefix}-${prescription?._id || prescription?.created_at || "item"}`}
+        className="border rounded p-3 mb-3 bg-light-subtle"
+      >
+        <div className="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div className="fw-semibold">
+              {formatDateDMY(prescription?.created_at)}
+            </div>
+            <small className="text-muted">
+              {medicines.length} medicine{medicines.length === 1 ? "" : "s"}
+            </small>
+            {(tests.length > 0 || xrays.length > 0) ? (
+              <div className="small text-muted mt-1">
+                {tests.length} test{tests.length === 1 ? "" : "s"} • {xrays.length} X-ray{xrays.length === 1 ? "" : "s"}
+              </div>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-dark"
+            onClick={() => setSelectedPrescriptionReport(prescription)}
+          >
+            View Report
+          </button>
+        </div>
+
+        <div className="small text-muted mt-2">
+          {medicinesPreview || "No medicine details available"}
+          {medicines.length > 2 ? ` +${medicines.length - 2} more` : ""}
+        </div>
+      </div>
+    );
+  };
+
+  useEffect(() => {
+    const textarea = notesTextareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [formData.Notes]);
+
  const loadEmployeeReports = async () => {
   if (!formData.Employee_ID) {
     alert("No employee selected");
@@ -191,10 +418,11 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
       familyId: formData.IsFamilyMember ? formData.FamilyMember_ID : null
     };
 
-    const [diseaseRes, diagnosisRes, xrayRes] = await Promise.all([
+    const [diseaseRes, diagnosisRes, xrayRes, doctorPrescriptionRes] = await Promise.all([
       axios.get(`${BACKEND_URL}/disease-api/employee/${formData.Employee_ID}`),
       axios.get(`${BACKEND_URL}/diagnosis-api/records/${formData.Employee_ID}`, { params }),
-      axios.get(`${BACKEND_URL}/xray-api/records/${formData.Employee_ID}`, { params })
+      axios.get(`${BACKEND_URL}/xray-api/records/${formData.Employee_ID}`, { params }),
+      axios.get(`${BACKEND_URL}/api/medical-actions/employee/${formData.Employee_ID}`)
     ]);
 
     const allDiseases =
@@ -217,7 +445,13 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     const reportPayload = {
       diseases: filteredDiseases,
       diagnosisRecords: diagnosisRes.data || [],
-      xrayRecords: xrayRes.data || []
+      xrayRecords: xrayRes.data || [],
+      previousPrescriptions: getEnrichedDoctorPrescriptions(
+        doctorPrescriptionRes.data || [],
+        diagnosisRes.data || [],
+        xrayRes.data || [],
+        formData.IsFamilyMember ? formData.FamilyMember_ID : null
+      ).slice(0, 5)
     };
 
     setEmployeeReport(reportPayload);
@@ -301,27 +535,23 @@ useEffect(() => {
   }, []);
   const fetchTopTwoPrescriptions = async (employeeId, familyId = null) => {
     try {
+      const params = {
+        isFamily: !!familyId,
+        familyId: familyId || null
+      };
 
-      const res = await axios.get(`${BACKEND_URL}/prescription-api/employee/${employeeId}`);
+      const [actionsRes, diagnosisRes, xrayRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/api/medical-actions/employee/${employeeId}`),
+        axios.get(`${BACKEND_URL}/diagnosis-api/records/${employeeId}`, { params }),
+        axios.get(`${BACKEND_URL}/xray-api/records/${employeeId}`, { params })
+      ]);
 
-
-      let data = res.data || [];
-
-      // 🔥 FILTER PROPERLY HERE
-      if (familyId) {
-        data = data.filter(p =>
-          p.IsFamilyMember &&
-          String(p.FamilyMember?._id) === String(familyId)
-        );
-      } else {
-        data = data.filter(p => !p.IsFamilyMember);
-      }
-
-      // 🔥 SORT USING Timestamp (NOT createdAt)
-      data.sort(
-        (a, b) => new Date(b.Timestamp) - new Date(a.Timestamp)
+      const data = getEnrichedDoctorPrescriptions(
+        actionsRes.data || [],
+        diagnosisRes.data || [],
+        xrayRes.data || [],
+        familyId
       );
-
       setLastTwoVisits(data.slice(0, 2));
 
     } catch (err) {
@@ -488,6 +718,15 @@ if (selectedMedicines.length === 0) {
       }
     });
 
+    await fetchTopTwoPrescriptions(
+      formData.Employee_ID,
+      formData.IsFamilyMember ? formData.FamilyMember_ID : null
+    );
+
+    if (showReports) {
+      await loadEmployeeReports();
+    }
+
     // ✅ Save Disease (if selected)
     if (diseaseData.Disease_Name?.trim()) {
         await axios.post(
@@ -632,68 +871,21 @@ if (validXrays.length === 0) {
                   className="card-body"
                   style={{ maxHeight: "70vh", overflowY: "auto" }}
                 >
-                  {/* ================= DISEASES SECTION ================= */}
+                  <h6 className="fw-bold text-dark mb-3">Previous Prescriptions</h6>
 
-                  <h6 className="fw-bold text-dark mb-3">Diseases</h6>
+{(() => {
+  const previousPrescriptions = employeeReport?.previousPrescriptions || [];
 
-                  {(() => {
-                    const allDiseases = employeeReport?.diseases || [];
-
-                    const twoWeeksAgo = new Date();
-                    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
-                    const nonCommunicable = allDiseases.filter(
-                      d => d.Category === "Non-Communicable"
-                    );
-
-                    const communicableRecent = allDiseases.filter(
-                      d =>
-                        d.Category === "Communicable" &&
-                        new Date(d.createdAt) >= twoWeeksAgo
-                    );
-
-                    return (
-                      <>
-                        {/* Non Communicable First */}
-                        {nonCommunicable.map((d, index) => (
-                          <div key={`nc-${index}`} className="border-bottom pb-2 mb-2">
-                            <div className="fw-semibold text-secondary">
-                              {d.Disease_Name}
-                            </div>
-                            <small className="text-muted">
-                              {new Date(d.createdAt).toLocaleDateString("en-GB")}
-                            </small>
-                            <div>
-                              <span className="badge bg-info mt-1">
-                                {d.Severity_Level}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-
-                        {/* Communicable (Last 2 Weeks Only) */}
-                        {communicableRecent.map((d, index) => (
-                          <div key={`c-${index}`} className="border-bottom pb-2 mb-2">
-                            <div className="fw-semibold text-danger">
-                              {d.Disease_Name}
-                            </div>
-                            <small className="text-muted">
-                              {new Date(d.createdAt).toLocaleDateString("en-GB")}
-                            </small>
-                            <div>
-                              <span className="badge bg-danger mt-1">
-                                {d.Severity_Level}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    );
-                  })()}
+  return previousPrescriptions.length > 0 ? (
+    previousPrescriptions.map((prescription, index) =>
+      renderPrescriptionHistoryCard(prescription, `report-panel-${index}`)
+    )
+  ) : (
+    <div className="text-muted">No previous prescriptions available</div>
+  );
+})()}
 
                   <hr className="my-4" />
-
-                  {/* ================= TESTS SECTION ================= */}
 
  <h6 className="fw-bold text-dark mb-3">Recent Tests</h6>
 
@@ -852,6 +1044,63 @@ if (validXrays.length === 0) {
     <div className="text-muted">No X-rays available</div>
   );
 })()}
+
+                  <hr className="my-4" />
+
+                  <h6 className="fw-bold text-dark mb-3">Diseases</h6>
+
+                  {(() => {
+                    const allDiseases = employeeReport?.diseases || [];
+
+                    const twoWeeksAgo = new Date();
+                    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+                    const nonCommunicable = allDiseases.filter(
+                      d => d.Category === "Non-Communicable"
+                    );
+
+                    const communicableRecent = allDiseases.filter(
+                      d =>
+                        d.Category === "Communicable" &&
+                        new Date(d.createdAt) >= twoWeeksAgo
+                    );
+
+                    return (
+                      <>
+                        {nonCommunicable.map((d, index) => (
+                          <div key={`nc-${index}`} className="border-bottom pb-2 mb-2">
+                            <div className="fw-semibold text-secondary">
+                              {d.Disease_Name}
+                            </div>
+                            <small className="text-muted">
+                              {new Date(d.createdAt).toLocaleDateString("en-GB")}
+                            </small>
+                            <div>
+                              <span className="badge bg-info mt-1">
+                                {d.Severity_Level}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+
+                        {communicableRecent.map((d, index) => (
+                          <div key={`c-${index}`} className="border-bottom pb-2 mb-2">
+                            <div className="fw-semibold text-danger">
+                              {d.Disease_Name}
+                            </div>
+                            <small className="text-muted">
+                              {new Date(d.createdAt).toLocaleDateString("en-GB")}
+                            </small>
+                            <div>
+                              <span className="badge bg-danger mt-1">
+                                {d.Severity_Level}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    );
+                  })()}
                 </div>
 
             </div>
@@ -940,6 +1189,221 @@ if (validXrays.length === 0) {
 
                   <div className="modal-footer">
                     <button className="btn btn-secondary" onClick={() => setSelectedXrayReport(null)}>Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedPrescriptionReport && (
+            <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", zIndex: 2050 }}>
+              <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060 }}>
+                <div className="modal-content">
+                  <div className="modal-header bg-dark text-white">
+                    <h5 className="modal-title">Prescription Report</h5>
+                    <button
+                      type="button"
+                      className="btn-close btn-close-white"
+                      onClick={() => setSelectedPrescriptionReport(null)}
+                    />
+                  </div>
+
+                  <div className="modal-body">
+                    {(() => {
+                      const medicines = selectedPrescriptionReport?.data?.medicines || [];
+                      const tests = selectedPrescriptionReport?.relatedTests || [];
+                      const xrays = selectedPrescriptionReport?.relatedXrays || [];
+
+                      return (
+                        <>
+                          <div className="row g-3 mb-3">
+                            <div className="col-md-6">
+                              <strong>Patient:</strong> {getPrescriptionReportForLabel(selectedPrescriptionReport)}
+                            </div>
+                            <div className="col-md-6 text-md-end">
+                              <strong>Date:</strong> {formatDateTime(selectedPrescriptionReport?.created_at)}
+                            </div>
+                            <div className="col-md-6">
+                              <strong>Institute:</strong> {instituteName || "-"}
+                            </div>
+                            <div className="col-md-6 text-md-end">
+                              <strong>ABS No:</strong> {selectedEmployee?.ABS_NO || employeeProfile?.ABS_NO || "-"}
+                            </div>
+                          </div>
+
+                          <table className="table table-bordered align-middle">
+                            <thead className="table-light">
+                              <tr>
+                                <th>#</th>
+                                <th>Medicine</th>
+                                <th>Strength</th>
+                                <th>Dosage</th>
+                                <th>Duration</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {medicines.length > 0 ? (
+                                medicines.map((medicine, index) => (
+                                  <tr key={`${medicine?.Medicine_Name || "medicine"}-${index}`}>
+                                    <td>{index + 1}</td>
+                                    <td>{medicine?.Medicine_Name || "-"}</td>
+                                    <td>{medicine?.Strength || "-"}</td>
+                                    <td>{medicine?.Dosage || "-"}</td>
+                                    <td>{medicine?.Duration || "-"}</td>
+                                  </tr>
+                                ))
+                              ) : (
+                                <tr>
+                                  <td colSpan="5" className="text-center text-muted">
+                                    No medicine details available
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+
+                          <div className="row g-3 mt-1">
+                            <div className="col-md-6">
+                              <div className="border rounded h-100 p-3 bg-light">
+                                <div className="fw-semibold mb-2">Tests Prescribed</div>
+                                {tests.length > 0 ? (
+                                  <div className="table-responsive">
+                                    <table className="table table-sm align-middle mb-0">
+                                      <thead>
+                                        <tr>
+                                          <th>Test</th>
+                                          <th>Status</th>
+                                          <th className="text-end">Report</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {tests.map((test, index) => {
+                                          const result = test?.matchedResult;
+                                          const canView =
+                                            isTestResultOut(result) &&
+                                            Array.isArray(result?.Reports) &&
+                                            result.Reports.length > 0;
+
+                                          return (
+                                            <tr key={`${test?.Test_ID || test?.Test_Name || "test"}-${index}`}>
+                                              <td>{test?.Test_Name || test?.Test_ID?.Test_Name || "Test"}</td>
+                                              <td>
+                                                <span className={`badge ${isTestResultOut(result) ? "bg-success" : "bg-warning text-dark"}`}>
+                                                  {isTestResultOut(result) ? "result out" : "pending"}
+                                                </span>
+                                              </td>
+                                              <td className="text-end">
+                                                {canView ? (
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-primary"
+                                                    onClick={() => {
+                                                      const url = resolveUrl(result?.Reports?.[0]?.url);
+                                                      if (url) {
+                                                        window.open(url, "_blank");
+                                                      }
+                                                    }}
+                                                  >
+                                                    View
+                                                  </button>
+                                                ) : (
+                                                  <span className="text-muted small">Not available</span>
+                                                )}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : (
+                                  <div className="text-muted small">No tests prescribed</div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="col-md-6">
+                              <div className="border rounded h-100 p-3 bg-light">
+                                <div className="fw-semibold mb-2">X-rays Prescribed</div>
+                                {xrays.length > 0 ? (
+                                  <div className="table-responsive">
+                                    <table className="table table-sm align-middle mb-0">
+                                      <thead>
+                                        <tr>
+                                          <th>X-ray</th>
+                                          <th>Status</th>
+                                          <th className="text-end">Report</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {xrays.map((xray, index) => {
+                                          const result = xray?.matchedResult;
+                                          const canView =
+                                            isXrayResultOut(result) &&
+                                            Array.isArray(result?.Reports) &&
+                                            result.Reports.length > 0;
+
+                                          return (
+                                            <tr key={`${xray?.Xray_ID || xray?.Xray_Type || "xray"}-${index}`}>
+                                              <td>
+                                                {xray?.Xray_Type || "X-ray"}
+                                                {xray?.Body_Part ? ` (${xray.Body_Part})` : ""}
+                                              </td>
+                                              <td>
+                                                <span className={`badge ${isXrayResultOut(result) ? "bg-success" : "bg-warning text-dark"}`}>
+                                                  {isXrayResultOut(result) ? "result out" : "pending"}
+                                                </span>
+                                              </td>
+                                              <td className="text-end">
+                                                {canView ? (
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-primary"
+                                                    onClick={() => {
+                                                      const url = resolveUrl(result?.Reports?.[0]?.url);
+                                                      if (url) {
+                                                        window.open(url, "_blank");
+                                                      }
+                                                    }}
+                                                  >
+                                                    View
+                                                  </button>
+                                                ) : (
+                                                  <span className="text-muted small">Not available</span>
+                                                )}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : (
+                                  <div className="text-muted small">No X-rays prescribed</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3">
+                            <strong>Doctor Notes</strong>
+                            <div className="border rounded p-3 bg-light mt-2" style={{ whiteSpace: "pre-wrap" }}>
+                              {selectedPrescriptionReport?.data?.notes || "No notes added"}
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setSelectedPrescriptionReport(null)}
+                    >
+                      Close
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1155,9 +1619,11 @@ if (validXrays.length === 0) {
                 <div className="mt-3">
                   <label className="form-label fw-semibold">Notes</label>
                   <textarea
+                    ref={notesTextareaRef}
                     className="form-control"
-                    rows="3"
+                    rows="6"
                     value={formData.Notes}
+                    style={{ minHeight: "160px", resize: "none", overflow: "hidden" }}
                     onChange={(e) =>
                       setFormData((f) => ({ ...f, Notes: e.target.value }))
                     }
@@ -1308,27 +1774,9 @@ if (validXrays.length === 0) {
       </div>
 
       <div className="card-body">
-        {lastTwoVisits.map((p, idx) => {
-          const formattedDate = p.Timestamp
-            ? new Date(p.Timestamp).toLocaleDateString("en-GB")
-            : "-";
-
-          return (
-            <div key={idx} className="mb-3 border-bottom pb-2">
-              <div className="fw-semibold mb-2">
-                {formattedDate}
-              </div>
-              <ul className="small mb-2">
-                {p.Medicines?.map((m, i) => (
-                  <li key={i}>
-                    {m.Medicine_Name}
-                    {m.Strength ? ` (${m.Strength})` : ""}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
+        {lastTwoVisits.map((prescription, index) =>
+          renderPrescriptionHistoryCard(prescription, `sidebar-${index}`)
+        )}
       </div>
     </div>
   )}
