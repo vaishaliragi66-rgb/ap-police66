@@ -8,15 +8,11 @@ function GlobalHeader() {
       className="w-full bg-white border-b border-[#BCCCDC] px-4 md:px-10 flex justify-between items-center"
       style={{ minHeight: `${APP_HEADER_HEIGHT}px`, position: "sticky", top: 0, zIndex: 1200 }}
     >
-      <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-full bg-[#4A70A9] text-white flex items-center justify-center font-semibold shadow-sm">
-          AP
-        </div>
-
+      <div>
         <div>
           {/* Main Heading */}
           <h1 className="text-lg md:text-2xl font-bold tracking-tight mb-0">
-            APP-MOHAN
+            POLICE HOSPITAL MANAGEMENT
           </h1>
 
           {/* Increased size */}
