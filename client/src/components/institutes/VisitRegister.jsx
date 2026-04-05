@@ -109,6 +109,13 @@ const VisitRegister = () => {
     setLoading(true);
   
     try {
+      // Convert temperature from Celsius to Fahrenheit
+      const vitalsCopy = { ...vitals };
+      if (vitalsCopy.Temperature) {
+        const celsius = parseFloat(vitalsCopy.Temperature);
+        vitalsCopy.Temperature = (celsius * 9/5) + 32; // Convert to Fahrenheit
+      }
+
       await axios.post(
         `${BACKEND_URL}/api/visits/register`,
         {
@@ -119,7 +126,7 @@ const VisitRegister = () => {
           FamilyMember: isFamily ? selectedFamily._id : null,
           name: isFamily ? selectedFamily.Name : selectedEmployee.Name,
           symptoms: symptoms,
-          Vitals: vitals
+          Vitals: vitalsCopy
         }
       );
       alert("✅ Visit Registered Successfully");
@@ -299,7 +306,7 @@ const VisitRegister = () => {
 
     <div className="row">
       <div className="col-md-6 mb-2">
-        <label>Temperature (°C)</label>
+        <label>Temperature (°F)</label>
         <input
           type="number"
           className="form-control"

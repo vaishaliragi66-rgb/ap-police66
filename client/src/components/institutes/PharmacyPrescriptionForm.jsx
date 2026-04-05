@@ -31,7 +31,7 @@ const PharmacyPrescriptionForm = () => {
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Medicines: [{ medicineId: "", medicineName: "", strength: "", expiryDate: "", quantity: 0 }],
+    Medicines: [{ medicineId: "", medicineName: "", type: "", strength: "", expiryDate: "", quantity: 0 }],
     Notes: ""
   });
 
@@ -377,7 +377,11 @@ const calculateQuantity = (dosage, duration) => {
   /* ================= ADD DOCTOR PRESCRIBED MEDICINE TO FORM ================= */
 const addDoctorPrescribedMedicine = (medicine) => {
   const baseName = medicine.Medicine_Name?.trim();
-  const calculatedQty = calculateQuantity(medicine.Dosage, medicine.Duration);
+  // Calculate quantity from Morning + Afternoon + Night over duration
+  const perDay = (Number(medicine.Morning) || 0) + (Number(medicine.Afternoon) || 0) + (Number(medicine.Night) || 0);
+  const daysMatch = medicine.Duration?.match(/\d+/);
+  const days = daysMatch ? Number(daysMatch[0]) : 1;
+  const calculatedQty = perDay * days;
 
   setFormData(prev => {
     const medicinesCopy = [...prev.Medicines];
@@ -393,6 +397,8 @@ const addDoctorPrescribedMedicine = (medicine) => {
       medicinesCopy[emptyIndex] = {
         ...medicinesCopy[emptyIndex],
         medicineName: baseName,
+        type: medicine.Type || "",
+        foodTiming: medicine.FoodTiming || "",
         strength: medicine.Strength || "",
         quantity: calculatedQty
       };
@@ -409,6 +415,8 @@ const addDoctorPrescribedMedicine = (medicine) => {
       medicinesCopy.push({
         medicineId: "",
         medicineName: baseName,
+        type: medicine.Type || "",
+        foodTiming: medicine.FoodTiming || "",
         strength: medicine.Strength || "",
         expiryDate: "",
         quantity: calculatedQty
@@ -476,7 +484,7 @@ const addMedicineToForm = (inventoryItem, quantity) => {
       ...prev,
       Medicines: [
         ...prev.Medicines,
-        { medicineId: "", medicineName: "", strength: "", quantity: 0 }
+        { medicineId: "", medicineName: "", type: "", strength: "", quantity: 0 }
       ]
     }));
 
@@ -536,6 +544,7 @@ const handleSubmit = async (e) => {
         Medicine_ID: invItem?._id || null,  // THIS MUST BE THE _id FROM DATABASE
         Medicine_Code: m.medicineId,
         Medicine_Name: m.medicineName,
+        Type: m.type || "",
         Strength: m.strength || invItem?.Strength || "",
         Quantity: Number(m.quantity),
         source: "PHARMACY"
@@ -559,7 +568,7 @@ const handleSubmit = async (e) => {
       Employee_ID: "",
       IsFamilyMember: false,
       FamilyMember_ID: "",
-      Medicines: [{ medicineId: "", medicineName: "", strength: "", expiryDate: "", quantity: 0 }],
+      Medicines: [{ medicineId: "", medicineName: "", type: "", strength: "", expiryDate: "", quantity: 0 }],
       Notes: ""
     });
     setSelectedEmployee(null);
@@ -810,9 +819,14 @@ const handleSubmit = async (e) => {
                               <thead>
                                 <tr>
                                   <th>Medicine</th>
+                                  <th>Type</th>
+                                  <th>Food Timing</th>
                                   <th>Strength</th>
-                                  <th>Dosage</th>
+                                  <th>Morning</th>
+                                  <th>Afternoon</th>
+                                  <th>Night</th>
                                   <th>Duration</th>
+                                  <th>Remarks</th>
                                   <th>Action</th>
                                 </tr>
                               </thead>
@@ -820,9 +834,14 @@ const handleSubmit = async (e) => {
                                 {prescription.data.medicines.map((medicine, mIdx) => (
                                   <tr key={mIdx}>
                                     <td>{medicine.Medicine_Name}</td>
+                                    <td>{medicine.Type || "-"}</td>
+                                    <td>{medicine.FoodTiming || "-"}</td>
                                     <td>{medicine.Strength || "-"}</td>
-                                    <td>{medicine.Dosage || "-"}</td>
+                                    <td>{medicine.Morning || "0"}</td>
+                                    <td>{medicine.Afternoon || "0"}</td>
+                                    <td>{medicine.Night || "0"}</td>
                                     <td>{medicine.Duration || "-"}</td>
+                                    <td>{medicine.Remarks || "-"}</td>
                                     <td>
                                       <button
                                         type="button"
@@ -876,7 +895,7 @@ const handleSubmit = async (e) => {
                                 }
 
                                 return med.medicineName
-                                  ? `${med.medicineName.trim()}${med.strength ? ` (${med.strength})` : ""} (Exp: ${formatExpiryMY(med.expiryDate)})`
+                                  ? `${med.medicineName.trim()}${med.type ? ` (${med.type})` : ""}${med.strength ? ` ${med.strength}` : ""} (Exp: ${formatExpiryMY(med.expiryDate)})`
                                   : "";
                               })()
                             }
@@ -946,6 +965,14 @@ const handleSubmit = async (e) => {
                           );
                         })}
                       </div>
+
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={med.type || ""}
+                        placeholder="Type"
+                        readOnly
+                      />
 
                       <input
                         type="text"
