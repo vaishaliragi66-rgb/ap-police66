@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+﻿  import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
@@ -137,6 +137,14 @@ const VisitRegister = () => {
       setFamilyMembers([]);
       setSelectedFamily(null);
       setSymptoms("");
+      setVitals({
+        Temperature: "",
+        Sugar: "",
+        Blood_Pressure: "",
+        Oxygen: "",
+        Pulse: "",
+        GRBS: ""
+      });
   
     } catch (err) {
       alert("❌ Failed to register visit");
@@ -324,9 +332,13 @@ const VisitRegister = () => {
           className="form-control"
           placeholder="120/80"
           value={vitals.Blood_Pressure}
-          onChange={(e) =>
-            setVitals({ ...vitals, Blood_Pressure: e.target.value })
-          }
+          onChange={(e) => {
+            const value = e.target.value;
+            // Allow only format: up to 3 digits, optional slash with up to 2 digits (e.g., "120/80")
+            if (value === '' || /^\d{1,3}(\/\d{0,2})?$/.test(value)) {
+              setVitals({ ...vitals, Blood_Pressure: value });
+            }
+          }}
         />
       </div>
 
