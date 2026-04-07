@@ -2,6 +2,7 @@
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 const EmployeeProfile = () => {
   const navigate = useNavigate();
@@ -15,6 +16,10 @@ const EmployeeProfile = () => {
   const [absCardFile, setAbsCardFile] = useState(null);
   const [absCardUploading, setAbsCardUploading] = useState(false);
   const [absCardDeleting, setAbsCardDeleting] = useState(false);
+  const [masterMap, setMasterMap] = useState({});
+
+  const designationOptions = getMasterOptions(masterMap, "Designations");
+  const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
 
   useEffect(() => {
     if (!employeeId) return;
@@ -30,6 +35,26 @@ const EmployeeProfile = () => {
       .get(`${BACKEND_URL}/family-api/family/${employeeId}`)
       .then((res) => setFamily(res.data || []));
   }, [employeeId, BACKEND_URL]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -339,13 +364,17 @@ const EmployeeProfile = () => {
       <p className="mb-2">
         <strong>Designation:</strong>{" "}
         {isEditing ? (
-          <input
-            type="text"
+          <select
             className="form-control d-inline-block"
             style={{ width: "auto", fontSize: "14px" }}
             value={editData.Designation || ""}
             onChange={(e) => setEditData({ ...editData, Designation: e.target.value })}
-          />
+          >
+            <option value="">Select Designation</option>
+            {designationOptions.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
+          </select>
         ) : (
           <span style={{ color: "#6B7280" }}>{employee.Designation}</span>
         )}
@@ -469,14 +498,9 @@ const EmployeeProfile = () => {
             onChange={(e) => setEditData({ ...editData, Blood_Group: e.target.value })}
           >
             <option value="">Select</option>
-            <option value="A+">A+</option>
-            <option value="A-">A-</option>
-            <option value="B+">B+</option>
-            <option value="B-">B-</option>
-            <option value="AB+">AB+</option>
-            <option value="AB-">AB-</option>
-            <option value="O+">O+</option>
-            <option value="O-">O-</option>
+            {bloodGroupOptions.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
           </select>
         ) : (
           <span style={{ color: "#6B7280" }}>

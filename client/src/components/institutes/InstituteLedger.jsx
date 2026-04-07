@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 const LedgerStore = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -28,6 +29,13 @@ const LedgerStore = () => {
   const [toTime, setToTime] = useState("");
   const [expiryDateFilter, setExpiryDateFilter] = useState(""); // New expiry date filter
   const [directionFilter, setDirectionFilter] = useState("ALL"); // Only for Sub Store
+  const [masterMap, setMasterMap] = useState({});
+
+  const transactionTypeOptions = getMasterOptions(masterMap, "Ledger Transaction Types");
+  const directionOptions = getMasterOptions(masterMap, "Ledger Directions");
+  const rowsPerPageOptions = getMasterOptions(masterMap, "Rows Per Page")
+    .map((item) => Number(item))
+    .filter((n) => Number.isFinite(n));
 
   const formatDateDMY = (dateValue) => {
     if (!dateValue) return "—";
@@ -132,6 +140,26 @@ const LedgerStore = () => {
 
   fetchAllData();
 }, [instituteId]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
 
   // Get current store ledger based on selection
   const currentStoreLedger = storeType === "MAIN" ? mainStoreLedger : subStoreLedger;
@@ -577,12 +605,9 @@ const downloadCSV = () => {
                 {storeType === "MAIN" ? (
                   <option value="STORE_TRANSFER">Store Transfer</option>
                 ) : (
-                  <>
-                    <option value="MAINSTORE_ADD">Main Store Add</option>
-                    <option value="STORE_TRANSFER">Store Transfer</option>
-                    <option value="PRESCRIPTION_ISSUE">Prescription Issue</option>
-                    <option value="SUBSTORE_ADD">Sub Store Add</option>
-                  </>
+                  transactionTypeOptions.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))
                 )}
               </select>
             </div>
@@ -596,8 +621,9 @@ const downloadCSV = () => {
                   onChange={(e) => setDirectionFilter(e.target.value)}
                 >
                   <option value="ALL">All (IN/OUT)</option>
-                  <option value="IN">IN Only</option>
-                  <option value="OUT">OUT Only</option>
+                  {directionOptions.map((item) => (
+                    <option key={item} value={item}>{item} Only</option>
+                  ))}
                 </select>
               </div>
             )}
@@ -716,10 +742,9 @@ const downloadCSV = () => {
                 value={rowsPerPage}
                 onChange={handleRowsChange}
               >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
+                {(rowsPerPageOptions.length ? rowsPerPageOptions : [5, 10, 20, 50]).map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
               </select>
             </div>
             <div className="d-flex align-items-center gap-2">

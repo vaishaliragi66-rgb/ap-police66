@@ -58,6 +58,7 @@ const analyticsRoutes = require("./apis/analyticsRoutes");
 const diseaseMasterRoutes = require("./apis/disease-fetch");
 const predictRoute = require("./apis/predict");
 const forecastRoutes = require("./apis/forecast");
+const masterDataRoutes = require("./apis/master_data_api");
 app.use("/institute-auth", instituteAuth.router);
 app.use("/auth", passwordResetApp);
 app.use("/institute-api", healthSummaryRoutes);
@@ -85,6 +86,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/disease-master-api", diseaseMasterRoutes);
 app.use("/api", predictRoute);
 app.use("/api/forecast", forecastRoutes);
+app.use("/master-data-api", masterDataRoutes);
 app.get("/", (req, res) => res.send("Manufacturer Server Running!"));
 
 // Global error handler - ensures CORS headers are sent even on errors

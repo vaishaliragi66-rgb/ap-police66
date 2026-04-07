@@ -1,8 +1,9 @@
-﻿import React, { useState, useRef } from "react";
+﻿import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { FaUserPlus, FaCamera, FaUser } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 import "./EmployeeRegister.css"
 const EmployeeRegister = () => {
   const navigate = useNavigate();
@@ -32,10 +33,44 @@ const EmployeeRegister = () => {
   const [profilePic, setProfilePic] = useState(null);
   const [profilePreview, setProfilePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [masterLoading, setMasterLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [masterMap, setMasterMap] = useState({});
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        setMasterLoading(true);
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) {
+          setMasterMap(data || {});
+        }
+      } catch (err) {
+        console.error("Failed to load master data", err);
+      } finally {
+        if (mounted) {
+          setMasterLoading(false);
+        }
+      }
+    };
+
+    loadMaster();
+    const handleMasterUpdate = () => loadMaster();
+    window.addEventListener("master-data-updated", handleMasterUpdate);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", handleMasterUpdate);
+    };
+  }, []);
+
+  const designationOptions = getMasterOptions(masterMap, "Designations");
+  const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
+  const districtOptions = getMasterOptions(masterMap, "Districts");
+  const stateOptions = getMasterOptions(masterMap, "States");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -522,32 +557,11 @@ if (validationErrors.length > 0) {
                     disabled={loading}
                   >
                     <option value="">Select Designation</option>
-                    <option value="HC">HC</option>
-                    <option value="ARSI">ARSI</option>
-                    <option value="ASI">ASI</option>
-                    <option value="RSI">RSI</option>
-                    <option value="SI">SI</option>
-                    <option value="RI">RI</option>
-                    <option value="CI">CI</option>
-                    <option value="DSP">DSP</option>
-                    <option value="AC">AC</option>
-                    <option value="Adl.Commandant">Adl.Commandant</option>
-                    <option value="Adl.SP">Adl.SP</option>
-                    <option value="SP">SP</option>
-                    <option value="COMMANDANT">COMMANDANT</option>
-                    <option value="DIG">DIG</option>
-                    <option value="IG">IG</option>
-                    <option value="ADGP">ADGP</option>
-                    <option value="DGP">DGP</option>
-                    <option value="AO">AO</option>
-                    <option value="SR.Assistant">SR.Assistant</option>
-                    <option value="Jr.Assistant">Jr.Assistant</option>
-                    <option value="Superintendent">Superintendent</option>
-                    <option value="CLASS IV">CLASS IV</option>
-                    <option value="Record Assistant">Record Assistant</option>
-                    <option value="COOK">CooK</option>
-                    <option value="OTHERS & PC">Others & PC</option>
+                    {designationOptions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
                   </select>
+                  {masterLoading && <small className="text-muted">Loading master values...</small>}
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">Date of Birth</label>
@@ -585,14 +599,9 @@ if (validationErrors.length > 0) {
                     disabled={loading}
                   >
                     <option value="">Select Blood Group</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
+                    {bloodGroupOptions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
                   </select>
                 </div>
                 
@@ -662,27 +671,33 @@ if (validationErrors.length > 0) {
               <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">District</label>
-                  <input
-                    type="text"
+                  <select
                     name="District"
-                    className="form-control"
-                    placeholder="District"
+                    className="form-select"
                     value={formData.Address.District}
                     onChange={handleChange}
                     disabled={loading}
-                  />
+                  >
+                    <option value="">Select District</option>
+                    {districtOptions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">State</label>
-                  <input
-                    type="text"
+                  <select
                     name="State"
-                    className="form-control"
-                    placeholder="State"
+                    className="form-select"
                     value={formData.Address.State}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
+                    onChange={handleChange}
+                    disabled={loading}
+                  >
+                    <option value="">Select State</option>
+                    {stateOptions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

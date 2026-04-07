@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -154,6 +155,29 @@ export default function EmployeeReports() {
   const [heightMax, setHeightMax] = useState("");
   const [weightMin, setWeightMin] = useState("");
   const [weightMax, setWeightMax] = useState("");
+  const [masterMap, setMasterMap] = useState({});
+
+  const roleOptions = getMasterOptions(masterMap, "Employee Report Roles");
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
   const [abnormalOnly, setAbnormalOnly] = useState(false);
 
   /* Pagination & Expand */
@@ -264,8 +288,9 @@ export default function EmployeeReports() {
                 { el: (
                   <select className="form-control" value={role} onChange={e => setRole(e.target.value)}>
                     <option value="">All Roles</option>
-                    <option value="Employee">Employee</option>
-                    <option value="Family">Family</option>
+                    {roleOptions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
                   </select>
                 )},
                 { el: <input className="form-control" placeholder="Name" value={name} onChange={e => setName(e.target.value)} /> },

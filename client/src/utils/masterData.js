@@ -1,0 +1,332 @@
+import axios from "axios";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+export const DEFAULT_MASTER_OPTIONS = {
+  "Blood Groups": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
+  "Designations": [
+    "HC",
+    "ARSI",
+    "ASI",
+    "RSI",
+    "SI",
+    "RI",
+    "CI",
+    "DSP",
+    "AC",
+    "Adl.Commandant",
+    "Adl.SP",
+    "SP",
+    "COMMANDANT",
+    "DIG",
+    "IG",
+    "ADGP",
+    "DGP",
+    "AO",
+    "SR.Assistant",
+    "Jr.Assistant",
+    "Superintendent",
+    "CLASS IV",
+    "Record Assistant",
+    "COOK",
+    "OTHERS & PC"
+  ],
+  "Districts": [
+    "Hyderabad",
+    "Visakhapatnam",
+    "Vijayawada",
+    "Guntur",
+    "Tirupati",
+    "Warangal",
+    "Karimnagar",
+    "Khammam",
+    "Nizamabad",
+    "Rangareddy",
+    "Medak",
+    "Srikakulam",
+    "Vizianagaram",
+    "East Godavari",
+    "West Godavari",
+    "Krishna",
+    "Prakasam",
+    "Nellore",
+    "Kurnool",
+    "Anantapur",
+    "Kadapa",
+    "Chittoor"
+  ],
+  "States": [
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+    "Andaman and Nicobar Islands",
+    "Chandigarh",
+    "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi",
+    "Jammu and Kashmir",
+    "Ladakh",
+    "Lakshadweep",
+    "Puducherry"
+  ],
+  "Tests": [
+    "HEMATOLOGY",
+    "DIABETES & GLUCOSE",
+    "LIPID PROFILE",
+    "LIVER FUNCTION TESTS (LFT)",
+    "KIDNEY FUNCTION TESTS (KFT)",
+    "THYROID PROFILE",
+    "ELECTROLYTES",
+    "URINALYSIS",
+    "CARDIAC MARKERS",
+    "VITAMINS & MINERALS",
+    "COAGULATION STUDIES",
+    "INFECTIOUS DISEASE PANEL",
+    "TUMOR MARKERS",
+    "HORMONAL PROFILE",
+    "BONE HEALTH",
+    "IMMUNOLOGY"
+  ],
+  "Diseases": ["Communicable", "Non-Communicable"],
+  "Disease Categories": ["Communicable", "Non-Communicable"],
+  "Disease Severity Levels": ["Mild", "Moderate", "Severe", "Chronic"],
+  "Relationships": ["Father", "Mother", "Wife", "Husband", "Son", "Daughter"],
+  "Employee Report Roles": ["Employee", "Family"],
+  "Medicine Types": [
+    "Tablet",
+    "Capsule",
+    "Syrup",
+    "Injection",
+    "Ointment",
+    "Drops",
+    "Inhaler",
+    "Powder",
+    "Other"
+  ],
+  "Xray Categories": [
+    "Head & Neck",
+    "Chest & Thorax",
+    "Upper Limb",
+    "Lower Limb",
+    "Spine",
+    "Abdomen"
+  ],
+  "Xray Body Parts": [
+    "Skull",
+    "Sinus",
+    "Cervical spine",
+    "Chest",
+    "Shoulder",
+    "Humerus",
+    "Elbow",
+    "Forearm",
+    "Wrist",
+    "Hand",
+    "Finger",
+    "Pelvis",
+    "Hip",
+    "Femur",
+    "Knee",
+    "Tibia/Fibula",
+    "Ankle",
+    "Foot",
+    "Toe",
+    "Thoracic Spine",
+    "Lumbar Spine",
+    "Sacrum & Coccyx",
+    "Abdomen"
+  ],
+  "Xray Views": ["AP", "PA", "Lateral", "Oblique", "Towne", "Waters", "Caldwell", "Decubitus", "Lordotic", "Expiratory", "Axillary", "Skyline", "Mortise", "Supine", "Erect"],
+  "Xray Types": [
+    "Skull X-ray – AP view",
+    "Skull X-ray – Lateral view (Right)",
+    "Skull X-ray – Lateral view (Left)",
+    "Skull X-ray – Towne view",
+    "Sinus X-ray – Waters view (occipitomental)",
+    "Sinus X-ray – Caldwell view",
+    "Cervical spine X-ray – AP view",
+    "Chest X-ray – PA view",
+    "Pelvis X-ray – AP view",
+    "Abdomen X-ray – Supine view"
+  ],
+  "Medicine Categories": [
+    "Antibiotic",
+    "Analgesic",
+    "Antipyretic",
+    "Antihistamine",
+    "Antacid",
+    "Vitamin",
+    "Cardiac",
+    "Diabetic",
+    "Other"
+  ],
+  "Food Timings": ["Before Food", "After Food"],
+  "Institute Roles": ["doctor", "pharmacist", "diagnosis", "xray", "front_desk"],
+  "Issued From Sources": [
+    "Chief Office-Hyderabad",
+    "1st Battalion-Yousufguda",
+    "2nd Battalion-Asifabad",
+    "3rd Battalion-Ibrahimpatnam",
+    "4th Battalion-Nampally",
+    "5th Battalion-Bhoopalapally",
+    "6th Battalion-Kothagudem",
+    "7th Battalion-Dichpally",
+    "8th Battalion-Kondapur",
+    "9th Battalion",
+    "10th Battalion-Bachupally",
+    "11th Battalion",
+    "12th Battalion-Anantapur",
+    "13th Battalion-Mancherial",
+    "14th Battalion",
+    "15th Battalion-Sattupally",
+    "16th Battalion",
+    "17th Battalion-Siricilla",
+    "PTC - Warangal",
+    "PTC - Karimnagar",
+    "PTC - Medchal",
+    "SAR CPL-Amberpet",
+    "CAR-Gachibowli",
+    "RBVRR TSPA",
+    "GREYHOUNDS",
+    "OCTOPUS"
+  ],
+  "Ledger Transaction Types": [
+    "MAINSTORE_ADD",
+    "STORE_TRANSFER",
+    "PRESCRIPTION_ISSUE",
+    "SUBSTORE_ADD"
+  ],
+  "Ledger Directions": ["IN", "OUT"],
+  "Rows Per Page": ["5", "10", "25", "50", "100"],
+  "Medicines": ["Paracetamol", "Amoxicillin", "Ibuprofen", "Vitamin D"],
+  "Residential Areas": [
+    "Hyderabad",
+    "Secunderabad",
+    "Jubilee Hills",
+    "Banjara Hills",
+    "Begumpet",
+    "Madhapur",
+    "Gachibowli",
+    "Ameerpet",
+    "Kukatpally",
+    "Hitech City",
+    "MG Road",
+    "100 Feet Road"
+  ],
+  "Rank Categories": [
+    "Constable",
+    "Head Constable",
+    "Assistant Sub Inspector",
+    "Sub-Inspector",
+    "Inspector",
+    "Deputy Superintendent of Police",
+    "Superintendent of Police"
+  ]
+};
+
+let cache = null;
+let cacheTime = 0;
+const TTL_MS = 5 * 60 * 1000;
+
+export const invalidateMasterDataCache = () => {
+  cache = null;
+  cacheTime = 0;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("master-data-updated"));
+  }
+};
+
+export const fetchMasterDataMap = async ({ force = false } = {}) => {
+  const now = Date.now();
+  if (!force && cache && now - cacheTime < TTL_MS) {
+    return cache;
+  }
+
+  const token = localStorage.getItem("instituteToken");
+  let res;
+
+  if (token) {
+    res = await axios.get(`${BACKEND_URL}/master-data-api/active-map`);
+  } else {
+    let instituteId = localStorage.getItem("instituteId") || "";
+
+    if (!instituteId) {
+      const employeeId = localStorage.getItem("employeeId");
+      if (employeeId) {
+        try {
+          const profileRes = await axios.get(`${BACKEND_URL}/employee-api/profile/${employeeId}`);
+          instituteId = String(profileRes.data?.Institute_ID || "");
+        } catch {
+          instituteId = "";
+        }
+      }
+    }
+
+    if (!instituteId) {
+      cache = {};
+      cacheTime = now;
+      return cache;
+    }
+
+    res = await axios.get(`${BACKEND_URL}/master-data-api/public-map`, {
+      params: { instituteId }
+    });
+  }
+
+  cache = res.data || {};
+  cacheTime = now;
+  return cache;
+};
+
+export const getMasterOptions = (masterMap, categoryName) => {
+  const fallback = DEFAULT_MASTER_OPTIONS[categoryName] || [];
+  const dbValues = (masterMap?.[categoryName] || []).map((item) => item.value_name);
+  return [...new Set([...fallback, ...dbValues].filter(Boolean))];
+};
+
+export const getMergedMasterValueObjects = (masterMap, categoryName) => {
+  const fallback = (DEFAULT_MASTER_OPTIONS[categoryName] || []).map((value_name, index) => ({
+    _id: `default-${categoryName}-${index}`,
+    value_name,
+    status: "Active",
+    isDefault: true
+  }));
+  const dbValues = masterMap?.[categoryName] || [];
+  const merged = new Map();
+
+  [...fallback, ...dbValues].forEach((item) => {
+    const key = String(item.value_name || "").trim().toLowerCase();
+    if (!key) return;
+    if (!merged.has(key)) {
+      merged.set(key, item);
+    } else if (!String(merged.get(key)?._id || "").startsWith("default-") && item._id) {
+      merged.set(key, item);
+    }
+  });
+
+  return [...merged.values()];
+};

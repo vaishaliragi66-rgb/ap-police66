@@ -1,7 +1,59 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 
 const DiseaseTypes = require("../models/diseasetypes");
+const MasterCategory = require("../models/master_category");
+const MasterValue = require("../models/master_value");
+
+const sortUniqueByName = (arr) => {
+  const seen = new Set();
+  const out = [];
+  arr.forEach((item) => {
+    const name = String(item?.name || item || "").trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    if (typeof item === "string") {
+      out.push({ name });
+    } else {
+      out.push({ ...item, name });
+    }
+  });
+  return out.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+};
+
+const getCustomDiseases = async (instituteId, mode) => {
+  if (!mongoose.Types.ObjectId.isValid(instituteId)) return [];
+
+  const diseasesCategory = await MasterCategory.findOne({
+    Institute_ID: instituteId,
+    normalized_name: "diseases"
+  }).select("_id");
+
+  if (!diseasesCategory) return [];
+
+  const values = await MasterValue.find({
+    Institute_ID: instituteId,
+    category_id: diseasesCategory._id,
+    status: "Active",
+    "meta.kind": "disease"
+  }).lean();
+
+  return values
+    .filter((item) => {
+      const group = String(item?.meta?.group || "").trim();
+      if (mode === "cd") return group === "Communicable";
+      if (mode === "ncd") return group === "Non-Communicable";
+      return group === "Communicable" || group === "Non-Communicable";
+    })
+    .map((item) => ({
+      name: item.value_name,
+      category: item?.meta?.group === "Communicable" ? "Communicable Diseases" : "Non-Communicable Diseases",
+      type: "Custom"
+    }));
+};
 
 const extractDiseases = (data, mode) => {
   let diseases = [];
@@ -51,9 +103,11 @@ router.get("/cd", async (req, res) => {
   try {
     const data = await DiseaseTypes.find().lean(); // important
 
+    const instituteId = String(req.query.instituteId || "").trim();
     const diseases = extractDiseases(data, "cd");
+    const custom = await getCustomDiseases(instituteId, "cd");
 
-    res.json(diseases); // ✅ THIS LINE MATTERS
+    res.json(sortUniqueByName([...diseases, ...custom])); // ✅ THIS LINE MATTERS
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -63,9 +117,11 @@ router.get("/ncd", async (req, res) => {
   try {
     const data = await DiseaseTypes.find();
 
+    const instituteId = String(req.query.instituteId || "").trim();
     const diseases = extractDiseases(data, "ncd");
+    const custom = await getCustomDiseases(instituteId, "ncd");
 
-    res.json(diseases);
+    res.json(sortUniqueByName([...diseases, ...custom]));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
