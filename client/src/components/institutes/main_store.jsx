@@ -15,6 +15,14 @@ const formatExpiryDate = (dateStr) => {
   return `${month}-${year}`;
 };
 
+const isExpired = (dateStr) => {
+  if (!dateStr) return false;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return false;
+  const expiryEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+  return expiryEnd < new Date();
+};
+
 export default function MainStore() {
 
   const navigate = useNavigate();
@@ -32,6 +40,7 @@ const indexOfLast = currentPage * rowsPerPage;
 const indexOfFirst = indexOfLast - rowsPerPage;
 const currentMedicines = medicines.slice(indexOfFirst, indexOfLast);
 const totalPages = Math.ceil(medicines.length / rowsPerPage);
+const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
 
 
   // modal state
@@ -153,6 +162,18 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
             No medicines available
           </div>
         ) : (
+          <>
+            {expiredMedicines.length > 0 && (
+              <div className="alert alert-danger m-3 mb-0">
+                <strong>Expired medicine notification:</strong> {expiredMedicines.length} medicine{expiredMedicines.length === 1 ? "" : "s"} expired in main store.
+                {" "}
+                {expiredMedicines
+                  .slice(0, 5)
+                  .map((med) => sanitizeName(med.Medicine_Name))
+                  .join(", ")}
+                {expiredMedicines.length > 5 ? " ..." : ""}
+              </div>
+            )}
           <div className="table-responsive">
             <table className="table table-striped mb-0">
               <thead className="table-dark">
@@ -171,7 +192,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
               <tbody>
                 {currentMedicines.map(med => (
 
-                  <tr key={med._id}>
+                  <tr key={med._id} className={isExpired(med.Expiry_Date) ? "table-danger" : ""}>
                     <td className="text-uppercase">{sanitizeName(med.Medicine_Code)}</td>
                     <td className="text-uppercase">{sanitizeName(med.Medicine_Name)}</td>
                     <td>{sanitizeName(med.Strength) || "-"}</td>
@@ -252,6 +273,7 @@ const totalPages = Math.ceil(medicines.length / rowsPerPage);
 
 
           </div>
+          </>
         )}
       </div>
 

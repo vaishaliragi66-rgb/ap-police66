@@ -157,6 +157,7 @@ prescriptionApp.post("/add",verifyToken,
     const prescriptionDoc = new Prescription({
       Institute: Institute_ID,
       Employee: Employee_ID,
+      visit_id: visit_id || null,
       IsFamilyMember: IsFamilyMember || false,
       FamilyMember: FamilyMember_ID || null,
       Medicines: prescriptionMedicines,
@@ -165,6 +166,26 @@ prescriptionApp.post("/add",verifyToken,
     });
 
     await prescriptionDoc.save();
+
+    await MedicalAction.create({
+      employee_id: Employee_ID,
+      visit_id: visit_id || null,
+      action_type: "PHARMACY_ISSUE",
+      source: "PHARMACY",
+      data: {
+        Institute_ID,
+        IsFamilyMember: IsFamilyMember || false,
+        FamilyMember_ID: FamilyMember_ID || null,
+        prescriptionId: prescriptionDoc._id,
+        medicines: prescriptionMedicines.map((medicine) => ({
+          Medicine_ID: medicine.Medicine_ID,
+          Medicine_Name: medicine.Medicine_Name,
+          Strength: medicine.Strength || "",
+          Quantity: medicine.Quantity
+        })),
+        notes: Notes || ""
+      }
+    });
 
     console.log("✅ Prescription saved:", prescriptionDoc._id);
 
