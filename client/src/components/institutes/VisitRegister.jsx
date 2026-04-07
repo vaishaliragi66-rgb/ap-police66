@@ -22,6 +22,7 @@ const VisitRegister = () => {
   const [symptoms, setSymptoms] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
   const instituteId = localStorage.getItem("instituteId");
 
   const [vitals, setVitals] = useState({
@@ -106,14 +107,19 @@ const VisitRegister = () => {
       return;
     }
   
+    setFormError("");
     setLoading(true);
   
     try {
-      // Convert temperature from Celsius to Fahrenheit
       const vitalsCopy = { ...vitals };
       if (vitalsCopy.Temperature) {
-        const celsius = parseFloat(vitalsCopy.Temperature);
-        vitalsCopy.Temperature = (celsius * 9/5) + 32; // Convert to Fahrenheit
+        const tempValue = Number(vitalsCopy.Temperature);
+        if (Number.isNaN(tempValue) || tempValue < 60 || tempValue > 115) {
+          setFormError("Temperature must be between 60 and 115 °F.");
+          setLoading(false);
+          return;
+        }
+        vitalsCopy.Temperature = tempValue;
       }
 
       await axios.post(
@@ -311,17 +317,21 @@ const VisitRegister = () => {
           {/* ================= VITALS ================= */}
   <div className="mt-4">
     <h6 className="fw-bold">Vitals</h6>
+    {formError && <div className="alert alert-danger">{formError}</div>}
 
     <div className="row">
       <div className="col-md-6 mb-2">
         <label>Temperature (°F)</label>
         <input
           type="number"
+          min="60"
+          max="115"
           className="form-control"
           value={vitals.Temperature}
-          onChange={(e) =>
-            setVitals({ ...vitals, Temperature: e.target.value })
-          }
+          onChange={(e) => {
+            setFormError("");
+            setVitals({ ...vitals, Temperature: e.target.value });
+          }}
         />
       </div>
 
