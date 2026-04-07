@@ -2,12 +2,100 @@ const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const AdmZip = require("adm-zip");
+const XLSX = require("xlsx");
+const axios = require("axios");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Admin = require("../models/admin");
 const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
 const Institute = require("../models/master_institute");
 const adminApp = express.Router();
+
+const uploadTempDir = path.join(__dirname, '..', 'uploads', 'temp');
+const profilePicDir = path.join(__dirname, '..', 'uploads', 'profile-pics');
+if (!fs.existsSync(uploadTempDir)) fs.mkdirSync(uploadTempDir, { recursive: true });
+if (!fs.existsSync(profilePicDir)) fs.mkdirSync(profilePicDir, { recursive: true });
+
+const bulkUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadTempDir),
+    filename: (req, file, cb) => cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname}`)
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.fieldname === "csvFile") {
+      return cb(null, /\.csv$/i.test(file.originalname));
+    }
+    if (file.fieldname === "photoZip") {
+      return cb(null, /\.zip$/i.test(file.originalname));
+    }
+    cb(null, false);
+  }
+}).fields([
+  { name: "csvFile", maxCount: 1 },
+  { name: "photoZip", maxCount: 1 }
+]);
+
+const getExtensionFromMime = (mimeType) => {
+  const map = {
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif"
+  };
+  return map[mimeType] || "";
+};
+
+const normalizeRow = (row) => {
+  const normalized = {};
+  Object.entries(row).forEach(([key, value]) => {
+    const cleanedKey = key.trim().toLowerCase().replace(/[_\s]+/g, "");
+    normalized[cleanedKey] = typeof value === "string" ? value.trim() : value;
+  });
+  return {
+    abs_no: normalized.absno || normalized.absnumber || normalized.abs || "",
+    name: normalized.name || "",
+    email: normalized.email || "",
+    password: normalized.password || "",
+    designation: normalized.designation || "",
+    dob: normalized.dob || normalized.dateofbirth || normalized.dateofbirth || "",
+    blood_group: normalized.bloodgroup || normalized.blood_group || "",
+    height: normalized.height || "",
+    weight: normalized.weight || "",
+    phone_no: normalized.phoneno || normalized.phonenumber || normalized.phone || "",
+    gender: normalized.gender || "",
+    street: normalized.street || "",
+    district: normalized.district || "",
+    state: normalized.state || "",
+    pincode: normalized.pincode || normalized.pin || "",
+    photofilename: normalized.photofilename || normalized.photofile || normalized.photofilepath || "",
+    photourl: normalized.photourl || normalized.photourl || normalized.photo_url || ""
+  };
+};
+
+const writePhoto = async (data, filename) => {
+  const target = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(filename) || ".jpg"}`;
+  const destPath = path.join(profilePicDir, target);
+  await fs.promises.writeFile(destPath, data);
+  return `/uploads/profile-pics/${target}`;
+};
+
+const downloadPhotoFromUrl = async (url) => {
+  const response = await axios.get(url, {
+    responseType: "arraybuffer",
+    timeout: 15000
+  });
+  const contentType = response.headers["content-type"] || "";
+  if (!contentType.startsWith("image/")) {
+    throw new Error("Photo URL must point to an image");
+  }
+  const ext = path.extname(new URL(url).pathname) || getExtensionFromMime(contentType) || ".jpg";
+  return await writePhoto(response.data, `downloaded${ext}`);
+};
 
 /* ================= ADMIN REGISTRATION ================= */
 
@@ -135,6 +223,193 @@ adminApp.post(
         message: "Admin registration failed", 
         error: err.message 
       });
+    }
+  })
+);
+
+adminApp.post(
+  "/employee-bulk-upload",
+  bulkUpload,
+  expressAsyncHandler(async (req, res) => {
+    const csvFile = req.files?.csvFile?.[0];
+    const zipFile = req.files?.photoZip?.[0];
+
+    if (!csvFile) {
+      if (zipFile) fs.unlinkSync(zipFile.path);
+      return res.status(400).json({ success: false, message: "CSV file is required." });
+    }
+
+    let photoMap = {};
+    try {
+      const workbook = XLSX.readFile(csvFile.path, { type: "file" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      fs.unlinkSync(csvFile.path);
+
+      if (zipFile) {
+        const zip = new AdmZip(zipFile.path);
+        zip.getEntries().forEach((entry) => {
+          if (!entry.isDirectory()) {
+            photoMap[path.basename(entry.entryName).toLowerCase()] = entry.getData();
+          }
+        });
+        fs.unlinkSync(zipFile.path);
+      }
+
+      if (!Array.isArray(rawRows) || rawRows.length === 0) {
+        return res.status(400).json({ success: false, message: "CSV file is empty or invalid." });
+      }
+
+      const csvEmailSet = new Set();
+      const csvAbsSet = new Set();
+      const emails = [];
+      const absNumbers = [];
+      const normalizedRows = rawRows.map((row, index) => {
+        const record = normalizeRow(row);
+        record._rowNumber = index + 2;
+        if (record.email) emails.push(record.email.toLowerCase());
+        if (record.abs_no) absNumbers.push(record.abs_no);
+        return record;
+      });
+
+      const existingEmployees = await Employee.find({
+        $or: [
+          { Email: { $in: emails.filter(Boolean).map((email) => email.toLowerCase()) } },
+          { ABS_NO: { $in: absNumbers.filter(Boolean) } }
+        ]
+      }).lean();
+
+      const existingByEmail = new Map();
+      const existingByAbs = new Map();
+      existingEmployees.forEach((employee) => {
+        if (employee.Email) existingByEmail.set(employee.Email.toLowerCase(), true);
+        if (employee.ABS_NO) existingByAbs.set(employee.ABS_NO, true);
+      });
+
+      const created = [];
+      const errors = [];
+
+      for (const row of normalizedRows) {
+        const rowErrors = [];
+        const rowNumber = row._rowNumber;
+
+        if (!row.abs_no) rowErrors.push("ABS_NO is required");
+        if (!row.name) rowErrors.push("Name is required");
+        if (!row.email) rowErrors.push("Email is required");
+        if (!row.password) rowErrors.push("Password is required");
+        if (!row.gender) rowErrors.push("Gender is required");
+
+        if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
+          rowErrors.push("Invalid email format");
+        }
+
+        if (row.password && row.password.length < 6) {
+          rowErrors.push("Password must be at least 6 characters long");
+        }
+
+        if (row.phone_no && !/^[6-9]\d{9}$/.test(row.phone_no)) {
+          rowErrors.push("Phone number must be a valid 10-digit Indian number");
+        }
+
+        if (row.pincode && !/^\d{6}$/.test(row.pincode)) {
+          rowErrors.push("Pincode must be 6 digits");
+        }
+
+        if (row.abs_no && csvAbsSet.has(row.abs_no)) {
+          rowErrors.push("Duplicate ABS_NO in CSV upload");
+        }
+
+        if (row.email && csvEmailSet.has(row.email.toLowerCase())) {
+          rowErrors.push("Duplicate Email in CSV upload");
+        }
+
+        if (row.email && existingByEmail.has(row.email.toLowerCase())) {
+          rowErrors.push("Employee already exists with this email");
+        }
+
+        if (row.abs_no && existingByAbs.has(row.abs_no)) {
+          rowErrors.push("Employee already exists with this ABS_NO");
+        }
+
+        if (row.abs_no) csvAbsSet.add(row.abs_no);
+        if (row.email) csvEmailSet.add(row.email.toLowerCase());
+
+        let photoPath = "";
+        if (row.photofilename) {
+          const filename = path.basename(row.photofilename.toString()).toLowerCase();
+          const fileData = photoMap[filename];
+          if (fileData) {
+            try {
+              photoPath = await writePhoto(fileData, filename);
+            } catch (err) {
+              rowErrors.push(`Failed to save photo ${filename}: ${err.message}`);
+            }
+          } else {
+            rowErrors.push(`Photo file not found in ZIP: ${row.photofilename}`);
+          }
+        } else if (row.photourl) {
+          try {
+            photoPath = await downloadPhotoFromUrl(row.photourl);
+          } catch (err) {
+            rowErrors.push(`Failed to download photo URL: ${err.message}`);
+          }
+        }
+
+        if (rowErrors.length > 0) {
+          errors.push({ row: rowNumber, errors: rowErrors });
+          continue;
+        }
+
+        const employeeData = {
+          ABS_NO: row.abs_no,
+          Name: row.name,
+          Email: row.email.toLowerCase(),
+          Password: await bcrypt.hash(row.password, 10),
+          Designation: row.designation || "",
+          DOB: row.dob || null,
+          Blood_Group: row.blood_group || "",
+          Height: row.height || "",
+          Weight: row.weight || "",
+          Phone_No: row.phone_no || "",
+          Gender: row.gender || "",
+          Address: {
+            Street: row.street || "",
+            District: row.district || "",
+            State: row.state || "",
+            Pincode: row.pincode || ""
+          }
+        };
+
+        if (photoPath) {
+          employeeData.Photo = photoPath;
+        }
+
+        try {
+          const saved = await new Employee(employeeData).save();
+          const employeeResponse = saved.toObject();
+          delete employeeResponse.Password;
+          created.push(employeeResponse);
+        } catch (err) {
+          const errorMessage = err.code === 11000 ? "Duplicate record prevented by database" : err.message;
+          errors.push({ row: rowNumber, errors: [errorMessage] });
+        }
+      }
+
+      if (created.length === 0) {
+        return res.status(400).json({ success: false, message: "No employees were created.", errors });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Bulk employee upload completed.",
+        totalRows: normalizedRows.length,
+        createdCount: created.length,
+        errors
+      });
+    } catch (err) {
+      console.error("Bulk upload error:", err);
+      return res.status(500).json({ success: false, message: "Bulk upload failed.", error: err.message });
     }
   })
 );

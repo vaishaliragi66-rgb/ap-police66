@@ -6,7 +6,8 @@ import {
   FaRobot,
   FaBuilding,
   FaUsers,
-  FaFileMedical
+  FaFileMedical,
+  FaUpload
 } from "react-icons/fa";
 import "./AdminDashboard.css";
 
@@ -94,6 +95,15 @@ function AdminDashboard() {
           <FaUserMd className="action-icon" />
           <h5>Employee Reports</h5>
           <p>Access employee medical & activity reports</p>
+        </div>
+
+        <div
+          className="admin-action-card"
+          onClick={() => navigate("/admin/employee-upload")}
+        >
+          <FaUpload className="action-icon" />
+          <h5>Bulk Employee Upload</h5>
+          <p>Upload employees in batches using CSV and optional photo ZIP</p>
         </div>
 
         <div
