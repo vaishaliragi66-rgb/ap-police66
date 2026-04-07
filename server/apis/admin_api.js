@@ -5,7 +5,6 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const AdmZip = require("adm-zip");
 const XLSX = require("xlsx");
 const axios = require("axios");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
@@ -27,24 +26,21 @@ const bulkUpload = multer({
   }),
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.fieldname === "csvFile") {
-      if (!/\.csv$/i.test(file.originalname)) {
-        return cb(new Error("CSV file must have .csv extension"));
+    if (file.fieldname === "excelFile") {
+      if (!/\.(xlsx|xls)$/i.test(file.originalname)) {
+        return cb(new Error("Excel file must have .xlsx or .xls extension"));
       }
       return cb(null, true);
     }
     if (file.fieldname === "photoZip") {
       if (!/\.zip$/i.test(file.originalname)) {
-        return cb(new Error("Photo file must have .zip extension"));
+        return cb(new Error("Photo ZIP must have .zip extension"));
       }
       return cb(null, true);
     }
-    cb(new Error("Invalid field name"));
+    cb(new Error(`Invalid field name: ${file.fieldname}`));
   }
-}).fields([
-  { name: "csvFile", maxCount: 1 },
-  { name: "photoZip", maxCount: 1 }
-]);
+});
 
 const getExtensionFromMime = (mimeType) => {
   const map = {
@@ -236,43 +232,57 @@ adminApp.post(
 adminApp.post(
   "/employee-bulk-upload",
   (req, res, next) => {
-    bulkUpload(req, res, (err) => {
+    bulkUpload.any()(req, res, (err) => {
       if (err) {
         console.error("Multer error:", err.message);
         return res.status(400).json({ success: false, message: `File error: ${err.message}` });
+      }
+
+      const invalidFiles = (req.files || []).filter(
+        (file) => !["excelFile", "photoZip"].includes(file.fieldname)
+      );
+      if (invalidFiles.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `File error: Invalid field name(s): ${invalidFiles.map((file) => file.fieldname).join(", ")}`
+        });
       }
       next();
     });
   },
   expressAsyncHandler(async (req, res) => {
-    const csvFile = req.files?.csvFile?.[0];
-    const zipFile = req.files?.photoZip?.[0];
+    const uploadedFiles = req.files || [];
+    const excelFile = uploadedFiles.find((file) => file.fieldname === "excelFile");
 
-    if (!csvFile) {
-      if (zipFile) fs.unlinkSync(zipFile.path);
-      return res.status(400).json({ success: false, message: "CSV file is required." });
+    if (!excelFile) {
+      return res.status(400).json({ success: false, message: "Excel file is required." });
     }
 
     let photoMap = {};
     try {
-      const workbook = XLSX.readFile(csvFile.path, { type: "file" });
+      const workbook = XLSX.readFile(excelFile.path, { type: "file" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-      fs.unlinkSync(csvFile.path);
+      fs.unlinkSync(excelFile.path);
 
-      if (zipFile) {
-        const zip = new AdmZip(zipFile.path);
-        zip.getEntries().forEach((entry) => {
-          if (!entry.isDirectory()) {
-            photoMap[path.basename(entry.entryName).toLowerCase()] = entry.getData();
+      // Extract embedded images from Excel file
+      if (workbook.Props && workbook.Props.embeddedImages) {
+        const embeddedImages = workbook.Props.embeddedImages;
+        for (const [key, imageData] of Object.entries(embeddedImages)) {
+          if (imageData && imageData.data) {
+            try {
+              const filename = `embedded_${key}.jpg`;
+              photoMap[filename.toLowerCase()] = imageData.data;
+            } catch (err) {
+              console.warn(`Failed to extract embedded image ${key}:`, err.message);
+            }
           }
-        });
-        fs.unlinkSync(zipFile.path);
+        }
       }
 
       if (!Array.isArray(rawRows) || rawRows.length === 0) {
-        return res.status(400).json({ success: false, message: "CSV file is empty or invalid." });
+        return res.status(400).json({ success: false, message: "Excel file is empty or invalid." });
       }
 
       const csvEmailSet = new Set();
@@ -362,7 +372,7 @@ adminApp.post(
               console.warn(photoWarning);
             }
           } else {
-            photoWarning = `Warning: Photo file not found in ZIP: ${row.photofilename}`;
+            photoWarning = `Warning: Embedded photo file not found: ${row.photofilename}`;
             console.warn(photoWarning);
           }
         } else if (row.photourl) {
@@ -703,6 +713,7 @@ adminApp.get("/analytics/all", async (req, res) => {
 
       {
         $project: {
+          createdAt: 1,
           Role: { $literal: "Employee" },
           Name: "$Name",
           ABS_NO: { $ifNull: ["$ABS_NO", "N/A"] },
@@ -821,6 +832,7 @@ adminApp.get("/analytics/all", async (req, res) => {
 
       {
         $project: {
+          createdAt: 1,
           Role: { $literal: "Family" },
           Name: "$Name",
           Linked_Employee_Name: { $ifNull: ["$emp.Name", "N/A"] },
@@ -873,8 +885,13 @@ adminApp.get("/analytics/all", async (req, res) => {
 
     const employees = await Employee.aggregate(employeePipeline);
     const family = await FamilyMember.aggregate(familyPipeline);
+    const combined = [...employees, ...family].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
 
-    res.json([...employees, ...family]);
+    res.json(combined);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });

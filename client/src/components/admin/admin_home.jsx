@@ -103,7 +103,7 @@ function AdminDashboard() {
         >
           <FaUpload className="action-icon" />
           <h5>Bulk Employee Upload</h5>
-          <p>Upload employees in batches using CSV and optional photo ZIP</p>
+          <p>Upload employees in batches using Excel with embedded photos</p>
         </div>
 
         <div

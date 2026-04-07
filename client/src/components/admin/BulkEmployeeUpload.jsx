@@ -12,6 +12,7 @@ const BulkEmployeeUpload = () => {
   const [previewHeaders, setPreviewHeaders] = useState([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [uploadWarnings, setUploadWarnings] = useState([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const zipInputRef = useRef(null);
@@ -38,18 +39,19 @@ const BulkEmployeeUpload = () => {
     "PhotoURL"
   ];
 
-  const handleCsvChange = async (event) => {
+  const handleExcelChange = async (event) => {
     const file = event.target.files[0];
     setMessage("");
     setError("");
+    setUploadWarnings([]);
     setPreviewRows([]);
     if (!file) {
       setCsvFile(null);
       return;
     }
 
-    if (!/\.csv$/i.test(file.name)) {
-      setError("Please upload a CSV file.");
+    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+      setError("Please upload an Excel file (.xlsx or .xls).");
       event.target.value = null;
       return;
     }
@@ -57,12 +59,11 @@ const BulkEmployeeUpload = () => {
     setCsvFile(file);
 
     try {
-      const text = await file.text();
-      const workbook = XLSX.read(text, { type: "string" });
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
       if (!rows || rows.length === 0) {
-        setError("The CSV file is empty or could not be parsed.");
+        setError("The Excel file is empty or could not be parsed.");
         return;
       }
 
@@ -71,7 +72,7 @@ const BulkEmployeeUpload = () => {
       setPreviewRows(rows.slice(0, 5));
     } catch (err) {
       console.error(err);
-      setError("Unable to read the CSV file. Please verify the format.");
+      setError("Unable to read the Excel file. Please verify the format.");
     }
   };
 
@@ -94,16 +95,17 @@ const BulkEmployeeUpload = () => {
   const handleUpload = async () => {
     setMessage("");
     setError("");
+    setUploadWarnings([]);
 
     if (!csvFile) {
-      setError("Please choose a CSV file before uploading.");
+      setError("Please choose an Excel file before uploading.");
       return;
     }
 
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append("csvFile", csvFile);
+      formData.append("excelFile", csvFile);
       if (zipFile) {
         formData.append("photoZip", zipFile);
       }
@@ -118,9 +120,11 @@ const BulkEmployeeUpload = () => {
         }
       );
 
+      const responseErrors = Array.isArray(response.data.errors) ? response.data.errors : [];
       setMessage(
         `${response.data.message} Created ${response.data.createdCount} of ${response.data.totalRows} rows.`
       );
+      setUploadWarnings(responseErrors);
       setError("");
       setCsvFile(null);
       setZipFile(null);
@@ -143,34 +147,33 @@ const BulkEmployeeUpload = () => {
   };
 
   const downloadTemplate = () => {
-    const sampleRow = [
-      "POLICE123",
-      "John Doe",
-      "john@example.com",
-      "TempPass@123",
-      "Inspector",
-      "1990-01-01",
-      "O+",
-      "170",
-      "68",
-      "9876543210",
-      "Male",
-      "MG Road",
-      "Hyderabad",
-      "Telangana",
-      "500001",
-      "john.jpg",
-      ""
+    const sampleData = [
+      sampleHeaders,
+      [
+        "POLICE123",
+        "John Doe",
+        "john@example.com",
+        "TempPass@123",
+        "Inspector",
+        "1990-01-01",
+        "O+",
+        "170",
+        "68",
+        "9876543210",
+        "Male",
+        "MG Road",
+        "Hyderabad",
+        "Telangana",
+        "500001",
+        "john.jpg",
+        ""
+      ]
     ];
 
-    const csv = [sampleHeaders.join(","), sampleRow.join(",")].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "employee_bulk_template.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.aoa_to_sheet(sampleData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Employees");
+    XLSX.writeFile(wb, "employee_bulk_template.xlsx");
   };
 
   return (
@@ -179,7 +182,7 @@ const BulkEmployeeUpload = () => {
         <div>
           <h2>Bulk Employee Upload</h2>
           <p className="text-muted">
-            Upload employee records via CSV. Optionally include a ZIP of photo files or add PhotoURL values in the CSV.
+            Upload employee records via Excel. Add PhotoURL values or embed photos directly in Excel cells.
           </p>
         </div>
         <button className="btn btn-light" onClick={() => navigate("/admin/dashboard")}>Back to Dashboard</button>
@@ -187,50 +190,51 @@ const BulkEmployeeUpload = () => {
 
       <div className="card shadow-sm p-4 mb-4">
         <div className="mb-3">
-          <label className="form-label fw-semibold">Employee CSV file</label>
+          <label className="form-label fw-semibold">Employee Excel file (.xlsx or .xls)</label>
           <input
             type="file"
-            accept=".csv"
+            accept=".xlsx,.xls"
             className="form-control"
-            onChange={handleCsvChange}
+            onChange={handleExcelChange}
             ref={fileInputRef}
-          />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label fw-semibold">Optional employee photo ZIP</label>
-          <input
-            type="file"
-            accept=".zip"
-            className="form-control"
-            onChange={handleZipChange}
-            ref={zipInputRef}
           />
         </div>
 
         <div className="d-flex flex-wrap gap-2 mb-4">
           <button className="btn btn-primary" onClick={handleUpload} disabled={uploading || !csvFile}>
             <FaCloudUploadAlt className="me-2" />
-            {uploading ? "Uploading..." : "Upload CSV"}
+            {uploading ? "Uploading..." : "Upload Excel"}
           </button>
           <button className="btn btn-outline-secondary" onClick={downloadTemplate} type="button">
-            <FaFileUpload className="me-2" />Download template
+            <FaFileUpload className="me-2" />Download Excel Template
           </button>
         </div>
 
         <div className="mb-3 text-muted">
           <small>
-            CSV must include headers like <code>ABS_NO</code>, <code>Name</code>, <code>Email</code>, <code>Password</code>, <code>Gender</code>, and address columns.
-            Use <code>PhotoFilename</code> to match names in the ZIP archive, or <code>PhotoURL</code> to fetch online images.
+            Excel file must include headers like <code>ABS_NO</code>, <code>Name</code>, <code>Email</code>, <code>Password</code>, <code>Gender</code>, and address columns.
+            You can embed photos directly in Excel cells or use the <code>PhotoURL</code> column for web images.
           </small>
         </div>
 
         {message && <div className="alert alert-success">{message}</div>}
         {error && <div className="alert alert-danger">{error}</div>}
+        {uploadWarnings.length > 0 && (
+          <div className="alert alert-warning">
+            <div className="fw-semibold mb-2">Some rows were skipped:</div>
+            <ul className="mb-0 ps-3">
+              {uploadWarnings.map((item) => (
+                <li key={item.row}>
+                  Row {item.row}: {item.errors.join(", ")}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {previewRows.length > 0 && (
           <div className="mt-4">
-            <h6>CSV preview (first 5 rows)</h6>
+            <h6>Excel preview (first 5 rows)</h6>
             <div className="table-responsive" style={{ maxHeight: 320, overflowY: "auto" }}>
               <table className="table table-sm table-bordered">
                 <thead>
