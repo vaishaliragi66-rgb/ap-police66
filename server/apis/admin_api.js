@@ -28,12 +28,18 @@ const bulkUpload = multer({
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === "csvFile") {
-      return cb(null, /\.csv$/i.test(file.originalname));
+      if (!/\.csv$/i.test(file.originalname)) {
+        return cb(new Error("CSV file must have .csv extension"));
+      }
+      return cb(null, true);
     }
     if (file.fieldname === "photoZip") {
-      return cb(null, /\.zip$/i.test(file.originalname));
+      if (!/\.zip$/i.test(file.originalname)) {
+        return cb(new Error("Photo file must have .zip extension"));
+      }
+      return cb(null, true);
     }
-    cb(null, false);
+    cb(new Error("Invalid field name"));
   }
 }).fields([
   { name: "csvFile", maxCount: 1 },
@@ -229,7 +235,15 @@ adminApp.post(
 
 adminApp.post(
   "/employee-bulk-upload",
-  bulkUpload,
+  (req, res, next) => {
+    bulkUpload(req, res, (err) => {
+      if (err) {
+        console.error("Multer error:", err.message);
+        return res.status(400).json({ success: false, message: `File error: ${err.message}` });
+      }
+      next();
+    });
+  },
   expressAsyncHandler(async (req, res) => {
     const csvFile = req.files?.csvFile?.[0];
     const zipFile = req.files?.photoZip?.[0];
@@ -336,6 +350,7 @@ adminApp.post(
         if (row.email) csvEmailSet.add(row.email.toLowerCase());
 
         let photoPath = "";
+        let photoWarning = "";
         if (row.photofilename) {
           const filename = path.basename(row.photofilename.toString()).toLowerCase();
           const fileData = photoMap[filename];
@@ -343,16 +358,19 @@ adminApp.post(
             try {
               photoPath = await writePhoto(fileData, filename);
             } catch (err) {
-              rowErrors.push(`Failed to save photo ${filename}: ${err.message}`);
+              photoWarning = `Warning: Failed to save photo ${filename}`;
+              console.warn(photoWarning);
             }
           } else {
-            rowErrors.push(`Photo file not found in ZIP: ${row.photofilename}`);
+            photoWarning = `Warning: Photo file not found in ZIP: ${row.photofilename}`;
+            console.warn(photoWarning);
           }
         } else if (row.photourl) {
           try {
             photoPath = await downloadPhotoFromUrl(row.photourl);
           } catch (err) {
-            rowErrors.push(`Failed to download photo URL: ${err.message}`);
+            photoWarning = `Warning: Failed to download photo URL`;
+            console.warn(photoWarning);
           }
         }
 
