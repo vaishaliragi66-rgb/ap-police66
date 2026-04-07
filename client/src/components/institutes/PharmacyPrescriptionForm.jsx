@@ -23,6 +23,7 @@ const PharmacyPrescriptionForm = () => {
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [employeeReport, setEmployeeReport] = useState(null);
   const [showReports, setShowReports] = useState(false);
+  const [showDoctorNotes, setShowDoctorNotes] = useState({});
 
   const navigate = useNavigate();
 
@@ -879,8 +880,19 @@ const handleSubmit = async (e) => {
                             </table>
 
                             {prescription.data.notes && (
-                              <div className="alert alert-info mt-2 mb-0 p-2">
-                                <small><strong>Doctor Notes:</strong> {prescription.data.notes}</small>
+                              <div className="mt-2">
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-info"
+                                  onClick={() => setShowDoctorNotes(prev => ({ ...prev, [pIdx]: !prev[pIdx] }))}
+                                >
+                                  {showDoctorNotes[pIdx] ? "Hide Doctor Notes" : "Show Doctor Notes"}
+                                </button>
+                                {showDoctorNotes[pIdx] && (
+                                  <div className="alert alert-info mt-2 mb-0 p-2">
+                                    <small><strong>Doctor Notes:</strong> {prescription.data.notes}</small>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

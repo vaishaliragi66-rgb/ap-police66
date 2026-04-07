@@ -753,17 +753,16 @@ const relevantDiseases = diseases.filter((d) => {
         Quantity: med.Quantity
       }));
 
-    for (let med of selectedMedicines) {
-      if (!uniqueMedicines.includes(med.Medicine_Name)) {
-        alert("Invalid medicine selected. Please choose from list.");
-        return;
-      }
-    }
+    // Removed validation - allow custom medicine names
+    // for (let med of selectedMedicines) {
+    //   if (!uniqueMedicines.includes(med.Medicine_Name)) {
+    //     alert("Invalid medicine selected. Please choose from list.");
+    //     return;
+    //   }
+    // }
 
-if (selectedMedicines.length === 0) {
-  alert("Please add at least one medicine");
-  return;
-}
+    // Medicines are now optional - removed validation
+    
     await axios.post(`${BACKEND_URL}/api/medical-actions`, {
       Institute_ID: formData.Institute_ID,
       employee_id: formData.Employee_ID,
@@ -1814,8 +1813,10 @@ if (validXrays.length === 0) {
         <div className="row g-2 align-items-end mb-3">
           <div className="col-md-2">
             <label className="form-label fw-semibold">Medicine</label>
-            <select
-              className="form-select"
+            <input
+              type="text"
+              className="form-control"
+              list={`medicine-list-${i}`}
               value={med.Medicine_Name}
               onChange={(e) => {
                 const copy = [...formData.Medicines];
@@ -1825,14 +1826,13 @@ if (validXrays.length === 0) {
                 }
                 setFormData(prev => ({ ...prev, Medicines: copy }));
               }}
-            >
-              <option value="">Select Medicine</option>
+              placeholder="Type or select medicine"
+            />
+            <datalist id={`medicine-list-${i}`}>
               {uniqueMedicines.map((name, idx) => (
-                <option key={idx} value={name}>
-                  {name}
-                </option>
+                <option key={idx} value={name} />
               ))}
-            </select>
+            </datalist>
           </div>
 
           <div className="col-md-2">

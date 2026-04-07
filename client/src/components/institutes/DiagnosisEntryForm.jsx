@@ -19,6 +19,7 @@ const DiagnosisEntryForm = () => {
   const [pastRecords, setPastRecords] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [tokenNumber, setTokenNumber] = useState(null);
+  const [showDoctorNotes, setShowDoctorNotes] = useState({});
 
 
   const [formData, setFormData] = useState({
@@ -780,8 +781,19 @@ const fetchPastRecords = async () => {
                         </ul>
 
                         {d.notes && (
-                          <div className="small text-muted">
-                            Notes: {d.notes}
+                          <div className="mt-2">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-info"
+                              onClick={() => setShowDoctorNotes(prev => ({ ...prev, [i]: !prev[i] }))}
+                            >
+                              {showDoctorNotes[i] ? "Hide Doctor Notes" : "Show Doctor Notes"}
+                            </button>
+                            {showDoctorNotes[i] && (
+                              <div className="small text-muted mt-2">
+                                Notes: {d.notes}
+                              </div>
+                            )}
                           </div>
                         )}
 

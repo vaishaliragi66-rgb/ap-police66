@@ -17,7 +17,7 @@ function GlobalHeader() {
 
           {/* Increased size */}
           <p className="text-sm md:text-base text-[#6B7280] mb-0">
-            Andhra Pradesh Police Management of Online Hospital Analytics Network
+            Police Management of Online Hospital Analytics Network
           </p>
 
           <p className="text-xs text-[#6B7280] mb-0">
