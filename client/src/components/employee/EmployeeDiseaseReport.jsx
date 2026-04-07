@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 const EmployeeDiseaseReport = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -13,6 +14,29 @@ const EmployeeDiseaseReport = () => {
   const [showType, setShowType] = useState("ALL"); // ALL | SELF | FAMILY
   const [familyFilter, setFamilyFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [masterMap, setMasterMap] = useState({});
+
+  const diseaseCategoryOptions = getMasterOptions(masterMap, "Disease Categories");
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     if (!employeeId) return;
@@ -179,12 +203,9 @@ const cleanNotesWithoutSymptoms = (notes) => {
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >
                 <option value="ALL">All</option>
-                <option value="Non-Communicable">
-                  Non-Communicable (Chronic)
-                </option>
-                <option value="Communicable">
-                  Communicable (Recent)
-                </option>
+                {diseaseCategoryOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
               </select>
             </div>
   

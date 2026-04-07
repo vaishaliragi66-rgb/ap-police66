@@ -1,7 +1,8 @@
-﻿import React, { useState, useRef } from "react";
+﻿import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { FaCamera, FaUser } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 const FamilyMemberRegistration = () => {
   const employeeId = localStorage.getItem("employeeId");
@@ -27,7 +28,33 @@ const FamilyMemberRegistration = () => {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [masterMap, setMasterMap] = useState({});
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
+
+  const relationshipOptions = getMasterOptions(masterMap, "Relationships");
+  const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -293,11 +320,9 @@ const FamilyMemberRegistration = () => {
               required
             >
               <option value="">Select Relationship</option>
-              <option value="Father">Father</option>
-              <option value="Mother">Mother</option>
-              <option value="Wife">Wife</option>
-              <option value="Son">Son</option>
-              <option value="Daughter">Daughter</option>
+              {relationshipOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
             </select>
           </div>
   
@@ -323,7 +348,7 @@ const FamilyMemberRegistration = () => {
               onChange={handleChange}
             >
               <option value="">Select</option>
-              {["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(bg => (
+              {bloodGroupOptions.map((bg) => (
                 <option key={bg} value={bg}>{bg}</option>
               ))}
             </select>

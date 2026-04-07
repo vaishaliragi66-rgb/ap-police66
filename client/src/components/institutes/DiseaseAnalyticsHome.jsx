@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 function DiseaseAnalyticsHome() {
 
@@ -8,6 +9,28 @@ function DiseaseAnalyticsHome() {
   const [category, setCategory] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [masterMap, setMasterMap] = useState({});
+  const diseaseCategoryOptions = getMasterOptions(masterMap, "Disease Categories");
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
 
   const goToAge = () => {
 
@@ -55,8 +78,9 @@ function DiseaseAnalyticsHome() {
             >
 
               <option value="">All</option>
-              <option value="Communicable">Communicable</option>
-              <option value="Non-Communicable">Non-Communicable</option>
+              {diseaseCategoryOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
 
             </select>
 

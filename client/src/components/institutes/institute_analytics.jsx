@@ -3,6 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 import {
   Bar,
   BarChart,
@@ -22,6 +23,34 @@ import {
 } from "recharts";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const DEFAULT_BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+const DEFAULT_DESIGNATIONS = [
+  "HC",
+  "ARSI",
+  "ASI",
+  "RSI",
+  "SI",
+  "RI",
+  "CI",
+  "DSP",
+  "AC",
+  "Adl.Commandant",
+  "Adl.SP",
+  "SP",
+  "COMMANDANT",
+  "DIG",
+  "IG",
+  "ADGP",
+  "DGP",
+  "AO",
+  "SR.Assistant",
+  "Jr.Assistant",
+  "Superintendent",
+  "CLASS IV",
+  "Record Assistant",
+  "COOK",
+  "OTHERS & PC"
+];
 
 const isPresent = (value) => {
   if (value === null || value === undefined) return false;
@@ -657,6 +686,7 @@ export default function InstituteAnalytics() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [masterMap, setMasterMap] = useState({});
 
   /* -------- Filters -------- */
   const [designationFilter, setDesignationFilter] = useState("");
@@ -674,6 +704,34 @@ export default function InstituteAnalytics() {
   const [ageMax, setAgeMax] = useState("");
 const [currentPage, setCurrentPage] = useState(1);
 const rowsPerPage = 10;
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) {
+          setMasterMap(data || {});
+        }
+      } catch (err) {
+        console.error("Failed to load master data in analytics", err);
+      }
+    };
+
+    loadMaster();
+
+    const handleMasterUpdate = () => loadMaster();
+    window.addEventListener("master-data-updated", handleMasterUpdate);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", handleMasterUpdate);
+    };
+  }, []);
+
+  const designationOptions = getMasterOptions(masterMap, "Designations");
+  const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
   useEffect(() => {
     const institute = JSON.parse(localStorage.getItem("institute"));
     if (!institute) {
@@ -851,31 +909,9 @@ const hasSmartCharts = smartCharts.length > 0;
                 onChange={(e) => setDesignationFilter(e.target.value)}
               >
                 <option value="">All Designations</option>
-                <option value="HC">HC</option>
-                <option value="ARSI">ARSI</option>
-                <option value="ASI">ASI</option>
-                <option value="RSI">RSI</option>
-                <option value="SI">SI</option>
-                <option value="RI">RI</option>
-                <option value="CI">CI</option>
-                <option value="DSP">DSP</option>
-                <option value="AC">AC</option>
-                <option value="Adl.Commandant">Adl.Commandant</option>
-                <option value="Adl.SP">Adl.SP</option>
-                <option value="SP">SP</option>
-                <option value="COMMANDANT">COMMANDANT</option>
-                <option value="DIG">DIG</option>
-                <option value="IG">IG</option>
-                <option value="ADGP">ADGP</option>
-                <option value="DGP">DGP</option>
-                <option value="AO">AO</option>
-                <option value="SR.Assistant">SR.Assistant</option>
-                <option value="Jr.Assistant">Jr.Assistant</option>
-                <option value="Superintendent">Superintendent</option>
-                <option value="CLASS IV">CLASS IV</option>
-                <option value="Record Assistant">Record Assistant</option>
-                <option value="COOK">CooK</option>
-                <option value="OTHERS & PC">Others & PC</option>
+                {(designationOptions.length ? designationOptions : DEFAULT_DESIGNATIONS).map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
               </select>
             </div>
 
@@ -903,14 +939,9 @@ const hasSmartCharts = smartCharts.length > 0;
                 onChange={(e) => setBloodGroupFilter(e.target.value)}
               >
                 <option value="">All Blood Groups</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
+                {(bloodGroupOptions.length ? bloodGroupOptions : DEFAULT_BLOOD_GROUPS).map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
               </select>
             </div>
 

@@ -1,6 +1,9 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
+const MasterCategory = require('../models/master_category');
+const MasterValue = require('../models/master_value');
 
 const router = express.Router();
 
@@ -20,8 +23,35 @@ router.get('/static', async (req, res) => {
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
     const data = JSON.parse(raw || '{}');
 
-    const comm = sortUnique(data.communicable || []);
-    const non = sortUnique(data.nonCommunicable || []);
+    let comm = sortUnique(data.communicable || []);
+    let non = sortUnique(data.nonCommunicable || []);
+
+    const instituteId = String(req.query.instituteId || '').trim();
+    if (mongoose.Types.ObjectId.isValid(instituteId)) {
+      const diseasesCategory = await MasterCategory.findOne({
+        Institute_ID: instituteId,
+        normalized_name: 'diseases'
+      }).select('_id');
+
+      if (diseasesCategory) {
+        const customDiseases = await MasterValue.find({
+          Institute_ID: instituteId,
+          category_id: diseasesCategory._id,
+          status: 'Active',
+          'meta.kind': 'disease'
+        }).select('value_name meta');
+
+        customDiseases.forEach((item) => {
+          const group = String(item?.meta?.group || '').trim();
+          if (group === 'Communicable') comm.push(item.value_name);
+          if (group === 'Non-Communicable') non.push(item.value_name);
+        });
+
+        comm = sortUnique(comm);
+        non = sortUnique(non);
+      }
+    }
+
     const all = sortUnique(data.all || [].concat(comm, non));
 
     return res.json({ communicable: comm, nonCommunicable: non, all });

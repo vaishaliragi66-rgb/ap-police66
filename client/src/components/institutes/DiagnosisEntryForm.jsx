@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +31,45 @@ const DiagnosisEntryForm = () => {
   });
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+  const testsByCategory = useMemo(() => {
+    const grouped = {};
+    Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
+      grouped[category] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
+        _id: `static-${category}-${idx}`,
+        name: String(test?.name || "").trim(),
+        reference: test?.reference || "",
+        unit: test?.unit || ""
+      })).filter((item) => item.name);
+    });
+
+    (testsMaster || []).forEach((test) => {
+      const group = String(test?.Group || "").trim();
+      const testName = String(test?.Test_Name || "").trim();
+      if (!group || !testName) return;
+      if (!grouped[group]) grouped[group] = [];
+      grouped[group].push({
+        _id: test._id,
+        name: testName,
+        reference: test.Reference_Range || "",
+        unit: test.Units || ""
+      });
+    });
+
+    Object.keys(grouped).forEach((group) => {
+      const seen = new Set();
+      grouped[group] = grouped[group]
+        .filter((item) => {
+          const key = String(item?.name || "").trim().toLowerCase();
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    return grouped;
+  }, [testsMaster]);
 
   const formatDateDMY = (dateValue) => {
   if (!dateValue) return "—";
@@ -330,19 +369,29 @@ const handleTestChange = (index, field, value) => {
       };
     } else if (field === "Test_Name") {
       const cat = updated[index].Category;
-      const list = cat && diagnosticTestsByCategory[cat] ? diagnosticTestsByCategory[cat] : [];
+      const list = cat && testsByCategory[cat] ? testsByCategory[cat] : [];
       const found = list.find(x => normalizeText(x.name) === normalizeText(value));
       const master = findMasterTest({ ...updated[index], Test_Name: value, Group: value });
 
-      updated[index] = {
-        ...updated[index],
-        Test_ID: master?._id || updated[index].Test_ID || "",
-        Test_Name: value,
-        Reference_Range:
-          master?.Reference_Range || found?.reference || updated[index].Reference_Range || "",
-        Units:
-          master?.Units || found?.unit || updated[index].Units || ""
-      };
+      if (found) {
+        updated[index] = {
+          ...updated[index],
+          Test_ID: master?._id || found._id || updated[index].Test_ID || "",
+          Test_Name: found.name,
+          Reference_Range:
+            master?.Reference_Range || found.reference || updated[index].Reference_Range || "",
+          Units:
+            master?.Units || found.unit || updated[index].Units || ""
+        };
+      } else {
+        updated[index] = {
+          ...updated[index],
+          Test_ID: master?._id || updated[index].Test_ID || "",
+          Test_Name: value,
+          Reference_Range: master?.Reference_Range || updated[index].Reference_Range || "",
+          Units: master?.Units || updated[index].Units || ""
+        };
+      }
     } else {
       updated[index] = {
         ...updated[index],
@@ -789,7 +838,7 @@ const fetchPastRecords = async () => {
                                   onChange={e => handleTestChange(i, "Category", e.target.value)}
                                 >
                                   <option value="">Select Category</option>
-                                  {Object.keys(diagnosticTestsByCategory).map(cat => (
+                                  {Object.keys(testsByCategory).map(cat => (
                                     <option key={cat} value={cat}>{cat}</option>
                                   ))}
                                 </select>
@@ -799,8 +848,8 @@ const fetchPastRecords = async () => {
                               <label className="form-label fw-semibold">Test Name</label>
                                 {(() => {
                                   const categoryOptions =
-                                    t.Category && diagnosticTestsByCategory[t.Category]
-                                      ? diagnosticTestsByCategory[t.Category]
+                                    t.Category && testsByCategory[t.Category]
+                                      ? testsByCategory[t.Category]
                                       : [];
                                   const hasSelectedOption = categoryOptions.some(
                                     (testObj) =>

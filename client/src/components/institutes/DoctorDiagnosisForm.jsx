@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
@@ -18,6 +18,43 @@ const DoctorDiagnosisForm = () => {
   const [visitId, setVisitId] = useState(null);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+  const testsByCategory = useMemo(() => {
+    const grouped = {};
+    Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
+      grouped[category] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
+        _id: `static-${category}-${idx}`,
+        name: String(test?.name || "").trim(),
+        reference: test?.reference || "",
+        unit: test?.unit || ""
+      })).filter((item) => item.name);
+    });
+
+    (testsMaster || []).forEach((test) => {
+      const group = String(test?.Group || "").trim();
+      const testName = String(test?.Test_Name || "").trim();
+      if (!group || !testName) return;
+      if (!grouped[group]) grouped[group] = [];
+      grouped[group].push({
+        _id: test._id,
+        name: testName,
+        reference: test.Reference_Range || "",
+        unit: test.Units || ""
+      });
+    });
+    Object.keys(grouped).forEach((group) => {
+      const seen = new Set();
+      grouped[group] = grouped[group]
+        .filter((item) => {
+          const key = String(item?.name || "").trim().toLowerCase();
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
+    });
+    return grouped;
+  }, [testsMaster]);
 
   useEffect(() => {
     const localInstituteId = localStorage.getItem("instituteId");
@@ -67,10 +104,10 @@ const DoctorDiagnosisForm = () => {
         updated[index] = { ...updated[index], Category: value, Test_ID: "", Test_Name: "", Reference_Range: "", Units: "" };
       } else if (field === "Test_Name") {
         const cat = updated[index].Category;
-        const list = cat && diagnosticTestsByCategory[cat] ? diagnosticTestsByCategory[cat] : [];
+        const list = cat && testsByCategory[cat] ? testsByCategory[cat] : [];
         const found = list.find(x => x.name === value);
         if (found) {
-          updated[index] = { ...updated[index], Test_Name: found.name, Reference_Range: found.reference || "", Units: found.unit || "" };
+          updated[index] = { ...updated[index], Test_ID: found._id || "", Test_Name: found.name, Reference_Range: found.reference || "", Units: found.unit || "" };
         } else {
           updated[index] = { ...updated[index], Test_Name: value };
         }
@@ -145,7 +182,7 @@ const DoctorDiagnosisForm = () => {
                   <label style={{ fontSize:12, fontWeight:600 }}>Category</label>
                   <select className="form-select" value={t.Category||""} onChange={e=>handleTestChange(i,'Category', e.target.value)}>
                     <option value="">Select Category</option>
-                    {Object.keys(diagnosticTestsByCategory).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+                    {Object.keys(testsByCategory).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
                   </select>
                 </div>
 
@@ -153,7 +190,7 @@ const DoctorDiagnosisForm = () => {
                   <label style={{ fontSize:12, fontWeight:600 }}>Test Name</label>
                   <select className="form-select" value={t.Test_Name||""} onChange={e=>handleTestChange(i,'Test_Name', e.target.value)} disabled={!t.Category}>
                     <option value="">Select Test</option>
-                    {(t.Category && diagnosticTestsByCategory[t.Category] ? diagnosticTestsByCategory[t.Category] : []).map(testObj => (<option key={testObj.name} value={testObj.name}>{testObj.name}</option>))}
+                    {(t.Category && testsByCategory[t.Category] ? testsByCategory[t.Category] : []).map(testObj => (<option key={testObj.name} value={testObj.name}>{testObj.name}</option>))}
                   </select>
                 </div>
 
