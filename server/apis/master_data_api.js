@@ -1,0 +1,1017 @@
+const express = require("express");
+const mongoose = require("mongoose");
+const fs = require("fs");
+const path = require("path");
+const { verifyToken } = require("./instituteAuth");
+const MasterCategory = require("../models/master_category");
+const MasterValue = require("../models/master_value");
+const DiagnosisTest = require("../models/diagnostics_test");
+
+const router = express.Router();
+const DISEASES_FILE = path.join(__dirname, "..", "data", "diseases.json");
+
+const DEFAULT_CATEGORIES = [
+  "Medicines",
+  "Tests",
+  "Diseases",
+  "Disease Categories",
+  "Disease Severity Levels",
+  "Relationships",
+  "Employee Report Roles",
+  "Medicine Types",
+  "Medicine Categories",
+  "Xray Categories",
+  "Xray Body Parts",
+  "Xray Views",
+  "Xray Types",
+  "Food Timings",
+  "Institute Roles",
+  "Issued From Sources",
+  "Ledger Transaction Types",
+  "Ledger Directions",
+  "Rows Per Page",
+  "Designations",
+  "Blood Groups",
+  "Districts",
+  "States",
+  "Residential Areas",
+  "Rank Categories"
+];
+
+const DEFAULT_VALUE_SEEDS = {
+  "Blood Groups": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
+  "Designations": [
+    "HC",
+    "ARSI",
+    "ASI",
+    "RSI",
+    "SI",
+    "RI",
+    "CI",
+    "DSP",
+    "AC",
+    "Adl.Commandant",
+    "Adl.SP",
+    "SP",
+    "COMMANDANT",
+    "DIG",
+    "IG",
+    "ADGP",
+    "DGP",
+    "AO",
+    "SR.Assistant",
+    "Jr.Assistant",
+    "Superintendent",
+    "CLASS IV",
+    "Record Assistant",
+    "COOK",
+    "OTHERS & PC"
+  ],
+  "Districts": [
+    "Hyderabad",
+    "Visakhapatnam",
+    "Vijayawada",
+    "Guntur",
+    "Tirupati",
+    "Warangal",
+    "Karimnagar",
+    "Khammam",
+    "Nizamabad",
+    "Rangareddy",
+    "Medak",
+    "Srikakulam",
+    "Vizianagaram",
+    "East Godavari",
+    "West Godavari",
+    "Krishna",
+    "Prakasam",
+    "Nellore",
+    "Kurnool",
+    "Anantapur",
+    "Kadapa",
+    "Chittoor"
+  ],
+  "States": [
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+    "Andaman and Nicobar Islands",
+    "Chandigarh",
+    "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi",
+    "Jammu and Kashmir",
+    "Ladakh",
+    "Lakshadweep",
+    "Puducherry"
+  ],
+  "Tests": [
+    "HEMATOLOGY",
+    "DIABETES & GLUCOSE",
+    "LIPID PROFILE",
+    "LIVER FUNCTION TESTS (LFT)",
+    "KIDNEY FUNCTION TESTS (KFT)",
+    "THYROID PROFILE",
+    "ELECTROLYTES",
+    "URINALYSIS",
+    "CARDIAC MARKERS",
+    "VITAMINS & MINERALS",
+    "COAGULATION STUDIES",
+    "INFECTIOUS DISEASE PANEL",
+    "TUMOR MARKERS",
+    "HORMONAL PROFILE",
+    "BONE HEALTH",
+    "IMMUNOLOGY"
+  ],
+  "Diseases": ["Communicable", "Non-Communicable"],
+  "Disease Categories": ["Communicable", "Non-Communicable"],
+  "Disease Severity Levels": ["Mild", "Moderate", "Severe", "Chronic"],
+  "Relationships": ["Father", "Mother", "Wife", "Husband", "Son", "Daughter"],
+  "Employee Report Roles": ["Employee", "Family"],
+  "Medicine Types": [
+    "Tablet",
+    "Capsule",
+    "Syrup",
+    "Injection",
+    "Ointment",
+    "Drops",
+    "Inhaler",
+    "Powder",
+    "Other"
+  ],
+  "Medicine Categories": [
+    "Antibiotic",
+    "Analgesic",
+    "Antipyretic",
+    "Antihistamine",
+    "Antacid",
+    "Vitamin",
+    "Cardiac",
+    "Diabetic",
+    "Other"
+  ],
+  "Xray Categories": [
+    "Head & Neck",
+    "Chest & Thorax",
+    "Upper Limb",
+    "Lower Limb",
+    "Spine",
+    "Abdomen"
+  ],
+  "Xray Body Parts": [
+    "Skull",
+    "Sinus",
+    "Cervical spine",
+    "Chest",
+    "Shoulder",
+    "Humerus",
+    "Elbow",
+    "Forearm",
+    "Wrist",
+    "Hand",
+    "Finger",
+    "Pelvis",
+    "Hip",
+    "Femur",
+    "Knee",
+    "Tibia/Fibula",
+    "Ankle",
+    "Foot",
+    "Toe",
+    "Thoracic Spine",
+    "Lumbar Spine",
+    "Sacrum & Coccyx",
+    "Abdomen"
+  ],
+  "Xray Views": ["AP", "PA", "Lateral", "Oblique", "Towne", "Waters", "Caldwell", "Decubitus", "Lordotic", "Expiratory", "Axillary", "Skyline", "Mortise", "Supine", "Erect"],
+  "Xray Types": [
+    "Skull X-ray – AP view",
+    "Skull X-ray – Lateral view (Right)",
+    "Skull X-ray – Lateral view (Left)",
+    "Skull X-ray – Towne view",
+    "Sinus X-ray – Waters view (occipitomental)",
+    "Sinus X-ray – Caldwell view",
+    "Cervical spine X-ray – AP view",
+    "Chest X-ray – PA view",
+    "Pelvis X-ray – AP view",
+    "Abdomen X-ray – Supine view"
+  ],
+  "Food Timings": ["Before Food", "After Food"],
+  "Institute Roles": ["doctor", "pharmacist", "diagnosis", "xray", "front_desk"],
+  "Issued From Sources": [
+    "Chief Office-Hyderabad",
+    "1st Battalion-Yousufguda",
+    "2nd Battalion-Asifabad",
+    "3rd Battalion-Ibrahimpatnam",
+    "4th Battalion-Nampally",
+    "5th Battalion-Bhoopalapally",
+    "6th Battalion-Kothagudem",
+    "7th Battalion-Dichpally",
+    "8th Battalion-Kondapur",
+    "9th Battalion",
+    "10th Battalion-Bachupally",
+    "11th Battalion",
+    "12th Battalion-Anantapur",
+    "13th Battalion-Mancherial",
+    "14th Battalion",
+    "15th Battalion-Sattupally",
+    "16th Battalion",
+    "17th Battalion-Siricilla",
+    "PTC - Warangal",
+    "PTC - Karimnagar",
+    "PTC - Medchal",
+    "SAR CPL-Amberpet",
+    "CAR-Gachibowli",
+    "RBVRR TSPA",
+    "GREYHOUNDS",
+    "OCTOPUS"
+  ],
+  "Ledger Transaction Types": [
+    "MAINSTORE_ADD",
+    "STORE_TRANSFER",
+    "PRESCRIPTION_ISSUE",
+    "SUBSTORE_ADD"
+  ],
+  "Ledger Directions": ["IN", "OUT"],
+  "Rows Per Page": ["5", "10", "25", "50", "100"],
+  "Medicines": ["Paracetamol", "Amoxicillin", "Ibuprofen", "Vitamin D"],
+  "Residential Areas": [
+    "Hyderabad",
+    "Secunderabad",
+    "Jubilee Hills",
+    "Banjara Hills",
+    "Begumpet",
+    "Madhapur",
+    "Gachibowli",
+    "Ameerpet",
+    "Kukatpally",
+    "Hitech City",
+    "MG Road",
+    "100 Feet Road"
+  ],
+  "Rank Categories": [
+    "Constable",
+    "Head Constable",
+    "Assistant Sub Inspector",
+    "Sub-Inspector",
+    "Inspector",
+    "Deputy Superintendent of Police",
+    "Superintendent of Police"
+  ]
+};
+
+const normalize = (value) => String(value || "").trim().toLowerCase();
+
+const sortUnique = (arr) => {
+  if (!Array.isArray(arr)) return [];
+  return [...new Set(arr.map((item) => String(item || "").trim()).filter(Boolean))].sort((a, b) =>
+    a.toLowerCase().localeCompare(b.toLowerCase())
+  );
+};
+
+const escapeRegex = (value) => String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const requireInstituteAdmin = (req, res, next) => {
+  if (req.user?.role !== "institute") {
+    return res.status(403).json({ message: "Only institute admin can modify master data" });
+  }
+  next();
+};
+
+const ensureDefaultCategories = async (instituteId) => {
+  const existing = await MasterCategory.find({ Institute_ID: instituteId }).select("normalized_name");
+  const existingSet = new Set(existing.map((item) => item.normalized_name));
+
+  const docs = DEFAULT_CATEGORIES
+    .filter((name) => !existingSet.has(normalize(name)))
+    .map((category_name) => ({
+      Institute_ID: instituteId,
+      category_name,
+      normalized_name: normalize(category_name),
+      status: "Active"
+    }));
+
+  if (docs.length) {
+    await MasterCategory.insertMany(docs, { ordered: false });
+  }
+};
+
+const ensureDefaultValues = async (instituteId) => {
+  const categories = await MasterCategory.find({ Institute_ID: instituteId }).select("_id category_name normalized_name");
+  if (!categories.length) {
+    return;
+  }
+
+  const existingValues = await MasterValue.find({ Institute_ID: instituteId }).select("category_id normalized_value");
+  const existingByCategory = new Map();
+
+  existingValues.forEach((item) => {
+    const key = String(item.category_id);
+    if (!existingByCategory.has(key)) {
+      existingByCategory.set(key, new Set());
+    }
+    existingByCategory.get(key).add(item.normalized_value);
+  });
+
+  const docs = [];
+
+  categories.forEach((category) => {
+    const seedValues = DEFAULT_VALUE_SEEDS[category.category_name] || [];
+    const existingSet = existingByCategory.get(String(category._id)) || new Set();
+
+    seedValues.forEach((value_name) => {
+      const normalized_value = normalize(value_name);
+      if (existingSet.has(normalized_value)) {
+        return;
+      }
+
+      docs.push({
+        Institute_ID: instituteId,
+        category_id: category._id,
+        value_name,
+        normalized_value,
+        status: "Active",
+        meta: {}
+      });
+    });
+  });
+
+  if (docs.length) {
+    await MasterValue.insertMany(docs, { ordered: false });
+  }
+};
+
+const getCategoryByName = async (instituteId, categoryName) => {
+  return MasterCategory.findOne({
+    Institute_ID: instituteId,
+    normalized_name: normalize(categoryName)
+  });
+};
+
+router.get("/public-map", async (req, res) => {
+  try {
+    const instituteId = String(req.query.instituteId || "").trim();
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Valid instituteId is required" });
+    }
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const categories = await MasterCategory.find({ Institute_ID: instituteId, status: "Active" });
+    const values = await MasterValue.find({ Institute_ID: instituteId, status: "Active" });
+
+    const categoryNameById = new Map(categories.map((c) => [String(c._id), c.category_name]));
+    const result = {};
+
+    categories.forEach((cat) => {
+      result[cat.category_name] = [];
+    });
+
+    values.forEach((item) => {
+      const categoryName = categoryNameById.get(String(item.category_id));
+      if (!categoryName) return;
+      result[categoryName].push({
+        id: item._id,
+        value_name: item.value_name,
+        meta: item.meta || {}
+      });
+    });
+
+    Object.keys(result).forEach((key) => {
+      result[key].sort((a, b) => a.value_name.localeCompare(b.value_name));
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error("GET /master-data-api/public-map error", err);
+    res.status(500).json({ message: "Failed to load public master data", error: err.message });
+  }
+});
+
+router.get("/categories", verifyToken, async (req, res) => {
+  try {
+    const instituteId = req.user?.instituteId;
+    if (!instituteId) {
+      return res.status(400).json({ message: "Institute id missing in token" });
+    }
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+    const categories = await MasterCategory.find({ Institute_ID: instituteId }).sort({ category_name: 1 });
+    res.json(categories);
+  } catch (err) {
+    console.error("GET /master-data-api/categories error", err);
+    res.status(500).json({ message: "Failed to load categories", error: err.message });
+  }
+});
+
+router.post("/categories", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const categoryName = String(req.body.category_name || "").trim();
+
+    if (!categoryName) {
+      return res.status(400).json({ message: "Category name is required" });
+    }
+
+    const normalizedName = normalize(categoryName);
+
+    const existing = await MasterCategory.findOne({
+      Institute_ID: instituteId,
+      normalized_name: normalizedName
+    });
+
+    if (existing) {
+      return res.status(409).json({ message: "Category already exists" });
+    }
+
+    const created = await MasterCategory.create({
+      Institute_ID: instituteId,
+      category_name: categoryName,
+      normalized_name: normalizedName,
+      status: "Active"
+    });
+
+    res.status(201).json(created);
+  } catch (err) {
+    console.error("POST /master-data-api/categories error", err);
+    res.status(500).json({ message: "Failed to create category", error: err.message });
+  }
+});
+
+router.put("/categories/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+    const categoryName = String(req.body.category_name || "").trim();
+    const status = req.body.status;
+
+    const category = await MasterCategory.findOne({ _id: id, Institute_ID: instituteId });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    if (categoryName) {
+      const normalizedName = normalize(categoryName);
+      const duplicate = await MasterCategory.findOne({
+        _id: { $ne: id },
+        Institute_ID: instituteId,
+        normalized_name: normalizedName
+      });
+      if (duplicate) {
+        return res.status(409).json({ message: "Category already exists" });
+      }
+      category.category_name = categoryName;
+      category.normalized_name = normalizedName;
+    }
+
+    if (status === "Active" || status === "Inactive") {
+      category.status = status;
+    }
+
+    await category.save();
+    res.json(category);
+  } catch (err) {
+    console.error("PUT /master-data-api/categories/:id error", err);
+    res.status(500).json({ message: "Failed to update category", error: err.message });
+  }
+});
+
+router.delete("/categories/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+
+    const category = await MasterCategory.findOne({ _id: id, Institute_ID: instituteId });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    await MasterValue.deleteMany({ Institute_ID: instituteId, category_id: category._id });
+    await category.deleteOne();
+
+    res.json({ message: "Category and related values deleted" });
+  } catch (err) {
+    console.error("DELETE /master-data-api/categories/:id error", err);
+    res.status(500).json({ message: "Failed to delete category", error: err.message });
+  }
+});
+
+router.get("/values", verifyToken, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { categoryId, status } = req.query;
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const query = { Institute_ID: instituteId };
+
+    if (categoryId) {
+      query.category_id = categoryId;
+    }
+
+    if (status && ["Active", "Inactive"].includes(status)) {
+      query.status = status;
+    }
+
+    const values = await MasterValue.find(query)
+      .populate("category_id", "category_name")
+      .sort({ value_name: 1 });
+
+    res.json(values);
+  } catch (err) {
+    console.error("GET /master-data-api/values error", err);
+    res.status(500).json({ message: "Failed to load values", error: err.message });
+  }
+});
+
+router.post("/values", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const categoryId = String(req.body.category_id || "").trim();
+    const valueName = String(req.body.value_name || "").trim();
+
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      return res.status(400).json({ message: "Valid category_id is required" });
+    }
+
+    if (!valueName) {
+      return res.status(400).json({ message: "value_name is required" });
+    }
+
+    const category = await MasterCategory.findOne({ _id: categoryId, Institute_ID: instituteId });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    const normalizedValue = normalize(valueName);
+
+    const duplicate = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: categoryId,
+      normalized_value: normalizedValue
+    });
+
+    if (duplicate) {
+      return res.status(409).json({ message: "Value already exists in this category" });
+    }
+
+    const created = await MasterValue.create({
+      Institute_ID: instituteId,
+      category_id: categoryId,
+      value_name: valueName,
+      normalized_value: normalizedValue,
+      status: req.body.status === "Inactive" ? "Inactive" : "Active",
+      meta: req.body.meta || {}
+    });
+
+    const populated = await MasterValue.findById(created._id).populate("category_id", "category_name");
+    res.status(201).json(populated);
+  } catch (err) {
+    console.error("POST /master-data-api/values error", err);
+    res.status(500).json({ message: "Failed to create value", error: err.message });
+  }
+});
+
+router.put("/values/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+    const valueName = String(req.body.value_name || "").trim();
+    const status = req.body.status;
+
+    const valueDoc = await MasterValue.findOne({ _id: id, Institute_ID: instituteId });
+    if (!valueDoc) {
+      return res.status(404).json({ message: "Value not found" });
+    }
+
+    if (valueName) {
+      const normalizedValue = normalize(valueName);
+      const duplicate = await MasterValue.findOne({
+        _id: { $ne: id },
+        Institute_ID: instituteId,
+        category_id: valueDoc.category_id,
+        normalized_value: normalizedValue
+      });
+      if (duplicate) {
+        return res.status(409).json({ message: "Value already exists in this category" });
+      }
+      valueDoc.value_name = valueName;
+      valueDoc.normalized_value = normalizedValue;
+    }
+
+    if (status === "Active" || status === "Inactive") {
+      valueDoc.status = status;
+    }
+
+    if (req.body.meta && typeof req.body.meta === "object") {
+      valueDoc.meta = req.body.meta;
+    }
+
+    await valueDoc.save();
+    const populated = await MasterValue.findById(valueDoc._id).populate("category_id", "category_name");
+    res.json(populated);
+  } catch (err) {
+    console.error("PUT /master-data-api/values/:id error", err);
+    res.status(500).json({ message: "Failed to update value", error: err.message });
+  }
+});
+
+router.delete("/values/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+
+    const valueDoc = await MasterValue.findOne({ _id: id, Institute_ID: instituteId });
+    if (!valueDoc) {
+      return res.status(404).json({ message: "Value not found" });
+    }
+
+    await valueDoc.deleteOne();
+    res.json({ message: "Value deleted" });
+  } catch (err) {
+    console.error("DELETE /master-data-api/values/:id error", err);
+    res.status(500).json({ message: "Failed to delete value", error: err.message });
+  }
+});
+
+router.get("/active-map", verifyToken, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const categories = await MasterCategory.find({ Institute_ID: instituteId, status: "Active" });
+    const values = await MasterValue.find({ Institute_ID: instituteId, status: "Active" });
+
+    const categoryNameById = new Map(categories.map((c) => [String(c._id), c.category_name]));
+    const result = {};
+
+    categories.forEach((cat) => {
+      result[cat.category_name] = [];
+    });
+
+    values.forEach((item) => {
+      const categoryName = categoryNameById.get(String(item.category_id));
+      if (!categoryName) return;
+      result[categoryName].push({
+        id: item._id,
+        value_name: item.value_name,
+        meta: item.meta || {}
+      });
+    });
+
+    Object.keys(result).forEach((key) => {
+      result[key].sort((a, b) => a.value_name.localeCompare(b.value_name));
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error("GET /master-data-api/active-map error", err);
+    res.status(500).json({ message: "Failed to load active master data", error: err.message });
+  }
+});
+
+router.get("/tests-structure", verifyToken, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const testsCategory = await getCategoryByName(instituteId, "Tests");
+    const customValues = testsCategory
+      ? await MasterValue.find({
+          Institute_ID: instituteId,
+          category_id: testsCategory._id,
+          status: "Active"
+        }).lean()
+      : [];
+
+    const dbTests = await DiagnosisTest.find().sort({ Group: 1, Test_Name: 1 }).lean();
+
+    const categoriesSet = new Set(
+      dbTests.map((test) => String(test.Group || "").trim()).filter(Boolean)
+    );
+
+    customValues
+      .filter((value) => value?.meta?.kind === "category")
+      .forEach((value) => {
+        if (value.value_name) categoriesSet.add(String(value.value_name).trim());
+      });
+
+    const testsByCategory = {};
+    const seenByCategory = new Map();
+
+    [...categoriesSet].forEach((category) => {
+      testsByCategory[category] = [];
+      seenByCategory.set(category, new Set());
+    });
+
+    dbTests.forEach((test) => {
+      const category = String(test.Group || "").trim();
+      if (!category) return;
+      if (!testsByCategory[category]) {
+        testsByCategory[category] = [];
+        seenByCategory.set(category, new Set());
+      }
+      const key = normalize(test.Test_Name);
+      if (seenByCategory.get(category).has(key)) return;
+      seenByCategory.get(category).add(key);
+      testsByCategory[category].push({
+        id: test._id,
+        name: test.Test_Name,
+        reference: test.Reference_Range || "",
+        unit: test.Units || "",
+        source: "diagnosis-test"
+      });
+    });
+
+    customValues
+      .filter((value) => value?.meta?.kind === "test")
+      .forEach((value) => {
+        const category = String(value?.meta?.category || "").trim();
+        if (!category) return;
+        if (!testsByCategory[category]) {
+          testsByCategory[category] = [];
+          seenByCategory.set(category, new Set());
+        }
+        const key = normalize(value.value_name);
+        if (seenByCategory.get(category).has(key)) return;
+        seenByCategory.get(category).add(key);
+        testsByCategory[category].push({
+          id: value._id,
+          name: value.value_name,
+          reference: value?.meta?.reference || "",
+          unit: value?.meta?.unit || "",
+          source: "master"
+        });
+      });
+
+    Object.keys(testsByCategory).forEach((category) => {
+      testsByCategory[category].sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+    });
+
+    const categories = Object.keys(testsByCategory).sort((a, b) => a.localeCompare(b));
+    res.json({ categories, testsByCategory });
+  } catch (err) {
+    console.error("GET /master-data-api/tests-structure error", err);
+    res.status(500).json({ message: "Failed to load tests structure", error: err.message });
+  }
+});
+
+router.post("/tests/category", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const categoryName = String(req.body.name || "").trim();
+
+    if (!categoryName) {
+      return res.status(400).json({ message: "Category name is required" });
+    }
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+    const testsCategory = await getCategoryByName(instituteId, "Tests");
+    if (!testsCategory) {
+      return res.status(404).json({ message: "Tests category not found" });
+    }
+
+    const duplicate = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: testsCategory._id,
+      normalized_value: normalize(categoryName),
+      "meta.kind": "category"
+    });
+
+    if (duplicate) {
+      return res.status(409).json({ message: "Test category already exists" });
+    }
+
+    const created = await MasterValue.create({
+      Institute_ID: instituteId,
+      category_id: testsCategory._id,
+      value_name: categoryName,
+      normalized_value: normalize(categoryName),
+      status: "Active",
+      meta: { kind: "category" }
+    });
+
+    res.status(201).json(created);
+  } catch (err) {
+    console.error("POST /master-data-api/tests/category error", err);
+    res.status(500).json({ message: "Failed to create test category", error: err.message });
+  }
+});
+
+router.post("/tests", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const category = String(req.body.category || "").trim();
+    const testName = String(req.body.testName || "").trim();
+    const referenceRange = String(req.body.referenceRange || "").trim();
+    const unit = String(req.body.unit || "").trim();
+
+    if (!category || !testName) {
+      return res.status(400).json({ message: "Both category and testName are required" });
+    }
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+    const testsCategory = await getCategoryByName(instituteId, "Tests");
+    if (!testsCategory) {
+      return res.status(404).json({ message: "Tests category not found" });
+    }
+
+    const categoryExists = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: testsCategory._id,
+      normalized_value: normalize(category),
+      "meta.kind": "category"
+    });
+
+    if (!categoryExists) {
+      await MasterValue.create({
+        Institute_ID: instituteId,
+        category_id: testsCategory._id,
+        value_name: category,
+        normalized_value: normalize(category),
+        status: "Active",
+        meta: { kind: "category" }
+      });
+    }
+
+    const existingTest = await DiagnosisTest.findOne({
+      Test_Name: { $regex: `^${escapeRegex(testName)}$`, $options: "i" }
+    });
+
+    if (existingTest) {
+      existingTest.Group = category;
+      if (referenceRange) existingTest.Reference_Range = referenceRange;
+      if (unit) existingTest.Units = unit;
+      await existingTest.save();
+    } else {
+      await DiagnosisTest.create({
+        Test_Name: testName,
+        Group: category,
+        Reference_Range: referenceRange,
+        Units: unit
+      });
+    }
+
+    const duplicateMasterTest = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: testsCategory._id,
+      normalized_value: normalize(testName),
+      "meta.kind": "test",
+      "meta.categoryNormalized": normalize(category)
+    });
+
+    if (!duplicateMasterTest) {
+      await MasterValue.create({
+        Institute_ID: instituteId,
+        category_id: testsCategory._id,
+        value_name: testName,
+        normalized_value: normalize(testName),
+        status: "Active",
+        meta: {
+          kind: "test",
+          category,
+          categoryNormalized: normalize(category),
+          reference: referenceRange,
+          unit
+        }
+      });
+    }
+
+    res.status(201).json({ message: "Test added successfully" });
+  } catch (err) {
+    console.error("POST /master-data-api/tests error", err);
+    res.status(500).json({ message: "Failed to add test", error: err.message });
+  }
+});
+
+router.get("/diseases-structure", verifyToken, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    let communicable = [];
+    let nonCommunicable = [];
+
+    if (fs.existsSync(DISEASES_FILE)) {
+      const raw = fs.readFileSync(DISEASES_FILE, "utf8");
+      const data = JSON.parse(raw || "{}");
+      communicable = sortUnique(data.communicable || []);
+      nonCommunicable = sortUnique(data.nonCommunicable || []);
+    }
+
+    const diseasesCategory = await getCategoryByName(instituteId, "Diseases");
+    const customValues = diseasesCategory
+      ? await MasterValue.find({
+          Institute_ID: instituteId,
+          category_id: diseasesCategory._id,
+          status: "Active",
+          "meta.kind": "disease"
+        }).lean()
+      : [];
+
+    customValues.forEach((value) => {
+      const group = String(value?.meta?.group || "").trim();
+      if (group === "Communicable") communicable.push(value.value_name);
+      if (group === "Non-Communicable") nonCommunicable.push(value.value_name);
+    });
+
+    communicable = sortUnique(communicable);
+    nonCommunicable = sortUnique(nonCommunicable);
+    const all = sortUnique([...communicable, ...nonCommunicable]);
+
+    res.json({
+      groups: ["Communicable", "Non-Communicable"],
+      communicable,
+      nonCommunicable,
+      all
+    });
+  } catch (err) {
+    console.error("GET /master-data-api/diseases-structure error", err);
+    res.status(500).json({ message: "Failed to load diseases structure", error: err.message });
+  }
+});
+
+router.post("/diseases", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const group = String(req.body.group || "").trim();
+    const diseaseName = String(req.body.diseaseName || "").trim();
+
+    if (!["Communicable", "Non-Communicable"].includes(group)) {
+      return res.status(400).json({ message: "group must be Communicable or Non-Communicable" });
+    }
+    if (!diseaseName) {
+      return res.status(400).json({ message: "diseaseName is required" });
+    }
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+    const diseasesCategory = await getCategoryByName(instituteId, "Diseases");
+    if (!diseasesCategory) {
+      return res.status(404).json({ message: "Diseases category not found" });
+    }
+
+    const duplicate = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: diseasesCategory._id,
+      normalized_value: normalize(diseaseName),
+      "meta.kind": "disease",
+      "meta.group": group
+    });
+
+    if (duplicate) {
+      return res.status(409).json({ message: "Disease already exists in this group" });
+    }
+
+    const created = await MasterValue.create({
+      Institute_ID: instituteId,
+      category_id: diseasesCategory._id,
+      value_name: diseaseName,
+      normalized_value: normalize(diseaseName),
+      status: "Active",
+      meta: {
+        kind: "disease",
+        group
+      }
+    });
+
+    res.status(201).json(created);
+  } catch (err) {
+    console.error("POST /master-data-api/diseases error", err);
+    res.status(500).json({ message: "Failed to add disease", error: err.message });
+  }
+});
+
+module.exports = router;

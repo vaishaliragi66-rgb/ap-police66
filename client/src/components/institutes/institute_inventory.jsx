@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 /* ---------- DATE FORMAT ---------- */
 const formatDateDMY = (value) => {
@@ -37,6 +38,11 @@ function InstituteInventory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [instituteName, setInstituteName] = useState("");
+  const [masterMap, setMasterMap] = useState({});
+
+  const rowsPerPageOptions = getMasterOptions(masterMap, "Rows Per Page")
+    .map((item) => Number(item))
+    .filter((n) => Number.isFinite(n));
 
   /* ---------- FILTER STATES ---------- */
   const [searchMedicine, setSearchMedicine] = useState("");
@@ -79,6 +85,46 @@ function InstituteInventory() {
     fetchInstituteAndInventory();
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
+
   /* ---------- CHECK IF ANY FILTER IS ACTIVE ---------- */
   const hasActiveFilters = () => {
     return searchMedicine || quantityFilter !== "" || expiryFilter || statusFilter || thresholdFilter;
@@ -111,11 +157,9 @@ function InstituteInventory() {
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f2f2f2; font-weight: bold; }
             .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-            .success { background-color: #d4edda; color: #155724; }
-            .danger { background-color: #f8d7da; color: #721c24; }
-            .warning { background-color: #fff3cd; color: #856404; }
-            .summary { margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; }
-          </style>
+                  {(rowsPerPageOptions.length ? rowsPerPageOptions : [5, 10, 20, 50, 100]).map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
         </head>
         <body>
           <h1>${instituteName} - Substore Report</h1>

@@ -2,6 +2,7 @@
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 const FamilyMemberProfile = () => {
   const { id } = useParams();
@@ -11,6 +12,10 @@ const FamilyMemberProfile = () => {
   const [member, setMember] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  const [masterMap, setMasterMap] = useState({});
+
+  const relationshipOptions = getMasterOptions(masterMap, "Relationships");
+  const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
 
   useEffect(() => {
     axios
@@ -19,7 +24,27 @@ const FamilyMemberProfile = () => {
         setMember(res.data);
         setEditData(res.data);
       });
-  }, [id, BACKEND_PORT]);
+  }, [id, BACKEND_URL]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -123,13 +148,17 @@ const FamilyMemberProfile = () => {
             <p>
               <strong>Relationship:</strong>{" "}
               {isEditing ? (
-                <input
-                  type="text"
+                <select
                   className="form-control d-inline-block"
                   style={{ width: "auto", fontSize: "14px" }}
                   value={editData.Relationship || ""}
                   onChange={(e) => setEditData({ ...editData, Relationship: e.target.value })}
-                />
+                >
+                  <option value="">Select Relationship</option>
+                  {relationshipOptions.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
               ) : (
                 member.Relationship
               )}
@@ -161,14 +190,9 @@ const FamilyMemberProfile = () => {
                   onChange={(e) => setEditData({ ...editData, Blood_Group: e.target.value })}
                 >
                   <option value="">Select</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
+                  {bloodGroupOptions.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
                 </select>
               ) : (
                 member.Blood_Group

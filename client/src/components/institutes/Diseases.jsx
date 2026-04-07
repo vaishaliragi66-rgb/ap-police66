@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 const Diseases = () => {
   const [employees, setEmployees] = useState([]);
@@ -12,6 +13,7 @@ const Diseases = () => {
   const [communicableDiseases, setCommunicableDiseases] = useState(["Tuberculosis", "Malaria", "Dengue"]);
   const [nonCommunicableDiseases, setNonCommunicableDiseases] = useState(["Diabetes", "Hypertension", "Asthma"]);
   const [allDiseases, setAllDiseases] = useState([]);
+  const [masterMap, setMasterMap] = useState({});
 
   const [showOtherDiseaseInput, setShowOtherDiseaseInput] = useState(false);
 
@@ -30,6 +32,8 @@ const Diseases = () => {
   });
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const diseaseCategoryOptions = getMasterOptions(masterMap, "Disease Categories");
+  const diseaseSeverityOptions = getMasterOptions(masterMap, "Disease Severity Levels");
 
   // Load institute and employees
   useEffect(() => {
@@ -41,11 +45,34 @@ const Diseases = () => {
     fetchEmployees();
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
+
   // fetch full disease lists extracted from DOCX on server
   useEffect(() => {
     const fetchDiseaseLists = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/disease-list/static`);
+        const instituteId = localStorage.getItem("instituteId") || "";
+        const res = await axios.get(`${BACKEND_URL}/disease-list/static`, {
+          params: { instituteId }
+        });
         const body = res.data || {};
         const sort = (arr) => (Array.isArray(arr) ? arr.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase())) : []);
         if (body.communicable && Array.isArray(body.communicable)) setCommunicableDiseases(sort(body.communicable));
@@ -394,8 +421,9 @@ const Diseases = () => {
                         value={formData.Category}
                         onChange={handleCategoryChange}
                       >
-                        <option value="Communicable">Communicable</option>
-                        <option value="Non-Communicable">Non-Communicable</option>
+                        {diseaseCategoryOptions.map((item) => (
+                          <option key={item} value={item}>{item}</option>
+                        ))}
                       </select>
                     </div>
       
@@ -470,10 +498,9 @@ const Diseases = () => {
                       value={formData.Severity_Level}
                       onChange={handleChange}
                     >
-                      <option>Mild</option>
-                      <option>Moderate</option>
-                      <option>Severe</option>
-                      <option>Chronic</option>
+                      {diseaseSeverityOptions.map((item) => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
                     </select>
                   </div>
       
