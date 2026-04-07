@@ -22,6 +22,7 @@ function Predict() {
 
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // handle input change
   const handleChange = (e) => {
@@ -35,15 +36,18 @@ function Predict() {
   const handlePredict = async (e) => {
     e.preventDefault();
 
-    console.log("clicked");
+    setError("");
     setLoading(true);
     setPrediction(null);
 
-    try {
-      // Convert temperature from Celsius to Fahrenheit
-      const celsius = Number(formData.temperature);
-      const fahrenheit = (celsius * 9/5) + 32;
+    const tempValue = Number(formData.temperature);
+    if (Number.isNaN(tempValue) || tempValue < 60 || tempValue > 115) {
+      setError("Temperature must be between 60 and 115 °F.");
+      setLoading(false);
+      return;
+    }
 
+    try {
       const res = await fetch(`${BACKEND_URL}/api/predict`, {
         method: "POST",
         headers: {
@@ -54,7 +58,7 @@ function Predict() {
           gender: Number(formData.gender),
           designation: Number(formData.designation),
           bmi: calculateBMI(),
-          temperature: fahrenheit,
+          temperature: tempValue,
           pulse: Number(formData.pulse),
           systolic_bp: Number(formData.systolic_bp),
           diastolic_bp: Number(formData.diastolic_bp),
@@ -90,6 +94,7 @@ function Predict() {
   return (
     <div className="container mt-4">
       <h3>Disease Prediction</h3>
+      {error && <div className="alert alert-danger">{error}</div>}
 
       <form onSubmit={handlePredict}>
         <div className="mb-3">
@@ -131,7 +136,7 @@ function Predict() {
           </div>
           <div className="mb-3">
             <label>Temperature (°F)</label>
-            <input type="number" name="temperature" className="form-control" onChange={handleChange} />
+            <input type="number" name="temperature" min="60" max="115" className="form-control" onChange={handleChange} />
           </div>
           <div className="mb-3">
             <label>Pulse</label>
