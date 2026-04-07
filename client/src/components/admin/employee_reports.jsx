@@ -139,6 +139,7 @@ const downloadPDF = (data) => {
 export default function EmployeeReports() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   /* Filters */
   const [role, setRole] = useState("");
@@ -161,14 +162,23 @@ export default function EmployeeReports() {
   const rowsPerPage = 10;
   const [expandedRow, setExpandedRow] = useState(null);
 
-  useEffect(() => {
+  const fetchRows = () => {
+    setLoading(true);
+    setError("");
     axios
       .get(`${BACKEND_URL}/admin-api/analytics/all`)
       .then(res => {
         setRows(res.data || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setError("Unable to load employee reports right now.");
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchRows();
   }, []);
 
   const filteredRows = rows.filter(r => {
@@ -247,7 +257,20 @@ export default function EmployeeReports() {
           <p style={{ color: "#6B7280", fontSize: 14, margin: 0 }}>
             Consolidated health records across all institutes
           </p>
+          <div className="mt-3">
+            <button
+              className="btn btn-outline-primary"
+              onClick={fetchRows}
+              disabled={loading}
+            >
+              {loading ? "Refreshing..." : "Refresh Data"}
+            </button>
+          </div>
         </div>
+
+        {error && (
+          <div className="alert alert-danger">{error}</div>
+        )}
   
         {/* ================= FILTER PANEL ================= */}
         <div
