@@ -40,12 +40,15 @@ const [xrayData, setXrayData] = useState({
 
 const [diseaseSearch, setDiseaseSearch] = useState("");
 const [filteredDiseases, setFilteredDiseases] = useState([]);
+const [showDiseaseDropdown, setShowDiseaseDropdown] = useState(false); // Track if field is focused
 
 const [diseaseMaster, setDiseaseMaster] = useState([]);
 const [cdDiseases, setCdDiseases] = useState([]);
 const [ncdDiseases, setNcdDiseases] = useState([]);
 const [selectedType, setSelectedType] = useState("");
 const [selectedSubgroup, setSelectedSubgroup] = useState("");
+const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resetting PatientSelector
+
 
 
   const communicableDiseases = [
@@ -93,7 +96,7 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Medicines: [{ Medicine_Name: "", Strength: "", Dosage: "", Duration: "", Quantity: 0 }],
+    Medicines: [{ Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
     Notes: "",
     Disease_Name: ""
   });
@@ -101,12 +104,11 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
   const getStrengthOptions = (medicineName) =>
     medicineName ? medicineStrengths[medicineName] || [] : [];
 
-  const calculateQuantity = (dosage, duration) => {
-    if (!dosage || !duration) return 0;
+  const calculateQuantity = (morning, afternoon, night, duration) => {
+    if (!duration) return 0;
 
-    // Example dosage: "1-0-2"
-    const parts = dosage.split("-").map(n => Number(n) || 0);
-    const perDay = parts.reduce((a, b) => a + b, 0);
+    // Sum the dosages for morning, afternoon, and night (1 if checked, 0 if not)
+    const perDay = (morning ? 1 : 0) + (afternoon ? 1 : 0) + (night ? 1 : 0);
 
     // Example duration: "3 days" or just "3"
     const daysMatch = duration.match(/\d+/);
@@ -243,7 +245,7 @@ const [selectedSubgroup, setSelectedSubgroup] = useState("");
     const noteParts = [
       visitSummary.symptoms ? `Symptoms: ${visitSummary.symptoms}` : "",
       vitals.Temperature != null && vitals.Temperature !== ""
-        ? `Temperature: ${vitals.Temperature}`
+        ? `Temperature: ${vitals.Temperature}°F`
         : "",
       vitals.Blood_Pressure
         ? `BP: ${vitals.Blood_Pressure}`
@@ -598,17 +600,22 @@ useEffect(() => {
   const allDiseases = [...cdDiseases, ...ncdDiseases];
 
   useEffect(() => {
-  if (!diseaseSearch.trim()) {
-    setFilteredDiseases([]);
-    return;
-  }
-
-  const search = diseaseSearch.toLowerCase();
-
   const source =
     diseaseData.Category === "Communicable"
       ? cdDiseases
       : ncdDiseases;
+
+  // If no search term, show all diseases in alphabetical order
+  if (!diseaseSearch.trim()) {
+    const sorted = [...source].sort((a, b) => 
+      (a.name || "").localeCompare(b.name || "")
+    );
+    setFilteredDiseases(sorted); // Show all diseases, not just 5
+    return;
+  }
+
+  // Otherwise filter based on search
+  const search = diseaseSearch.toLowerCase();
 
   const filtered = source.filter(d => {
     return (
@@ -649,7 +656,7 @@ const relevantDiseases = diseases.filter((d) => {
       ...prev,
       Medicines: [
         ...prev.Medicines,
-        { Medicine_Name: "", Strength: "", Dosage: "", Duration: "", Quantity: 0 }
+        { Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }
       ]
     }));
 
@@ -679,9 +686,14 @@ const relevantDiseases = diseases.filter((d) => {
       .filter((med) => med.Medicine_Name?.trim())
       .map((med) => ({
         Medicine_Name: med.Medicine_Name,
+        Type: med.Type,
+        FoodTiming: med.FoodTiming,
         Strength: med.Strength,
-        Dosage: med.Dosage,
+        Morning: med.Morning,
+        Afternoon: med.Afternoon,
+        Night: med.Night,
         Duration: med.Duration,
+        Remarks: med.Remarks,
         Quantity: med.Quantity
       }));
 
@@ -709,9 +721,14 @@ if (selectedMedicines.length === 0) {
           : null,
           medicines: selectedMedicines.map(m => ({
             Medicine_Name: m.Medicine_Name,
+            Type: m.Type,
+            FoodTiming: m.FoodTiming,
             Strength: m.Strength,
-            Dosage: m.Dosage,
+            Morning: m.Morning,
+            Afternoon: m.Afternoon,
+            Night: m.Night,
             Duration: m.Duration,
+            Remarks: m.Remarks,
             Quantity: m.Quantity
           })),
         notes: formData.Notes
@@ -752,6 +769,52 @@ if (selectedMedicines.length === 0) {
 
 
     alert("✅ Prescription saved successfully");
+    
+    // Reset all form fields
+    setFormData({
+      Institute_ID: formData.Institute_ID,
+      Employee_ID: "",
+      IsFamilyMember: false,
+      FamilyMember_ID: "",
+      Medicines: [{ Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+      Notes: "",
+      Disease_Name: ""
+    });
+    
+    setDiseaseData({
+      Category: "Communicable",
+      Disease_Name: "",
+      Severity_Level: "Mild"
+    });
+    
+    setDiagnosisData({
+      Tests: [{ Test_ID: "", Test_Name: "" }]
+    });
+    
+    setXrayData({
+      Xrays: [{ Xray_ID: "", Xray_Type: "" }]
+    });
+    
+    setSelectedEmployee(null);
+    setLastTwoVisits([]);
+    setSelectedVisit(null);
+    setEmployeeProfile(null);
+    setDiseases([]);
+    setVisitId(null);
+    setSelectedDiagnosisReport(null);
+    setSelectedXrayReport(null);
+    setSelectedPrescriptionReport(null);
+    setDiseaseSearch("");
+    setFilteredDiseases([]);
+    setSelectedType("");
+    setSelectedSubgroup("");
+    
+    // Reset PatientSelector component by changing key
+    setPatientSelectorKey(prev => prev + 1);
+    
+    if (notesTextareaRef.current) {
+      notesTextareaRef.current.value = "";
+    }
   };
 
 
@@ -1236,9 +1299,14 @@ if (validXrays.length === 0) {
                               <tr>
                                 <th>#</th>
                                 <th>Medicine</th>
+                                <th>Type</th>
+                                <th>Food Timing</th>
                                 <th>Strength</th>
-                                <th>Dosage</th>
+                                <th>Morning</th>
+                                <th>Afternoon</th>
+                                <th>Night</th>
                                 <th>Duration</th>
+                                <th>Remarks</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1247,14 +1315,19 @@ if (validXrays.length === 0) {
                                   <tr key={`${medicine?.Medicine_Name || "medicine"}-${index}`}>
                                     <td>{index + 1}</td>
                                     <td>{medicine?.Medicine_Name || "-"}</td>
+                                    <td>{medicine?.Type || "-"}</td>
+                                    <td>{medicine?.FoodTiming || "-"}</td>
                                     <td>{medicine?.Strength || "-"}</td>
-                                    <td>{medicine?.Dosage || "-"}</td>
+                                    <td>{medicine?.Morning || "0"}</td>
+                                    <td>{medicine?.Afternoon || "0"}</td>
+                                    <td>{medicine?.Night || "0"}</td>
                                     <td>{medicine?.Duration || "-"}</td>
+                                    <td>{medicine?.Remarks || "-"}</td>
                                   </tr>
                                 ))
                               ) : (
                                 <tr>
-                                  <td colSpan="5" className="text-center text-muted">
+                                  <td colSpan="10" className="text-center text-muted">
                                     No medicine details available
                                   </td>
                                 </tr>
@@ -1432,8 +1505,9 @@ if (validXrays.length === 0) {
 
 
                 <PatientSelector
+                  key={patientSelectorKey}
                   instituteId={formData.Institute_ID}
-                  onSelect={({ employee, visit }) => {
+                  onSelect={async ({ employee, visit }) => {
 
                     setSelectedEmployee(employee);
                     setSelectedVisit(visit);
@@ -1456,7 +1530,7 @@ if (validXrays.length === 0) {
                 Symptoms: ${visit.symptoms || "-"}
 
                 Vitals:
-                Temperature: ${vitals.Temperature || "-"}
+                Temperature: ${vitals.Temperature || "-"}°F
                 BP: ${vitals.Blood_Pressure || "-"}
                 Pulse: ${vitals.Pulse || "-"}
                 Oxygen: ${vitals.Oxygen || "-"}
@@ -1469,7 +1543,47 @@ if (validXrays.length === 0) {
                       }));
                     }
 
-                    // 🔥 FETCH HISTORY CORRECTLY
+                    // 🔥 FETCH HISTORY AND CHECK FOR EXISTING PRESCRIPTION
+                    try {
+                      // Fetch all medical actions for this employee
+                      const actionsRes = await axios.get(`${BACKEND_URL}/api/medical-actions/employee/${employee._id}`);
+                      const actions = actionsRes.data || [];
+                      
+                      // Filter to get prescriptions for this specific visit
+                      const existingPrescription = actions.find(action => 
+                        action.action_type === "DOCTOR_PRESCRIPTION" && 
+                        action.visit_id === visit?._id &&
+                        (isFamily ? action.data?.FamilyMember_ID === familyId : !action.data?.FamilyMember_ID)
+                      );
+
+                      if (existingPrescription && existingPrescription.data) {
+                        // Pre-fill form with existing prescription data
+                        const prescriptionData = existingPrescription.data;
+                        
+                        setFormData(prev => ({
+                          ...prev,
+                          Medicines: prescriptionData.medicines && prescriptionData.medicines.length > 0
+                            ? prescriptionData.medicines.map(med => ({
+                                Medicine_Name: med.Medicine_Name || "",
+                                Type: med.Type || "",
+                                FoodTiming: med.FoodTiming || "",
+                                Strength: med.Strength || "",
+                                Morning: med.Morning || false,
+                                Afternoon: med.Afternoon || false,
+                                Night: med.Night || false,
+                                Duration: med.Duration || "",
+                                Remarks: med.Remarks || "",
+                                Quantity: med.Quantity || 0
+                              }))
+                            : [{ Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+                          Notes: prescriptionData.notes || prev.Notes
+                        }));
+                      }
+                    } catch (err) {
+                      console.error("Error loading existing prescription:", err);
+                    }
+
+                    // Fetch prescription history for sidebar
                     fetchTopTwoPrescriptions(employee._id, familyId);
                   }}
                 />
@@ -1544,10 +1658,15 @@ if (validXrays.length === 0) {
       onChange={(e) => {
         setDiseaseSearch(e.target.value);
       }}
+      onFocus={() => setShowDiseaseDropdown(true)}
+      onBlur={() => {
+        // Delay hiding to allow click on dropdown items
+        setTimeout(() => setShowDiseaseDropdown(false), 200);
+      }}
     />
 
     {/* ✅ SUGGESTIONS */}
-    {filteredDiseases.length > 0 && (
+    {showDiseaseDropdown && filteredDiseases.length > 0 && (
       <ul
         className="list-group position-absolute w-100"
         style={{ zIndex: 1000, maxHeight: "200px", overflowY: "auto" }}
@@ -1564,6 +1683,7 @@ if (validXrays.length === 0) {
                 Disease_Name: d.name
               }));
               setFilteredDiseases([]);
+              setShowDiseaseDropdown(false);
             }}
           >
             {/* 🔥 FINAL FORMAT */}
@@ -1633,114 +1753,209 @@ if (validXrays.length === 0) {
                 <h6 className="fw-bold mt-4">Medicines</h6>
 
                 {formData.Medicines.map((med, i) => (
-      <div key={i} className="mb-3">
-    <div className="row g-2 align-items-end">
+      <div key={i} className="mb-4 border rounded p-3 bg-light">
+        {/* First Row: Medicine Selection */}
+        <div className="row g-2 align-items-end mb-3">
+          <div className="col-md-2">
+            <label className="form-label fw-semibold">Medicine</label>
+            <select
+              className="form-select"
+              value={med.Medicine_Name}
+              onChange={(e) => {
+                const copy = [...formData.Medicines];
+                copy[i].Medicine_Name = e.target.value;
+                if (!getStrengthOptions(e.target.value).includes(copy[i].Strength)) {
+                  copy[i].Strength = "";
+                }
+                setFormData(prev => ({ ...prev, Medicines: copy }));
+              }}
+            >
+              <option value="">Select Medicine</option>
+              {uniqueMedicines.map((name, idx) => (
+                <option key={idx} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="col-md-3">
-        <label className="form-label">Medicine</label>
-        <select
-          className="form-select"
-          value={med.Medicine_Name}
-          onChange={(e) => {
-            const copy = [...formData.Medicines];
-            copy[i].Medicine_Name = e.target.value;
-            if (!getStrengthOptions(e.target.value).includes(copy[i].Strength)) {
-              copy[i].Strength = "";
-            }
-            setFormData(prev => ({ ...prev, Medicines: copy }));
-          }}
-        >
-          <option value="">Select Medicine</option>
+          <div className="col-md-2">
+            <label className="form-label fw-semibold">Type</label>
+            <select
+              className="form-select"
+              value={med.Type}
+              onChange={(e) => {
+                const copy = [...formData.Medicines];
+                copy[i].Type = e.target.value;
+                setFormData(prev => ({ ...prev, Medicines: copy }));
+              }}
+            >
+              <option value="">Select Type</option>
+              <option value="Tablet">Tablet</option>
+              <option value="Syrup">Syrup</option>
+              <option value="Injection">Injection</option>
+            </select>
+          </div>
 
-          {uniqueMedicines.map((name, idx) => (
-            <option key={idx} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
+          <div className="col-md-2">
+            <label className="form-label fw-semibold">Food Timing</label>
+            <select
+              className="form-select"
+              value={med.FoodTiming}
+              onChange={(e) => {
+                const copy = [...formData.Medicines];
+                copy[i].FoodTiming = e.target.value;
+                setFormData(prev => ({ ...prev, Medicines: copy }));
+              }}
+            >
+              <option value="">Select Timing</option>
+              <option value="Before Food">Before Food</option>
+              <option value="After Food">After Food</option>
+            </select>
+          </div>
 
+          <div className="col-md-2">
+            <label className="form-label fw-semibold">Strength</label>
+            <select
+              className="form-select"
+              value={med.Strength || ""}
+              disabled={!med.Medicine_Name}
+              onChange={(e) => {
+                const copy = [...formData.Medicines];
+                copy[i].Strength = e.target.value;
+                setFormData(prev => ({ ...prev, Medicines: copy }));
+              }}
+            >
+              <option value="">
+                {getStrengthOptions(med.Medicine_Name).length > 0
+                  ? "Select Strength"
+                  : "Not specified"}
+              </option>
+              {getStrengthOptions(med.Medicine_Name).map((strength, idx) => (
+                <option key={idx} value={strength}>
+                  {strength}
+                </option>
+              ))}
+            </select>
+          </div>
 
+          <div className="col-md-4">
+            <button
+              type="button"
+              className="btn btn-outline-danger w-100"
+              onClick={() => removeMedicine(i)}
+            >
+              ✕ Remove Medicine
+            </button>
+          </div>
+        </div>
+
+        {/* Second Row: Dosage Details */}
+        <div className="row g-2 align-items-end">
+          <div className="col-md-4">
+            <label className="form-label fw-semibold">Dosage Times</label>
+            <div className="d-flex gap-3 mt-2">
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id={`morning-${i}`}
+                  checked={med.Morning}
+                  onChange={(e) => {
+                    const copy = [...formData.Medicines];
+                    copy[i].Morning = e.target.checked;
+                    copy[i].Quantity = calculateQuantity(copy[i].Morning, copy[i].Afternoon, copy[i].Night, copy[i].Duration);
+                    setFormData(prev => ({ ...prev, Medicines: copy }));
+                  }}
+                />
+                <label className="form-check-label" htmlFor={`morning-${i}`}>
+                  Morning
+                </label>
+              </div>
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id={`afternoon-${i}`}
+                  checked={med.Afternoon}
+                  onChange={(e) => {
+                    const copy = [...formData.Medicines];
+                    copy[i].Afternoon = e.target.checked;
+                    copy[i].Quantity = calculateQuantity(copy[i].Morning, copy[i].Afternoon, copy[i].Night, copy[i].Duration);
+                    setFormData(prev => ({ ...prev, Medicines: copy }));
+                  }}
+                />
+                <label className="form-check-label" htmlFor={`afternoon-${i}`}>
+                  Afternoon
+                </label>
+              </div>
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id={`night-${i}`}
+                  checked={med.Night}
+                  onChange={(e) => {
+                    const copy = [...formData.Medicines];
+                    copy[i].Night = e.target.checked;
+                    copy[i].Quantity = calculateQuantity(copy[i].Morning, copy[i].Afternoon, copy[i].Night, copy[i].Duration);
+                    setFormData(prev => ({ ...prev, Medicines: copy }));
+                  }}
+                />
+                <label className="form-check-label" htmlFor={`night-${i}`}>
+                  Night
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-2">
+            <label className="form-label fw-semibold">Duration</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="5 days"
+              value={med.Duration}
+              onChange={(e) => {
+                const copy = [...formData.Medicines];
+                copy[i].Duration = e.target.value;
+                copy[i].Quantity = calculateQuantity(copy[i].Morning, copy[i].Afternoon, copy[i].Night, e.target.value);
+                setFormData(prev => ({ ...prev, Medicines: copy }));
+              }}
+            />
+          </div>
+
+          <div className="col-md-3">
+            <label className="form-label fw-semibold">Remarks</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Doctor's remarks"
+              value={med.Remarks}
+              onChange={(e) => {
+                const copy = [...formData.Medicines];
+                copy[i].Remarks = e.target.value;
+                setFormData(prev => ({ ...prev, Medicines: copy }));
+              }}
+            />
+          </div>
+
+          <div className="col-md-1">
+            <label className="form-label fw-semibold">Quantity</label>
+            <input
+              type="number"
+              className="form-control"
+              min="0"
+              value={med.Quantity}
+              onChange={(e) => {
+                const copy = [...formData.Medicines];
+                copy[i].Quantity = Number(e.target.value) || 0;
+                setFormData(prev => ({ ...prev, Medicines: copy }));
+              }}
+            />
+          </div>
+        </div>
       </div>
-
-      <div className="col-md-2">
-        <label className="form-label">Strength</label>
-        <select
-          className="form-select"
-          value={med.Strength || ""}
-          disabled={!med.Medicine_Name}
-          onChange={(e) => {
-            const copy = [...formData.Medicines];
-            copy[i].Strength = e.target.value;
-            setFormData(prev => ({ ...prev, Medicines: copy }));
-          }}
-        >
-          <option value="">
-            {getStrengthOptions(med.Medicine_Name).length > 0
-              ? "Select Strength"
-              : "Not specified"}
-          </option>
-          {getStrengthOptions(med.Medicine_Name).map((strength, idx) => (
-            <option key={idx} value={strength}>
-              {strength}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="col-md-2">
-        <label className="form-label">Dosage</label>
-        <input
-          type="text"
-          className="form-control"
-          placeholder="1-0-1"
-          value={med.Dosage}
-          onChange={(e) => {
-            const copy = [...formData.Medicines];
-            copy[i].Dosage = e.target.value;
-            copy[i].Quantity = calculateQuantity(e.target.value, copy[i].Duration);
-            setFormData(prev => ({ ...prev, Medicines: copy }));
-          }}
-        />
-      </div>
-
-      <div className="col-md-2">
-        <label className="form-label">Duration</label>
-        <input
-          type="text"
-          className="form-control"
-          placeholder="5 days"
-          value={med.Duration}
-          onChange={(e) => {
-            const copy = [...formData.Medicines];
-            copy[i].Duration = e.target.value;
-            copy[i].Quantity = calculateQuantity(copy[i].Dosage, e.target.value);
-            setFormData(prev => ({ ...prev, Medicines: copy }));
-          }}
-        />
-      </div>
-
-      <div className="col-md-1">
-        <label className="form-label">Quantity</label>
-        <input
-          type="number"
-          className="form-control"
-          value={med.Quantity}
-          readOnly
-        />
-      </div>
-
-      <div className="col-md-2">
-        <button
-          type="button"
-          className="btn btn-outline-danger w-100"
-          onClick={() => removeMedicine(i)}
-        >
-          ✕
-        </button>
-      </div>
-
-    </div>
-  </div>
 ))}
 
                 <button

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+﻿  import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
@@ -109,6 +109,13 @@ const VisitRegister = () => {
     setLoading(true);
   
     try {
+      // Convert temperature from Celsius to Fahrenheit
+      const vitalsCopy = { ...vitals };
+      if (vitalsCopy.Temperature) {
+        const celsius = parseFloat(vitalsCopy.Temperature);
+        vitalsCopy.Temperature = (celsius * 9/5) + 32; // Convert to Fahrenheit
+      }
+
       await axios.post(
         `${BACKEND_URL}/api/visits/register`,
         {
@@ -119,7 +126,7 @@ const VisitRegister = () => {
           FamilyMember: isFamily ? selectedFamily._id : null,
           name: isFamily ? selectedFamily.Name : selectedEmployee.Name,
           symptoms: symptoms,
-          Vitals: vitals
+          Vitals: vitalsCopy
         }
       );
       alert("✅ Visit Registered Successfully");
@@ -130,6 +137,14 @@ const VisitRegister = () => {
       setFamilyMembers([]);
       setSelectedFamily(null);
       setSymptoms("");
+      setVitals({
+        Temperature: "",
+        Sugar: "",
+        Blood_Pressure: "",
+        Oxygen: "",
+        Pulse: "",
+        GRBS: ""
+      });
   
     } catch (err) {
       alert("❌ Failed to register visit");
@@ -299,7 +314,7 @@ const VisitRegister = () => {
 
     <div className="row">
       <div className="col-md-6 mb-2">
-        <label>Temperature (°C)</label>
+        <label>Temperature (°F)</label>
         <input
           type="number"
           className="form-control"
@@ -317,9 +332,13 @@ const VisitRegister = () => {
           className="form-control"
           placeholder="120/80"
           value={vitals.Blood_Pressure}
-          onChange={(e) =>
-            setVitals({ ...vitals, Blood_Pressure: e.target.value })
-          }
+          onChange={(e) => {
+            const value = e.target.value;
+            // Allow only format: up to 3 digits, optional slash with up to 2 digits (e.g., "120/80")
+            if (value === '' || /^\d{1,3}(\/\d{0,2})?$/.test(value)) {
+              setVitals({ ...vitals, Blood_Pressure: value });
+            }
+          }}
         />
       </div>
 
