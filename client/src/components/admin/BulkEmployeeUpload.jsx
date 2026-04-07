@@ -6,8 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 const BulkEmployeeUpload = () => {
   const navigate = useNavigate();
-  const [csvFile, setCsvFile] = useState(null);
-  const [zipFile, setZipFile] = useState(null);
+  const [excelFile, setExcelFile] = useState(null);
   const [previewRows, setPreviewRows] = useState([]);
   const [previewHeaders, setPreviewHeaders] = useState([]);
   const [message, setMessage] = useState("");
@@ -15,7 +14,6 @@ const BulkEmployeeUpload = () => {
   const [uploadWarnings, setUploadWarnings] = useState([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const zipInputRef = useRef(null);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -34,9 +32,7 @@ const BulkEmployeeUpload = () => {
     "Street",
     "District",
     "State",
-    "Pincode",
-    "PhotoFilename",
-    "PhotoURL"
+    "Pincode"
   ];
 
   const handleExcelChange = async (event) => {
@@ -46,17 +42,17 @@ const BulkEmployeeUpload = () => {
     setUploadWarnings([]);
     setPreviewRows([]);
     if (!file) {
-      setCsvFile(null);
+      setExcelFile(null);
       return;
     }
 
-    if (!/\.(xlsx|xls)$/i.test(file.name)) {
-      setError("Please upload an Excel file (.xlsx or .xls).");
+    if (!/\.xlsx$/i.test(file.name)) {
+      setError("Please upload an Excel file (.xlsx).");
       event.target.value = null;
       return;
     }
 
-    setCsvFile(file);
+    setExcelFile(file);
 
     try {
       const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
@@ -76,28 +72,12 @@ const BulkEmployeeUpload = () => {
     }
   };
 
-  const handleZipChange = (event) => {
-    const file = event.target.files[0];
-    setError("");
-    setMessage("");
-    if (!file) {
-      setZipFile(null);
-      return;
-    }
-    if (!/\.zip$/i.test(file.name)) {
-      setError("Please upload a ZIP file for photos.");
-      event.target.value = null;
-      return;
-    }
-    setZipFile(file);
-  };
-
   const handleUpload = async () => {
     setMessage("");
     setError("");
     setUploadWarnings([]);
 
-    if (!csvFile) {
+    if (!excelFile) {
       setError("Please choose an Excel file before uploading.");
       return;
     }
@@ -105,10 +85,7 @@ const BulkEmployeeUpload = () => {
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append("excelFile", csvFile);
-      if (zipFile) {
-        formData.append("photoZip", zipFile);
-      }
+      formData.append("excelFile", excelFile);
 
       const response = await axios.post(
         `${BACKEND_URL}/admin-api/employee-bulk-upload`,
@@ -126,12 +103,10 @@ const BulkEmployeeUpload = () => {
       );
       setUploadWarnings(responseErrors);
       setError("");
-      setCsvFile(null);
-      setZipFile(null);
+      setExcelFile(null);
       setPreviewRows([]);
       setPreviewHeaders([]);
       if (fileInputRef.current) fileInputRef.current.value = null;
-      if (zipInputRef.current) zipInputRef.current.value = null;
     } catch (err) {
       console.error(err);
       const apiError = err.response?.data?.message || err.message || "Upload failed.";
@@ -165,8 +140,6 @@ const BulkEmployeeUpload = () => {
         "Hyderabad",
         "Telangana",
         "500001",
-        "john.jpg",
-        ""
       ]
     ];
 
@@ -182,7 +155,7 @@ const BulkEmployeeUpload = () => {
         <div>
           <h2>Bulk Employee Upload</h2>
           <p className="text-muted">
-            Upload employee records via Excel. Add PhotoURL values or embed photos directly in Excel cells.
+            Upload employee records through Excel and place each employee photo directly on the same row inside the sheet.
           </p>
         </div>
         <button className="btn btn-light" onClick={() => navigate("/admin/dashboard")}>Back to Dashboard</button>
@@ -190,10 +163,10 @@ const BulkEmployeeUpload = () => {
 
       <div className="card shadow-sm p-4 mb-4">
         <div className="mb-3">
-          <label className="form-label fw-semibold">Employee Excel file (.xlsx or .xls)</label>
+          <label className="form-label fw-semibold">Employee Excel file (.xlsx)</label>
           <input
             type="file"
-            accept=".xlsx,.xls"
+            accept=".xlsx"
             className="form-control"
             onChange={handleExcelChange}
             ref={fileInputRef}
@@ -201,7 +174,7 @@ const BulkEmployeeUpload = () => {
         </div>
 
         <div className="d-flex flex-wrap gap-2 mb-4">
-          <button className="btn btn-primary" onClick={handleUpload} disabled={uploading || !csvFile}>
+          <button className="btn btn-primary" onClick={handleUpload} disabled={uploading || !excelFile}>
             <FaCloudUploadAlt className="me-2" />
             {uploading ? "Uploading..." : "Upload Excel"}
           </button>
@@ -213,7 +186,7 @@ const BulkEmployeeUpload = () => {
         <div className="mb-3 text-muted">
           <small>
             Excel file must include headers like <code>ABS_NO</code>, <code>Name</code>, <code>Email</code>, <code>Password</code>, <code>Gender</code>, and address columns.
-            You can embed photos directly in Excel cells or use the <code>PhotoURL</code> column for web images.
+            Insert each photo into the worksheet on the same row as that employee. The upload will use the first image anchored to each row.
           </small>
         </div>
 
