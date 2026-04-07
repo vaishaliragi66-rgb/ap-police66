@@ -168,6 +168,25 @@ const loadEmployeeReports = async () => {
     return `${mm}-${yyyy}`;
   };
 
+  const isMedicineExpired = (value) => {
+    if (!value) return false;
+
+    const parsed = new Date(value);
+    if (isNaN(parsed.getTime())) return false;
+
+    const expiryEndOfDay = new Date(
+      parsed.getFullYear(),
+      parsed.getMonth(),
+      parsed.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+
+    return expiryEndOfDay < new Date();
+  };
+
   /* ================= INITIAL LOAD ================= */
 useEffect(() => {
   const instituteId = localStorage.getItem("instituteId");
@@ -196,7 +215,10 @@ useEffect(() => {
       const res = await axios.get(
         `${BACKEND_URL}/institute-api/inventory/${id}`
       );
-      setInventory(res.data || []);
+      const usableInventory = (res.data || []).filter(
+        (item) => Number(item?.Quantity || 0) > 0 && !isMedicineExpired(item?.Expiry_Date)
+      );
+      setInventory(usableInventory);
     } catch (error) {
       console.error("Error fetching inventory:", error);
       setInventory([]);

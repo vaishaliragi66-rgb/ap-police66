@@ -26,7 +26,7 @@ const DiagnosisEntryForm = () => {
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Tests: [{ Category: "", Test_ID: "", Test_Name: "", Result_Value: "", Reference_Range: "", Units: "",ReportFile: null }],
+    Tests: [],
     Diagnosis_Notes: ""
   });
 
@@ -51,55 +51,13 @@ const fetchDoctorDiagnosis = async (visitId) => {
       `${BACKEND_URL}/diagnosis-api/visit/${visitId}/doctor`
     );
 
-    setDoctorDiagnosis(res.data?.tests || []);
+    setDoctorDiagnosis(res.data?.orders || []);
 
   } catch (err) {
     console.error("Failed to fetch doctor diagnosis", err);
     setDoctorDiagnosis([]);
   }
 };
-
-
-useEffect(() => {
-
-  if (!doctorDiagnosis || doctorDiagnosis.length === 0) {
-    setFormData(prev => ({
-      ...prev,
-      Tests: [{
-        Category: "",
-        Test_ID: "",
-        Test_Name: "",
-        Result_Value: "",
-        Reference_Range: "",
-        Units: "",
-        ReportFile: null
-      }]
-    }));
-    return;
-  }
-
-  const populatedTests = doctorDiagnosis.map(t => {
-
-    const master = testsMaster.find(m => m._id === t.Test_ID);
-
-    return {
-      Category: "",
-      Test_ID: t.Test_ID || "",
-      Test_Name: t.Test_Name || "",
-      Result_Value: "",
-      Reference_Range: master?.Reference_Range || "",
-      Units: master?.Units || "",
-    ReportFile: null
-    };
-
-  });
-
-  setFormData(prev => ({
-    ...prev,
-    Tests: populatedTests
-  }));
-
-}, [doctorDiagnosis, testsMaster]);
 
   useEffect(() => {
     const localInstituteId = localStorage.getItem("instituteId");
@@ -130,12 +88,218 @@ const fetchTests = async () => {
       `${BACKEND_URL}/diagnosis-api/tests`
     );
 
-    setTestsMaster(res.data || []);
-    console.log("Tests fetched:", res.data?.length);
+    const normalizedTests = (res.data || [])
+      .filter((test) => test?.Group || test?.Test_Name)
+      .map((test) => ({
+        ...test,
+        Display_Name: test?.Group || test?.Test_Name || "",
+        Group: test?.Group || "",
+        Raw_Test_Name: test?.Test_Name || ""
+      }))
+      .filter((test) => test.Display_Name);
+
+    setTestsMaster(normalizedTests);
+    console.log("Tests fetched:", normalizedTests.length);
   } catch (err) {
     console.error("Error fetching tests:", err);
   }
 };
+
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const normalizedEquals = (left, right) => {
+  const a = normalizeText(left);
+  const b = normalizeText(right);
+  return Boolean(a) && Boolean(b) && a === b;
+};
+
+const findMasterTest = (test = {}) =>
+  testsMaster.find((master) => {
+    const candidateIds = [
+      test?.Test_ID?._id,
+      test?.Test_ID,
+      test?._id
+    ]
+      .filter(Boolean)
+      .map(String);
+
+    const matchesId =
+      candidateIds.length > 0 && candidateIds.includes(String(master._id));
+
+    const matchesName =
+      normalizedEquals(master.Display_Name, test?.Test_Name) ||
+      normalizedEquals(master.Display_Name, test?.Group) ||
+      normalizedEquals(master.Raw_Test_Name, test?.Test_Name) ||
+      normalizedEquals(master.Raw_Test_Name, test?.Group) ||
+      normalizedEquals(master.Group, test?.Test_Name) ||
+      normalizedEquals(master.Group, test?.Group) ||
+      normalizedEquals(master.Test_Name, test?.Test_Name) ||
+      normalizedEquals(master.Test_Name, test?.Group);
+
+    return matchesId || matchesName;
+  }) || null;
+
+const getCategoryForTestName = (testName) => {
+  if (!testName) return "";
+
+  const entry = Object.entries(diagnosticTestsByCategory).find(([, tests]) =>
+    tests.some((test) => normalizeText(test.name) === normalizeText(testName))
+  );
+
+  return entry?.[0] || "";
+};
+
+const createFormTestFromDoctorTest = (test) => {
+  const doctorTestId = test?.Test_ID?._id || test?.Test_ID || "";
+  const master = findMasterTest(test);
+
+  const resolvedTestName =
+    test?.Test_Name ||
+    test?.Test_ID?.Group ||
+    test?.Test_ID?.Test_Name ||
+    test?.Group ||
+    master?.Display_Name ||
+    master?.Group ||
+    master?.Test_Name ||
+    "";
+
+  const category =
+    getCategoryForTestName(resolvedTestName) || "";
+
+  return {
+    Category: category,
+    Test_ID: master?._id || doctorTestId || "",
+    Test_Name: resolvedTestName,
+    Result_Value: "",
+    Reference_Range:
+      master?.Reference_Range ??
+      test?.Reference_Range ??
+      test?.Test_ID?.Reference_Range ??
+      "",
+    Units:
+      master?.Units ??
+      test?.Units ??
+      test?.Test_ID?.Units ??
+      "",
+    ReportFile: null
+  };
+};
+
+const hydrateTestWithMasterData = (test) => {
+  const master = findMasterTest(test);
+
+  if (!master) {
+    return {
+      ...test,
+      Category:
+        test?.Category ||
+        getCategoryForTestName(test?.Test_Name || test?.Group || "")
+    };
+  }
+
+  const resolvedTestName =
+    test?.Test_Name ||
+    test?.Group ||
+    master.Display_Name ||
+    master.Group ||
+    master.Test_Name ||
+    "";
+
+  return {
+    ...test,
+    Category:
+      test?.Category ||
+      getCategoryForTestName(resolvedTestName) ||
+      "",
+    Test_ID: master._id || test?.Test_ID || "",
+    Test_Name: resolvedTestName,
+    Reference_Range:
+      master.Reference_Range ??
+      test?.Reference_Range ??
+      test?.Test_ID?.Reference_Range ??
+      "",
+    Units:
+      master.Units ??
+      test?.Units ??
+      test?.Test_ID?.Units ??
+      ""
+  };
+};
+
+useEffect(() => {
+  if (!testsMaster.length) return;
+
+  setFormData((prev) => ({
+    ...prev,
+    Tests: (prev.Tests || []).map((test) => hydrateTestWithMasterData(test))
+  }));
+}, [testsMaster]);
+
+useEffect(() => {
+  if (!testsMaster.length || !formData.Tests.length) return;
+
+  const hydratedTests = formData.Tests.map((test) => hydrateTestWithMasterData(test));
+
+  const hasChanges = hydratedTests.some((test, index) => {
+    const current = formData.Tests[index];
+
+    return (
+      String(test.Test_ID || "") !== String(current?.Test_ID || "") ||
+      (test.Test_Name || "") !== (current?.Test_Name || "") ||
+      (test.Category || "") !== (current?.Category || "") ||
+      (test.Reference_Range || "") !== (current?.Reference_Range || "") ||
+      (test.Units || "") !== (current?.Units || "")
+    );
+  });
+
+  if (!hasChanges) return;
+
+  setFormData((prev) => ({
+    ...prev,
+    Tests: prev.Tests.map((test) => hydrateTestWithMasterData(test))
+  }));
+}, [testsMaster, formData.Tests]);
+
+const mergeDoctorTestsIntoForm = (testsToAdd = []) => {
+  if (!testsToAdd.length) return;
+
+  setFormData((prev) => {
+    const mappedTests = testsToAdd
+      .map(createFormTestFromDoctorTest)
+      .filter((test) => test.Test_Name);
+
+    if (!mappedTests.length) return prev;
+
+    const existingKeys = new Set(
+      (prev.Tests || [])
+        .filter((test) => test.Test_Name)
+        .map((test) => `${test.Test_ID || ""}::${test.Test_Name}`)
+    );
+
+    const uniqueTests = mappedTests.filter((test) => {
+      const key = `${test.Test_ID || ""}::${test.Test_Name}`;
+      if (existingKeys.has(key)) return false;
+      existingKeys.add(key);
+      return true;
+    });
+
+    if (!uniqueTests.length) return prev;
+
+    return {
+      ...prev,
+      Tests: [...prev.Tests, ...uniqueTests]
+    };
+  });
+};
+
+const createEmptyTest = () => ({
+  Category: "",
+  Test_ID: "",
+  Test_Name: "",
+  Result_Value: "",
+  Reference_Range: "",
+  Units: "",
+  ReportFile: null
+});
 
 const handleTestChange = (index, field, value) => {
   setFormData(prev => {
@@ -145,13 +309,13 @@ const handleTestChange = (index, field, value) => {
     if (field === "Test_ID") {
       const sel = testsMaster.find(t => t._id === value);
       if (sel) {
-        updated[index] = {
-          ...updated[index],
-          Test_ID: sel._id,
-          Test_Name: sel.Test_Name,
-          Reference_Range: sel.Reference_Range || "",
-          Units: sel.Units || "",
-          ReportFile: updated[index].ReportFile || null
+          updated[index] = {
+            ...updated[index],
+            Test_ID: sel._id,
+            Test_Name: sel.Display_Name || sel.Group || sel.Test_Name,
+            Reference_Range: sel.Reference_Range || "",
+            Units: sel.Units || "",
+            ReportFile: updated[index].ReportFile || null
         };
       }
     } else if (field === "Category") {
@@ -167,17 +331,18 @@ const handleTestChange = (index, field, value) => {
     } else if (field === "Test_Name") {
       const cat = updated[index].Category;
       const list = cat && diagnosticTestsByCategory[cat] ? diagnosticTestsByCategory[cat] : [];
-      const found = list.find(x => x.name === value);
-      if (found) {
-        updated[index] = {
-          ...updated[index],
-          Test_Name: found.name,
-          Reference_Range: found.reference || "",
-          Units: found.unit || ""
-        };
-      } else {
-        updated[index] = { ...updated[index], Test_Name: value };
-      }
+      const found = list.find(x => normalizeText(x.name) === normalizeText(value));
+      const master = findMasterTest({ ...updated[index], Test_Name: value, Group: value });
+
+      updated[index] = {
+        ...updated[index],
+        Test_ID: master?._id || updated[index].Test_ID || "",
+        Test_Name: value,
+        Reference_Range:
+          master?.Reference_Range || found?.reference || updated[index].Reference_Range || "",
+        Units:
+          master?.Units || found?.unit || updated[index].Units || ""
+      };
     } else {
       updated[index] = {
         ...updated[index],
@@ -198,15 +363,7 @@ const addTest = () =>
     ...prev,
     Tests: [
       ...prev.Tests,
-      {
-          Category: "",
-          Test_ID: "",
-          Test_Name: "",
-          Result_Value: "",
-          Reference_Range: "",
-          Units: "",
-          ReportFile: null
-      }
+      createEmptyTest()
     ]
   }));
   
@@ -289,24 +446,15 @@ const addTest = () =>
     }, 300);
   };
 
-const filteredDoctorDiagnosis = (doctorDiagnosis || []).filter(d => {
-  const isFamily =
-    d.data?.is_family_member ??
-    d.data?.IsFamilyMember ??
-    false;
-
-  const familyId =
-    d.data?.family_member_id ??
-    d.data?.FamilyMember_ID ??
-    null;
-
-  // Employee self
+const filteredDoctorDiagnosis = (doctorDiagnosis || []).filter((order) => {
   if (!formData.IsFamilyMember) {
-    return isFamily === false;
+    return order.isFamilyMember === false;
   }
 
-  // Family member
-  return isFamily === true && familyId === formData.FamilyMember_ID;
+  return (
+    order.isFamilyMember === true &&
+    String(order.familyMemberId || "") === String(formData.FamilyMember_ID || "")
+  );
 });
 
 const fetchVisitDetails = async (visitId) => {
@@ -492,12 +640,16 @@ const fetchPastRecords = async () => {
                         IsFamilyMember: Boolean(visit?.IsFamilyMember),
                         FamilyMember_ID: visit?.IsFamilyMember
                           ? visit.FamilyMember?._id
-                          : ""
+                          : "",
+                        Tests: [],
+                        Diagnosis_Notes: ""
                       }));
 
                       // 🔥 THIS IS THE IMPORTANT PART
                       if (vId) {
                         fetchDoctorDiagnosis(vId);
+                      } else {
+                        setDoctorDiagnosis([]);
                       }
                     }}
                   />
@@ -545,18 +697,42 @@ const fetchPastRecords = async () => {
                 {filteredDoctorDiagnosis.length > 0 && (
                   <div className="alert alert-warning mb-4">
                     <h6 className="alert-heading">👨‍⚕️ Doctor Diagnosis (Reference)</h6>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-dark mb-3"
+                      onClick={() =>
+                        mergeDoctorTestsIntoForm(
+                          filteredDoctorDiagnosis.flatMap((order) => order.tests || [])
+                        )
+                      }
+                    >
+                      ➕ Add All Prescribed Tests Below
+                    </button>
+
                     {filteredDoctorDiagnosis.map((d, i) => (
                       <div key={i} className="mt-2">
 
                         <ul className="mb-2">
-                          {(d.data?.tests || []).map((t, idx) => (
-                            <li key={idx}>{t.Test_Name}</li>
+                          {(d.tests || []).map((t, idx) => (
+                            <li
+                              key={idx}
+                              className="d-flex justify-content-between align-items-center gap-2"
+                            >
+                              <span>{t.Test_Name}</span>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => mergeDoctorTestsIntoForm([t])}
+                              >
+                                Add Test
+                              </button>
+                            </li>
                           ))}
                         </ul>
 
-                        {d.data?.notes && (
+                        {d.notes && (
                           <div className="small text-muted">
-                            Notes: {d.data.notes}
+                            Notes: {d.notes}
                           </div>
                         )}
 
@@ -580,6 +756,12 @@ const fetchPastRecords = async () => {
                     </div>
                   ) : (
                     <>
+                      {formData.Tests.length === 0 && (
+                        <div className="alert alert-secondary">
+                          No tests added yet. Use <strong>Add Another Test</strong> or import the doctor's prescribed tests above.
+                        </div>
+                      )}
+
                       {formData.Tests.map((t, i) => (
                         <div
                           key={i}
@@ -615,21 +797,35 @@ const fetchPastRecords = async () => {
 
                             <div className="col-md-6">
                               <label className="form-label fw-semibold">Test Name</label>
+                                {(() => {
+                                  const categoryOptions =
+                                    t.Category && diagnosticTestsByCategory[t.Category]
+                                      ? diagnosticTestsByCategory[t.Category]
+                                      : [];
+                                  const hasSelectedOption = categoryOptions.some(
+                                    (testObj) =>
+                                      normalizeText(testObj.name) === normalizeText(t.Test_Name)
+                                  );
+
+                                  return (
                                 <select
                                   className="form-select"
                                   value={t.Test_Name || ""}
                                   onChange={e => handleTestChange(i, "Test_Name", e.target.value)}
-                                  disabled={!t.Category}
+                                  disabled={!t.Category && !t.Test_Name}
                                 >
                                   <option value="">Select Test</option>
+                                  {t.Test_Name && !hasSelectedOption && (
+                                    <option value={t.Test_Name}>{t.Test_Name}</option>
+                                  )}
                                   {(
-                                    t.Category && diagnosticTestsByCategory[t.Category]
-                                      ? diagnosticTestsByCategory[t.Category]
-                                      : []
+                                    categoryOptions
                                   ).map(testObj => (
                                     <option key={testObj.name} value={testObj.name}>{testObj.name}</option>
                                   ))}
                                 </select>
+                                  );
+                                })()}
                             </div>
 
                             <div className="col-md-6">
