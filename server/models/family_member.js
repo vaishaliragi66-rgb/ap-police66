@@ -16,7 +16,7 @@ const FamilyMemberSchema = new Schema({
   Relationship: { 
     type: String, 
     required: true, 
-    enum: ["Father", "Mother", "Wife", "Child"]
+    enum: ["Father", "Mother", "Wife", "Son", "Daughter", "Child"]
   },
 
   DOB: { 

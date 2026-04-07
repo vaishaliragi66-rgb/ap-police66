@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { FaCamera, FaUser } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -6,6 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const FamilyMemberRegistration = () => {
   const employeeId = localStorage.getItem("employeeId");
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const [employeeProfile, setEmployeeProfile] = useState(null);
 
   const [formData, setFormData] = useState({
     Name: "",
@@ -29,6 +30,21 @@ const FamilyMemberRegistration = () => {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    if (!employeeId) return;
+
+    const fetchEmployeeProfile = async () => {
+      try {
+        const res = await axios.get(`${BACKEND_URL}/employee-api/profile/${employeeId}`);
+        setEmployeeProfile(res.data || null);
+      } catch (err) {
+        console.error("Failed to fetch employee profile:", err);
+      }
+    };
+
+    fetchEmployeeProfile();
+  }, [employeeId, BACKEND_URL]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name.startsWith("Address.")) {
@@ -37,6 +53,25 @@ const FamilyMemberRegistration = () => {
     } else {
       setFormData({ ...formData, [name]: value });
     }
+  };
+
+  const handleUseEmployeePhone = () => {
+    setFormData((prev) => ({
+      ...prev,
+      Phone_No: employeeProfile?.Phone_No || "",
+    }));
+  };
+
+  const handleUseEmployeeAddress = () => {
+    setFormData((prev) => ({
+      ...prev,
+      Address: {
+        Street: employeeProfile?.Address?.Street || "",
+        District: employeeProfile?.Address?.District || "",
+        State: employeeProfile?.Address?.State || "",
+        Pincode: employeeProfile?.Address?.Pincode || "",
+      },
+    }));
   };
 
   const handlePhotoChange = (e) => {
@@ -107,7 +142,14 @@ const FamilyMemberRegistration = () => {
       });
       handleRemovePhoto();
     } catch (err) {
-      alert(err.response?.data?.message || "Registration failed");
+      const responseData = err.response?.data;
+      const errorMessage =
+        responseData?.message ||
+        responseData?.error ||
+        (Array.isArray(responseData?.errors) ? responseData.errors.join(", ") : "") ||
+        err.message ||
+        "Registration failed";
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -356,7 +398,25 @@ const FamilyMemberRegistration = () => {
   
           {/* Phone */}
           <div className="mb-3">
-            <label className="form-label fw-semibold">Phone Number</label>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <label className="form-label fw-semibold mb-0">Phone Number</label>
+              <button
+                type="button"
+                onClick={handleUseEmployeePhone}
+                disabled={!employeeProfile?.Phone_No}
+                className="btn btn-sm"
+                style={{
+                  backgroundColor: "#EAF2FF",
+                  color: "#4A70A9",
+                  border: "1px solid #4A70A9",
+                  borderRadius: "999px",
+                  fontSize: "12px",
+                  padding: "4px 12px",
+                }}
+              >
+                Same as Employee
+              </button>
+            </div>
             <input
               type="text"
               className="form-control"
@@ -373,6 +433,25 @@ const FamilyMemberRegistration = () => {
           >
             Address Details
           </h6>
+
+          <div className="d-flex justify-content-end mb-2">
+            <button
+              type="button"
+              onClick={handleUseEmployeeAddress}
+              disabled={!employeeProfile?.Address}
+              className="btn btn-sm"
+              style={{
+                backgroundColor: "#EAF2FF",
+                color: "#4A70A9",
+                border: "1px solid #4A70A9",
+                borderRadius: "999px",
+                fontSize: "12px",
+                padding: "4px 12px",
+              }}
+            >
+              Same as Employee
+            </button>
+          </div>
   
           <input
             className="form-control mb-2"
