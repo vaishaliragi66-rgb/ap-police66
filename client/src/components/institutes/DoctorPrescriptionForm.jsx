@@ -2002,6 +2002,24 @@ if (validXrays.length === 0) {
         {/* First Row: Medicine Selection */}
         <div className="row g-2 align-items-end mb-3">
           <div className="col-md-2">
+            <label className="form-label fw-semibold">Type</label>
+            <select
+              className="form-select"
+              value={med.Type}
+              onChange={(e) => {
+                const copy = [...formData.Medicines];
+                copy[i].Type = e.target.value;
+                setFormData(prev => ({ ...prev, Medicines: copy }));
+              }}
+            >
+              <option value="">Select Type</option>
+              {medicineTypeOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-md-2">
             <label className="form-label fw-semibold">Medicine</label>
             <input
               type="text"
@@ -2023,24 +2041,6 @@ if (validXrays.length === 0) {
                 <option key={idx} value={name} />
               ))}
             </datalist>
-          </div>
-
-          <div className="col-md-2">
-            <label className="form-label fw-semibold">Type</label>
-            <select
-              className="form-select"
-              value={med.Type}
-              onChange={(e) => {
-                const copy = [...formData.Medicines];
-                copy[i].Type = e.target.value;
-                setFormData(prev => ({ ...prev, Medicines: copy }));
-              }}
-            >
-              <option value="">Select Type</option>
-              {medicineTypeOptions.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
-            </select>
           </div>
 
           <div className="col-md-2">
