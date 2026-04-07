@@ -5,8 +5,12 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const XLSX = require("xlsx");
-const axios = require("axios");
+let ExcelJS;
+try {
+  ExcelJS = require("exceljs");
+} catch (err) {
+  ExcelJS = require("../../client/node_modules/exceljs");
+}
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Admin = require("../models/admin");
 const Employee = require("../models/employee");
@@ -27,30 +31,14 @@ const bulkUpload = multer({
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === "excelFile") {
-      if (!/\.(xlsx|xls)$/i.test(file.originalname)) {
-        return cb(new Error("Excel file must have .xlsx or .xls extension"));
-      }
-      return cb(null, true);
-    }
-    if (file.fieldname === "photoZip") {
-      if (!/\.zip$/i.test(file.originalname)) {
-        return cb(new Error("Photo ZIP must have .zip extension"));
+      if (!/\.xlsx$/i.test(file.originalname)) {
+        return cb(new Error("Excel file must have .xlsx extension"));
       }
       return cb(null, true);
     }
     cb(new Error(`Invalid field name: ${file.fieldname}`));
   }
 });
-
-const getExtensionFromMime = (mimeType) => {
-  const map = {
-    "image/jpeg": ".jpg",
-    "image/jpg": ".jpg",
-    "image/png": ".png",
-    "image/gif": ".gif"
-  };
-  return map[mimeType] || "";
-};
 
 const normalizeRow = (row) => {
   const normalized = {};
@@ -73,9 +61,7 @@ const normalizeRow = (row) => {
     street: normalized.street || "",
     district: normalized.district || "",
     state: normalized.state || "",
-    pincode: normalized.pincode || normalized.pin || "",
-    photofilename: normalized.photofilename || normalized.photofile || normalized.photofilepath || "",
-    photourl: normalized.photourl || normalized.photourl || normalized.photo_url || ""
+    pincode: normalized.pincode || normalized.pin || ""
   };
 };
 
@@ -86,17 +72,96 @@ const writePhoto = async (data, filename) => {
   return `/uploads/profile-pics/${target}`;
 };
 
-const downloadPhotoFromUrl = async (url) => {
-  const response = await axios.get(url, {
-    responseType: "arraybuffer",
-    timeout: 15000
-  });
-  const contentType = response.headers["content-type"] || "";
-  if (!contentType.startsWith("image/")) {
-    throw new Error("Photo URL must point to an image");
+const getExcelCellValue = (value) => {
+  if (value === null || value === undefined) {
+    return "";
   }
-  const ext = path.extname(new URL(url).pathname) || getExtensionFromMime(contentType) || ".jpg";
-  return await writePhoto(response.data, `downloaded${ext}`);
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10);
+  }
+  if (typeof value === "object") {
+    if (Array.isArray(value.richText)) {
+      return value.richText.map((item) => item.text || "").join("");
+    }
+    if (value.text !== undefined) {
+      return value.text;
+    }
+    if (value.result !== undefined) {
+      return value.result;
+    }
+    if (value.hyperlink && value.text !== undefined) {
+      return value.text;
+    }
+  }
+  return value;
+};
+
+const readExcelUpload = async (excelPath) => {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(excelPath);
+  const worksheet = workbook.worksheets[0];
+  const photoMap = new Map();
+  const rawRows = [];
+
+  if (!worksheet) {
+    return { rawRows, photoMap };
+  }
+
+  const headerRow = worksheet.getRow(1);
+  const headers = [];
+  headerRow.eachCell({ includeEmpty: true }, (cell, columnNumber) => {
+    headers[columnNumber] = String(getExcelCellValue(cell.value) || "").trim();
+  });
+
+  worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) {
+      return;
+    }
+
+    const rowData = { _rowNumber: rowNumber };
+    let hasData = false;
+
+    for (let columnNumber = 1; columnNumber < headers.length; columnNumber += 1) {
+      const header = headers[columnNumber];
+      if (!header) {
+        continue;
+      }
+
+      const value = getExcelCellValue(row.getCell(columnNumber).value);
+      rowData[header] = value;
+      if (value !== "") {
+        hasData = true;
+      }
+    }
+
+    if (hasData) {
+      rawRows.push(rowData);
+    }
+  });
+
+  worksheet.getImages().forEach((image) => {
+    const anchorRow = image.range?.tl?.nativeRow;
+    const endAnchorRow = image.range?.br?.nativeRow;
+    const imageData = workbook.getImage(image.imageId);
+    if (anchorRow === undefined || !imageData?.buffer) {
+      return;
+    }
+
+    const extension = imageData.extension ? `.${imageData.extension}` : ".jpg";
+    const startRow = anchorRow + 1;
+    const endRow = endAnchorRow !== undefined ? endAnchorRow + 1 : startRow;
+
+    for (let rowNumber = startRow; rowNumber <= endRow + 1; rowNumber += 1) {
+      if (!photoMap.has(rowNumber)) {
+        photoMap.set(rowNumber, {
+          buffer: imageData.buffer,
+          extension
+        });
+      }
+    }
+  });
+
+  return { rawRows, photoMap };
 };
 
 /* ================= ADMIN REGISTRATION ================= */
@@ -239,7 +304,7 @@ adminApp.post(
       }
 
       const invalidFiles = (req.files || []).filter(
-        (file) => !["excelFile", "photoZip"].includes(file.fieldname)
+        (file) => file.fieldname !== "excelFile"
       );
       if (invalidFiles.length > 0) {
         return res.status(400).json({
@@ -258,28 +323,10 @@ adminApp.post(
       return res.status(400).json({ success: false, message: "Excel file is required." });
     }
 
-    let photoMap = {};
     try {
-      const workbook = XLSX.readFile(excelFile.path, { type: "file" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      const { rawRows, photoMap } = await readExcelUpload(excelFile.path);
 
       fs.unlinkSync(excelFile.path);
-
-      // Extract embedded images from Excel file
-      if (workbook.Props && workbook.Props.embeddedImages) {
-        const embeddedImages = workbook.Props.embeddedImages;
-        for (const [key, imageData] of Object.entries(embeddedImages)) {
-          if (imageData && imageData.data) {
-            try {
-              const filename = `embedded_${key}.jpg`;
-              photoMap[filename.toLowerCase()] = imageData.data;
-            } catch (err) {
-              console.warn(`Failed to extract embedded image ${key}:`, err.message);
-            }
-          }
-        }
-      }
 
       if (!Array.isArray(rawRows) || rawRows.length === 0) {
         return res.status(400).json({ success: false, message: "Excel file is empty or invalid." });
@@ -289,9 +336,9 @@ adminApp.post(
       const csvAbsSet = new Set();
       const emails = [];
       const absNumbers = [];
-      const normalizedRows = rawRows.map((row, index) => {
+      const normalizedRows = rawRows.map((row) => {
         const record = normalizeRow(row);
-        record._rowNumber = index + 2;
+        record._rowNumber = row._rowNumber;
         if (record.email) emails.push(record.email.toLowerCase());
         if (record.abs_no) absNumbers.push(record.abs_no);
         return record;
@@ -360,27 +407,18 @@ adminApp.post(
         if (row.email) csvEmailSet.add(row.email.toLowerCase());
 
         let photoPath = "";
-        let photoWarning = "";
-        if (row.photofilename) {
-          const filename = path.basename(row.photofilename.toString()).toLowerCase();
-          const fileData = photoMap[filename];
-          if (fileData) {
-            try {
-              photoPath = await writePhoto(fileData, filename);
-            } catch (err) {
-              photoWarning = `Warning: Failed to save photo ${filename}`;
-              console.warn(photoWarning);
-            }
-          } else {
-            photoWarning = `Warning: Embedded photo file not found: ${row.photofilename}`;
-            console.warn(photoWarning);
-          }
-        } else if (row.photourl) {
+        const embeddedPhoto =
+          photoMap.get(rowNumber) ||
+          photoMap.get(rowNumber - 1) ||
+          photoMap.get(rowNumber + 1);
+        if (embeddedPhoto) {
           try {
-            photoPath = await downloadPhotoFromUrl(row.photourl);
+            photoPath = await writePhoto(
+              embeddedPhoto.buffer,
+              `embedded-row-${rowNumber}${embeddedPhoto.extension}`
+            );
           } catch (err) {
-            photoWarning = `Warning: Failed to download photo URL`;
-            console.warn(photoWarning);
+            console.warn(`Warning: Failed to save embedded photo for row ${rowNumber}`);
           }
         }
 
