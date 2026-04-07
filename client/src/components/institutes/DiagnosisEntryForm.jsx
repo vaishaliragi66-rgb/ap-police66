@@ -3,6 +3,7 @@ import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import diagnosticTestsByCategory from "../../data/diagnosticTests";
 
 const DiagnosisEntryForm = () => {
   const [testsMaster, setTestsMaster] = useState([]);
@@ -25,7 +26,7 @@ const DiagnosisEntryForm = () => {
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Tests: [{ Test_ID: "", Test_Name: "", Result_Value: "", Reference_Range: "", Units: "",ReportFile: null }],
+    Tests: [{ Category: "", Test_ID: "", Test_Name: "", Result_Value: "", Reference_Range: "", Units: "",ReportFile: null }],
     Diagnosis_Notes: ""
   });
 
@@ -65,6 +66,7 @@ useEffect(() => {
     setFormData(prev => ({
       ...prev,
       Tests: [{
+        Category: "",
         Test_ID: "",
         Test_Name: "",
         Result_Value: "",
@@ -81,6 +83,7 @@ useEffect(() => {
     const master = testsMaster.find(m => m._id === t.Test_ID);
 
     return {
+      Category: "",
       Test_ID: t.Test_ID || "",
       Test_Name: t.Test_Name || "",
       Result_Value: "",
@@ -140,27 +143,46 @@ const handleTestChange = (index, field, value) => {
     const updated = [...prev.Tests];
 
     if (field === "Test_ID") {
-
       const sel = testsMaster.find(t => t._id === value);
-
       if (sel) {
         updated[index] = {
-  ...updated[index],
-  Test_ID: sel._id,
-  Test_Name: sel.Test_Name,
-  Reference_Range: sel.Reference_Range || "",
-  Units: sel.Units || "",
-  ReportFile: updated[index].ReportFile || null
-};
+          ...updated[index],
+          Test_ID: sel._id,
+          Test_Name: sel.Test_Name,
+          Reference_Range: sel.Reference_Range || "",
+          Units: sel.Units || "",
+          ReportFile: updated[index].ReportFile || null
+        };
       }
-
+    } else if (field === "Category") {
+      // set category and clear test selection when category changes
+      updated[index] = {
+        ...updated[index],
+        Category: value,
+        Test_ID: "",
+        Test_Name: "",
+        Reference_Range: "",
+        Units: ""
+      };
+    } else if (field === "Test_Name") {
+      const cat = updated[index].Category;
+      const list = cat && diagnosticTestsByCategory[cat] ? diagnosticTestsByCategory[cat] : [];
+      const found = list.find(x => x.name === value);
+      if (found) {
+        updated[index] = {
+          ...updated[index],
+          Test_Name: found.name,
+          Reference_Range: found.reference || "",
+          Units: found.unit || ""
+        };
+      } else {
+        updated[index] = { ...updated[index], Test_Name: value };
+      }
     } else {
-
       updated[index] = {
         ...updated[index],
         [field]: value
       };
-
     }
 
     return {
@@ -177,12 +199,13 @@ const addTest = () =>
     Tests: [
       ...prev.Tests,
       {
-        Test_ID: "",
-        Test_Name: "",
-        Result_Value: "",
-        Reference_Range: "",
-        Units: "",
-        ReportFile: null
+          Category: "",
+          Test_ID: "",
+          Test_Name: "",
+          Result_Value: "",
+          Reference_Range: "",
+          Units: "",
+          ReportFile: null
       }
     ]
   }));
@@ -577,30 +600,36 @@ const fetchPastRecords = async () => {
 
                           <div className="row g-3">
                             <div className="col-md-6">
-                              <label className="form-label fw-semibold">Test Selection</label>
-                              <select
-                                className="form-select"
-                                value={t.Test_ID || ""}
-                                onChange={e => handleTestChange(i, "Test_ID", e.target.value)}
-                              >
-                                <option value="">Select Test (or type below)</option>
-                                {testsMaster.map(tm => (
-                                  <option key={tm._id} value={tm._id}>
-                                    {tm.Test_Name} {tm.Group ? `(${tm.Group})` : ""}
-                                  </option>
-                                ))}
-                              </select>
+                                <label className="form-label fw-semibold">Category</label>
+                                <select
+                                  className="form-select"
+                                  value={t.Category || ""}
+                                  onChange={e => handleTestChange(i, "Category", e.target.value)}
+                                >
+                                  <option value="">Select Category</option>
+                                  {Object.keys(diagnosticTestsByCategory).map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                  ))}
+                                </select>
                             </div>
 
                             <div className="col-md-6">
                               <label className="form-label fw-semibold">Test Name</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                placeholder="Test Name"
-                                value={t.Test_Name}
-                                onChange={e => handleTestChange(i, "Test_Name", e.target.value)}
-                              />
+                                <select
+                                  className="form-select"
+                                  value={t.Test_Name || ""}
+                                  onChange={e => handleTestChange(i, "Test_Name", e.target.value)}
+                                  disabled={!t.Category}
+                                >
+                                  <option value="">Select Test</option>
+                                  {(
+                                    t.Category && diagnosticTestsByCategory[t.Category]
+                                      ? diagnosticTestsByCategory[t.Category]
+                                      : []
+                                  ).map(testObj => (
+                                    <option key={testObj.name} value={testObj.name}>{testObj.name}</option>
+                                  ))}
+                                </select>
                             </div>
 
                             <div className="col-md-6">

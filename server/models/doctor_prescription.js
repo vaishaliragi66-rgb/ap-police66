@@ -34,9 +34,15 @@ const DoctorPrescriptionSchema = new Schema(
     Medicines: [
       {
         Medicine_Name: { type: String, required: true },
+        Type: { type: String },            // Tablet, Syrup, Injection
+        FoodTiming: { type: String },      // Before Food, After Food
         Strength: { type: String, trim: true },
-        Dosage: { type: String },          // optional (1-0-1 etc.)
+        Morning: { type: Number, default: 0 },     // Morning dosage
+        Afternoon: { type: Number, default: 0 },   // Afternoon dosage
+        Night: { type: Number, default: 0 },       // Night dosage
         Duration: { type: String },        // optional (5 days)
+        Remarks: { type: String },         // Doctor remarks for this medicine
+        Quantity: { type: Number, default: 0 }
       }
     ],
 
