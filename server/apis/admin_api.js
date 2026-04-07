@@ -5,9 +5,12 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const AdmZip = require("adm-zip");
-const XLSX = require("xlsx");
-const axios = require("axios");
+let ExcelJS;
+try {
+  ExcelJS = require("exceljs");
+} catch (err) {
+  ExcelJS = require("../../client/node_modules/exceljs");
+}
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Admin = require("../models/admin");
 const Employee = require("../models/employee");
@@ -27,28 +30,15 @@ const bulkUpload = multer({
   }),
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.fieldname === "csvFile") {
-      return cb(null, /\.csv$/i.test(file.originalname));
+    if (file.fieldname === "excelFile") {
+      if (!/\.xlsx$/i.test(file.originalname)) {
+        return cb(new Error("Excel file must have .xlsx extension"));
+      }
+      return cb(null, true);
     }
-    if (file.fieldname === "photoZip") {
-      return cb(null, /\.zip$/i.test(file.originalname));
-    }
-    cb(null, false);
+    cb(new Error(`Invalid field name: ${file.fieldname}`));
   }
-}).fields([
-  { name: "csvFile", maxCount: 1 },
-  { name: "photoZip", maxCount: 1 }
-]);
-
-const getExtensionFromMime = (mimeType) => {
-  const map = {
-    "image/jpeg": ".jpg",
-    "image/jpg": ".jpg",
-    "image/png": ".png",
-    "image/gif": ".gif"
-  };
-  return map[mimeType] || "";
-};
+});
 
 const normalizeRow = (row) => {
   const normalized = {};
@@ -71,9 +61,7 @@ const normalizeRow = (row) => {
     street: normalized.street || "",
     district: normalized.district || "",
     state: normalized.state || "",
-    pincode: normalized.pincode || normalized.pin || "",
-    photofilename: normalized.photofilename || normalized.photofile || normalized.photofilepath || "",
-    photourl: normalized.photourl || normalized.photourl || normalized.photo_url || ""
+    pincode: normalized.pincode || normalized.pin || ""
   };
 };
 
@@ -84,17 +72,96 @@ const writePhoto = async (data, filename) => {
   return `/uploads/profile-pics/${target}`;
 };
 
-const downloadPhotoFromUrl = async (url) => {
-  const response = await axios.get(url, {
-    responseType: "arraybuffer",
-    timeout: 15000
-  });
-  const contentType = response.headers["content-type"] || "";
-  if (!contentType.startsWith("image/")) {
-    throw new Error("Photo URL must point to an image");
+const getExcelCellValue = (value) => {
+  if (value === null || value === undefined) {
+    return "";
   }
-  const ext = path.extname(new URL(url).pathname) || getExtensionFromMime(contentType) || ".jpg";
-  return await writePhoto(response.data, `downloaded${ext}`);
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10);
+  }
+  if (typeof value === "object") {
+    if (Array.isArray(value.richText)) {
+      return value.richText.map((item) => item.text || "").join("");
+    }
+    if (value.text !== undefined) {
+      return value.text;
+    }
+    if (value.result !== undefined) {
+      return value.result;
+    }
+    if (value.hyperlink && value.text !== undefined) {
+      return value.text;
+    }
+  }
+  return value;
+};
+
+const readExcelUpload = async (excelPath) => {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(excelPath);
+  const worksheet = workbook.worksheets[0];
+  const photoMap = new Map();
+  const rawRows = [];
+
+  if (!worksheet) {
+    return { rawRows, photoMap };
+  }
+
+  const headerRow = worksheet.getRow(1);
+  const headers = [];
+  headerRow.eachCell({ includeEmpty: true }, (cell, columnNumber) => {
+    headers[columnNumber] = String(getExcelCellValue(cell.value) || "").trim();
+  });
+
+  worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) {
+      return;
+    }
+
+    const rowData = { _rowNumber: rowNumber };
+    let hasData = false;
+
+    for (let columnNumber = 1; columnNumber < headers.length; columnNumber += 1) {
+      const header = headers[columnNumber];
+      if (!header) {
+        continue;
+      }
+
+      const value = getExcelCellValue(row.getCell(columnNumber).value);
+      rowData[header] = value;
+      if (value !== "") {
+        hasData = true;
+      }
+    }
+
+    if (hasData) {
+      rawRows.push(rowData);
+    }
+  });
+
+  worksheet.getImages().forEach((image) => {
+    const anchorRow = image.range?.tl?.nativeRow;
+    const endAnchorRow = image.range?.br?.nativeRow;
+    const imageData = workbook.getImage(image.imageId);
+    if (anchorRow === undefined || !imageData?.buffer) {
+      return;
+    }
+
+    const extension = imageData.extension ? `.${imageData.extension}` : ".jpg";
+    const startRow = anchorRow + 1;
+    const endRow = endAnchorRow !== undefined ? endAnchorRow + 1 : startRow;
+
+    for (let rowNumber = startRow; rowNumber <= endRow + 1; rowNumber += 1) {
+      if (!photoMap.has(rowNumber)) {
+        photoMap.set(rowNumber, {
+          buffer: imageData.buffer,
+          extension
+        });
+      }
+    }
+  });
+
+  return { rawRows, photoMap };
 };
 
 /* ================= ADMIN REGISTRATION ================= */
@@ -229,45 +296,49 @@ adminApp.post(
 
 adminApp.post(
   "/employee-bulk-upload",
-  bulkUpload,
-  expressAsyncHandler(async (req, res) => {
-    const csvFile = req.files?.csvFile?.[0];
-    const zipFile = req.files?.photoZip?.[0];
-
-    if (!csvFile) {
-      if (zipFile) fs.unlinkSync(zipFile.path);
-      return res.status(400).json({ success: false, message: "CSV file is required." });
-    }
-
-    let photoMap = {};
-    try {
-      const workbook = XLSX.readFile(csvFile.path, { type: "file" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-      fs.unlinkSync(csvFile.path);
-
-      if (zipFile) {
-        const zip = new AdmZip(zipFile.path);
-        zip.getEntries().forEach((entry) => {
-          if (!entry.isDirectory()) {
-            photoMap[path.basename(entry.entryName).toLowerCase()] = entry.getData();
-          }
-        });
-        fs.unlinkSync(zipFile.path);
+  (req, res, next) => {
+    bulkUpload.any()(req, res, (err) => {
+      if (err) {
+        console.error("Multer error:", err.message);
+        return res.status(400).json({ success: false, message: `File error: ${err.message}` });
       }
 
+      const invalidFiles = (req.files || []).filter(
+        (file) => file.fieldname !== "excelFile"
+      );
+      if (invalidFiles.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `File error: Invalid field name(s): ${invalidFiles.map((file) => file.fieldname).join(", ")}`
+        });
+      }
+      next();
+    });
+  },
+  expressAsyncHandler(async (req, res) => {
+    const uploadedFiles = req.files || [];
+    const excelFile = uploadedFiles.find((file) => file.fieldname === "excelFile");
+
+    if (!excelFile) {
+      return res.status(400).json({ success: false, message: "Excel file is required." });
+    }
+
+    try {
+      const { rawRows, photoMap } = await readExcelUpload(excelFile.path);
+
+      fs.unlinkSync(excelFile.path);
+
       if (!Array.isArray(rawRows) || rawRows.length === 0) {
-        return res.status(400).json({ success: false, message: "CSV file is empty or invalid." });
+        return res.status(400).json({ success: false, message: "Excel file is empty or invalid." });
       }
 
       const csvEmailSet = new Set();
       const csvAbsSet = new Set();
       const emails = [];
       const absNumbers = [];
-      const normalizedRows = rawRows.map((row, index) => {
+      const normalizedRows = rawRows.map((row) => {
         const record = normalizeRow(row);
-        record._rowNumber = index + 2;
+        record._rowNumber = row._rowNumber;
         if (record.email) emails.push(record.email.toLowerCase());
         if (record.abs_no) absNumbers.push(record.abs_no);
         return record;
@@ -336,23 +407,18 @@ adminApp.post(
         if (row.email) csvEmailSet.add(row.email.toLowerCase());
 
         let photoPath = "";
-        if (row.photofilename) {
-          const filename = path.basename(row.photofilename.toString()).toLowerCase();
-          const fileData = photoMap[filename];
-          if (fileData) {
-            try {
-              photoPath = await writePhoto(fileData, filename);
-            } catch (err) {
-              rowErrors.push(`Failed to save photo ${filename}: ${err.message}`);
-            }
-          } else {
-            rowErrors.push(`Photo file not found in ZIP: ${row.photofilename}`);
-          }
-        } else if (row.photourl) {
+        const embeddedPhoto =
+          photoMap.get(rowNumber) ||
+          photoMap.get(rowNumber - 1) ||
+          photoMap.get(rowNumber + 1);
+        if (embeddedPhoto) {
           try {
-            photoPath = await downloadPhotoFromUrl(row.photourl);
+            photoPath = await writePhoto(
+              embeddedPhoto.buffer,
+              `embedded-row-${rowNumber}${embeddedPhoto.extension}`
+            );
           } catch (err) {
-            rowErrors.push(`Failed to download photo URL: ${err.message}`);
+            console.warn(`Warning: Failed to save embedded photo for row ${rowNumber}`);
           }
         }
 
@@ -685,6 +751,7 @@ adminApp.get("/analytics/all", async (req, res) => {
 
       {
         $project: {
+          createdAt: 1,
           Role: { $literal: "Employee" },
           Name: "$Name",
           ABS_NO: { $ifNull: ["$ABS_NO", "N/A"] },
@@ -803,6 +870,7 @@ adminApp.get("/analytics/all", async (req, res) => {
 
       {
         $project: {
+          createdAt: 1,
           Role: { $literal: "Family" },
           Name: "$Name",
           Linked_Employee_Name: { $ifNull: ["$emp.Name", "N/A"] },
@@ -855,8 +923,13 @@ adminApp.get("/analytics/all", async (req, res) => {
 
     const employees = await Employee.aggregate(employeePipeline);
     const family = await FamilyMember.aggregate(familyPipeline);
+    const combined = [...employees, ...family].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
 
-    res.json([...employees, ...family]);
+    res.json(combined);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });
