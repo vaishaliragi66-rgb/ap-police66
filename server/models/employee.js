@@ -23,7 +23,7 @@ const EmployeeSchema = new Schema(
     Weight: { type: String,required: true, default: "" },
     Phone_No: { type: String,required: true, default: "" },
 
-    Photo: { type: String,required: true, default: "" },
+    Photo: { type: String, default: null },
     ABS_Card: { type: String, default: "" },
 
     Address: {

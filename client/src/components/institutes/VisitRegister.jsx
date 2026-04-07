@@ -299,7 +299,7 @@ const VisitRegister = () => {
 
     <div className="row">
       <div className="col-md-6 mb-2">
-        <label>Temperature (°C)</label>
+        <label>Temperature (°F)</label>
         <input
           type="number"
           className="form-control"
