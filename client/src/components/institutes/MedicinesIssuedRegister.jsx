@@ -2,6 +2,7 @@
 import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 const MedicinesIssuedRegister = () => {
@@ -393,26 +394,29 @@ const uniqueMedicineIds = [
     const doc = new jsPDF("p", "mm", "a4");
     const pageWidth = doc.internal.pageSize.getWidth();
   
-    const billDate = row.timestamp
+    const testDate = row.timestamp
       ? new Date(row.timestamp).toLocaleString()
       : "-";
+    const downloadedAt = formatReportTimestamp();
+    const institutionName = getReportInstitutionName(row.Institute_Name);
   
     // HEADER
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("AP POLICE HEALTH INSTITUTE", pageWidth / 2, 15, { align: "center" });
-  
-    doc.setFontSize(12);
-    doc.text("OUT-PATIENT PHARMACY RECEIPT", pageWidth / 2, 23, { align: "center" });
-  
-    doc.line(14, 28, pageWidth - 14, 28);
+    addCenteredReportHeader(doc, {
+      centerX: pageWidth / 2,
+      left: 14,
+      right: pageWidth - 14,
+      institutionName,
+      title: "OUT-PATIENT PHARMACY RECEIPT",
+      lineY: 28
+    });
+    addDownloadTimestamp(doc, { x: pageWidth - 14, y: 12, align: "right", timestamp: downloadedAt });
   
     // DETAILS BOX
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
   
     doc.text(`Receipt No: ${row.prescriptionId.slice(-6)}`, 14, 38);
-    doc.text(`Bill Date: ${billDate}`, pageWidth - 14, 38, { align: "right" });
+    doc.text(`Test Date: ${testDate}`, pageWidth - 14, 38, { align: "right" });
   
     doc.text(`Issued To: ${row.issuedTo}`, 14, 46);
     doc.text(`Employee ABS No: ${row.employeeABS}`, pageWidth - 14, 46, { align: "right" });
@@ -458,21 +462,24 @@ const viewPrescription = (row) => {
 const downloadPrescriptionPDF = (prescription) => {
   const doc = new jsPDF("p", "mm", "a4");
   const pageWidth = doc.internal.pageSize.getWidth();
+  const downloadedAt = formatReportTimestamp();
+  const institutionName = getReportInstitutionName(prescription.Institute?.Institute_Name);
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text("AP POLICE HEALTH INSTITUTE", pageWidth / 2, 18, { align: "center" });
-
-  doc.setFontSize(12);
-  doc.text("MEDICAL PRESCRIPTION", pageWidth / 2, 26, { align: "center" });
-
-  doc.line(14, 30, pageWidth - 14, 30);
+  addCenteredReportHeader(doc, {
+    centerX: pageWidth / 2,
+    left: 14,
+    right: pageWidth - 14,
+    institutionName,
+    title: "MEDICAL PRESCRIPTION",
+    lineY: 30
+  });
+  addDownloadTimestamp(doc, { x: pageWidth - 14, y: 12, align: "right", timestamp: downloadedAt });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
 
   doc.text(`Prescription Ref: ${prescription._id.slice(-6)}`, 14, 40);
-  doc.text(`Date: ${new Date(prescription.Timestamp).toLocaleString()}`, pageWidth - 14, 40, { align: "right" });
+  doc.text(`Test Date: ${new Date(prescription.Timestamp).toLocaleString()}`, pageWidth - 14, 40, { align: "right" });
 
   doc.text(`Employee: ${prescription.Employee?.Name}`, 14, 48);
   doc.text(`ABS No: ${prescription.Employee?.ABS_NO}`, pageWidth - 14, 48, { align: "right" });
@@ -535,12 +542,14 @@ const downloadPrescriptionWord = (prescription) => {
   </head>
   <body>
 
-    <h2>ONLINE MEDICAL PRESCRIPTION</h2>
+    <h2>${getReportInstitutionName(prescription.Institute?.Institute_Name)}</h2>
+    <h3 style="text-align:center; margin-top: 0;">ONLINE MEDICAL PRESCRIPTION</h3>
 
     <p><strong>Prescription Ref:</strong> ${prescription._id.slice(-6)}</p>
     <p><strong>Employee:</strong> ${prescription.Employee?.Name}</p>
     <p><strong>ABS No:</strong> ${prescription.Employee?.ABS_NO}</p>
-    <p><strong>Date:</strong> ${new Date(prescription.Timestamp).toLocaleString()}</p>
+    <p><strong>Test Date:</strong> ${new Date(prescription.Timestamp).toLocaleString()}</p>
+    <p><strong>Downloaded On:</strong> ${formatReportTimestamp()}</p>
 
     <table>
       <tr>

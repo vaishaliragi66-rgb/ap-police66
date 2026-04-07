@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 
 const InstituteIndent = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -48,6 +49,19 @@ const InstituteIndent = () => {
       
       const indent = indentData;
       const doc = new jsPDF();
+      const downloadedAt = formatReportTimestamp();
+      const institutionName = getReportInstitutionName(indent.Institute_Name);
+
+      addCenteredReportHeader(doc, {
+        centerX: 105,
+        left: 14,
+        right: 196,
+        institutionName,
+        title: "INDENT REQUEST",
+        lineY: 30
+      });
+      addDownloadTimestamp(doc, { x: 196, y: 12, align: "right", timestamp: downloadedAt });
+
       doc.setFontSize(10);
       doc.text(
         `DATE: ${new Date(indent.Date).toLocaleDateString("en-GB")}`,
@@ -55,16 +69,13 @@ const InstituteIndent = () => {
         42,
         { align: "right" }
       );
-      doc.setFontSize(14);
-      doc.setTextColor(40, 40, 40);
-      doc.text("INDENT REQUEST", 105, 20, { align: "center" });
 
       doc.setFontSize(11);
-      doc.text(indent.Institute_Name, 105, 28, { align: "center" });
-      doc.text(indent.Institute_Address, 105, 34, { align: "center" });
+      doc.text(indent.Institute_Name, 105, 38, { align: "center" });
+      doc.text(indent.Institute_Address, 105, 44, { align: "center" });
 
       autoTable(doc, {
-        startY: 45,
+        startY: 52,
         head: [[
           "S.NO",
           "MEDICINE NAME",

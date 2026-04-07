@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const XrayReport = () => {
@@ -89,24 +90,27 @@ const XrayReport = () => {
 
     const left = 15;
     const right = 282;
-    const instituteName = report.Institute?.Institute_Name || "Medical Institute";
+    const instituteName = getReportInstitutionName(report.Institute?.Institute_Name);
     const reportDate = formatDate(report);
+    const downloadedAt = formatReportTimestamp();
     const patientName = report.Employee?.Name || "Employee";
     const employeeIdText = report.Employee?.ABS_NO ? `(${report.Employee.ABS_NO})` : "";
     const issuedTo = report.IsFamilyMember ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})` : "Self";
 
-    doc.setFontSize(16);
-    doc.text(instituteName.toUpperCase(), 148.5, 18, { align: "center" });
-
-    doc.setFontSize(12);
-    doc.text("X-RAY REPORT", 148.5, 26, { align: "center" });
-
-    doc.line(left, 30, right, 30);
+    addCenteredReportHeader(doc, {
+      centerX: 148.5,
+      left,
+      right,
+      institutionName: instituteName,
+      title: "X-RAY REPORT",
+      lineY: 30
+    });
+    addDownloadTimestamp(doc, { x: right, y: 12, align: "right", timestamp: downloadedAt });
 
     doc.setFontSize(10);
     doc.text(`Employee Name: ${patientName} ${employeeIdText}`, left, 40);
     doc.text(`Report For: ${issuedTo}`, left, 46);
-    doc.text(`Report Date: ${reportDate}`, left, 52);
+    doc.text(`Test Date: ${reportDate}`, left, 52);
 
     const tableData = report.Xrays.map((x) => [
       x.Xray_Type || "-",
@@ -269,7 +273,7 @@ const XrayReport = () => {
                       <th>Report For</th>
                       <th>Institute</th>
                       <th>No. of X‑rays</th>
-                      <th>Report Date</th>
+                      <th>Test Date</th>
                       <th>Details</th>
                     </tr>
                   </thead>
@@ -314,7 +318,7 @@ const XrayReport = () => {
                 <p><strong>Employee:</strong> {selectedReport.Employee?.Name}</p>
                 <p><strong>Report For:</strong> {selectedReport.IsFamilyMember ? `${selectedReport.FamilyMember?.Name} (${selectedReport.FamilyMember?.Relationship})` : 'Self'}</p>
                 <p><strong>Institute:</strong> {selectedReport.Institute?.Institute_Name}</p>
-                <p><strong>Date:</strong> {formatDate(selectedReport)}</p>
+                <p><strong>Test Date:</strong> {formatDate(selectedReport)}</p>
 
                 <hr />
 

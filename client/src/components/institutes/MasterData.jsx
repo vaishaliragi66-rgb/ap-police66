@@ -3,11 +3,16 @@ import axios from "axios";
 import { invalidateMasterDataCache } from "../../utils/masterData";
 import { DEFAULT_MASTER_OPTIONS, getMergedMasterValueObjects } from "../../utils/masterData";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
+import { mergeXrayTypes } from "../../data/xrayTypes";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const FIXED_CATEGORIES = Object.keys(DEFAULT_MASTER_OPTIONS).filter(
-  (categoryName) => categoryName !== "Disease Categories"
+  (categoryName) =>
+    categoryName !== "Disease Categories" &&
+    categoryName !== "Xray Categories" &&
+    categoryName !== "Xray Body Parts" &&
+    categoryName !== "Xray Views"
 );
 
 const sortUnique = (items) =>
@@ -91,6 +96,7 @@ const MasterData = () => {
   const [values, setValues] = useState([]);
   const [testsStructure, setTestsStructure] = useState({ categories: [], testsByCategory: {} });
   const [customTestMap, setCustomTestMap] = useState({});
+  const [customTestCategoryMap, setCustomTestCategoryMap] = useState({});
   const [selectedTestCategory, setSelectedTestCategory] = useState("");
   const [newTestCategoryName, setNewTestCategoryName] = useState("");
   const [newTestName, setNewTestName] = useState("");
@@ -100,6 +106,13 @@ const MasterData = () => {
   const [customDiseaseMap, setCustomDiseaseMap] = useState({});
   const [selectedDiseaseGroup, setSelectedDiseaseGroup] = useState("Communicable");
   const [newDiseaseName, setNewDiseaseName] = useState("");
+  const [xrayTypes, setXrayTypes] = useState([]);
+  const [selectedXrayBodyPart, setSelectedXrayBodyPart] = useState("");
+  const [newXrayBodyPart, setNewXrayBodyPart] = useState("");
+  const [newXrayName, setNewXrayName] = useState("");
+  const [newXraySide, setNewXraySide] = useState("NA");
+  const [newXrayFilmSize, setNewXrayFilmSize] = useState("");
+  const [customBodyPartMap, setCustomBodyPartMap] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -188,12 +201,20 @@ const MasterData = () => {
 
       const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
       const testMap = {};
+      const testCategoryMap = {};
+      masterValues
+        .filter((item) => item?.meta?.kind === "category")
+        .forEach((item) => {
+          const key = normalizeText(item?.value_name);
+          if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
+        });
       masterValues
         .filter((item) => item?.meta?.kind === "test")
         .forEach((item) => {
           const key = makePairKey(item?.meta?.category, item?.value_name);
           if (key !== "::") testMap[key] = item;
         });
+      setCustomTestCategoryMap(testCategoryMap);
       setCustomTestMap(testMap);
 
       const data = mergeTestsStructure(staticStructure, res.data || { categories: [], testsByCategory: {} });
@@ -240,12 +261,20 @@ const MasterData = () => {
       const diagnosisTests = Array.isArray(testsRes.data) ? testsRes.data : [];
       const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
       const testMap = {};
+      const testCategoryMap = {};
+      masterValues
+        .filter((item) => item?.meta?.kind === "category")
+        .forEach((item) => {
+          const key = normalizeText(item?.value_name);
+          if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
+        });
       masterValues
         .filter((item) => item?.meta?.kind === "test")
         .forEach((item) => {
           const key = makePairKey(item?.meta?.category, item?.value_name);
           if (key !== "::") testMap[key] = item;
         });
+      setCustomTestCategoryMap(testCategoryMap);
       setCustomTestMap(testMap);
 
       const grouped = { ...staticStructure.testsByCategory };
@@ -453,6 +482,40 @@ const MasterData = () => {
     }
   };
 
+  const loadXrayTypes = async () => {
+    try {
+      const [xrayRes, bodyPartRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/xray-api/types`),
+        axios.get(`${BACKEND_URL}/xray-api/body-parts`).catch(() => ({ data: [] }))
+      ]);
+      
+      const rows = Array.isArray(xrayRes.data) ? xrayRes.data : [];
+      const merged = mergeXrayTypes(rows).filter((item) => String(item?.status || "Active") === "Active");
+      setXrayTypes(merged);
+
+      // Build map of custom body parts
+      const bodyPartMap = {};
+      const bodyPartsData = Array.isArray(bodyPartRes.data) ? bodyPartRes.data : [];
+      bodyPartsData.forEach((bp) => {
+        if (bp?._id && bp?.Body_Part) {
+          bodyPartMap[String(bp.Body_Part).trim().toLowerCase()] = bp;
+        }
+      });
+      setCustomBodyPartMap(bodyPartMap);
+
+      if (!selectedXrayBodyPart && merged.length > 0) {
+        setSelectedXrayBodyPart(String(merged[0]?.Body_Part || ""));
+      }
+    } catch (err) {
+      console.error(err);
+      const fallback = mergeXrayTypes([]);
+      setXrayTypes(fallback);
+      setCustomBodyPartMap({});
+      setSelectedXrayBodyPart(fallback[0]?.Body_Part || "");
+      throw err;
+    }
+  };
+
   const refresh = async () => {
     setLoading(true);
     setError("");
@@ -481,6 +544,8 @@ const MasterData = () => {
         ? loadTestsStructure
         : selected.category_name === "Diseases"
         ? loadDiseasesStructure
+        : selected.category_name === "Xray Types"
+        ? loadXrayTypes
         : () => loadValues(selectedCategoryId);
 
     loader().catch((err) => {
@@ -508,8 +573,27 @@ const MasterData = () => {
           String(item?.name || "").toLowerCase().includes(searchText.toLowerCase())
         );
 
+  const xrayBodyParts = useMemo(
+    () =>
+      [...new Set([...xrayTypes, newXrayBodyPart, selectedXrayBodyPart].map((item) => String(item?.Body_Part || item || "").trim()).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [xrayTypes, newXrayBodyPart, selectedXrayBodyPart]
+  );
+
+  const filteredXrays = xrayTypes.filter((item) => {
+    const partMatch = !selectedXrayBodyPart || String(item.Body_Part || "").trim() === selectedXrayBodyPart;
+    const searchMatch =
+      !searchText.trim() ||
+      String(item.Body_Part || "").toLowerCase().includes(searchText.toLowerCase()) ||
+      String(item.Xray_Type || "").toLowerCase().includes(searchText.toLowerCase());
+    return partMatch && searchMatch;
+  });
+
   const handleEditSpecialValue = async (item, reloadFn) => {
-    if (!item?.masterValue?._id) return;
+    const itemId = item?.masterValue?._id || item?.id;
+    if (!itemId) return;
+
     const updated = window.prompt("Edit value", item.name || item.value_name);
     if (updated === null) return;
     const valueName = updated.trim();
@@ -519,11 +603,15 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.put(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, {
-        value_name: valueName,
-        meta: item.masterValue.meta || {}
-      });
-      setMessage("Value updated successfully");
+      if (item?.masterValue?._id) {
+        await axios.put(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, {
+          value_name: valueName,
+          meta: item.masterValue.meta || {}
+        });
+        setMessage("Value updated successfully");
+      } else {
+        setMessage("Built-in items cannot be edited");
+      }
       await reloadFn();
       invalidateMasterDataCache();
     } catch (err) {
@@ -535,15 +623,21 @@ const MasterData = () => {
   };
 
   const handleToggleSpecialValue = async (item, reloadFn) => {
-    if (!item?.masterValue?._id) return;
+    const itemId = item?.masterValue?._id || item?.id;
+    if (!itemId) return;
+
     setSaving(true);
     setMessage("");
     setError("");
     try {
-      await axios.put(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, {
-        status: item.status === "Active" ? "Inactive" : "Active"
-      });
-      setMessage("Value status updated");
+      if (item?.masterValue?._id) {
+        await axios.put(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, {
+          status: item.status === "Active" ? "Inactive" : "Active"
+        });
+        setMessage("Value status updated");
+      } else {
+        setMessage("Built-in items cannot be deactivated");
+      }
       await reloadFn();
       invalidateMasterDataCache();
     } catch (err) {
@@ -555,7 +649,9 @@ const MasterData = () => {
   };
 
   const handleDeleteSpecialValue = async (item, reloadFn) => {
-    if (!item?.masterValue?._id) return;
+    const itemId = item?.masterValue?._id || item?.id;
+    if (!itemId) return;
+
     const ok = window.confirm(`Delete '${item.name || item.value_name}'?`);
     if (!ok) return;
 
@@ -563,13 +659,52 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.delete(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`);
-      setMessage("Value deleted successfully");
+      if (item?.masterValue?._id) {
+        await axios.delete(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`);
+        setMessage("Value deleted successfully");
+      } else {
+        setMessage("Built-in items cannot be deleted directly");
+      }
       await reloadFn();
       invalidateMasterDataCache();
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to delete value");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteTestCategory = async (categoryName) => {
+    if (!categoryName) {
+      setError("Category name is required");
+      return;
+    }
+
+    const categoryKey = normalizeText(categoryName);
+    const masterValue = customTestCategoryMap[categoryKey];
+    
+    if (!masterValue || !masterValue._id) {
+      console.log("Info: Built-in category (no delete needed)", categoryName);
+      setMessage("Built-in categories cannot be deleted");
+      return;
+    }
+
+    const ok = window.confirm(`Delete test category '${categoryName}' and all its tests?`);
+    if (!ok) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      const response = await axios.delete(`${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`);
+      setMessage("Test category deleted successfully");
+      await loadTestsStructure();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Delete category error:", err);
+      const errorMsg = err.response?.data?.message || err.message || "Failed to delete test category";
+      setError(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -666,24 +801,16 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      try {
-        await axios.post(`${BACKEND_URL}/master-data-api/tests/category`, {
-          name: newTestCategoryName.trim()
-        });
-      } catch (err) {
-        if (err?.response?.status !== 404) throw err;
-        await axios.post(`${BACKEND_URL}/master-data-api/values`, {
-          category_id: selectedCategoryId,
-          value_name: newTestCategoryName.trim(),
-          meta: { kind: "category" }
-        });
-      }
+      // Use the primary endpoint which handles Tests category internally
+      const response = await axios.post(`${BACKEND_URL}/master-data-api/tests/category`, {
+        name: newTestCategoryName.trim()
+      });
       setNewTestCategoryName("");
       setMessage("Test category added successfully");
       await loadTestsStructure();
       invalidateMasterDataCache();
     } catch (err) {
-      console.error(err);
+      console.error("Error adding test category:", err);
       setError(err.response?.data?.message || "Failed to add test category");
     } finally {
       setSaving(false);
@@ -783,6 +910,227 @@ const MasterData = () => {
     }
   };
 
+  const handleAddXray = async () => {
+    const bodyPart = String(newXrayBodyPart || selectedXrayBodyPart || "").trim();
+    const xrayType = String(newXrayName || "").trim();
+    if (!bodyPart || !xrayType) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.post(`${BACKEND_URL}/xray-api/xrays/add`, {
+        Body_Part: bodyPart,
+        Xray_Type: xrayType,
+        Side: newXraySide || "NA",
+        View: "",
+        Film_Size: newXrayFilmSize.trim()
+      });
+      setNewXrayBodyPart("");
+      setNewXrayName("");
+      setNewXraySide("NA");
+      setNewXrayFilmSize("");
+      setMessage("X-ray added successfully");
+      await loadXrayTypes();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to add x-ray");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddXrayBodyPart = async () => {
+    const bodyPart = String(newXrayBodyPart || "").trim();
+    if (!bodyPart) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.post(`${BACKEND_URL}/xray-api/body-parts`, {
+        Body_Part: bodyPart
+      });
+      setNewXrayBodyPart("");
+      setSelectedXrayBodyPart(bodyPart);
+      setMessage("Body part added successfully");
+      await loadXrayTypes();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Error adding body part:", err);
+      setError(err.response?.data?.message || "Failed to add body part");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditXray = async (item) => {
+    const newType = window.prompt("Edit X-ray type", item.Xray_Type || "");
+    if (newType === null) return;
+    const newBodyPart = window.prompt("Edit body part", item.Body_Part || "");
+    if (newBodyPart === null) return;
+
+    const xrayType = newType.trim();
+    const bodyPart = newBodyPart.trim();
+    if (!xrayType || !bodyPart) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/xray-api/xrays/${item._id}`, {
+        Xray_Type: xrayType,
+        Body_Part: bodyPart,
+        Side: item.Side || "NA",
+        View: item.View || "",
+        Film_Size: item.Film_Size || ""
+      });
+      setMessage("X-ray updated successfully");
+      await loadXrayTypes();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to update x-ray");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteXray = async (item) => {
+    const ok = window.confirm(`Delete '${item.Xray_Type}'?`);
+    if (!ok) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.delete(`${BACKEND_URL}/xray-api/xrays/${item._id}`);
+      setMessage("X-ray deleted successfully");
+      await loadXrayTypes();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to delete x-ray");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleXrayStatus = async (item) => {
+    if (!item?._id) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/xray-api/xrays/${item._id}`, {
+        Xray_Type: item.Xray_Type,
+        Body_Part: item.Body_Part,
+        Side: item.Side || "NA",
+        View: item.View || "",
+        Film_Size: item.Film_Size || "",
+        status: item.status === "Active" ? "Inactive" : "Active"
+      });
+      setMessage("X-ray status updated successfully");
+      await loadXrayTypes();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to update x-ray status");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteXrayBodyPart = async (bodyPartName) => {
+    if (!bodyPartName) return;
+
+    const bodyPartKey = String(bodyPartName || "").trim().toLowerCase();
+    const bodyPartRecord = customBodyPartMap[bodyPartKey];
+    
+    if (!bodyPartRecord || !bodyPartRecord._id) {
+      setError("This is a built-in body part and cannot be deleted");
+      return;
+    }
+
+    const ok = window.confirm(`Delete body part '${bodyPartName}' and all its X-ray types?`);
+    if (!ok) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.delete(`${BACKEND_URL}/xray-api/body-parts/${bodyPartRecord._id}`);
+      setMessage("Body part deleted successfully");
+      if (selectedXrayBodyPart === bodyPartName) {
+        setSelectedXrayBodyPart("");
+      }
+      await loadXrayTypes();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Delete body part error:", err);
+      const errorMsg = err.response?.data?.message || err.message || "Failed to delete body part";
+      setError(errorMsg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditXrayBodyPart = async (bodyPartRecord, bodyPartName) => {
+    if (!bodyPartRecord || !bodyPartRecord._id) {
+      setMessage("Built-in body parts cannot be edited");
+      return;
+    }
+
+    const updated = window.prompt("Edit body part name", bodyPartName);
+    if (updated === null) return;
+    const newName = updated.trim();
+    if (!newName) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/xray-api/body-parts/${bodyPartRecord._id}`, {
+        Body_Part: newName
+      });
+      setMessage("Body part updated successfully");
+      await loadXrayTypes();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to update body part");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleXrayBodyPartStatus = async (bodyPartRecord, bodyPartName) => {
+    if (!bodyPartRecord || !bodyPartRecord._id) {
+      setMessage("Built-in body parts cannot be deactivated");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/xray-api/body-parts/${bodyPartRecord._id}`, {
+        Body_Part: bodyPartName,
+        status: bodyPartRecord.status === "Active" ? "Inactive" : "Active"
+      });
+      setMessage("Body part status updated successfully");
+      await loadXrayTypes();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to update body part status");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="container-fluid py-3">
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
@@ -838,6 +1186,8 @@ const MasterData = () => {
                   ? `${filteredTests.length} items`
                   : selectedCategory?.category_name === "Diseases"
                   ? `${filteredDiseases.length} items`
+                  : selectedCategory?.category_name === "Xray Types"
+                  ? `${filteredXrays.length} items`
                   : `${filteredValues.length} items`}
               </span>
             </div>
@@ -855,6 +1205,64 @@ const MasterData = () => {
 
               {selectedCategory?.category_name === "Tests" && (
                 <>
+                  <div className="table-responsive mb-3">
+                    <table className="table table-bordered table-striped align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: 80 }}>ID</th>
+                          <th>Test Category</th>
+                          <th style={{ width: 120 }}>Status</th>
+                          <th style={{ width: 240 }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {testsStructure.categories.map((item, idx) => {
+                          const masterValue = customTestCategoryMap[normalizeText(item)] || null;
+                          const isCustom = Boolean(masterValue?._id);
+                          const status = masterValue?.status || "Active";
+
+                          return (
+                            <tr key={item}>
+                              <td>{idx + 1}</td>
+                              <td>{item}</td>
+                              <td>
+                                <span className={`badge ${status === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                  {status}
+                                </span>
+                              </td>
+                              <td className="d-flex flex-wrap gap-2">
+                                <button
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() => handleEditSpecialValue({...masterValue, name: item}, loadTestsStructure)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={isCustom ? "Edit this category" : "Cannot edit built-in categories"}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-warning"
+                                  onClick={() => handleToggleSpecialValue({...masterValue, name: item, status}, loadTestsStructure)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={isCustom ? "Toggle status" : "Cannot deactivate built-in categories"}
+                                >
+                                  {status === "Active" ? "Deactivate" : "Activate"}
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDeleteTestCategory(item)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={isCustom ? "Delete this category" : "Cannot delete built-in categories"}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
                   <div className="row g-2 mb-3">
                     <div className="col-md-8">
                       <input
@@ -961,21 +1369,24 @@ const MasterData = () => {
                               <button
                                 className="btn btn-sm btn-outline-primary"
                                 onClick={() => handleEditSpecialValue(item, loadTestsStructure)}
-                                disabled={!isInstituteAdmin || saving || !item.masterValue?._id}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Edit this test" : "Cannot edit built-in tests"}
                               >
                                 Edit
                               </button>
                               <button
                                 className="btn btn-sm btn-outline-warning"
                                 onClick={() => handleToggleSpecialValue(item, loadTestsStructure)}
-                                disabled={!isInstituteAdmin || saving || !item.masterValue?._id}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Toggle status" : "Cannot deactivate built-in tests"}
                               >
                                 {item.status === "Active" ? "Deactivate" : "Activate"}
                               </button>
                               <button
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => handleDeleteSpecialValue(item, loadTestsStructure)}
-                                disabled={!isInstituteAdmin || saving || !item.masterValue?._id}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Delete this test" : "Cannot delete built-in tests"}
                               >
                                 Delete
                               </button>
@@ -1052,21 +1463,24 @@ const MasterData = () => {
                               <button
                                 className="btn btn-sm btn-outline-primary"
                                 onClick={() => handleEditSpecialValue(item, loadDiseasesStructure)}
-                                disabled={!isInstituteAdmin || saving || !item.masterValue?._id}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Edit this disease" : "Cannot edit built-in diseases"}
                               >
                                 Edit
                               </button>
                               <button
                                 className="btn btn-sm btn-outline-warning"
                                 onClick={() => handleToggleSpecialValue(item, loadDiseasesStructure)}
-                                disabled={!isInstituteAdmin || saving || !item.masterValue?._id}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Toggle status" : "Cannot deactivate built-in diseases"}
                               >
                                 {item.status === "Active" ? "Deactivate" : "Activate"}
                               </button>
                               <button
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => handleDeleteSpecialValue(item, loadDiseasesStructure)}
-                                disabled={!isInstituteAdmin || saving || !item.masterValue?._id}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Delete this disease" : "Cannot delete built-in diseases"}
                               >
                                 Delete
                               </button>
@@ -1079,7 +1493,223 @@ const MasterData = () => {
                 </>
               )}
 
-              {selectedCategory && !["Tests", "Diseases"].includes(selectedCategory.category_name) && (
+              {selectedCategory?.category_name === "Xray Types" && (
+                <>
+                  <div className="alert alert-light border py-2 px-3 small mb-3">
+                    Manage the X-ray master list here. Add a new body part by typing a new body part name, then add X-ray tests under it.
+                  </div>
+
+                  <div className="table-responsive mb-4">
+                    <table className="table table-bordered table-striped align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: 80 }}>ID</th>
+                          <th>Body Part</th>
+                          <th style={{ width: 120 }}>Status</th>
+                          <th style={{ width: 300 }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {xrayBodyParts.map((part, idx) => {
+                          const partKey = String(part || "").trim().toLowerCase();
+                          const bodyPartRecord = customBodyPartMap[partKey];
+                          const isCustom = Boolean(bodyPartRecord?._id);
+                          const status = bodyPartRecord?.status || "Active";
+                          return (
+                            <tr key={part}>
+                              <td>{idx + 1}</td>
+                              <td>{part}</td>
+                              <td>
+                                <span className={`badge ${status === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                  {status}
+                                </span>
+                              </td>
+                              <td className="d-flex flex-wrap gap-2">
+                                <button
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() => handleEditXrayBodyPart(bodyPartRecord, part)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={isCustom ? "Edit this body part" : "Cannot edit built-in body parts"}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-warning"
+                                  onClick={() => handleToggleXrayBodyPartStatus(bodyPartRecord, part)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={isCustom ? "Toggle status" : "Cannot deactivate built-in body parts"}
+                                >
+                                  {status === "Active" ? "Deactivate" : "Activate"}
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDeleteXrayBodyPart(part)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={isCustom ? "Delete this body part" : "Cannot delete built-in body parts"}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-8">
+                      <input
+                        className="form-control"
+                        placeholder="Add new body part"
+                        value={newXrayBodyPart}
+                        onChange={(e) => setNewXrayBodyPart(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <button
+                        className="btn btn-success w-100"
+                        onClick={handleAddXrayBodyPart}
+                        disabled={!isInstituteAdmin || saving || !newXrayBodyPart.trim()}
+                      >
+                        Add Body Part
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-3">
+                      <select
+                        className="form-select"
+                        value={selectedXrayBodyPart}
+                        onChange={(e) => setSelectedXrayBodyPart(e.target.value)}
+                      >
+                        <option value="">Select body part</option>
+                        {xrayBodyParts.map((part) => (
+                          <option key={part} value={part}>{part}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <input
+                        className="form-control"
+                        placeholder="Add X-ray type name"
+                        value={newXrayName}
+                        onChange={(e) => setNewXrayName(e.target.value)}
+                        disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart}
+                      />
+                    </div>
+                    <div className="col-md-2">
+                      <select
+                        className="form-select"
+                        value={newXraySide}
+                        onChange={(e) => setNewXraySide(e.target.value)}
+                        disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart}
+                      >
+                        <option value="NA">NA</option>
+                        <option value="Left">Left</option>
+                        <option value="Right">Right</option>
+                        <option value="Both">Both</option>
+                      </select>
+                    </div>
+                    <div className="col-md-3">
+                      <input
+                        className="form-control"
+                        placeholder="Film size (optional)"
+                        value={newXrayFilmSize}
+                        onChange={(e) => setNewXrayFilmSize(e.target.value.toUpperCase().replace(/\s+/g, ""))}
+                        disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart}
+                      />
+                    </div>
+                    <div className="col-md-2">
+                      <button
+                        className="btn btn-success w-100"
+                        onClick={handleAddXray}
+                        disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart || !newXrayName.trim()}
+                      >
+                        Add X-ray
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-5">
+                      <input
+                        className="form-control"
+                        placeholder="Search X-ray type"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="table table-bordered table-striped align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: 80 }}>ID</th>
+                          <th>Body Part</th>
+                          <th>X-ray Test</th>
+                          <th style={{ width: 130 }}>Side</th>
+                          <th style={{ width: 130 }}>Film Size</th>
+                          <th style={{ width: 120 }}>Status</th>
+                          <th style={{ width: 300 }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {!loading && filteredXrays.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="text-center py-4 text-muted">No x-ray types found</td>
+                          </tr>
+                        )}
+                        {filteredXrays.map((item, idx) => (
+                            <tr key={item._id || `${item.Body_Part}-${item.Xray_Type}-${idx}`}>
+                              <td>{idx + 1}</td>
+                              <td>{item.Body_Part || "-"}</td>
+                              <td>{item.Xray_Type || "-"}</td>
+                              <td>{item.Side || "NA"}</td>
+                              <td>{item.Film_Size || "-"}</td>
+                              <td>
+                                <span className={`badge ${item.status === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                  {item.status || "Active"}
+                                </span>
+                              </td>
+                              <td className="d-flex flex-wrap gap-2">
+                                <button
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() => handleEditXray(item)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title="Edit this X-ray type"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-warning"
+                                  onClick={() => handleToggleXrayStatus(item)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title="Toggle status"
+                                >
+                                  {item.status === "Active" ? "Deactivate" : "Activate"}
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDeleteXray(item)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title="Delete this X-ray type"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              {selectedCategory && !["Tests", "Diseases", "Xray Types"].includes(selectedCategory.category_name) && (
                 <>
                   <div className="row g-2 mb-3">
                     <div className="col-md-7">

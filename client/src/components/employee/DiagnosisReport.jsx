@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
+import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const DiagnosisReport = () => {
@@ -58,41 +59,84 @@ useEffect(() => {
   };
 
   /* ================= STATUS ================= */
-  const getStatus = (result, range) => {
-  try {
-    const value = parseFloat(result);
-    if (isNaN(value) || !range) return "N/A";
+  const evaluateAgainstRangeExpression = (value, expression) => {
+    const exp = String(expression || "").replace(/[–—]/g, "-").trim();
+    if (!exp) return null;
 
-    // Normalize dash (– or — to -)
-    const normalizedRange = range.replace(/[–—]/g, "-").trim();
-
-    // Case 1: range like 7-56
-    const rangeMatch = normalizedRange.match(/^(\d+\.?\d*)-(\d+\.?\d*)$/);
+    const rangeMatch = exp.match(/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)$/);
     if (rangeMatch) {
       const low = parseFloat(rangeMatch[1]);
       const high = parseFloat(rangeMatch[2]);
-      return value >= low && value <= high ? "Normal" : "Risk";
+      return value >= low && value <= high;
     }
 
-    // Case 2: less than <5.7
-    const lessMatch = normalizedRange.match(/^<\s*(\d+\.?\d*)$/);
-    if (lessMatch) {
-      const limit = parseFloat(lessMatch[1]);
-      return value < limit ? "Normal" : "Risk";
-    }
+    const lessEqMatch = exp.match(/^<=\s*(\d+(?:\.\d+)?)$/);
+    if (lessEqMatch) return value <= parseFloat(lessEqMatch[1]);
 
-    // Case 3: greater than >10
-    const greaterMatch = normalizedRange.match(/^>\s*(\d+\.?\d*)$/);
-    if (greaterMatch) {
-      const limit = parseFloat(greaterMatch[1]);
-      return value > limit ? "Normal" : "Risk";
-    }
+    const greaterEqMatch = exp.match(/^>=\s*(\d+(?:\.\d+)?)$/);
+    if (greaterEqMatch) return value >= parseFloat(greaterEqMatch[1]);
 
-    return "N/A"; // for "Varies by age and sex"
-  } catch {
-    return "N/A";
-  }
-};
+    const lessMatch = exp.match(/^<\s*(\d+(?:\.\d+)?)$/);
+    if (lessMatch) return value < parseFloat(lessMatch[1]);
+
+    const greaterMatch = exp.match(/^>\s*(\d+(?:\.\d+)?)$/);
+    if (greaterMatch) return value > parseFloat(greaterMatch[1]);
+
+    return null;
+  };
+
+  const getStatus = (result, range, gender = "") => {
+    try {
+      const value = parseFloat(result);
+      if (isNaN(value) || !range) return "N/A";
+
+      const normalizedRange = String(range).replace(/[–—]/g, "-");
+      const normalizedGender = String(gender || "").trim().toLowerCase();
+      const isMale = normalizedGender.startsWith("m");
+      const isFemale = normalizedGender.startsWith("f");
+
+      const segments = normalizedRange.split("|").map((s) => s.trim()).filter(Boolean);
+      const genderSpecific = [];
+      const generic = [];
+
+      segments.forEach((segment) => {
+        const labeled = segment.match(/^(male|female|m|f)\s*[:=-]\s*(.+)$/i);
+        if (labeled) {
+          genderSpecific.push({
+            label: labeled[1].toLowerCase(),
+            expression: labeled[2].trim(),
+          });
+        } else {
+          generic.push(segment);
+        }
+      });
+
+      const preferred = [];
+      if (genderSpecific.length > 0) {
+        const genderMatch = genderSpecific.find((item) => (isMale && (item.label === "m" || item.label === "male")) || (isFemale && (item.label === "f" || item.label === "female")));
+        if (genderMatch) preferred.push(genderMatch.expression);
+      }
+      preferred.push(...generic);
+
+      for (const expression of preferred) {
+        const ok = evaluateAgainstRangeExpression(value, expression);
+        if (ok !== null) return ok ? "Normal" : "Risk";
+      }
+
+      // Fallback for ranges without explicit separator, e.g. "M: 4.7-6.1 F: 4.2-5.4"
+      const maleInline = normalizedRange.match(/(?:male|\bm\b)\s*[:=-]\s*([^|,;]+)/i);
+      const femaleInline = normalizedRange.match(/(?:female|\bf\b)\s*[:=-]\s*([^|,;]+)/i);
+      const inlineExpression = (isMale && maleInline?.[1]) || (isFemale && femaleInline?.[1]) || null;
+      if (inlineExpression) {
+        const ok = evaluateAgainstRangeExpression(value, inlineExpression);
+        if (ok !== null) return ok ? "Normal" : "Risk";
+      }
+
+      return "N/A";
+    } catch {
+      return "N/A";
+    }
+  };
 
   // determine category for a test object
   const getCategoryForTest = (t) => {
@@ -118,10 +162,10 @@ useEffect(() => {
     const left = 15;
     const right = 195;
 
-    const instituteName =
-      report.Institute?.Institute_Name || "Medical Institute";
+    const instituteName = getReportInstitutionName(report.Institute?.Institute_Name);
 
     const reportDate = formatDate(report);
+    const downloadedAt = formatReportTimestamp();
 
     const patientName = report.Employee?.Name || "Employee";
     const employeeIdText = report.Employee?.ABS_NO
@@ -133,23 +177,21 @@ useEffect(() => {
       : "Self";
 
     /* ---------- HEADER ---------- */
-    doc.setFontSize(16);
-    doc.text(instituteName.toUpperCase(), 105, 20, {
-      align: "center"
+    addCenteredReportHeader(doc, {
+      centerX: 105,
+      left,
+      right,
+      institutionName: instituteName,
+      title: "DIAGNOSTIC LABORATORY REPORT",
+      lineY: 32
     });
-
-    doc.setFontSize(12);
-    doc.text("DIAGNOSTIC LABORATORY REPORT", 105, 28, {
-      align: "center"
-    });
-
-    doc.line(left, 32, right, 32);
+    addDownloadTimestamp(doc, { x: right, y: 12, align: "right", timestamp: downloadedAt });
 
     /* ---------- PATIENT DETAILS ---------- */
     doc.setFontSize(10);
     doc.text(`Employee Name: ${patientName} ${employeeIdText}`, left, 42);
     doc.text(`Report For: ${issuedTo}`, left, 48);
-    doc.text(`Report Date: ${reportDate}`, left, 54);
+    doc.text(`Test Date: ${reportDate}`, left, 54);
 
     /* ---------- TEST TABLE ---------- */
     const tableData = report.Tests.map((t) => {
@@ -170,7 +212,7 @@ useEffect(() => {
         t.Test_Name,
         `${t.Result_Value} ${t.Units || ""}`,
         t.Test_ID?.Reference_Range || t.Reference_Range || "-",
-        getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range)
+        getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range, report.Employee?.Gender)
       ];
     });
 
@@ -180,6 +222,11 @@ useEffect(() => {
       body: tableData,
       styles: { fontSize: 9 },
       headStyles: { fillColor: [40, 40, 40] },
+      didParseCell: (data) => {
+        if (data.section === "body" && data.row.raw?.[4] === "Risk" && data.column.index === 2) {
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
       margin: { left, right: 15 }
     });
 
@@ -329,7 +376,7 @@ return (
                     <th>Report For</th>
                     <th>Institute</th>
                     <th>No. of Tests</th>
-                    <th>Report Date</th>
+                    <th>Test Date</th>
                     <th>Lab Report</th>
                   </tr>
                 </thead>
@@ -435,7 +482,7 @@ return (
               : "Self"}
           </p>
           <p><strong>Institute:</strong> {selectedReport.Institute?.Institute_Name}</p>
-          <p><strong>Date:</strong> {formatDate(selectedReport)}</p>
+          <p><strong>Test Date:</strong> {formatDate(selectedReport)}</p>
 
           <hr />
 
@@ -470,14 +517,16 @@ return (
                       <span className={`badge ${
                         getStatus(
                           t.Result_Value,
-                          t.Test_ID?.Reference_Range || t.Reference_Range
+                          t.Test_ID?.Reference_Range || t.Reference_Range,
+                          selectedReport.Employee?.Gender
                         ) === "Normal"
                           ? "bg-success"
                           : "bg-danger"
                       }`}>
                         {getStatus(
                           t.Result_Value,
-                          t.Test_ID?.Reference_Range || t.Reference_Range
+                          t.Test_ID?.Reference_Range || t.Reference_Range,
+                          selectedReport.Employee?.Gender
                         )}
                       </span>
                     </td>

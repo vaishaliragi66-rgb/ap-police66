@@ -3,149 +3,21 @@ import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import DEFAULT_XRAY_TYPES, { mergeXrayTypes } from "../../data/xrayTypes";
 
-const DEFAULT_XRAY_CATEGORIES = [
-  "Head & Neck",
-  "Chest & Thorax",
-  "Upper Limb",
-  "Lower Limb",
-  "Spine",
-  "Abdomen",
-];
+const normalizeFilmSize = (value) => {
+  const cleaned = String(value || "")
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[^0-9X]/g, "")
+    .replace(/X+/g, "X");
 
-const DEFAULT_XRAY_TYPES = [
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Skull X-ray – AP view", Body_Part: "Skull", Side: "NA", View: "AP" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Skull X-ray – Lateral view (Right)", Body_Part: "Skull", Side: "Right", View: "Lateral" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Skull X-ray – Lateral view (Left)", Body_Part: "Skull", Side: "Left", View: "Lateral" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Skull X-ray – Towne view", Body_Part: "Skull", Side: "NA", View: "Towne" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Sinus X-ray – Waters view (occipitomental)", Body_Part: "Sinus", Side: "NA", View: "Waters" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Sinus X-ray – Caldwell view", Body_Part: "Sinus", Side: "NA", View: "Caldwell" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Sinus X-ray – Lateral view (Right)", Body_Part: "Sinus", Side: "Right", View: "Lateral" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Sinus X-ray – Lateral view (Left)", Body_Part: "Sinus", Side: "Left", View: "Lateral" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Cervical spine X-ray – AP view", Body_Part: "Cervical spine", Side: "NA", View: "AP" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Cervical spine X-ray – Lateral view (Right)", Body_Part: "Cervical spine", Side: "Right", View: "Lateral" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Cervical spine X-ray – Lateral view (Left)", Body_Part: "Cervical spine", Side: "Left", View: "Lateral" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Cervical spine X-ray – Oblique view (Right)", Body_Part: "Cervical spine", Side: "Right", View: "Oblique" },
-  { category: "Head & Neck", subcategory: "", Xray_Type: "Cervical spine X-ray – Oblique view (Left)", Body_Part: "Cervical spine", Side: "Left", View: "Oblique" },
-  { category: "Chest & Thorax", subcategory: "", Xray_Type: "Chest X-ray – PA view", Body_Part: "Chest", Side: "NA", View: "PA" },
-  { category: "Chest & Thorax", subcategory: "", Xray_Type: "Chest X-ray – AP view", Body_Part: "Chest", Side: "NA", View: "AP" },
-  { category: "Chest & Thorax", subcategory: "", Xray_Type: "Chest X-ray – Lateral view (Right)", Body_Part: "Chest", Side: "Right", View: "Lateral" },
-  { category: "Chest & Thorax", subcategory: "", Xray_Type: "Chest X-ray – Lateral view (Left)", Body_Part: "Chest", Side: "Left", View: "Lateral" },
-  { category: "Chest & Thorax", subcategory: "", Xray_Type: "Chest X-ray – Decubitus view (Right)", Body_Part: "Chest", Side: "Right", View: "Decubitus" },
-  { category: "Chest & Thorax", subcategory: "", Xray_Type: "Chest X-ray – Decubitus view (Left)", Body_Part: "Chest", Side: "Left", View: "Decubitus" },
-  { category: "Chest & Thorax", subcategory: "", Xray_Type: "Chest X-ray – Lordotic view", Body_Part: "Chest", Side: "NA", View: "Lordotic" },
-  { category: "Chest & Thorax", subcategory: "", Xray_Type: "Chest X-ray – Expiratory view", Body_Part: "Chest", Side: "NA", View: "Expiratory" },
-  { category: "Upper Limb", subcategory: "Shoulder & Arm", Xray_Type: "Right Shoulder X-ray – AP view", Body_Part: "Shoulder", Side: "Right", View: "AP" },
-  { category: "Upper Limb", subcategory: "Shoulder & Arm", Xray_Type: "Right Shoulder X-ray – Axillary view", Body_Part: "Shoulder", Side: "Right", View: "Axillary" },
-  { category: "Upper Limb", subcategory: "Shoulder & Arm", Xray_Type: "Left Shoulder X-ray – AP view", Body_Part: "Shoulder", Side: "Left", View: "AP" },
-  { category: "Upper Limb", subcategory: "Shoulder & Arm", Xray_Type: "Left Shoulder X-ray – Axillary view", Body_Part: "Shoulder", Side: "Left", View: "Axillary" },
-  { category: "Upper Limb", subcategory: "Shoulder & Arm", Xray_Type: "Right Humerus X-ray – AP view", Body_Part: "Humerus", Side: "Right", View: "AP" },
-  { category: "Upper Limb", subcategory: "Shoulder & Arm", Xray_Type: "Right Humerus X-ray – Lateral view", Body_Part: "Humerus", Side: "Right", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Shoulder & Arm", Xray_Type: "Left Humerus X-ray – AP view", Body_Part: "Humerus", Side: "Left", View: "AP" },
-  { category: "Upper Limb", subcategory: "Shoulder & Arm", Xray_Type: "Left Humerus X-ray – Lateral view", Body_Part: "Humerus", Side: "Left", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Elbow", Xray_Type: "Right Elbow X-ray – Lateral view", Body_Part: "Elbow", Side: "Right", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Elbow", Xray_Type: "Right Elbow X-ray – AP", Body_Part: "Elbow", Side: "Right", View: "AP" },
-  { category: "Upper Limb", subcategory: "Elbow", Xray_Type: "Left Elbow X-ray – AP view", Body_Part: "Elbow", Side: "Left", View: "AP" },
-  { category: "Upper Limb", subcategory: "Elbow", Xray_Type: "Left Elbow X-ray – Lateral view", Body_Part: "Elbow", Side: "Left", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Right Forearm X-ray – AP view", Body_Part: "Forearm", Side: "Right", View: "AP" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Right Forearm X-ray – Lateral view", Body_Part: "Forearm", Side: "Right", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Left Forearm X-ray – AP view", Body_Part: "Forearm", Side: "Left", View: "AP" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Left Forearm X-ray – Lateral view", Body_Part: "Forearm", Side: "Left", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Right Wrist X-ray – PA view", Body_Part: "Wrist", Side: "Right", View: "PA" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Right Wrist X-ray – Lateral views", Body_Part: "Wrist", Side: "Right", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Right Wrist X-ray – Oblique view", Body_Part: "Wrist", Side: "Right", View: "Oblique" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Left Wrist X-ray – PA view", Body_Part: "Wrist", Side: "Left", View: "PA" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Left Wrist X-ray – Lateral views", Body_Part: "Wrist", Side: "Left", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Forearm & Wrist", Xray_Type: "Left Wrist X-ray – Oblique view", Body_Part: "Wrist", Side: "Left", View: "Oblique" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Right Hand X-ray – PA view", Body_Part: "Hand", Side: "Right", View: "PA" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Right Hand X-ray – Oblique view", Body_Part: "Hand", Side: "Right", View: "Oblique" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Right Hand X-ray – Lateral view", Body_Part: "Hand", Side: "Right", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Left Hand X-ray – PA view", Body_Part: "Hand", Side: "Left", View: "PA" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Left Hand X-ray – Oblique view", Body_Part: "Hand", Side: "Left", View: "Oblique" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Left Hand X-ray – Lateral view", Body_Part: "Hand", Side: "Left", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Right Finger X-ray – AP view", Body_Part: "Finger", Side: "Right", View: "AP" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Right Finger X-ray – Lateral view", Body_Part: "Finger", Side: "Right", View: "Lateral" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Left Finger X-ray – AP view", Body_Part: "Finger", Side: "Left", View: "AP" },
-  { category: "Upper Limb", subcategory: "Hand & Fingers", Xray_Type: "Left Finger X-ray – Lateral view", Body_Part: "Finger", Side: "Left", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Hip & Pelvis", Xray_Type: "Pelvis X-ray – AP view", Body_Part: "Pelvis", Side: "NA", View: "AP" },
-  { category: "Lower Limb", subcategory: "Hip & Pelvis", Xray_Type: "Right Hip X-ray – AP view", Body_Part: "Hip", Side: "Right", View: "AP" },
-  { category: "Lower Limb", subcategory: "Hip & Pelvis", Xray_Type: "Right Hip X-ray – Lateral view", Body_Part: "Hip", Side: "Right", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Hip & Pelvis", Xray_Type: "Left Hip X-ray – AP view", Body_Part: "Hip", Side: "Left", View: "AP" },
-  { category: "Lower Limb", subcategory: "Hip & Pelvis", Xray_Type: "Left Hip X-ray – Lateral view", Body_Part: "Hip", Side: "Left", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Femur", Xray_Type: "Right Femur X-ray – AP view", Body_Part: "Femur", Side: "Right", View: "AP" },
-  { category: "Lower Limb", subcategory: "Femur", Xray_Type: "Right Femur X-ray – Lateral view", Body_Part: "Femur", Side: "Right", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Femur", Xray_Type: "Left Femur X-ray – AP view", Body_Part: "Femur", Side: "Left", View: "AP" },
-  { category: "Lower Limb", subcategory: "Femur", Xray_Type: "Left Femur X-ray – Lateral view", Body_Part: "Femur", Side: "Left", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Knee", Xray_Type: "Right Knee X-ray – AP view", Body_Part: "Knee", Side: "Right", View: "AP" },
-  { category: "Lower Limb", subcategory: "Knee", Xray_Type: "Right Knee X-ray – Lateral view", Body_Part: "Knee", Side: "Right", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Knee", Xray_Type: "Right Knee X-ray – Skyline view", Body_Part: "Knee", Side: "Right", View: "Skyline" },
-  { category: "Lower Limb", subcategory: "Knee", Xray_Type: "Left Knee X-ray – AP view", Body_Part: "Knee", Side: "Left", View: "AP" },
-  { category: "Lower Limb", subcategory: "Knee", Xray_Type: "Left Knee X-ray – Lateral view", Body_Part: "Knee", Side: "Left", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Knee", Xray_Type: "Left Knee X-ray – Skyline view", Body_Part: "Knee", Side: "Left", View: "Skyline" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Right Tibia/Fibula X-ray – AP view", Body_Part: "Tibia/Fibula", Side: "Right", View: "AP" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Right Tibia/Fibula X-ray – Lateral view", Body_Part: "Tibia/Fibula", Side: "Right", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Left Tibia/Fibula X-ray – AP view", Body_Part: "Tibia/Fibula", Side: "Left", View: "AP" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Left Tibia/Fibula X-ray – Lateral view", Body_Part: "Tibia/Fibula", Side: "Left", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Right Ankle X-ray – AP view", Body_Part: "Ankle", Side: "Right", View: "AP" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Right Ankle X-ray – Lateral view", Body_Part: "Ankle", Side: "Right", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Right Ankle X-ray – Mortise view", Body_Part: "Ankle", Side: "Right", View: "Mortise" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Left Ankle X-ray – AP view", Body_Part: "Ankle", Side: "Left", View: "AP" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Left Ankle X-ray – Lateral view", Body_Part: "Ankle", Side: "Left", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Leg & Ankle", Xray_Type: "Left Ankle X-ray – Mortise view", Body_Part: "Ankle", Side: "Left", View: "Mortise" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Right Foot X-ray – AP view", Body_Part: "Foot", Side: "Right", View: "AP" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Right Foot X-ray – Lateral view", Body_Part: "Foot", Side: "Right", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Right Foot X-ray – Oblique view", Body_Part: "Foot", Side: "Right", View: "Oblique" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Left Foot X-ray – AP view", Body_Part: "Foot", Side: "Left", View: "AP" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Left Foot X-ray – Lateral view", Body_Part: "Foot", Side: "Left", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Left Foot X-ray – Oblique view", Body_Part: "Foot", Side: "Left", View: "Oblique" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Right Toe X-ray – AP view", Body_Part: "Toe", Side: "Right", View: "AP" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Right Toe X-ray – Lateral view", Body_Part: "Toe", Side: "Right", View: "Lateral" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Left Toe X-ray – AP view", Body_Part: "Toe", Side: "Left", View: "AP" },
-  { category: "Lower Limb", subcategory: "Foot & Toes", Xray_Type: "Left Toe X-ray – Lateral view", Body_Part: "Toe", Side: "Left", View: "Lateral" },
-  { category: "Spine", subcategory: "", Xray_Type: "Cervical Spine X-ray – AP view", Body_Part: "Cervical Spine", Side: "NA", View: "AP" },
-  { category: "Spine", subcategory: "", Xray_Type: "Cervical Spine X-ray – Lateral view", Body_Part: "Cervical Spine", Side: "NA", View: "Lateral" },
-  { category: "Spine", subcategory: "", Xray_Type: "Cervical Spine X-ray – Oblique view", Body_Part: "Cervical Spine", Side: "NA", View: "Oblique" },
-  { category: "Spine", subcategory: "", Xray_Type: "Thoracic Spine X-ray – AP", Body_Part: "Thoracic Spine", Side: "NA", View: "AP" },
-  { category: "Spine", subcategory: "", Xray_Type: "Thoracic Spine X-ray – Lateral view", Body_Part: "Thoracic Spine", Side: "NA", View: "Lateral" },
-  { category: "Spine", subcategory: "", Xray_Type: "Lumbar Spine X-ray – AP view", Body_Part: "Lumbar Spine", Side: "NA", View: "AP" },
-  { category: "Spine", subcategory: "", Xray_Type: "Lumbar Spine X-ray – Lateral view", Body_Part: "Lumbar Spine", Side: "NA", View: "Lateral" },
-  { category: "Spine", subcategory: "", Xray_Type: "Sacrum & Coccyx X-ray – AP view", Body_Part: "Sacrum & Coccyx", Side: "NA", View: "AP" },
-  { category: "Spine", subcategory: "", Xray_Type: "Sacrum & Coccyx X-ray – Lateral view", Body_Part: "Sacrum & Coccyx", Side: "NA", View: "Lateral" },
-  { category: "Abdomen", subcategory: "", Xray_Type: "Abdomen X-ray – Supine view", Body_Part: "Abdomen", Side: "NA", View: "Supine" },
-  { category: "Abdomen", subcategory: "", Xray_Type: "Abdomen X-ray – Erect view", Body_Part: "Abdomen", Side: "NA", View: "Erect" },
-  { category: "Abdomen", subcategory: "", Xray_Type: "Abdomen X-ray – Decubitus view", Body_Part: "Abdomen", Side: "NA", View: "Decubitus" },
-];
-
-const normalizeDefaultXrayId = (xray) =>
-  `default-xray-${(xray.category || "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${(xray.Xray_Type || "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-
-const mergeXrayTypes = (remoteTypes = []) => {
-  const map = new Map();
-
-  remoteTypes.forEach((item) => {
-    const key = `${item.Xray_Type}||${item.Body_Part}`;
-    map.set(key, { ...item });
-  });
-
-  DEFAULT_XRAY_TYPES.forEach((item) => {
-    const key = `${item.Xray_Type}||${item.Body_Part}`;
-    if (!map.has(key)) {
-      map.set(key, { ...item, _id: normalizeDefaultXrayId(item) });
-    } else {
-      const existing = map.get(key);
-      if (!existing.category) existing.category = item.category;
-      if (!existing.subcategory) existing.subcategory = item.subcategory;
-    }
-  });
-
-  return Array.from(map.values()).sort((a, b) => {
-    const categoryA = DEFAULT_XRAY_CATEGORIES.indexOf(a.category || "Other");
-    const categoryB = DEFAULT_XRAY_CATEGORIES.indexOf(b.category || "Other");
-    if (categoryA !== categoryB) return categoryA - categoryB;
-    if ((a.subcategory || "") !== (b.subcategory || "")) return (a.subcategory || "").localeCompare(b.subcategory || "");
-    return (a.Xray_Type || "").localeCompare(b.Xray_Type || "");
-  });
+  const parts = cleaned.split("X").filter(Boolean);
+  if (parts.length <= 1) return cleaned;
+  return `${parts[0]}X${parts.slice(1).join("")}`;
 };
+
+const isValidFilmSize = (value) => /^\d+X\d+$/.test(String(value || "").trim());
 
 const XrayEntryForm = () => {
   const [instituteName, setInstituteName] = useState("");
@@ -162,10 +34,15 @@ const XrayEntryForm = () => {
   const [showDoctorNotes, setShowDoctorNotes] = useState({});
   const navigate = useNavigate();
 
+  const xraySource = useMemo(
+    () => (xrayMaster.length ? xrayMaster : mergeXrayTypes([])),
+    [xrayMaster]
+  );
+
   const groupedXrayOptions = useMemo(() => {
     const groups = {};
 
-    (xrayMaster.length ? xrayMaster : mergeXrayTypes([])).forEach((xm) => {
+    xraySource.forEach((xm) => {
       const category = xm.category || "";
       if (!category || category === "Other") return;
       groups[category] = groups[category] || [];
@@ -182,7 +59,16 @@ const XrayEntryForm = () => {
     });
 
     return groups;
-  }, [xrayMaster]);
+  }, [xraySource]);
+
+  const bodyPartOptions = useMemo(() => {
+    const parts = new Set();
+    xraySource.forEach((item) => {
+      const part = String(item?.Body_Part || "").trim();
+      if (part) parts.add(part);
+    });
+    return Array.from(parts).sort((a, b) => a.localeCompare(b));
+  }, [xraySource]);
 
 
 
@@ -278,7 +164,17 @@ const fetchXrayTypes = async () => {
   setFormData(prev => {
     const updated = [...prev.Xrays];
 
-    if (field === "Xray_ID") {
+    if (field === "Body_Part") {
+      updated[index] = {
+        ...updated[index],
+        Body_Part: value,
+        Xray_ID: "",
+        Xray_Type: "",
+        Side: "NA",
+        View: "",
+        Film_Size: ""
+      };
+    } else if (field === "Xray_ID") {
       const sel = xrayMaster.find(x => x._id === value);
 
       if (sel) {
@@ -300,6 +196,11 @@ const fetchXrayTypes = async () => {
             : ""
         };
       }
+    } else if (field === "Film_Size") {
+      updated[index] = {
+        ...updated[index],
+        Film_Size: normalizeFilmSize(value)
+      };
     } else {
       updated[index] = {
         ...updated[index],
@@ -361,6 +262,15 @@ const fetchXrayTypes = async () => {
   const handleSubmit = async (e) => {
 
 e.preventDefault();
+
+const invalidFilmSizeIndex = formData.Xrays.findIndex(
+  (xray) => !isValidFilmSize(xray.Film_Size)
+);
+
+if (invalidFilmSizeIndex !== -1) {
+  alert(`Please enter a valid Film Size in format like 10X8 or 16X16 for X-ray #${invalidFilmSizeIndex + 1}`);
+  return;
+}
 
 const fd = new FormData();
 
@@ -741,57 +651,44 @@ alert("✅ Xray saved");
                       </div>
 
                       <div className="row g-3">
-                        <div className="col-md-6">
+                        <div className="col-md-4">
+                          <label className="form-label fw-semibold">Body Part</label>
+                          <select
+                            className="form-select"
+                            value={x.Body_Part || ""}
+                            onChange={(e) => handleXrayChange(i, "Body_Part", e.target.value)}
+                          >
+                            <option value="">Select body part</option>
+                            {bodyPartOptions.map((part) => (
+                              <option key={part} value={part}>
+                                {part}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="col-md-8">
                           <label className="form-label fw-semibold">X-ray Selection</label>
                           <select
                             className="form-select"
                             value={x.Xray_ID || ""}
                             onChange={(e) => handleXrayChange(i, "Xray_ID", e.target.value)}
+                            disabled={!x.Body_Part}
                           >
-                            <option value="">Select X-ray test (or type below)</option>
-                            {Object.entries(groupedXrayOptions).map(([category, items]) => (
-                              <optgroup label={category} key={category}>
-                                {items.map((xm) => (
-                                  <option key={xm._id} value={xm._id}>
-                                    {xm.subcategory ? `${xm.subcategory}: ` : ""}{xm.Xray_Type} ({xm.Body_Part})
-                                  </option>
-                                ))}
-                              </optgroup>
-                            ))}
+                            <option value="">{x.Body_Part ? "Select X-ray test" : "Select body part first"}</option>
+                            {xraySource
+                              .filter(
+                                (xm) =>
+                                  String(xm?.Body_Part || "").trim().toLowerCase() ===
+                                  String(x.Body_Part || "").trim().toLowerCase()
+                              )
+                              .sort((a, b) => String(a?.Xray_Type || "").localeCompare(String(b?.Xray_Type || "")))
+                              .map((xm) => (
+                                <option key={xm._id} value={xm._id}>
+                                  {xm.Xray_Type}
+                                </option>
+                              ))}
                           </select>
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold">X-ray Type</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="X-ray Type"
-                            value={x.Xray_Type}
-                            onChange={(e) => handleXrayChange(i, "Xray_Type", e.target.value)}
-                          />
-                        </div>
-
-                        <div className="col-md-4">
-                          <label className="form-label fw-semibold">Body Part</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Body Part"
-                            value={x.Body_Part}
-                            onChange={(e) => handleXrayChange(i, "Body_Part", e.target.value)}
-                          />
-                        </div>
-
-                        <div className="col-md-4">
-                          <label className="form-label fw-semibold">View</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="View (AP/PA)"
-                            value={x.View}
-                            onChange={(e) => handleXrayChange(i, "View", e.target.value)}
-                          />
                         </div>
 
                         <div className="col-md-4">
@@ -799,9 +696,12 @@ alert("✅ Xray saved");
                           <input
                             type="text"
                             className="form-control"
-                            placeholder="Film Size (10x8)"
+                            placeholder="10X8"
                             value={x.Film_Size}
                             onChange={(e) => handleXrayChange(i, "Film_Size", e.target.value)}
+                            inputMode="text"
+                            autoComplete="off"
+                            onBlur={(e) => handleXrayChange(i, "Film_Size", e.target.value)}
                           />
                         </div>
 

@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -87,8 +88,21 @@ const downloadCSV = (data) => {
 const downloadPDF = (data) => {
   if (!data.length) return;
   const doc = new jsPDF("l", "mm", "a4");
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const downloadedAt = formatReportTimestamp();
+
+  addCenteredReportHeader(doc, {
+    centerX: pageWidth / 2,
+    left: 14,
+    right: pageWidth - 14,
+    institutionName: getReportInstitutionName("POLICE HOSPITAL MANAGEMENT"),
+    title: "EMPLOYEE ANALYTICS REPORT",
+    lineY: 28
+  });
+  addDownloadTimestamp(doc, { x: pageWidth - 14, y: 12, align: "right", timestamp: downloadedAt });
 
   autoTable(doc, {
+    startY: 35,
     head: [[
       "Role",
       "ABS Number",

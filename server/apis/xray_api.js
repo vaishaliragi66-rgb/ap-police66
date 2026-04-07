@@ -88,6 +88,13 @@ const xrayStorage = multer.diskStorage({
 
 const xrayUpload = multer({ storage: xrayStorage, limits: { fileSize: 20 * 1024 * 1024 } });
 
+const requireInstituteAdmin = (req, res, next) => {
+  if (req.user?.role !== "institute") {
+    return res.status(403).json({ message: "Only institute admin can modify x-ray master data" });
+  }
+  next();
+};
+
 // ---------- DEBUG: Unauthenticated upload (for troubleshooting only) ----------
 // Note: temporary endpoint to verify multer/storage behavior without auth.
 xrayApp.post('/upload-debug', xrayUpload.single('report'), async (req, res) => {
@@ -111,7 +118,7 @@ xrayApp.post('/upload-debug', xrayUpload.single('report'), async (req, res) => {
 // GET all X-ray types
 xrayApp.get("/types", async (req, res) => {
   try {
-    const xrays = await Xray.find().sort({ Xray_Type: 1 });
+    const xrays = await Xray.find().sort({ Body_Part: 1, Xray_Type: 1 });
     res.json(xrays);
   } catch (err) {
     console.error("Error fetching X-ray types:", err);
@@ -182,7 +189,7 @@ xrayApp.get("/queue/:instituteId", async (req, res) => {
   }
 });
 
-xrayApp.post("/xrays/add", async (req, res) => {
+xrayApp.post("/xrays/add", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
     const {
       Xray_Type,
@@ -201,8 +208,7 @@ xrayApp.post("/xrays/add", async (req, res) => {
     // check duplicate
     const exists = await Xray.findOne({
       Xray_Type,
-      Body_Part,
-      View
+      Body_Part
     });
 
     if (exists) {
@@ -231,6 +237,48 @@ xrayApp.post("/xrays/add", async (req, res) => {
     res.status(500).json({
       error: "Failed to add xray"
     });
+  }
+});
+
+xrayApp.put("/xrays/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const xray = await Xray.findById(id);
+    if (!xray) {
+      return res.status(404).json({ message: "X-ray not found" });
+    }
+
+    const Xray_Type = String(req.body.Xray_Type || "").trim();
+    const Body_Part = String(req.body.Body_Part || "").trim();
+    const Side = String(req.body.Side || "NA").trim() || "NA";
+    const View = String(req.body.View || "").trim();
+    const Film_Size = String(req.body.Film_Size || "").trim();
+
+    if (Xray_Type) xray.Xray_Type = Xray_Type;
+    if (Body_Part) xray.Body_Part = Body_Part;
+    xray.Side = Side;
+    xray.View = View;
+    xray.Film_Size = Film_Size;
+
+    await xray.save();
+    res.json({ message: "X-ray updated", xray });
+  } catch (err) {
+    console.error("Error updating xray:", err);
+    res.status(500).json({ message: "Failed to update xray", error: err.message });
+  }
+});
+
+xrayApp.delete("/xrays/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Xray.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "X-ray not found" });
+    }
+    res.json({ message: "X-ray deleted" });
+  } catch (err) {
+    console.error("Error deleting xray:", err);
+    res.status(500).json({ message: "Failed to delete xray", error: err.message });
   }
 });
 
@@ -365,6 +413,149 @@ error:err.message
 
 }
 );
+
+// ✅ Get all body parts
+xrayApp.get("/body-parts", verifyToken, async (req, res) => {
+  try {
+    const bodyParts = await Xray.distinct("Body_Part");
+    const customBodyParts = await Xray.find({ "_id": { $exists: true } }).select("_id Body_Part status").sort({ Body_Part: 1 });
+    
+    const result = customBodyParts.map(bp => ({
+      _id: bp._id,
+      Body_Part: bp.Body_Part,
+      status: bp.status || "Active"
+    }));
+    
+    res.json(result);
+  } catch (err) {
+    console.error("Error fetching body parts:", err);
+    res.status(500).json({ message: "Failed to fetch body parts", error: err.message });
+  }
+});
+
+// ✅ Add a new body part
+xrayApp.post("/body-parts", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const { Body_Part } = req.body;
+    
+    if (!Body_Part || !String(Body_Part).trim()) {
+      return res.status(400).json({ message: "Body_Part is required" });
+    }
+
+    const bp = String(Body_Part).trim();
+    
+    // Check if already exists
+    const existing = await Xray.findOne({ Body_Part: bp });
+    if (existing) {
+      return res.status(409).json({ message: "This body part already exists" });
+    }
+
+    // Create a placeholder X-ray entry for this body part
+    const newXray = new Xray({
+      Body_Part: bp,
+      Xray_Type: `${bp} (placeholder)`,
+      Side: "NA",
+      View: "",
+      Film_Size: "",
+      status: "Active"
+    });
+
+    const saved = await newXray.save();
+    console.log(`Body part added: ${bp}`);
+    
+    res.status(201).json({
+      _id: saved._id,
+      Body_Part: bp,
+      message: "Body part added successfully"
+    });
+  } catch (err) {
+    console.error("Error adding body part:", err);
+    res.status(500).json({ message: "Failed to add body part", error: err.message });
+  }
+});
+
+// ✅ Update a body part (name and/or status)
+xrayApp.put("/body-parts/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { Body_Part, status } = req.body;
+
+    // Find the body part record
+    const bodyPartRecord = await Xray.findById(id);
+    if (!bodyPartRecord) {
+      return res.status(404).json({ message: "Body part not found" });
+    }
+
+    const oldBodyPart = bodyPartRecord.Body_Part;
+
+    // Update the body part record
+    if (Body_Part && String(Body_Part).trim()) {
+      const newBodyPart = String(Body_Part).trim();
+      
+      // Check if new name already exists
+      if (newBodyPart !== oldBodyPart) {
+        const existing = await Xray.findOne({ Body_Part: newBodyPart });
+        if (existing) {
+          return res.status(409).json({ message: "This body part name already exists" });
+        }
+        
+        // Update all X-rays with this body part to the new name
+        await Xray.updateMany(
+          { Body_Part: oldBodyPart },
+          { $set: { Body_Part: newBodyPart } }
+        );
+      }
+      bodyPartRecord.Body_Part = newBodyPart;
+    }
+
+    if (status) {
+      bodyPartRecord.status = status;
+    }
+
+    const updated = await bodyPartRecord.save();
+    
+    console.log(`Body part updated: ${oldBodyPart} -> ${updated.Body_Part || oldBodyPart}`);
+
+    res.json({
+      _id: updated._id,
+      Body_Part: updated.Body_Part,
+      status: updated.status,
+      message: "Body part updated successfully"
+    });
+  } catch (err) {
+    console.error("Error updating body part:", err);
+    res.status(500).json({ message: "Failed to update body part", error: err.message });
+  }
+});
+
+// ✅ Delete a body part and all its X-rays
+xrayApp.delete("/body-parts/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the body part record to get the body part name
+    const bodyPartRecord = await Xray.findById(id);
+    if (!bodyPartRecord) {
+      return res.status(404).json({ message: "Body part not found" });
+    }
+
+    const bodyPartName = bodyPartRecord.Body_Part;
+
+    // Delete all X-rays with this body part
+    const deleteResult = await Xray.deleteMany({ Body_Part: bodyPartName });
+
+    console.log(`Deleted body part '${bodyPartName}' and ${deleteResult.deletedCount} X-rays`);
+
+    res.json({ 
+      message: "Body part deleted successfully",
+      bodyPart: bodyPartName,
+      xraysDeleted: deleteResult.deletedCount
+    });
+  } catch (err) {
+    console.error("Error deleting body part:", err);
+    res.status(500).json({ message: "Failed to delete body part", error: err.message });
+  }
+});
 
 module.exports = xrayApp;
 
