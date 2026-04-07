@@ -2,6 +2,7 @@
 import axios from "axios";
 import { FaPills, FaCalendarAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 const AddMainStoreMedicine = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -23,6 +24,11 @@ const AddMainStoreMedicine = () => {
   });
 
   const [existingMeds, setExistingMeds] = useState([]);
+  const [masterMap, setMasterMap] = useState({});
+
+  const medicineCategoryOptions = getMasterOptions(masterMap, "Medicine Categories");
+  const medicineTypeOptions = getMasterOptions(masterMap, "Medicine Types");
+  const issuedFromOptions = getMasterOptions(masterMap, "Issued From Sources");
   
   // Get unique medicine names filtered by category
   const getFilteredMedicineNames = () => {
@@ -127,6 +133,26 @@ const AddMainStoreMedicine = () => {
       }
     };
     load();
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
   }, []);
 
   // tomorrow = min expiry
@@ -277,15 +303,9 @@ const AddMainStoreMedicine = () => {
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
             >
               <option value="">Select Category</option>
-              <option value="Antibiotic">Antibiotic</option>
-              <option value="Analgesic">Analgesic</option>
-              <option value="Antipyretic">Antipyretic</option>
-              <option value="Antihistamine">Antihistamine</option>
-              <option value="Antacid">Antacid</option>
-              <option value="Vitamin">Vitamin</option>
-              <option value="Cardiac">Cardiac</option>
-              <option value="Diabetic">Diabetic</option>
-              <option value="Other">Other</option>
+              {medicineCategoryOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
             </select>
           </div>
 
@@ -360,15 +380,9 @@ const AddMainStoreMedicine = () => {
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
             >
               <option value="">Select Type</option>
-              <option value="Tablet">Tablet</option>
-              <option value="Capsule">Capsule</option>
-              <option value="Syrup">Syrup</option>
-              <option value="Injection">Injection</option>
-              <option value="Ointment">Ointment</option>
-              <option value="Drops">Drops</option>
-              <option value="Inhaler">Inhaler</option>
-              <option value="Powder">Powder</option>
-              <option value="Other">Other</option>
+              {medicineTypeOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
             </select>
           </div>
 
@@ -386,35 +400,8 @@ const AddMainStoreMedicine = () => {
               className="w-full border border-gray-300 rounded-md p-2 bg-white text-sm"
             >
               <option value="">Select Issued From</option>
-              {[
-                "Chief Office-Hyderabad",
-                "1st Battalion-Yousufguda",
-                "2nd Battalion-Asifabad",
-                "3rd Battalion-Ibrahimpatnam",
-                "4th Battalion-Nampally",
-                "5th Battalion-Bhoopalapally",
-                "6th Battalion-Kothagudem",
-                "7th Battalion-Dichpally",
-                "8th Battalion-Kondapur",
-                "9th Battalion",
-                "10th Battalion-Bachupally",
-                "11th Battalion",
-                "12th Battalion-Anantapur",
-                "13th Battalion-Mancherial",
-                "14th Battalion",
-                "15th Battalion-Sattupally",
-                "16th Battalion",
-                "17th Battalion-Siricilla",
-                "PTC - Warangal",
-                "PTC - Karimnagar",
-                "PTC - Medchal",
-                "SAR CPL-Amberpet",
-                "CAR-Gachibowli",
-                "RBVRR TSPA",
-                "GREYHOUNDS",
-                "OCTOPUS"
-              ].map((n, i) => (
-                <option key={i} value={n}>{n.replace(/\uFFFD/g, '').replace(/�/g,'').trim()}</option>
+              {issuedFromOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
               ))}
             </select>
           </div>

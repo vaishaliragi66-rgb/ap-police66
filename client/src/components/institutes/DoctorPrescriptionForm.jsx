@@ -1,9 +1,10 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 const DoctorPrescriptionForm = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
@@ -46,37 +47,12 @@ const [showDiseaseDropdown, setShowDiseaseDropdown] = useState(false); // Track 
 const [diseaseMaster, setDiseaseMaster] = useState([]);
 const [cdDiseases, setCdDiseases] = useState([]);
 const [ncdDiseases, setNcdDiseases] = useState([]);
+const [masterMap, setMasterMap] = useState({});
 const [selectedType, setSelectedType] = useState("");
 const [selectedSubgroup, setSelectedSubgroup] = useState("");
 const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resetting PatientSelector
 
 
-
-  const communicableDiseases = [
-    "Tuberculosis",
-    "Malaria",
-    "Dengue",
-    "COVID-19",
-    "Cholera",
-    "Typhoid",
-    "Hepatitis A",
-    "Hepatitis B",
-    "Influenza",
-    "Chickenpox",
-  ];
-
-  const nonCommunicableDiseases = [
-    "Diabetes",
-    "Hypertension",
-    "Asthma",
-    "Cancer",
-    "Heart Disease",
-    "Arthritis",
-    "Kidney Disease",
-    "Migraine",
-    "Obesity",
-    "Stroke",
-  ];
 
   const [diseaseData, setDiseaseData] = useState({
     Category: "Communicable",
@@ -85,12 +61,49 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
   });
 
 
-  const currentDiseaseList =
-  diseaseData.Category === "Communicable"
-    ? communicableDiseases
-    : nonCommunicableDiseases;
+  const testsByCategory = useMemo(() => {
+    const grouped = {};
+    Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
+      grouped[category] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
+        _id: `static-${category}-${idx}`,
+        name: String(test?.name || "").trim(),
+        reference: test?.reference || "",
+        unit: test?.unit || ""
+      })).filter((item) => item.name);
+    });
+
+    (testsMaster || []).forEach((test) => {
+      const group = String(test?.Group || "").trim();
+      const testName = String(test?.Test_Name || "").trim();
+      if (!group || !testName) return;
+      if (!grouped[group]) grouped[group] = [];
+      grouped[group].push({
+        _id: test._id,
+        name: testName,
+        reference: test.Reference_Range || "",
+        unit: test.Units || ""
+      });
+    });
+    Object.keys(grouped).forEach((group) => {
+      const seen = new Set();
+      grouped[group] = grouped[group]
+        .filter((item) => {
+          const key = String(item?.name || "").trim().toLowerCase();
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
+    });
+    return grouped;
+  }, [testsMaster]);
 
   const [showOtherDiseaseInput, setShowOtherDiseaseInput] = useState(false);
+
+  const diseaseCategoryOptions = getMasterOptions(masterMap, "Disease Categories");
+  const diseaseSeverityOptions = getMasterOptions(masterMap, "Disease Severity Levels");
+  const medicineTypeOptions = getMasterOptions(masterMap, "Medicine Types");
+  const foodTimingOptions = getMasterOptions(masterMap, "Food Timings");
 
   const [formData, setFormData] = useState({
     Institute_ID: "",
@@ -589,13 +602,55 @@ useEffect(() => {
   }, [formData.Employee_ID]);
 
   useEffect(() => {
-    axios.get(`${BACKEND_URL}/disease-master-api/cd`)
-        .then(res => setCdDiseases(res.data || []))
-        .catch(() => setCdDiseases([]));
+    const instituteId = localStorage.getItem("instituteId") || "";
 
-      axios.get(`${BACKEND_URL}/disease-master-api/ncd`)
-        .then(res => setNcdDiseases(res.data || []))
-        .catch(() => setNcdDiseases([]));
+    const loadDiseaseMasters = async () => {
+      const normalizeRows = (rows) =>
+        (Array.isArray(rows) ? rows : [])
+          .map((item) => (typeof item === "string" ? { name: item } : item))
+          .filter((item) => item?.name)
+          .map((item) => ({
+            ...item,
+            name: String(item.name).trim()
+          }));
+
+      const dedupeByName = (rows) => {
+        const seen = new Set();
+        return rows.filter((item) => {
+          const key = String(item?.name || "").trim().toLowerCase();
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      };
+
+      try {
+        const [cdRes, ncdRes, masterMap] = await Promise.all([
+          axios.get(`${BACKEND_URL}/disease-master-api/cd`, { params: { instituteId } }).catch(() => ({ data: [] })),
+          axios.get(`${BACKEND_URL}/disease-master-api/ncd`, { params: { instituteId } }).catch(() => ({ data: [] })),
+          fetchMasterDataMap({ force: true }).catch(() => ({}))
+        ]);
+
+        setMasterMap(masterMap || {});
+
+        const customDiseases = Array.isArray(masterMap?.Diseases) ? masterMap.Diseases : [];
+        const customCd = customDiseases
+          .filter((item) => item?.meta?.kind === "disease" && item?.meta?.group === "Communicable")
+          .map((item) => ({ name: item.value_name, type: "Custom" }));
+        const customNcd = customDiseases
+          .filter((item) => item?.meta?.kind === "disease" && item?.meta?.group === "Non-Communicable")
+          .map((item) => ({ name: item.value_name, type: "Custom" }));
+
+        setCdDiseases(dedupeByName([...normalizeRows(cdRes.data), ...normalizeRows(customCd)]));
+        setNcdDiseases(dedupeByName([...normalizeRows(ncdRes.data), ...normalizeRows(customNcd)]));
+      } catch {
+        setMasterMap({});
+        setCdDiseases([]);
+        setNcdDiseases([]);
+      }
+    };
+
+    loadDiseaseMasters();
   }, []);
 
   const allDiseases = [...cdDiseases, ...ncdDiseases];
@@ -1639,8 +1694,9 @@ if (validXrays.length === 0) {
         setShowOtherDiseaseInput(false);
       }}
     >
-      <option value="Communicable">Communicable</option>
-      <option value="Non-Communicable">Non-Communicable</option>
+      {diseaseCategoryOptions.map((item) => (
+        <option key={item} value={item}>{item}</option>
+      ))}
     </select>
   </div>
 
@@ -1712,10 +1768,9 @@ if (validXrays.length === 0) {
         }))
       }
     >
-      <option>Mild</option>
-      <option>Moderate</option>
-      <option>Severe</option>
-      <option>Chronic</option>
+      {diseaseSeverityOptions.map((item) => (
+        <option key={item} value={item}>{item}</option>
+      ))}
     </select>
   </div>
 </div>
@@ -1792,9 +1847,9 @@ if (validXrays.length === 0) {
               }}
             >
               <option value="">Select Type</option>
-              <option value="Tablet">Tablet</option>
-              <option value="Syrup">Syrup</option>
-              <option value="Injection">Injection</option>
+              {medicineTypeOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
             </select>
           </div>
 
@@ -1810,8 +1865,9 @@ if (validXrays.length === 0) {
               }}
             >
               <option value="">Select Timing</option>
-              <option value="Before Food">Before Food</option>
-              <option value="After Food">After Food</option>
+              {foodTimingOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
             </select>
           </div>
 
@@ -2028,7 +2084,7 @@ if (validXrays.length === 0) {
             }}
           >
             <option value="">Select Category</option>
-            {Object.keys(diagnosticTestsByCategory).map(category => (
+            {Object.keys(testsByCategory).map(category => (
               <option key={category} value={category}>
                 {category}
               </option>
@@ -2058,7 +2114,7 @@ if (validXrays.length === 0) {
             }}
           >
             <option value="">Select Test</option>
-            {(diagnosticTestsByCategory[t.Category] || []).map(test => (
+            {(testsByCategory[t.Category] || []).map(test => (
               <option key={`${t.Category}-${test.name}`} value={test.name}>
                 {test.name}
               </option>

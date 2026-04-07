@@ -2,6 +2,7 @@
 import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 
 const MedicinesIssuedRegister = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -32,6 +33,11 @@ const MedicinesIssuedRegister = () => {
   ];
   const [medicineIdFilter, setMedicineIdFilter] = useState("");
   const [quantityFilter, setQuantityFilter] = useState("");
+  const [masterMap, setMasterMap] = useState({});
+
+  const rowsPerPageOptions = getMasterOptions(masterMap, "Rows Per Page")
+    .map((item) => Number(item))
+    .filter((n) => Number.isFinite(n));
   
   // ---------- PRESCRIPTION VIEW ----------
 const [viewMode, setViewMode] = useState(false);
@@ -139,6 +145,46 @@ const uniqueMedicineIds = [
       })
       .catch(() => setLoading(false));
   }, [instituteId]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: true });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
 
   // ---------- UNIQUE DROPDOWN VALUES ----------
   const uniqueMedicines = [...new Set(rows.map(r => r.medicineName).filter(Boolean))];
@@ -871,10 +917,9 @@ const printPrescription = () => {
                     setCurrentPage(1);
                   }}
                 >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
+                  {(rowsPerPageOptions.length ? rowsPerPageOptions : [5, 10, 25, 50]).map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
                 </select>
               </div>
 

@@ -52,6 +52,7 @@ import DiseaseAnalyticsDetails from "./components/institutes/DiseaseAnalyticsDet
 import RiskHotspots from "./components/institutes/RiskHotspots";
 import Predict from "./components/institutes/Predict";
 import ForecastDashboard from "./components/institutes/ForecastTable";
+import MasterData from "./components/institutes/MasterData";
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -224,6 +225,10 @@ function App() {
             {
               path:"/institutes/forecast",
               element:<ForecastDashboard/>
+            },
+            {
+              path: "/institutes/master-data",
+              element: <MasterData />
             }
           ]
         },

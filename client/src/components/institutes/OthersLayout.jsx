@@ -9,7 +9,8 @@ import {
   FaFileMedical,
   FaBars,
   FaTimes,
-  FaHome
+  FaHome,
+  FaDatabase
 } from "react-icons/fa";
 import { APP_HEADER_HEIGHT } from "../GlobalHeader";
 
@@ -33,7 +34,8 @@ const OthersLayout = () => {
     { label: "Analytics", path: "/institutes/analytics", icon: <FaRobot />},
     { label: "Disease Analytics", path: "/institutes/disease-analytics", icon: <FaRobot />},
     { label: "Predict", path: "/institutes/predict", icon: <FaRobot /> },
-    { label: "Forecast", path: "/institutes/forecast", icon: <FaRobot /> }
+    { label: "Forecast", path: "/institutes/forecast", icon: <FaRobot /> },
+    { label: "Master Data", path: "/institutes/master-data", icon: <FaDatabase /> }
   ];
 
   return (
