@@ -1,8 +1,10 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar, Line, Pie } from 'react-chartjs-2';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useAIQuerySuggestions } from '../../hooks/useAIQuerySuggestions';
+import AIQuerySuggestions from '../common/AIQuerySuggestions';
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
 
@@ -15,6 +17,10 @@ const AIInsights = () => {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'chart'
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredDemoSuggestions, setFilteredDemoSuggestions] = useState([]);
+  const inputRef = useRef(null);
+  const wrapperRef = useRef(null);
 
   // Get institute ID from localStorage (adjust based on your auth system)
   const getInstituteId = () => {
@@ -22,19 +28,69 @@ const AIInsights = () => {
     if (instituteData) {
       try {
         const parsed = JSON.parse(instituteData);
-        return parsed._id || parsed.id;
+        return parsed._id || parsed.id || localStorage.getItem('instituteId');
       } catch (e) {
         console.error('Failed to parse institute data:', e);
       }
     }
-    return null;
+    return localStorage.getItem('instituteId');
   };
+
+  // Fallback demo suggestions (shown when backend has no data)
+  const [demoSuggestions] = useState([
+    { text: 'list employees with blood group o+', count: 25, lastUsed: new Date() },
+    { text: 'show diabetes patients by age', count: 22, lastUsed: new Date() },
+    { text: 'count medicines with low stock', count: 20, lastUsed: new Date() },
+    { text: 'show all employees by designation', count: 18, lastUsed: new Date() },
+    { text: 'list medicines expiring soon', count: 17, lastUsed: new Date() },
+    { text: 'count patients with hypertension', count: 16, lastUsed: new Date() },
+    { text: 'count employees by blood group', count: 15, lastUsed: new Date() },
+    { text: 'list all diabetes patients', count: 14, lastUsed: new Date() },
+    { text: 'show medicine inventory by name', count: 13, lastUsed: new Date() },
+    { text: 'total number of employees', count: 12, lastUsed: new Date() },
+  ]);
+
+  // Initialize AI query suggestions hook
+  const instituteId = getInstituteId();
+  const {
+    suggestions: backendSuggestions,
+    loading: suggestionsLoading,
+    selectedIndex,
+    fetchSuggestions,
+    debouncedFetch,
+    clearHistory,
+    handleKeyDown,
+    setSuggestions
+  } = useAIQuerySuggestions(BACKEND_URL, instituteId);
+
+  // Use backend suggestions if available, otherwise use demo suggestions (filtered)
+  const suggestions = backendSuggestions.length > 0 
+    ? backendSuggestions 
+    : (filteredDemoSuggestions.length > 0 ? filteredDemoSuggestions : demoSuggestions);
+
+  // Load initial suggestions on mount
+  useEffect(() => {
+    fetchSuggestions('');
+  }, [fetchSuggestions]);
+
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleQuery = async () => {
     if (!query.trim()) return;
 
     setLoading(true);
     setError(null);
+    setShowSuggestions(false);
 
     try {
       const instituteId = getInstituteId();
@@ -62,6 +118,7 @@ const AIInsights = () => {
       }
 
       setResults(data);
+      fetchSuggestions(query);
 
       // Auto-select view mode
       if (data.chartType && data.chartType !== 'none') {
@@ -79,9 +136,107 @@ const AIInsights = () => {
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // Handle keyboard navigation in suggestions
+    const navigationHandled = handleKeyDown(e, query, handleSuggestionSelect);
+    
+    if (!navigationHandled && e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleQuery();
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    
+    // Show suggestions
+    setShowSuggestions(true);
+    
+    // Filter demo suggestions in real-time for instant feedback
+    if (value.trim()) {
+      const filtered = demoSuggestions.filter(s => 
+        s.text.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredDemoSuggestions(filtered);
+    } else {
+      setFilteredDemoSuggestions([]);
+    }
+    
+    // Also fetch from backend (debounced)
+    debouncedFetch(value);
+  };
+
+  const handleInputFocus = () => {
+    setShowSuggestions(true);
+    setFilteredDemoSuggestions([]);
+    if (backendSuggestions.length === 0) {
+      fetchSuggestions('');
+    }
+  };
+
+  const handleSuggestionSelect = (suggestionText) => {
+    setQuery(suggestionText);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    
+    // Auto-execute the query
+    setTimeout(() => {
+      inputRef.current?.blur();
+      // Trigger query with the selected suggestion
+      const executeQuery = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+          const instituteId = getInstituteId();
+          
+          const response = await fetch(`${BACKEND_URL}/ai-api/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              userQuery: suggestionText,
+              instituteId: instituteId 
+            })
+          });
+
+          const raw = await response.text();
+          let data = {};
+
+          try {
+            data = raw ? JSON.parse(raw) : {};
+          } catch {
+            data = { error: raw || 'Server returned an invalid response' };
+          }
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Query failed');
+          }
+
+          setResults(data);
+          fetchSuggestions(suggestionText);
+
+          if (data.chartType && data.chartType !== 'none') {
+            setViewMode('chart');
+          } else {
+            setViewMode('table');
+          }
+
+        } catch (err) {
+          setError(err.message);
+          console.error('Query error:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      executeQuery();
+    }, 100);
+  };
+
+  const handleClearHistory = async () => {
+    if (window.confirm('Are you sure you want to clear your query history?')) {
+      await clearHistory();
+      setShowSuggestions(false);
     }
   };
 
@@ -225,23 +380,39 @@ const AIInsights = () => {
 
         {/* Query Input */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex gap-4">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="e.g., List employees with blood group O+, Show diabetes patients by age..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            />
-            <button
-              onClick={handleQuery}
-              disabled={loading || !query.trim()}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Processing...' : 'Ask AI'}
-            </button>
+          <div className="relative" ref={wrapperRef}>
+            <div className="flex gap-4">
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={handleInputChange}
+                onFocus={handleInputFocus}
+                onKeyDown={handleKeyPress}
+                placeholder="e.g., List employees with blood group O+, Show diabetes patients by age..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              />
+              <button
+                onClick={handleQuery}
+                disabled={loading || !query.trim()}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Processing...' : 'Ask AI'}
+              </button>
+            </div>
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <AIQuerySuggestions
+                suggestions={suggestions}
+                loading={suggestionsLoading}
+                selectedIndex={selectedIndex}
+                onSelect={handleSuggestionSelect}
+                onClearHistory={handleClearHistory}
+                showClearButton={true}
+              />
+            )}
           </div>
 
           {/* Sample Queries */}
