@@ -4,6 +4,7 @@ const { Schema } = mongoose;
 const PrescriptionSchema = new Schema({
   Institute: { type: Schema.Types.ObjectId, ref: "Institute", required: true }, // matches Institute collection _id
   Employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
+  visit_id: { type: Schema.Types.ObjectId, ref: "DailyVisit", default: null },
   IsFamilyMember: { type: Boolean, default: false },
   FamilyMember: { type: Schema.Types.ObjectId, ref: "FamilyMember" },
   Medicines: [
