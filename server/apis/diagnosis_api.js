@@ -49,14 +49,28 @@ diagnosisApp.get("/visit/:visitId/doctor", async (req, res) => {
     }).sort({ created_at: -1 });
 
     if (!actions.length) {
-      return res.json([]);
+      return res.json({
+        visit_id: visitId,
+        orders: []
+      });
     }
-
-    const tests = actions.flatMap((action) => action.data?.tests || []);
 
     res.json({
       visit_id: visitId,
-      tests
+      orders: actions.map((action) => ({
+        id: action._id,
+        created_at: action.created_at,
+        notes: action.data?.notes || action.remarks || "",
+        tests: action.data?.tests || [],
+        isFamilyMember:
+          action.data?.is_family_member ??
+          action.data?.IsFamilyMember ??
+          false,
+        familyMemberId:
+          action.data?.family_member_id ??
+          action.data?.FamilyMember_ID ??
+          null
+      }))
     });
   } catch (err) {
     console.error(err);

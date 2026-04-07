@@ -3,6 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
+import diagnosticTestsByCategory from "../../data/diagnosticTests";
 
 const DoctorPrescriptionForm = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
@@ -23,7 +24,7 @@ const DoctorPrescriptionForm = () => {
   const [visitId, setVisitId] = useState(null);
   const [testsMaster, setTestsMaster] = useState([]);
   const [diagnosisData, setDiagnosisData] = useState({
-    Tests: [{ Test_ID: "", Test_Name: "" }]
+    Tests: [{ Category: "", Test_ID: "", Test_Name: "" }]
   });
   const [employeeReport, setEmployeeReport] = useState(null);
   const [showReports, setShowReports] = useState(false);
@@ -788,7 +789,7 @@ if (selectedMedicines.length === 0) {
     });
     
     setDiagnosisData({
-      Tests: [{ Test_ID: "", Test_Name: "" }]
+      Tests: [{ Category: "", Test_ID: "", Test_Name: "" }]
     });
     
     setXrayData({
@@ -826,7 +827,7 @@ if (selectedMedicines.length === 0) {
       return;
     }
 
-  const validTests = diagnosisData.Tests.filter(t => t.Test_ID);
+  const validTests = diagnosisData.Tests.filter(t => t.Test_ID || t.Test_Name);
 
 if (validTests.length === 0) {
   alert("Please select at least one test");
@@ -851,7 +852,7 @@ if (validTests.length === 0) {
     alert("✅ Diagnosis saved successfully");
 
     setDiagnosisData({
-      Tests: [{ Test_ID: "", Test_Name: "" }]
+      Tests: [{ Category: "", Test_ID: "", Test_Name: "" }]
     });
   };
 
@@ -2010,16 +2011,44 @@ if (validXrays.length === 0) {
 
           <select
             className="form-select mb-2"
-            value={t.Test_ID}
+            value={t.Category || ""}
+            onChange={(e) => {
+              const copy = [...diagnosisData.Tests];
+              copy[i] = {
+                ...copy[i],
+                Category: e.target.value,
+                Test_ID: "",
+                Test_Name: ""
+              };
+
+              setDiagnosisData(prev => ({
+                ...prev,
+                Tests: copy
+              }));
+            }}
+          >
+            <option value="">Select Category</option>
+            {Object.keys(diagnosticTestsByCategory).map(category => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="form-select mb-2"
+            value={t.Test_Name || ""}
+            disabled={!t.Category}
             onChange={(e) => {
               const selected = testsMaster.find(
-                test => test._id === e.target.value
+                test => test.Test_Name === e.target.value
               );
 
               const copy = [...diagnosisData.Tests];
               copy[i] = {
+                ...copy[i],
                 Test_ID: selected?._id || "",
-                Test_Name: selected?.Test_Name || ""
+                Test_Name: e.target.value || ""
               };
 
               setDiagnosisData(prev => ({
@@ -2029,9 +2058,9 @@ if (validXrays.length === 0) {
             }}
           >
             <option value="">Select Test</option>
-            {testsMaster.map(test => (
-              <option key={test._id} value={test._id}>
-                {test.Test_Name}
+            {(diagnosticTestsByCategory[t.Category] || []).map(test => (
+              <option key={`${t.Category}-${test.name}`} value={test.name}>
+                {test.name}
               </option>
             ))}
           </select>
@@ -2060,7 +2089,7 @@ if (validXrays.length === 0) {
         onClick={() =>
           setDiagnosisData(prev => ({
             ...prev,
-            Tests: [...prev.Tests, { Test_ID: "", Test_Name: "" }]
+            Tests: [...prev.Tests, { Category: "", Test_ID: "", Test_Name: "" }]
           }))
         }
       >

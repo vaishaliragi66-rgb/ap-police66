@@ -1,0 +1,4 @@
+ABS_NO,Name,Email,Password,Designation,DOB,Blood_Group,Height,Weight,Phone_No,Gender,Street,District,State,Pincode,PhotoFilename,PhotoURL
+POLICE001,Rajesh Kumar,rajesh.kumar@police.gov.in,SecurePass@123,Police Inspector,1985-03-15,O+,175,72,9876543210,Male,100 Feet Road,Hyderabad,Telangana,500001,,
+POLICE002,Priya Sharma,priya.sharma@police.gov.in,SafePass@456,Sub-Inspector,1988-07-22,B+,162,58,9876543211,Female,Jubilee Hills,Hyderabad,Telangana,500033,,
+POLICE003,Arjun Singh,arjun.singh@police.gov.in,StrongPass@789,Constable,1992-11-05,AB+,180,75,9876543212,Male,Begumpet,Hyderabad,Telangana,500016,,
