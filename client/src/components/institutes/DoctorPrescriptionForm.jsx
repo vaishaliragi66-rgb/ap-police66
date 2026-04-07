@@ -1716,6 +1716,7 @@ if (validXrays.length === 0) {
       <option>Moderate</option>
       <option>Severe</option>
       <option>Chronic</option>
+      <option>Null</option>
     </select>
   </div>
 </div>
