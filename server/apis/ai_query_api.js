@@ -5,6 +5,7 @@ const Groq = require('groq-sdk');
 const { schemaDefinitions } = require('../utils/schemaExtractor');
 const expressAsyncHandler = require("express-async-handler");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
+const AIQuery = require('../models/AIQuery');
 // Lazy-initialize Groq only when API key is available
 let groq = null;
 if (process.env.GROQ_API_KEY) {
@@ -348,7 +349,13 @@ try {
 
     console.log('✅ Query executed successfully. Results count:', results.length);
 
-    // Step 6: Return results
+    // Step 6.5: Track query for suggestions before responding
+    const trackedQuery = await AIQuery.trackQuery(userQuery, instituteId);
+    if (!trackedQuery) {
+      console.warn('Failed to persist tracked query for /query:', userQuery);
+    }
+
+    // Step 7: Return results
     res.json({
       success: true,
       results,
@@ -593,6 +600,13 @@ Return ONLY JSON in this format:
     }
 
     /* ---------------- FINAL RESPONSE ---------------- */
+    
+    // Track query for suggestions before responding
+    const trackedQuery = await AIQuery.trackQuery(userQuery, instituteId);
+    if (!trackedQuery) {
+      console.warn('Failed to persist tracked query for /institute-query:', userQuery);
+    }
+    
     res.json({
       success: true,
       results,
