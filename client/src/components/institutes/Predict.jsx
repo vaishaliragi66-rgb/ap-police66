@@ -40,6 +40,10 @@ function Predict() {
     setPrediction(null);
 
     try {
+      // Convert temperature from Celsius to Fahrenheit
+      const celsius = Number(formData.temperature);
+      const fahrenheit = (celsius * 9/5) + 32;
+
       const res = await fetch(`${BACKEND_URL}/api/predict`, {
         method: "POST",
         headers: {
@@ -50,7 +54,7 @@ function Predict() {
           gender: Number(formData.gender),
           designation: Number(formData.designation),
           bmi: calculateBMI(),
-          temperature: Number(formData.temperature),
+          temperature: fahrenheit,
           pulse: Number(formData.pulse),
           systolic_bp: Number(formData.systolic_bp),
           diastolic_bp: Number(formData.diastolic_bp),
@@ -126,7 +130,7 @@ function Predict() {
             <input type="number" name="weight" className="form-control" onChange={handleChange} />
           </div>
           <div className="mb-3">
-            <label>Temperature (°C)</label>
+            <label>Temperature (°F)</label>
             <input type="number" name="temperature" className="form-control" onChange={handleChange} />
           </div>
           <div className="mb-3">

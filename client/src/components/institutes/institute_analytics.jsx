@@ -1,8 +1,25 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  Scatter,
+  ScatterChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -68,6 +85,416 @@ const isAbnormal = (value, range) => {
   return false;
 };
 
+const countBy = (data, getLabel) => {
+  const map = new Map();
+  data.forEach(item => {
+    const label = getLabel(item);
+    if (!label) return;
+    map.set(label, (map.get(label) || 0) + 1);
+  });
+  return [...map.entries()]
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+};
+
+const buildAnalyticsInsights = (data) => {
+  const designationCounts = countBy(data, row => row.Designation || "Unknown").slice(0, 8);
+  const genderCounts = countBy(data, row => row.Gender || "Unknown");
+  const diseaseCounts = countBy(
+    data.flatMap(row => [
+      ...(row.Communicable_Diseases || []),
+      ...(row.NonCommunicable_Diseases || [])
+    ]),
+    disease => String(disease || "").trim()
+  ).slice(0, 8);
+
+  const abnormalCount = data.filter(row =>
+    (row.Tests || []).some(test => isAbnormal(test.Result_Value, test.Reference_Range))
+  ).length;
+
+  return {
+    designationCounts,
+    genderCounts,
+    diseaseCounts,
+    abnormalSplit: [
+      { name: "Abnormal", value: abnormalCount },
+      { name: "Normal", value: Math.max(data.length - abnormalCount, 0) }
+    ]
+  };
+};
+
+const getActiveFilters = (filters) => {
+  const active = [];
+  Object.entries(filters).forEach(([key, value]) => {
+    if (typeof value === "boolean" ? value : String(value || "").trim()) {
+      active.push(key);
+    }
+  });
+  return active;
+};
+
+const uniqueCount = (data, selector) => {
+  const values = new Set();
+  data.forEach(item => {
+    const value = selector(item);
+    if (value === null || value === undefined || value === "") return;
+    values.add(String(value).trim().toLowerCase());
+  });
+  return values.size;
+};
+
+const getAgeBuckets = (data) => {
+  const buckets = [
+    { name: "0-20", value: 0 },
+    { name: "21-30", value: 0 },
+    { name: "31-40", value: 0 },
+    { name: "41-50", value: 0 },
+    { name: "51-60", value: 0 },
+    { name: "60+", value: 0 }
+  ];
+
+  data.forEach(row => {
+    const age = Number(row.Age);
+    if (Number.isNaN(age)) return;
+    if (age <= 20) buckets[0].value += 1;
+    else if (age <= 30) buckets[1].value += 1;
+    else if (age <= 40) buckets[2].value += 1;
+    else if (age <= 50) buckets[3].value += 1;
+    else if (age <= 60) buckets[4].value += 1;
+    else buckets[5].value += 1;
+  });
+
+  return buckets;
+};
+
+const getTimeSeries = (data, field) => {
+  const counts = new Map();
+  data.forEach(row => {
+    const value = row[field];
+    if (!value) return;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return;
+    const key = date.toLocaleDateString("en-GB");
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+
+  return [...counts.entries()]
+    .map(([name, value]) => ({ name, value, sortKey: new Date(name.split("/").reverse().join("-")).getTime() }))
+    .sort((a, b) => a.sortKey - b.sortKey)
+    .map(({ name, value }) => ({ name, value }));
+};
+
+const getScatterData = (data) =>
+  data
+    .map(row => ({
+      x: Number(row.Height),
+      y: Number(row.Weight),
+      name: row.Name || row.ABS_NO || "Unknown"
+    }))
+    .filter(point => !Number.isNaN(point.x) && !Number.isNaN(point.y));
+
+const buildSmartChartConfigs = (data, filters, insights) => {
+  if (!Array.isArray(data) || data.length < 3) return [];
+
+  const activeFilters = getActiveFilters(filters);
+  const chartConfigs = [];
+  const addChart = (config) => {
+    chartConfigs.push(config);
+  };
+
+  if (!activeFilters.includes("designationFilter") && uniqueCount(data, row => row.Designation) > 1) {
+    addChart({
+      key: "designation",
+      title: "Top Designations",
+      subtitle: "Recommended categorical analysis",
+      type: "bar",
+      data: insights.designationCounts,
+      summary: insights.designationCounts.slice(0, 3).map(item => `${item.name} → ${item.value}`),
+      tableRows: toDataTableRows(insights.designationCounts, data.length),
+      color: "#0d6efd"
+    });
+  }
+
+  if (!activeFilters.includes("diseaseFilter") && uniqueCount(data, row => [...(row.Communicable_Diseases || []), ...(row.NonCommunicable_Diseases || [])].join("|")) > 1) {
+    addChart({
+      key: "diseases",
+      title: "Top Diseases",
+      subtitle: "Highest disease frequency across patients",
+      type: "horizontalBar",
+      data: insights.diseaseCounts,
+      summary: insights.diseaseCounts.slice(0, 3).map(item => `${item.name} → ${item.value}`),
+      tableRows: toDataTableRows(insights.diseaseCounts, data.length),
+      color: "#198754"
+    });
+  }
+
+  if (!activeFilters.includes("genderFilter") && uniqueCount(data, row => row.Gender) > 1) {
+    addChart({
+      key: "gender",
+      title: "Gender Distribution",
+      subtitle: "Recommended pie chart",
+      type: "pie",
+      data: insights.genderCounts,
+      summary: insights.genderCounts.map(item => `${item.name} → ${item.value}`),
+      tableRows: toDataTableRows(insights.genderCounts, data.length)
+    });
+  }
+
+  const ageBuckets = getAgeBuckets(data);
+  if (ageBuckets.some(item => item.value > 0)) {
+    addChart({
+      key: "age",
+      title: "Age Distribution",
+      subtitle: "Histogram-style age buckets",
+      type: "bar",
+      data: ageBuckets,
+      summary: ageBuckets.filter(item => item.value > 0).slice(0, 3).map(item => `${item.name} → ${item.value}`),
+      tableRows: toDataTableRows(ageBuckets.filter(item => item.value > 0), data.length),
+      color: "#fd7e14"
+    });
+  }
+
+  const districts = countBy(data, row => row.District || "Unknown").slice(0, 8);
+  if (!activeFilters.includes("districtFilter") && districts.length > 1) {
+    addChart({
+      key: "districts",
+      title: "District-wise Patients",
+      subtitle: "Recommended geographic analysis",
+      type: "bar",
+      data: districts,
+      summary: districts.slice(0, 3).map(item => `${item.name} → ${item.value}`),
+      tableRows: toDataTableRows(districts, data.length),
+      color: "#6610f2"
+    });
+  }
+
+  const medicineCounts = countBy(
+    data.flatMap(row => row.Medicines || []),
+    medicine => medicine?.Medicine_Name || ""
+  ).slice(0, 8);
+  if (!activeFilters.includes("medicineFilter") && medicineCounts.length > 1) {
+    addChart({
+      key: "medicines",
+      title: "Medicine Usage",
+      subtitle: "Most frequently prescribed medicines",
+      type: "bar",
+      data: medicineCounts,
+      summary: medicineCounts.slice(0, 3).map(item => `${item.name} → ${item.value}`),
+      tableRows: toDataTableRows(medicineCounts, data.length),
+      color: "#6f42c1"
+    });
+  }
+
+  const testCounts = countBy(
+    data.flatMap(row => row.Tests || []),
+    test => test?.Test_Name || ""
+  ).slice(0, 8);
+  if (!activeFilters.includes("testFilter") && testCounts.length > 1) {
+    addChart({
+      key: "tests",
+      title: "Test Result Analysis",
+      subtitle: "Frequently observed tests",
+      type: "bar",
+      data: testCounts,
+      summary: testCounts.slice(0, 3).map(item => `${item.name} → ${item.value}`),
+      tableRows: toDataTableRows(testCounts, data.length),
+      color: "#dc3545"
+    });
+  }
+
+  const scatterData = getScatterData(data);
+  if (scatterData.length > 1 && !activeFilters.includes("ageMin") && !activeFilters.includes("ageMax")) {
+    addChart({
+      key: "scatter",
+      title: "Height vs Weight",
+      subtitle: "Health correlation scatter plot",
+      type: "scatter",
+      data: scatterData,
+      summary: [
+        `Points → ${scatterData.length}`,
+        `Avg Height → ${(scatterData.reduce((sum, item) => sum + item.x, 0) / scatterData.length).toFixed(1)}`,
+        `Avg Weight → ${(scatterData.reduce((sum, item) => sum + item.y, 0) / scatterData.length).toFixed(1)}`
+      ],
+      tableRows: scatterData.slice(0, 12).map((item, index) => ({
+        sNo: index + 1,
+        label: item.name,
+        count: `${item.x} / ${item.y}`,
+        percent: "Height / Weight"
+      }))
+    });
+  }
+
+  const visits = getTimeSeries(data, "First_Visit_Date");
+  if (visits.length > 1) {
+    addChart({
+      key: "visits",
+      title: "First Visit Trend",
+      subtitle: "Time-based visit frequency",
+      type: "line",
+      data: visits,
+      summary: visits.slice(0, 3).map(item => `${item.name} → ${item.value}`),
+      tableRows: toDataTableRows(visits, data.length),
+      color: "#0dcaf0"
+    });
+  }
+
+  const preferredOrder = [
+    "diseases",
+    "gender",
+    "age",
+    "districts",
+    "medicines",
+    "tests",
+    "scatter",
+    "designation",
+    "visits"
+  ];
+
+  return chartConfigs.sort((a, b) => preferredOrder.indexOf(a.key) - preferredOrder.indexOf(b.key));
+};
+
+const toDataTableRows = (data, total) =>
+  data.map((item, index) => ({
+    sNo: index + 1,
+    label: item.name,
+    count: item.value,
+    percent: total ? ((item.value * 100) / total).toFixed(1) : "0.0"
+  }));
+
+const CHART_COLORS = ["#0d6efd", "#198754", "#dc3545", "#ffc107", "#6f42c1", "#0dcaf0", "#6610f2", "#fd7e14"];
+
+const drawBarChartInPdf = (doc, title, data, startY, opts = {}) => {
+  const chartX = 14;
+  const chartY = startY + 4;
+  const chartWidth = 125;
+  const chartHeight = 55;
+  const maxValue = Math.max(...data.map(item => item.value), 1);
+  const barHeight = Math.min(7, (chartHeight - 8) / Math.max(data.length, 1));
+
+  doc.setFontSize(11);
+  doc.text(title, chartX, startY);
+
+  data.slice(0, opts.limit || 8).forEach((item, index) => {
+    const y = chartY + index * (barHeight + 1);
+    const width = (item.value / maxValue) * chartWidth;
+    doc.setFillColor(13, 110, 253);
+    doc.rect(chartX, y, width, barHeight, "F");
+    doc.setTextColor(33, 37, 41);
+    doc.setFontSize(8);
+    doc.text(`${item.name} (${item.value})`, chartX + width + 2, y + barHeight - 1);
+  });
+
+  return chartY + Math.max(1, data.slice(0, opts.limit || 8).length) * (barHeight + 1) + 4;
+};
+
+const drawHorizontalBarChartInPdf = (doc, title, data, startY, color = [25, 135, 84]) => {
+  const chartX = 14;
+  const chartY = startY + 4;
+  const chartWidth = 125;
+  const rowHeight = 6;
+  const maxValue = Math.max(...data.map(item => item.value), 1);
+
+  doc.setFontSize(11);
+  doc.text(title, chartX, startY);
+
+  data.slice(0, 8).forEach((item, index) => {
+    const y = chartY + index * (rowHeight + 2);
+    const width = (item.value / maxValue) * chartWidth;
+    doc.setFillColor(...color);
+    doc.rect(chartX, y, width, rowHeight, "F");
+    doc.setFontSize(8);
+    doc.setTextColor(33, 37, 41);
+    doc.text(`${item.name} (${item.value})`, chartX + width + 2, y + 4.5);
+  });
+
+  return chartY + Math.max(1, Math.min(data.length, 8)) * (rowHeight + 2) + 4;
+};
+
+const drawScatterSummaryInPdf = (doc, title, data, startY) => {
+  doc.setFontSize(11);
+  doc.setTextColor(33, 37, 41);
+  doc.text(title, 14, startY);
+
+  autoTable(doc, {
+    startY: startY + 3,
+    head: [["S.No", "Name", "Height", "Weight"]],
+    body: data.slice(0, 12).map((item, index) => [index + 1, item.name, item.x, item.y]),
+    styles: { fontSize: 8, cellPadding: 1.5 },
+    headStyles: { fillColor: [33, 37, 41] },
+    margin: { left: 14, right: 14 }
+  });
+
+  return (doc.lastAutoTable?.finalY || startY + 10) + 7;
+};
+
+const drawSimpleBreakdownInPdf = (doc, title, data, x, y) => {
+  doc.setFontSize(11);
+  doc.setTextColor(33, 37, 41);
+  doc.text(title, x, y);
+  let currentY = y + 7;
+
+  data.forEach((item, index) => {
+    const color = CHART_COLORS[index % CHART_COLORS.length];
+    const red = Number.parseInt(color.slice(1, 3), 16);
+    const green = Number.parseInt(color.slice(3, 5), 16);
+    const blue = Number.parseInt(color.slice(5, 7), 16);
+    doc.setFillColor(red, green, blue);
+    doc.rect(x, currentY - 4, 4, 4, "F");
+    doc.setFontSize(9);
+    doc.setTextColor(33, 37, 41);
+    doc.text(`${item.name}: ${item.value}`, x + 6, currentY - 0.5);
+    currentY += 6;
+  });
+};
+
+const addInsightTableToPdf = (doc, title, rows, startY) => {
+  doc.setFontSize(11);
+  doc.setTextColor(33, 37, 41);
+  doc.text(title, 14, startY);
+
+  autoTable(doc, {
+    startY: startY + 3,
+    head: [["S.No", "Category", "Count", "Percentage (%)"]],
+    body: rows.map(row => [row.sNo, row.label, row.count, row.percent]),
+    styles: { fontSize: 8, cellPadding: 1.5 },
+    headStyles: { fillColor: [33, 37, 41] },
+    margin: { left: 14, right: 14 }
+  });
+
+  return (doc.lastAutoTable?.finalY || startY + 10) + 7;
+};
+
+const InsightDataTable = ({ rows, emptyText = "No data available" }) => {
+  if (!rows.length) {
+    return <div className="text-muted small mt-2">{emptyText}</div>;
+  }
+
+  return (
+    <div className="table-responsive mt-2">
+      <table className="table table-sm table-bordered mb-0 align-middle">
+        <thead className="table-light">
+          <tr>
+            <th style={{ width: "12%" }}>S.No</th>
+            <th>Category</th>
+            <th style={{ width: "18%" }}>Count</th>
+            <th style={{ width: "20%" }}>%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.sNo + row.label}>
+              <td>{row.sNo}</td>
+              <td>{row.label}</td>
+              <td>{row.count}</td>
+              <td>{row.percent}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 /* ===============================
    Export Utilities
 =================================*/
@@ -120,7 +547,7 @@ const downloadCSV = (data) => {
   link.click();
 };
 
-const downloadPDF = (data) => {
+const downloadPDF = (data, insights, filters) => {
   if (!data.length) return;
 
   const doc = new jsPDF("l", "mm", "a4");
@@ -168,6 +595,57 @@ const downloadPDF = (data) => {
     styles: { fontSize: 7, cellPadding: 1.5 },
     headStyles: { fillColor: [33, 37, 41] }
   });
+
+  const chartConfigs = buildSmartChartConfigs(data, {
+    designationFilter: filters.designationFilter,
+    genderFilter: filters.genderFilter,
+    districtFilter: filters.districtFilter,
+    stateFilter: filters.stateFilter,
+    absFilter: filters.absFilter,
+    diseaseFilter: filters.diseaseFilter,
+    medicineFilter: filters.medicineFilter,
+    testFilter: filters.testFilter,
+    bloodGroupFilter: filters.bloodGroupFilter,
+    abnormalOnly: filters.abnormalOnly,
+    ageMin: filters.ageMin,
+    ageMax: filters.ageMax
+  }, insights);
+
+  if (chartConfigs.length) {
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setTextColor(33, 37, 41);
+    doc.text("Institute Medical Analytics - Smart Graph Analysis", 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Recommended charts generated from ${data.length} filtered records`, 14, 22);
+
+    let currentY = 30;
+    chartConfigs.forEach((chart, index) => {
+      if (index > 0 && currentY > 225) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      if (chart.type === "scatter") {
+        currentY = drawScatterSummaryInPdf(doc, chart.title, chart.data, currentY);
+      } else if (chart.type === "pie") {
+        currentY = drawSimpleBreakdownInPdf(
+          doc,
+          chart.title,
+          chart.data,
+          14,
+          currentY
+        );
+      } else if (chart.key === "diseases") {
+        currentY = drawHorizontalBarChartInPdf(doc, chart.title, chart.data, currentY, [25, 135, 84]);
+      } else {
+        currentY = drawBarChartInPdf(doc, chart.title, chart.data, currentY, { limit: 8 });
+      }
+
+      currentY = addInsightTableToPdf(doc, `${chart.title} - Data Table`, chart.tableRows, currentY);
+      currentY += 4;
+    });
+  }
 
   doc.save("Institute_Analytics_Report.pdf");
 };
@@ -296,6 +774,42 @@ const indexOfLast = currentPage * rowsPerPage;
 const indexOfFirst = indexOfLast - rowsPerPage;
 
 const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
+
+const insights = useMemo(() => buildAnalyticsInsights(filteredRows), [filteredRows]);
+  const smartCharts = useMemo(
+    () => buildSmartChartConfigs(filteredRows, {
+      designationFilter,
+      genderFilter,
+      districtFilter,
+      stateFilter,
+      absFilter,
+      diseaseFilter,
+      medicineFilter,
+      testFilter,
+      bloodGroupFilter,
+      abnormalOnly,
+      ageMin,
+      ageMax
+    }, insights),
+    [
+      filteredRows,
+      designationFilter,
+      genderFilter,
+      districtFilter,
+      stateFilter,
+      absFilter,
+      diseaseFilter,
+      medicineFilter,
+      testFilter,
+      bloodGroupFilter,
+      abnormalOnly,
+      ageMin,
+      ageMax,
+      insights
+    ]
+  );
+
+const hasSmartCharts = smartCharts.length > 0;
 
 
   if (loading) {
@@ -536,7 +1050,20 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
             </button>
             <button 
               className="btn btn-danger btn-sm"
-              onClick={() => downloadPDF(filteredRows)}
+              onClick={() => downloadPDF(filteredRows, insights, {
+                designationFilter,
+                genderFilter,
+                districtFilter,
+                stateFilter,
+                absFilter,
+                diseaseFilter,
+                medicineFilter,
+                testFilter,
+                bloodGroupFilter,
+                abnormalOnly,
+                ageMin,
+                ageMax
+              })}
               disabled={filteredRows.length === 0}
             >
               📄 Download PDF
@@ -690,6 +1217,100 @@ const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
 </div>
 
           </div>
+        </div>
+      </div>
+
+      {/* =============================== ANALYSIS CHARTS ================================*/}
+      <div className="card shadow-sm mt-4">
+        <div className="card-body">
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+              <h5 className="card-title mb-1">Smart Graph Analysis</h5>
+              <p className="text-muted mb-0">Charts are recommended automatically from the filtered hospital data.</p>
+            </div>
+            <div className="text-muted small">
+              {hasSmartCharts ? `${smartCharts.length} recommended chart(s)` : "No charts to display for the current filter set"}
+            </div>
+          </div>
+
+          {hasSmartCharts ? (
+            <div className="row g-4">
+              {smartCharts.map(chart => (
+                <div className="col-12 col-lg-6" key={chart.key}>
+                  <div className="border rounded-3 p-3 h-100 bg-white shadow-sm">
+                    <div className="d-flex justify-content-between align-items-start gap-3 mb-2">
+                      <div>
+                        <h6 className="fw-semibold mb-1">{chart.title}</h6>
+                        <div className="text-muted small">{chart.subtitle}</div>
+                      </div>
+                      <span className="badge text-bg-primary text-uppercase">{chart.type}</span>
+                    </div>
+
+                    <div style={{ width: "100%", height: chart.type === "scatter" ? 320 : 280 }}>
+                      <ResponsiveContainer>
+                        {chart.type === "pie" ? (
+                          <PieChart>
+                            <Pie data={chart.data} dataKey="value" nameKey="name" outerRadius={95} label>
+                              {chart.data.map((entry, index) => (
+                                <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        ) : chart.type === "scatter" ? (
+                          <ScatterChart>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="x" type="number" name="Height" />
+                            <YAxis dataKey="y" type="number" name="Weight" />
+                            <Tooltip cursor={{ strokeDasharray: "3 3" }} />
+                            <Scatter data={chart.data} fill="#0d6efd" />
+                          </ScatterChart>
+                        ) : chart.type === "line" ? (
+                          <LineChart data={chart.data}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" angle={-20} textAnchor="end" height={70} interval={0} />
+                            <YAxis allowDecimals={false} />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="value" stroke="#0dcaf0" strokeWidth={3} dot={{ r: 4 }} />
+                          </LineChart>
+                        ) : chart.type === "horizontalBar" ? (
+                          <BarChart data={chart.data} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" allowDecimals={false} />
+                            <YAxis type="category" dataKey="name" width={120} />
+                            <Tooltip />
+                            <Bar dataKey="value" fill={chart.color || "#198754"} radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        ) : (
+                          <BarChart data={chart.data}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" angle={-20} textAnchor="end" height={70} interval={0} />
+                            <YAxis allowDecimals={false} />
+                            <Tooltip />
+                            <Bar dataKey="value" fill={chart.color || "#0d6efd"} radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        )}
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="mt-3">
+                      <div className="fw-semibold small text-uppercase text-muted mb-1">Summary</div>
+                      <ul className="small mb-2 ps-3">
+                        {chart.summary.map((line, index) => (
+                          <li key={index}>{line}</li>
+                        ))}
+                      </ul>
+                      <InsightDataTable rows={chart.tableRows} emptyText="No chart data" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="alert alert-light border mb-0">
+              Smart charts are hidden because the current filters leave too little or too uniform data.
+            </div>
+          )}
         </div>
       </div>
     </div>
