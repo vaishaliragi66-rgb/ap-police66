@@ -158,6 +158,8 @@ const XrayEntryForm = () => {
   const [xrayTypes, setXrayTypes] = useState([]);
   const [xrayMaster, setXrayMaster] = useState([]);
   const [doctorXrays, setDoctorXrays] = useState([]);
+  const [doctorXrayOrders, setDoctorXrayOrders] = useState([]);
+  const [showDoctorNotes, setShowDoctorNotes] = useState({});
   const navigate = useNavigate();
 
   const groupedXrayOptions = useMemo(() => {
@@ -222,15 +224,31 @@ const XrayEntryForm = () => {
 
   const fetchDoctorXrays = async (visitId) => {
   try {
+    // Fetch from medical-actions API like pharmacy and diagnosis
     const res = await axios.get(
-      `${BACKEND_URL}/xray-api/visit/${visitId}/doctor`
+      `${BACKEND_URL}/api/medical-actions/visit/${visitId}`
     );
 
-    setDoctorXrays(res.data?.xrays || []);
+    console.log("Medical actions API Response:", res.data);
+    
+    const actions = res.data || [];
+    
+    // Filter for DOCTOR_XRAY actions
+    const doctorXrayActions = actions.filter(a => a.action_type === "DOCTOR_XRAY");
+    
+    console.log("Doctor X-ray actions:", doctorXrayActions);
+    
+    // Set the orders (each action is an order with data containing xrays and notes)
+    setDoctorXrayOrders(doctorXrayActions);
+    
+    // Extract xrays from all actions for the form
+    const allXrays = doctorXrayActions.flatMap(action => action.data?.xrays || []);
+    setDoctorXrays(allXrays);
 
   } catch (err) {
     console.error("Failed to fetch doctor xrays", err);
     setDoctorXrays([]);
+    setDoctorXrayOrders([]);
   }
 };
 
@@ -659,6 +677,42 @@ alert("✅ Xray saved");
                         📄 View History
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {/* Doctor X-ray Orders with Notes */}
+                {doctorXrayOrders.length > 0 && (
+                  <div className="alert alert-warning mb-4">
+                    <h6 className="alert-heading">👨‍⚕️ Doctor X-ray Orders (Reference)</h6>
+                    
+                    {doctorXrayOrders.map((action, i) => (
+                      <div key={i} className="mt-2">
+                        <ul className="mb-2">
+                          {(action.data?.xrays || []).map((xray, idx) => (
+                            <li key={idx}>
+                              {xray.Xray_Type} {xray.Body_Part ? `(${xray.Body_Part})` : ''}
+                            </li>
+                          ))}
+                        </ul>
+
+                        {action.data?.notes && (
+                          <div className="mt-2">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-info"
+                              onClick={() => setShowDoctorNotes(prev => ({ ...prev, [i]: !prev[i] }))}
+                            >
+                              {showDoctorNotes[i] ? "Hide Doctor Notes" : "Show Doctor Notes"}
+                            </button>
+                            {showDoctorNotes[i] && (
+                              <div className="alert alert-info mt-2 mb-0 p-2">
+                                <small><strong>Doctor Notes:</strong> {action.data.notes}</small>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
 
