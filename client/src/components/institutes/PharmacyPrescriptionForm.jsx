@@ -4,16 +4,16 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import "./PharmacyPrescriptionForm.css";
 import { useNavigate } from "react-router-dom";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
+
+const { useMemo } = React;
 
 const PharmacyPrescriptionForm = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [visitId, setVisitId] = useState(null);
-  const [medicineSearch, setMedicineSearch] = useState({});
-  const [activeMedicineIndex, setActiveMedicineIndex] = useState(null);
   const [inventory, setInventory] = useState([]);
   const [instituteName, setInstituteName] = useState("");
-  const [filteredMedicines, setFilteredMedicines] = useState([]);
   const [diseases, setDiseases] = useState([]);
   const [medicineErrors, setMedicineErrors] = useState({});
   const [doctorPrescription, setDoctorPrescription] = useState([]);
@@ -23,6 +23,7 @@ const PharmacyPrescriptionForm = () => {
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [employeeReport, setEmployeeReport] = useState(null);
   const [showReports, setShowReports] = useState(false);
+  const [masterMap, setMasterMap] = useState({});
 
   const navigate = useNavigate();
 
@@ -34,6 +35,17 @@ const PharmacyPrescriptionForm = () => {
     Medicines: [{ medicineId: "", medicineName: "", type: "", strength: "", expiryDate: "", quantity: 0 }],
     Notes: ""
   });
+
+  const medicineTypeOptions = useMemo(() => {
+    const masterTypes = getMasterOptions(masterMap, "Medicine Types");
+    const inventoryTypes = [...new Set(
+      (inventory || [])
+        .map((item) => String(item?.Type || "").trim())
+        .filter(Boolean)
+    )];
+
+    return [...new Set([...masterTypes, ...inventoryTypes])];
+  }, [inventory, masterMap]);
 
   /* ================= FILTER DOCTOR PRESCRIPTIONS ================= */
   useEffect(() => {
@@ -195,6 +207,9 @@ useEffect(() => {
   setFormData((f) => ({ ...f, Institute_ID: instituteId }));
   fetchInstitute(instituteId);
   fetchInventory(instituteId);
+  fetchMasterDataMap()
+    .then((data) => setMasterMap(data || {}))
+    .catch(() => setMasterMap({}));
 }, []);
 
 
@@ -235,43 +250,6 @@ useEffect(() => {
       setDiseases([]);
     }
   };
-
-  /* ================= MEDICINE SEARCH ================= */
-useEffect(() => {
-  const searchText = medicineSearch[activeMedicineIndex] || "";
-
-  if (!searchText.trim()) {
-    setFilteredMedicines([]);
-    return;
-  }
-
-  console.log("Inventory sample:", inventory[0]);
-
-const results = inventory.filter(m =>
-  m.Medicine_Name?.toLowerCase().includes(searchText.toLowerCase())
-);
-
-  const selectedStrength =
-    activeMedicineIndex !== null
-      ? (formData.Medicines[activeMedicineIndex]?.strength || "").trim().toLowerCase()
-      : "";
-
-  const filteredByStrength = results.filter((m) => {
-    if (!selectedStrength) {
-      return true;
-    }
-
-    const inventoryStrength = (m.Strength || "").trim().toLowerCase();
-    return !inventoryStrength || inventoryStrength === selectedStrength;
-  });
-
-
-  setFilteredMedicines(filteredByStrength);
-  console.log("Search text:", searchText);
-console.log("Results:", filteredByStrength);
-
-}, [medicineSearch, activeMedicineIndex, inventory, formData.Medicines]);
-
 
   /* ================= DISEASE FILTER ================= */
   const twoMonthsAgo = new Date();
@@ -327,9 +305,32 @@ const handleMedicineChange = (index, field, value) => {
         ...updated[index],   // 🔥 keep existing quantity
         medicineId: selected.Medicine_Code,
         medicineName: selected.Medicine_Name,
+        type: selected.Type || updated[index].type || "",
         strength: selected.Strength || updated[index].strength || "",
         expiryDate: selected.Expiry_Date
       };
+    }
+
+    if (field === "type") {
+      const currentMedicineCode = updated[index].medicineId;
+      const currentSelected = inventory.find(
+        (item) => item.Medicine_Code === currentMedicineCode
+      );
+
+      updated[index] = {
+        ...updated[index],
+        type: value
+      };
+
+      if (currentSelected && String(currentSelected.Type || "") !== String(value || "")) {
+        updated[index] = {
+          ...updated[index],
+          medicineId: "",
+          medicineName: "",
+          strength: "",
+          expiryDate: ""
+        };
+      }
     }
 
 if (field === "quantity") {
@@ -365,19 +366,6 @@ else {
 }
 
 }
-
-
-    if (field === "searchText") {
-      updated[index] = {
-        ...updated[index],
-        medicineId: "",
-        medicineName: "",
-        strength: "",
-        expiryDate: ""
-      };
-    }
-
-
     return { ...prev, Medicines: updated };
   });
 };
@@ -424,14 +412,6 @@ const addDoctorPrescribedMedicine = (medicine) => {
         strength: medicine.Strength || "",
         quantity: calculatedQty
       };
-
-      // Pre-fill search for that index
-      setMedicineSearch(prevSearch => ({
-        ...prevSearch,
-        [emptyIndex]: baseName
-      }));
-
-      setActiveMedicineIndex(emptyIndex);
     } else {
       // Otherwise add new row
       medicinesCopy.push({
@@ -443,15 +423,6 @@ const addDoctorPrescribedMedicine = (medicine) => {
         expiryDate: "",
         quantity: calculatedQty
       });
-
-      const newIndex = medicinesCopy.length - 1;
-
-      setMedicineSearch(prevSearch => ({
-        ...prevSearch,
-        [newIndex]: baseName
-      }));
-
-      setActiveMedicineIndex(newIndex);
     }
 
     return { ...prev, Medicines: medicinesCopy };
@@ -527,11 +498,9 @@ const handleSubmit = async (e) => {
     return;
   }
 
-  const hasManualEntry = formData.Medicines.some((medicine, index) => {
-    const typedText = (medicineSearch[index] || "").trim();
-    const hasTypedOrQty = typedText.length > 0 || Number(medicine.quantity) > 0;
-    return hasTypedOrQty && !medicine.medicineId;
-  });
+  const hasManualEntry = formData.Medicines.some((medicine) =>
+    (medicine.medicineName?.trim() || Number(medicine.quantity) > 0) && !medicine.medicineId
+  );
 
   if (hasManualEntry) {
     alert("Please select medicine from suggestions only. Manual entry is not allowed.");
@@ -899,102 +868,33 @@ const handleSubmit = async (e) => {
                 {formData.Medicines.map((med, i) => (
                   <div key={i} className="mb-3 medicine-row">
                     <div className="d-flex gap-2 align-items-start">
-                      <div className="d-flex flex-column w-100">
-                        <input
-                          type="text"
-                          className={`form-control ${
-                              med.medicineName ? "medicine-auto-filled" : ""
-                            }`}
-                          placeholder="Type medicine name..."
-                          // When displaying medicine in the input field:
-                          value={
-                              (() => {
-                                const typedValue = medicineSearch[i];
-                                const hasTypedValue = typeof typedValue === "string" && typedValue.length > 0;
-
-                                if (hasTypedValue) {
-                                  return typedValue;
-                                }
-
-                                return med.medicineName
-                                  ? `${med.medicineName.trim()}${med.type ? ` (${med.type})` : ""}${med.strength ? ` ${med.strength}` : ""} (Exp: ${formatExpiryMY(med.expiryDate)})`
-                                  : "";
-                              })()
-                            }
-
-                          onFocus={() => setActiveMedicineIndex(i)}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setMedicineSearch(prev => ({
-                              ...prev,
-                              [i]: value
-                            }));
-                            handleMedicineChange(i, "searchText", value);
-                          }}
-                          onBlur={() => {
-                            setTimeout(() => {
-                              if (activeMedicineIndex === i) {
-                                setActiveMedicineIndex(null);
-                              }
-                            }, 150);
-                          }}
-
-                        />
-
-                        {activeMedicineIndex === i && filteredMedicines.map((m) => {
-                          const displayName = m.Medicine_Name?.trim();
-                          const displayCode = m.Medicine_Code?.trim();
-
-                          return (
-                            <button
-                              type="button"
-                              key={m._id}
-                              className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
-                                m.Quantity === 0 ? "disabled text-muted" : ""
-                              }`}
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                if (m.Quantity === 0) return;
-                                handleMedicineChange(i, "medicineId", displayCode);
-                                setMedicineSearch(prev => {
-                                  const updated = { ...prev };
-                                  delete updated[i];
-                                  return updated;
-                                });
-
-                                setFilteredMedicines([]);
-                                setActiveMedicineIndex(null);
-                              }}
-                            >
-                              <div>
-                                <strong>{displayName}</strong>
-                                <div className="small text-muted">
-                                  {m.Strength ? `Strength: ${m.Strength} | ` : ""}
-                                  Exp: {formatExpiryMY(m.Expiry_Date)}
-                                </div>
-                              </div>
-
-                              {m.Quantity > 0 ? (
-                                <span className="badge bg-success">
-                                  Available: {m.Quantity}
-                                </span>
-                              ) : (
-                                <span className="badge bg-warning text-dark">
-                                  Not in sub-store
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <input
-                        type="text"
-                        className="form-control"
+                      <select
+                        className="form-select"
                         value={med.type || ""}
-                        placeholder="Type"
-                        readOnly
-                      />
+                        onChange={(e) => handleMedicineChange(i, "type", e.target.value)}
+                      >
+                        <option value="">Select Type</option>
+                        {medicineTypeOptions.map((typeOption) => (
+                          <option key={typeOption} value={typeOption}>
+                            {typeOption}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        className={`form-select ${med.medicineName ? "medicine-auto-filled" : ""}`}
+                        value={med.medicineId || ""}
+                        onChange={(e) => handleMedicineChange(i, "medicineId", e.target.value)}
+                      >
+                        <option value="">Select Medicine</option>
+                        {inventory
+                          .filter((item) => !med.type || String(item.Type || "") === String(med.type))
+                          .map((item) => (
+                            <option key={item._id} value={item.Medicine_Code}>
+                              {`${item.Medicine_Name}${item.Strength ? ` (${item.Strength})` : ""}${item.Expiry_Date ? ` - Exp ${formatExpiryMY(item.Expiry_Date)}` : ""} - Stock ${item.Quantity}`}
+                            </option>
+                          ))}
+                      </select>
 
                       <input
                         type="text"
@@ -1054,7 +954,7 @@ const handleSubmit = async (e) => {
                     rows="3"
                     value={formData.Notes}
                     onChange={(e) =>
-                      setFormData((f) => ({ ...f, Notes: e.tar7.value }))
+                      setFormData((f) => ({ ...f, Notes: e.target.value }))
                     }
                     placeholder="Any additional notes from pharmacy..."
                   />
