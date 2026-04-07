@@ -161,6 +161,25 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
     });
   };
 
+  const isMedicineExpired = (value) => {
+    if (!value) return false;
+
+    const parsed = new Date(value);
+    if (isNaN(parsed.getTime())) return false;
+
+    const expiryEndOfDay = new Date(
+      parsed.getFullYear(),
+      parsed.getMonth(),
+      parsed.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+
+    return expiryEndOfDay < new Date();
+  };
+
   const getReportStatus = (value) => {
     if (!value) return "pending";
 
@@ -651,7 +670,9 @@ useEffect(() => {
     axios
       .get(`${BACKEND_URL}/institute-api/inventory/${formData.Institute_ID}`)
       .then(res => {
-        const inventory = res.data || [];
+        const inventory = (res.data || []).filter(
+          (item) => Number(item?.Quantity || 0) > 0 && !isMedicineExpired(item?.Expiry_Date)
+        );
 
         const names = [];
         const seenNames = new Set();

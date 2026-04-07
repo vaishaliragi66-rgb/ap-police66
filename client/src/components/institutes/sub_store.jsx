@@ -41,6 +41,14 @@ export default function SubStore() {
     return `${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`;
   };
 
+  const isExpired = (dateValue) => {
+    if (!dateValue) return false;
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return false;
+    const expiryEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    return expiryEnd < new Date();
+  };
+
   const handleSort = (key) => {
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc") {
@@ -160,6 +168,7 @@ export default function SubStore() {
   const indexOfLast = currentPage * rowsPerPage;
   const indexOfFirst = indexOfLast - rowsPerPage;
   const currentRows = sortedRows.slice(indexOfFirst, indexOfLast);
+  const expiredRows = rows.filter((row) => isExpired(row.Expiry_Date));
 
   const totalPages = Math.ceil(sortedRows.length / rowsPerPage);
 
@@ -232,6 +241,18 @@ export default function SubStore() {
         {/* ---------- TABLE ---------- */}
         <div className="card-body">
 
+          {expiredRows.length > 0 && (
+            <div className="alert alert-danger">
+              <strong>Expired medicine notification:</strong> {expiredRows.length} medicine{expiredRows.length === 1 ? "" : "s"} expired in sub-store.
+              {" "}
+              {expiredRows
+                .slice(0, 5)
+                .map((row) => row.Medicine_Name)
+                .join(", ")}
+              {expiredRows.length > 5 ? " ..." : ""}
+            </div>
+          )}
+
           {/* Rows per page */}
           <div className="d-flex justify-content-end mb-3">
             <div className="d-flex align-items-center gap-2">
@@ -272,7 +293,7 @@ export default function SubStore() {
                 )}
 
                 {currentRows.map((r,i) => (
-                  <tr key={i}>
+                  <tr key={i} className={isExpired(r.Expiry_Date) ? "table-danger" : ""}>
                     <td>{r.Medicine_Code}</td>
                     <td>{r.Medicine_Name}</td>
                     <td>{r.Strength || "-"}</td>
