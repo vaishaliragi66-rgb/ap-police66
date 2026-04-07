@@ -295,14 +295,71 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
     return !isFamilyAction;
   };
 
-  const getEnrichedDoctorPrescriptions = (
+  const prescriptionMatchesSelectedPatient = (prescription, familyId = null) => {
+    const isFamilyPrescription = prescription?.IsFamilyMember === true;
+    const prescriptionFamilyId =
+      prescription?.FamilyMember?._id || prescription?.FamilyMember || null;
+
+    if (familyId) {
+      return isFamilyPrescription && String(prescriptionFamilyId) === String(familyId);
+    }
+
+    return !isFamilyPrescription;
+  };
+
+  const getPrescriptionTimestamp = (record) =>
+    record?.created_at || record?.Timestamp || record?.createdAt || null;
+
+  const normalizeDoctorMedicine = (medicine) => ({
+    ...medicine,
+    _source: "Doctor"
+  });
+
+  const normalizePharmacyMedicine = (medicine) => ({
+    Medicine_Name: medicine?.Medicine_Name || medicine?.Medicine_ID?.Medicine_Name || "",
+    Type: medicine?.Type || medicine?.Medicine_ID?.Type || "",
+    FoodTiming: medicine?.FoodTiming || "",
+    Strength: medicine?.Strength || medicine?.Medicine_ID?.Strength || "",
+    Morning: medicine?.Morning ?? "",
+    Afternoon: medicine?.Afternoon ?? "",
+    Night: medicine?.Night ?? "",
+    Duration: medicine?.Duration || "",
+    Remarks: medicine?.Remarks || "",
+    Quantity: Number(medicine?.Quantity) || 0,
+    _source: "Pharmacy"
+  });
+
+  const findMatchingPrescriptionReport = (reports, pharmacyRecord) => {
+    const visitKey = pharmacyRecord?.visit_id ? String(pharmacyRecord.visit_id) : null;
+    if (visitKey) {
+      const exactMatch = reports.find(
+        (report) => report?.visit_id && String(report.visit_id) === visitKey
+      );
+      if (exactMatch) return exactMatch;
+    }
+
+    const pharmacyTime = new Date(getPrescriptionTimestamp(pharmacyRecord) || 0).getTime();
+    const twelveHours = 12 * 60 * 60 * 1000;
+
+    return reports.find((report) => {
+      const reportTime = new Date(getPrescriptionTimestamp(report) || 0).getTime();
+      if (!reportTime || !pharmacyTime) return false;
+      return Math.abs(reportTime - pharmacyTime) <= twelveHours;
+    }) || null;
+  };
+
+  const getEnrichedPrescriptionHistory = (
     actions = [],
+    pharmacyRecords = [],
     diagnosisRecords = [],
     xrayRecords = [],
     familyId = null
   ) => {
     const patientActions = actions.filter((action) =>
       actionMatchesSelectedPatient(action, familyId)
+    );
+    const patientPharmacyRecords = pharmacyRecords.filter((record) =>
+      prescriptionMatchesSelectedPatient(record, familyId)
     );
 
     const relatedOrdersByVisit = new Map();
@@ -329,7 +386,7 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
       }
     });
 
-    return patientActions
+    const reports = patientActions
       .filter((action) => action?.action_type === "DOCTOR_PRESCRIPTION")
       .sort((a, b) => new Date(b?.created_at || 0) - new Date(a?.created_at || 0))
       .map((prescription) => {
@@ -337,9 +394,14 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
         const relatedOrders = visitKey
           ? relatedOrdersByVisit.get(visitKey) || { tests: [], xrays: [] }
           : { tests: [], xrays: [] };
+        const doctorMedicines = (prescription?.data?.medicines || []).map(normalizeDoctorMedicine);
 
         return {
           ...prescription,
+          combinedMedicines: doctorMedicines,
+          doctorNotes: prescription?.data?.notes || "",
+          pharmacyNotes: [],
+          instituteDisplayName: instituteName || "-",
           relatedTests: relatedOrders.tests.map((test) => ({
             ...test,
             matchedResult: getMatchingDiagnosisResult(
@@ -358,20 +420,102 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
           }))
         };
       });
+
+    patientPharmacyRecords.forEach((record) => {
+      const matchedReport = findMatchingPrescriptionReport(reports, record);
+      const pharmacyMedicines = (record?.Medicines || []).map(normalizePharmacyMedicine);
+      const pharmacyNote = String(record?.Notes || "").trim();
+
+      if (matchedReport) {
+        matchedReport.combinedMedicines = [
+          ...(matchedReport.combinedMedicines || []),
+          ...pharmacyMedicines
+        ];
+        matchedReport.pharmacyNotes = pharmacyNote
+          ? [...(matchedReport.pharmacyNotes || []), pharmacyNote]
+          : matchedReport.pharmacyNotes || [];
+        matchedReport.instituteDisplayName =
+          matchedReport.instituteDisplayName ||
+          record?.Institute?.Institute_Name ||
+          instituteName ||
+          "-";
+        return;
+      }
+
+      const visitKey = record?.visit_id ? String(record.visit_id) : null;
+      const relatedOrders = visitKey
+        ? relatedOrdersByVisit.get(visitKey) || { tests: [], xrays: [] }
+        : { tests: [], xrays: [] };
+
+      reports.push({
+        _id: `pharmacy-${record?._id || getPrescriptionTimestamp(record) || Math.random()}`,
+        visit_id: record?.visit_id || null,
+        created_at: getPrescriptionTimestamp(record),
+        data: {
+          IsFamilyMember: record?.IsFamilyMember || false,
+          FamilyMember_ID: record?.FamilyMember?._id || record?.FamilyMember || null,
+          medicines: [],
+          notes: ""
+        },
+        IsFamilyMember: record?.IsFamilyMember || false,
+        FamilyMember: record?.FamilyMember || null,
+        combinedMedicines: pharmacyMedicines,
+        doctorNotes: "",
+        pharmacyNotes: pharmacyNote ? [pharmacyNote] : [],
+        instituteDisplayName: record?.Institute?.Institute_Name || instituteName || "-",
+        relatedTests: relatedOrders.tests.map((test) => ({
+          ...test,
+          matchedResult: getMatchingDiagnosisResult(
+            test,
+            diagnosisRecords,
+            getPrescriptionTimestamp(record)
+          )
+        })),
+        relatedXrays: relatedOrders.xrays.map((xray) => ({
+          ...xray,
+          matchedResult: getMatchingXrayResult(
+            xray,
+            xrayRecords,
+            getPrescriptionTimestamp(record)
+          )
+        }))
+      });
+    });
+
+    return reports.sort(
+      (a, b) => new Date(getPrescriptionTimestamp(b) || 0) - new Date(getPrescriptionTimestamp(a) || 0)
+    );
   };
 
   const getPrescriptionReportForLabel = (prescription) => {
-    if (prescription?.data?.IsFamilyMember) {
-      const familyName = selectedVisit?.FamilyMember?.Name || "Family Member";
-      const relationship = selectedVisit?.FamilyMember?.Relationship;
+    const isFamilyPrescription =
+      prescription?.data?.IsFamilyMember === true || prescription?.IsFamilyMember === true;
+
+    if (isFamilyPrescription) {
+      const familyName =
+        selectedVisit?.FamilyMember?.Name ||
+        prescription?.FamilyMember?.Name ||
+        "Family Member";
+      const relationship =
+        selectedVisit?.FamilyMember?.Relationship ||
+        prescription?.FamilyMember?.Relationship;
       return relationship ? `${familyName} (${relationship})` : familyName;
     }
 
-    return selectedEmployee?.Name || employeeProfile?.Name || "Employee";
+    return selectedEmployee?.Name || employeeProfile?.Name || prescription?.Employee?.Name || "Employee";
+  };
+
+  const getPrescriptionMedicines = (prescription) =>
+    prescription?.combinedMedicines || prescription?.data?.medicines || [];
+
+  const formatDoseCell = (value) => {
+    if (value === true) return "1";
+    if (value === false) return "0";
+    return value || "-";
   };
 
   const renderPrescriptionHistoryCard = (prescription, keyPrefix = "prescription") => {
-    const medicines = prescription?.data?.medicines || [];
+    const medicines = getPrescriptionMedicines(prescription);
     const tests = prescription?.relatedTests || [];
     const xrays = prescription?.relatedXrays || [];
     const medicinesPreview = medicines
@@ -387,7 +531,7 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
         <div className="d-flex justify-content-between align-items-start gap-2">
           <div>
             <div className="fw-semibold">
-              {formatDateDMY(prescription?.created_at)}
+              {formatDateDMY(getPrescriptionTimestamp(prescription))}
             </div>
             <small className="text-muted">
               {medicines.length} medicine{medicines.length === 1 ? "" : "s"}
@@ -437,11 +581,12 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
       familyId: formData.IsFamilyMember ? formData.FamilyMember_ID : null
     };
 
-    const [diseaseRes, diagnosisRes, xrayRes, doctorPrescriptionRes] = await Promise.all([
+    const [diseaseRes, diagnosisRes, xrayRes, doctorPrescriptionRes, pharmacyPrescriptionRes] = await Promise.all([
       axios.get(`${BACKEND_URL}/disease-api/employee/${formData.Employee_ID}`),
       axios.get(`${BACKEND_URL}/diagnosis-api/records/${formData.Employee_ID}`, { params }),
       axios.get(`${BACKEND_URL}/xray-api/records/${formData.Employee_ID}`, { params }),
-      axios.get(`${BACKEND_URL}/api/medical-actions/employee/${formData.Employee_ID}`)
+      axios.get(`${BACKEND_URL}/api/medical-actions/employee/${formData.Employee_ID}`),
+      axios.get(`${BACKEND_URL}/prescription-api/employee/${formData.Employee_ID}`)
     ]);
 
     const allDiseases =
@@ -465,8 +610,9 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
       diseases: filteredDiseases,
       diagnosisRecords: diagnosisRes.data || [],
       xrayRecords: xrayRes.data || [],
-      previousPrescriptions: getEnrichedDoctorPrescriptions(
+      previousPrescriptions: getEnrichedPrescriptionHistory(
         doctorPrescriptionRes.data || [],
+        pharmacyPrescriptionRes.data || [],
         diagnosisRes.data || [],
         xrayRes.data || [],
         formData.IsFamilyMember ? formData.FamilyMember_ID : null
@@ -559,14 +705,16 @@ useEffect(() => {
         familyId: familyId || null
       };
 
-      const [actionsRes, diagnosisRes, xrayRes] = await Promise.all([
+      const [actionsRes, diagnosisRes, xrayRes, pharmacyRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/api/medical-actions/employee/${employeeId}`),
         axios.get(`${BACKEND_URL}/diagnosis-api/records/${employeeId}`, { params }),
-        axios.get(`${BACKEND_URL}/xray-api/records/${employeeId}`, { params })
+        axios.get(`${BACKEND_URL}/xray-api/records/${employeeId}`, { params }),
+        axios.get(`${BACKEND_URL}/prescription-api/employee/${employeeId}`)
       ]);
 
-      const data = getEnrichedDoctorPrescriptions(
+      const data = getEnrichedPrescriptionHistory(
         actionsRes.data || [],
+        pharmacyRes.data || [],
         diagnosisRes.data || [],
         xrayRes.data || [],
         familyId
@@ -1319,7 +1467,7 @@ if (validXrays.length === 0) {
 
           {selectedPrescriptionReport && (
             <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", zIndex: 2050 }}>
-              <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060 }}>
+              <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060 }}>
                 <div className="modal-content">
                   <div className="modal-header bg-dark text-white">
                     <h5 className="modal-title">Prescription Report</h5>
@@ -1332,9 +1480,10 @@ if (validXrays.length === 0) {
 
                   <div className="modal-body">
                     {(() => {
-                      const medicines = selectedPrescriptionReport?.data?.medicines || [];
+                      const medicines = getPrescriptionMedicines(selectedPrescriptionReport);
                       const tests = selectedPrescriptionReport?.relatedTests || [];
                       const xrays = selectedPrescriptionReport?.relatedXrays || [];
+                      const pharmacyNotes = selectedPrescriptionReport?.pharmacyNotes || [];
 
                       return (
                         <>
@@ -1343,56 +1492,66 @@ if (validXrays.length === 0) {
                               <strong>Patient:</strong> {getPrescriptionReportForLabel(selectedPrescriptionReport)}
                             </div>
                             <div className="col-md-6 text-md-end">
-                              <strong>Date:</strong> {formatDateTime(selectedPrescriptionReport?.created_at)}
+                              <strong>Date:</strong> {formatDateTime(getPrescriptionTimestamp(selectedPrescriptionReport))}
                             </div>
                             <div className="col-md-6">
-                              <strong>Institute:</strong> {instituteName || "-"}
+                              <strong>Institute:</strong> {selectedPrescriptionReport?.instituteDisplayName || instituteName || "-"}
                             </div>
                             <div className="col-md-6 text-md-end">
                               <strong>ABS No:</strong> {selectedEmployee?.ABS_NO || employeeProfile?.ABS_NO || "-"}
                             </div>
                           </div>
 
-                          <table className="table table-bordered align-middle">
-                            <thead className="table-light">
-                              <tr>
-                                <th>#</th>
-                                <th>Medicine</th>
-                                <th>Type</th>
-                                <th>Food Timing</th>
-                                <th>Strength</th>
-                                <th>Morning</th>
-                                <th>Afternoon</th>
-                                <th>Night</th>
-                                <th>Duration</th>
-                                <th>Remarks</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {medicines.length > 0 ? (
-                                medicines.map((medicine, index) => (
-                                  <tr key={`${medicine?.Medicine_Name || "medicine"}-${index}`}>
-                                    <td>{index + 1}</td>
-                                    <td>{medicine?.Medicine_Name || "-"}</td>
-                                    <td>{medicine?.Type || "-"}</td>
-                                    <td>{medicine?.FoodTiming || "-"}</td>
-                                    <td>{medicine?.Strength || "-"}</td>
-                                    <td>{medicine?.Morning || "0"}</td>
-                                    <td>{medicine?.Afternoon || "0"}</td>
-                                    <td>{medicine?.Night || "0"}</td>
-                                    <td>{medicine?.Duration || "-"}</td>
-                                    <td>{medicine?.Remarks || "-"}</td>
-                                  </tr>
-                                ))
-                              ) : (
+                          <div className="table-responsive">
+                            <table className="table table-bordered align-middle">
+                              <thead className="table-light">
                                 <tr>
-                                  <td colSpan="10" className="text-center text-muted">
-                                    No medicine details available
-                                  </td>
+                                  <th>#</th>
+                                  <th>Medicine</th>
+                                  <th>Source</th>
+                                  <th>Type</th>
+                                  <th>Food Timing</th>
+                                  <th>Strength</th>
+                                  <th>Morning</th>
+                                  <th>Afternoon</th>
+                                  <th>Night</th>
+                                  <th>Duration</th>
+                                  <th>Quantity</th>
+                                  <th>Remarks</th>
                                 </tr>
-                              )}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {medicines.length > 0 ? (
+                                  medicines.map((medicine, index) => (
+                                    <tr key={`${medicine?.Medicine_Name || "medicine"}-${index}`}>
+                                      <td>{index + 1}</td>
+                                      <td>{medicine?.Medicine_Name || "-"}</td>
+                                      <td>
+                                        <span className={`badge ${medicine?._source === "Pharmacy" ? "bg-info text-dark" : "bg-secondary"}`}>
+                                          {medicine?._source || "Doctor"}
+                                        </span>
+                                      </td>
+                                      <td>{medicine?.Type || "-"}</td>
+                                      <td>{medicine?.FoodTiming || "-"}</td>
+                                      <td>{medicine?.Strength || "-"}</td>
+                                      <td>{formatDoseCell(medicine?.Morning)}</td>
+                                      <td>{formatDoseCell(medicine?.Afternoon)}</td>
+                                      <td>{formatDoseCell(medicine?.Night)}</td>
+                                      <td>{medicine?.Duration || "-"}</td>
+                                      <td>{medicine?.Quantity || "-"}</td>
+                                      <td>{medicine?.Remarks || "-"}</td>
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr>
+                                    <td colSpan="12" className="text-center text-muted">
+                                      No medicine details available
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
 
                           <div className="row g-3 mt-1">
                             <div className="col-md-6">
@@ -1520,7 +1679,14 @@ if (validXrays.length === 0) {
                           <div className="mt-3">
                             <strong>Doctor Notes</strong>
                             <div className="border rounded p-3 bg-light mt-2" style={{ whiteSpace: "pre-wrap" }}>
-                              {selectedPrescriptionReport?.data?.notes || "No notes added"}
+                              {selectedPrescriptionReport?.doctorNotes || selectedPrescriptionReport?.data?.notes || "No notes added"}
+                            </div>
+                          </div>
+
+                          <div className="mt-3">
+                            <strong>Pharmacy Notes</strong>
+                            <div className="border rounded p-3 bg-light mt-2" style={{ whiteSpace: "pre-wrap" }}>
+                              {pharmacyNotes.length > 0 ? pharmacyNotes.join("\n\n") : "No pharmacy notes added"}
                             </div>
                           </div>
                         </>
