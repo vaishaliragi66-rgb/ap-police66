@@ -1,8 +1,9 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import html2canvas from "html2canvas";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 import {
   Bar,
@@ -392,6 +393,13 @@ const toDataTableRows = (data, total) =>
 
 const CHART_COLORS = ["#0d6efd", "#198754", "#dc3545", "#ffc107", "#6f42c1", "#0dcaf0", "#6610f2", "#fd7e14"];
 
+const safeText = (doc, text, x, y, options = {}) => {
+  const sanitized = String(text || "").trim();
+  if (sanitized) {
+    doc.text(sanitized, x, y, options);
+  }
+};
+
 const drawBarChartInPdf = (doc, title, data, startY, opts = {}) => {
   const chartX = 14;
   const chartY = startY + 4;
@@ -401,7 +409,7 @@ const drawBarChartInPdf = (doc, title, data, startY, opts = {}) => {
   const barHeight = Math.min(7, (chartHeight - 8) / Math.max(data.length, 1));
 
   doc.setFontSize(11);
-  doc.text(title, chartX, startY);
+  safeText(doc, title, chartX, startY);
 
   data.slice(0, opts.limit || 8).forEach((item, index) => {
     const y = chartY + index * (barHeight + 1);
@@ -410,7 +418,7 @@ const drawBarChartInPdf = (doc, title, data, startY, opts = {}) => {
     doc.rect(chartX, y, width, barHeight, "F");
     doc.setTextColor(33, 37, 41);
     doc.setFontSize(8);
-    doc.text(`${item.name} (${item.value})`, chartX + width + 2, y + barHeight - 1);
+    safeText(doc, `${item.name} (${item.value})`, chartX + width + 2, y + barHeight - 1);
   });
 
   return chartY + Math.max(1, data.slice(0, opts.limit || 8).length) * (barHeight + 1) + 4;
@@ -424,7 +432,7 @@ const drawHorizontalBarChartInPdf = (doc, title, data, startY, color = [25, 135,
   const maxValue = Math.max(...data.map(item => item.value), 1);
 
   doc.setFontSize(11);
-  doc.text(title, chartX, startY);
+  safeText(doc, title, chartX, startY);
 
   data.slice(0, 8).forEach((item, index) => {
     const y = chartY + index * (rowHeight + 2);
@@ -433,7 +441,7 @@ const drawHorizontalBarChartInPdf = (doc, title, data, startY, color = [25, 135,
     doc.rect(chartX, y, width, rowHeight, "F");
     doc.setFontSize(8);
     doc.setTextColor(33, 37, 41);
-    doc.text(`${item.name} (${item.value})`, chartX + width + 2, y + 4.5);
+    safeText(doc, `${item.name} (${item.value})`, chartX + width + 2, y + 4.5);
   });
 
   return chartY + Math.max(1, Math.min(data.length, 8)) * (rowHeight + 2) + 4;
@@ -442,7 +450,7 @@ const drawHorizontalBarChartInPdf = (doc, title, data, startY, color = [25, 135,
 const drawScatterSummaryInPdf = (doc, title, data, startY) => {
   doc.setFontSize(11);
   doc.setTextColor(33, 37, 41);
-  doc.text(title, 14, startY);
+  safeText(doc, title, 14, startY);
 
   autoTable(doc, {
     startY: startY + 3,
@@ -459,7 +467,7 @@ const drawScatterSummaryInPdf = (doc, title, data, startY) => {
 const drawSimpleBreakdownInPdf = (doc, title, data, x, y) => {
   doc.setFontSize(11);
   doc.setTextColor(33, 37, 41);
-  doc.text(title, x, y);
+  safeText(doc, title, x, y);
   let currentY = y + 7;
 
   data.forEach((item, index) => {
@@ -471,7 +479,7 @@ const drawSimpleBreakdownInPdf = (doc, title, data, x, y) => {
     doc.rect(x, currentY - 4, 4, 4, "F");
     doc.setFontSize(9);
     doc.setTextColor(33, 37, 41);
-    doc.text(`${item.name}: ${item.value}`, x + 6, currentY - 0.5);
+    safeText(doc, `${item.name}: ${item.value}`, x + 6, currentY - 0.5);
     currentY += 6;
   });
 };
@@ -479,7 +487,7 @@ const drawSimpleBreakdownInPdf = (doc, title, data, x, y) => {
 const addInsightTableToPdf = (doc, title, rows, startY) => {
   doc.setFontSize(11);
   doc.setTextColor(33, 37, 41);
-  doc.text(title, 14, startY);
+  safeText(doc, title, 14, startY);
 
   autoTable(doc, {
     startY: startY + 3,
@@ -576,25 +584,33 @@ const downloadCSV = (data) => {
   link.click();
 };
 
-const downloadPDF = (data, insights, filters) => {
-  if (!data.length) return;
+const downloadPDF = async (data, insights, filters, smartGraphElement) => {
+  if (!data.length) {
+    alert("No data to export. Please apply filters and try again.");
+    return;
+  }
 
-  const doc = new jsPDF("l", "mm", "a4");
-  doc.setFontSize(14);
-  doc.text("Institute Medical Analytics Report", 14, 15);
+  try {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-  autoTable(doc, {
-    startY: 22,
-    head: [[
+    // Title page
+    doc.setFontSize(16);
+    doc.text("Institute Medical Analytics Report", 20, 20);
+    doc.setFontSize(11);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, 20, 30);
+    doc.text(`Total Records: ${data.length}`, 20, 40);
+    
+    // Data table
+    const headers = [
       "Designation",
-      "ABS Number",
+      "ABS",
       "Name",
       "Gender",
       "District",
       "State",
       "Age",
       "Blood Group",
-      "Phone Number",
+      "Phone",
       "Height",
       "Weight",
       "Diseases",
@@ -602,81 +618,97 @@ const downloadPDF = (data, insights, filters) => {
       "Medicines",
       "First Visit",
       "Last Visit"
-    ]],
-    body: data.map(r => [
-      r.Designation,
-      r.ABS_NO || "—",
-      r.Name,
-      r.Gender || "—",
-      r.District || "—",
-      r.State || "—",
-      r.Age ?? "—",
-      r.Blood_Group || "—",
-      r.Phone_No || "—",
-      r.Height || "—",
-      r.Weight || "—",
-      [...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])].join(", "),
-      (r.Tests || []).map(t => `${t.Test_Name}: ${t.Result_Value}`).join("; "),
-      (r.Medicines || []).map(m => `${m.Medicine_Name} (${m.Quantity})`).join("; "),
+    ];
+
+    const rows = data.map(r => [
+      String(r.Designation || "—"),
+      String(r.ABS_NO || "—"),
+      String(r.Name || "—"),
+      String(r.Gender || "—"),
+      String(r.District || "—"),
+      String(r.State || "—"),
+      String(r.Age ?? "—"),
+      String(r.Blood_Group || "—"),
+      String(r.Phone_No || "—"),
+      String(r.Height || "—"),
+      String(r.Weight || "—"),
+      [...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])].filter(d => d).join(", ") || "—",
+      (r.Tests || []).map(t => `${t.Test_Name || "—"}`).join("; ") || "—",
+      (r.Medicines || []).map(m => `${m.Medicine_Name || "—"}`).join("; ") || "—",
       r.First_Visit_Date ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB") : "—",
       r.Last_Visit_Date ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB") : "—"
-    ]),
-    styles: { fontSize: 7, cellPadding: 1.5 },
-    headStyles: { fillColor: [33, 37, 41] }
-  });
+    ]);
 
-  const chartConfigs = buildSmartChartConfigs(data, {
-    designationFilter: filters.designationFilter,
-    genderFilter: filters.genderFilter,
-    districtFilter: filters.districtFilter,
-    stateFilter: filters.stateFilter,
-    absFilter: filters.absFilter,
-    diseaseFilter: filters.diseaseFilter,
-    medicineFilter: filters.medicineFilter,
-    testFilter: filters.testFilter,
-    bloodGroupFilter: filters.bloodGroupFilter,
-    abnormalOnly: filters.abnormalOnly,
-    ageMin: filters.ageMin,
-    ageMax: filters.ageMax
-  }, insights);
-
-  if (chartConfigs.length) {
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.setTextColor(33, 37, 41);
-    doc.text("Institute Medical Analytics - Smart Graph Analysis", 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Recommended charts generated from ${data.length} filtered records`, 14, 22);
-
-    let currentY = 30;
-    chartConfigs.forEach((chart, index) => {
-      if (index > 0 && currentY > 225) {
-        doc.addPage();
-        currentY = 20;
+    autoTable(doc, {
+      head: [headers],
+      body: rows,
+      startY: 50,
+      margin: { top: 10, right: 10, bottom: 10, left: 10 },
+      styles: {
+        fontSize: 6,
+        cellPadding: 2,
+        overflow: "linebreak",
+        halign: "left"
+      },
+      headStyles: {
+        fillColor: [33, 37, 41],
+        textColor: [255, 255, 255],
+        fontStyle: "bold"
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
       }
-
-      if (chart.type === "scatter") {
-        currentY = drawScatterSummaryInPdf(doc, chart.title, chart.data, currentY);
-      } else if (chart.type === "pie") {
-        currentY = drawSimpleBreakdownInPdf(
-          doc,
-          chart.title,
-          chart.data,
-          14,
-          currentY
-        );
-      } else if (chart.key === "diseases") {
-        currentY = drawHorizontalBarChartInPdf(doc, chart.title, chart.data, currentY, [25, 135, 84]);
-      } else {
-        currentY = drawBarChartInPdf(doc, chart.title, chart.data, currentY, { limit: 8 });
-      }
-
-      currentY = addInsightTableToPdf(doc, `${chart.title} - Data Table`, chart.tableRows, currentY);
-      currentY += 4;
     });
-  }
 
-  doc.save("Institute_Analytics_Report.pdf");
+    if (smartGraphElement) {
+      const chartCards = Array.from(smartGraphElement.querySelectorAll(".smart-chart-card"));
+
+      if (chartCards.length > 0) {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 10;
+        const contentWidth = pageWidth - margin * 2;
+        const topStart = 24;
+        const bottomLimit = pageHeight - margin;
+
+        doc.addPage();
+        doc.setFontSize(15);
+        doc.text("Smart Graph Analysis", margin, 16);
+
+        let currentY = topStart;
+
+        for (const card of chartCards) {
+          const canvas = await html2canvas(card, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            windowWidth: card.scrollWidth,
+            windowHeight: card.scrollHeight
+          });
+
+          const imgData = canvas.toDataURL("image/png");
+          const naturalHeight = (canvas.height * contentWidth) / canvas.width;
+          const maxHeightPerPage = pageHeight - topStart - margin;
+          const renderHeight = Math.min(naturalHeight, maxHeightPerPage);
+
+          if (currentY + renderHeight > bottomLimit) {
+            doc.addPage();
+            doc.setFontSize(15);
+            doc.text("Smart Graph Analysis (contd.)", margin, 16);
+            currentY = topStart;
+          }
+
+          doc.addImage(imgData, "PNG", margin, currentY, contentWidth, renderHeight, undefined, "FAST");
+          currentY += renderHeight + 6;
+        }
+      }
+    }
+
+    doc.save("Institute_Analytics_Report.pdf");
+  } catch (error) {
+    console.error("PDF generation error:", error);
+    alert(`Failed to generate PDF: ${error.message}`);
+  }
 };
 
 /* ===============================
@@ -687,6 +719,7 @@ export default function InstituteAnalytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [masterMap, setMasterMap] = useState({});
+  const smartGraphRef = useRef(null);
 
   /* -------- Filters -------- */
   const [designationFilter, setDesignationFilter] = useState("");
@@ -732,6 +765,39 @@ const rowsPerPage = 10;
 
   const designationOptions = getMasterOptions(masterMap, "Designations");
   const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
+  const districtOptions = getMasterOptions(masterMap, "Districts");
+  const stateOptions = getMasterOptions(masterMap, "States");
+
+  const uniqueDiseases = useMemo(() => {
+    const diseases = new Set();
+    rows.forEach(row => {
+      [...(row.Communicable_Diseases || []), ...(row.NonCommunicable_Diseases || [])].forEach(d => {
+        if (d) diseases.add(String(d).trim());
+      });
+    });
+    return Array.from(diseases).sort();
+  }, [rows]);
+
+  const uniqueMedicines = useMemo(() => {
+    const medicines = new Set();
+    rows.forEach(row => {
+      (row.Medicines || []).forEach(m => {
+        if (m?.Medicine_Name) medicines.add(String(m.Medicine_Name).trim());
+      });
+    });
+    return Array.from(medicines).sort();
+  }, [rows]);
+
+  const uniqueTests = useMemo(() => {
+    const tests = new Set();
+    rows.forEach(row => {
+      (row.Tests || []).forEach(t => {
+        if (t?.Test_Name) tests.add(String(t.Test_Name).trim());
+      });
+    });
+    return Array.from(tests).sort();
+  }, [rows]);
+
   useEffect(() => {
     const institute = JSON.parse(localStorage.getItem("institute"));
     if (!institute) {
@@ -805,20 +871,32 @@ const rowsPerPage = 10;
     const hasAbnormal =
       r.Tests?.some(t => isAbnormal(t.Result_Value, t.Reference_Range));
 
+    const allDiseases = [...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])];
+    const diseaseMatch = !diseaseFilter || allDiseases.some(d => 
+      String(d).trim().toLowerCase() === String(diseaseFilter).trim().toLowerCase()
+    );
+
+    const medicineName = (r.Medicines || []).map(m => m.Medicine_Name);
+    const medicineMatch = !medicineFilter || medicineName.some(m => 
+      String(m).trim().toLowerCase() === String(medicineFilter).trim().toLowerCase()
+    );
+
+    const testNames = (r.Tests || []).map(t => t.Test_Name);
+    const testMatch = !testFilter || testNames.some(t => 
+      String(t).trim().toLowerCase() === String(testFilter).trim().toLowerCase()
+    );
+
     return (
       (!designationFilter || r.Designation === designationFilter) &&
       (!genderFilter || r.Gender === genderFilter) &&
       (!bloodGroupFilter || r.Blood_Group === bloodGroupFilter) &&
+      (!districtFilter || r.District === districtFilter) &&
+      (!stateFilter || r.State === stateFilter) &&
       match(r.Name, nameFilter) &&
-      match(r.District, districtFilter) &&
-      match(r.State, stateFilter) &&
       match(r.ABS_NO, absFilter) &&
-      match(
-        [...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])].join(" "),
-        diseaseFilter
-      ) &&
-      match((r.Medicines || []).map(m => m.Medicine_Name).join(" "), medicineFilter) &&
-      match((r.Tests || []).map(t => t.Test_Name).join(" "), testFilter) &&
+      diseaseMatch &&
+      medicineMatch &&
+      testMatch &&
       ageOK &&
       (!abnormalOnly || hasAbnormal)
     );
@@ -960,25 +1038,31 @@ const hasSmartCharts = smartCharts.length > 0;
             {/* District Filter */}
             <div className="col-md-3">
               <label className="form-label fw-semibold">District</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by district"
+              <select
+                className="form-select"
                 value={districtFilter}
                 onChange={(e) => setDistrictFilter(e.target.value)}
-              />
+              >
+                <option value="">All Districts</option>
+                {districtOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
             </div>
 
             {/* State Filter */}
             <div className="col-md-3">
               <label className="form-label fw-semibold">State</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by state"
+              <select
+                className="form-select"
                 value={stateFilter}
                 onChange={(e) => setStateFilter(e.target.value)}
-              />
+              >
+                <option value="">All States</option>
+                {stateOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
             </div>
 
             {/* ABS Number Filter */}
@@ -996,37 +1080,46 @@ const hasSmartCharts = smartCharts.length > 0;
             {/* Disease Filter */}
             <div className="col-md-3">
               <label className="form-label fw-semibold">Disease</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by disease"
+              <select
+                className="form-select"
                 value={diseaseFilter}
                 onChange={(e) => setDiseaseFilter(e.target.value)}
-              />
+              >
+                <option value="">All Diseases</option>
+                {uniqueDiseases.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
             </div>
 
             {/* Medicine Filter */}
             <div className="col-md-3">
               <label className="form-label fw-semibold">Medicine</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by medicine"
+              <select
+                className="form-select"
                 value={medicineFilter}
                 onChange={(e) => setMedicineFilter(e.target.value)}
-              />
+              >
+                <option value="">All Medicines</option>
+                {uniqueMedicines.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
             </div>
 
             {/* Test Filter */}
             <div className="col-md-3">
               <label className="form-label fw-semibold">Test</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by test name"
+              <select
+                className="form-select"
                 value={testFilter}
                 onChange={(e) => setTestFilter(e.target.value)}
-              />
+              >
+                <option value="">All Tests</option>
+                {uniqueTests.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
             </div>
 
             {/* Age Min */}
@@ -1094,7 +1187,7 @@ const hasSmartCharts = smartCharts.length > 0;
                 abnormalOnly,
                 ageMin,
                 ageMax
-              })}
+              }, smartGraphRef.current)}
               disabled={filteredRows.length === 0}
             >
               📄 Download PDF
@@ -1252,7 +1345,7 @@ const hasSmartCharts = smartCharts.length > 0;
       </div>
 
       {/* =============================== ANALYSIS CHARTS ================================*/}
-      <div className="card shadow-sm mt-4">
+      <div className="card shadow-sm mt-4" ref={smartGraphRef}>
         <div className="card-body">
           <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div>
@@ -1268,7 +1361,7 @@ const hasSmartCharts = smartCharts.length > 0;
             <div className="row g-4">
               {smartCharts.map(chart => (
                 <div className="col-12 col-lg-6" key={chart.key}>
-                  <div className="border rounded-3 p-3 h-100 bg-white shadow-sm">
+                  <div className="smart-chart-card border rounded-3 p-3 h-100 bg-white shadow-sm">
                     <div className="d-flex justify-content-between align-items-start gap-3 mb-2">
                       <div>
                         <h6 className="fw-semibold mb-1">{chart.title}</h6>

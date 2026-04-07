@@ -20,9 +20,6 @@ const DEFAULT_CATEGORIES = [
   "Employee Report Roles",
   "Medicine Types",
   "Medicine Categories",
-  "Xray Categories",
-  "Xray Body Parts",
-  "Xray Views",
   "Xray Types",
   "Food Timings",
   "Institute Roles",
@@ -36,6 +33,26 @@ const DEFAULT_CATEGORIES = [
   "States",
   "Residential Areas",
   "Rank Categories"
+];
+
+// Valid test categories from the diagnostic tests catalog
+const VALID_TEST_CATEGORIES = [
+  "HEMATOLOGY",
+  "DIABETES & GLUCOSE",
+  "LIPID PROFILE",
+  "LIVER FUNCTION TESTS (LFT)",
+  "KIDNEY FUNCTION TESTS (KFT)",
+  "THYROID PROFILE",
+  "ELECTROLYTES",
+  "URINALYSIS",
+  "CARDIAC MARKERS",
+  "VITAMINS & MINERALS",
+  "COAGULATION STUDIES",
+  "INFECTIOUS DISEASE PANEL",
+  "TUMOR MARKERS",
+  "HORMONAL PROFILE",
+  "BONE HEALTH",
+  "IMMUNOLOGY"
 ];
 
 const DEFAULT_VALUE_SEEDS = {
@@ -174,40 +191,6 @@ const DEFAULT_VALUE_SEEDS = {
     "Diabetic",
     "Other"
   ],
-  "Xray Categories": [
-    "Head & Neck",
-    "Chest & Thorax",
-    "Upper Limb",
-    "Lower Limb",
-    "Spine",
-    "Abdomen"
-  ],
-  "Xray Body Parts": [
-    "Skull",
-    "Sinus",
-    "Cervical spine",
-    "Chest",
-    "Shoulder",
-    "Humerus",
-    "Elbow",
-    "Forearm",
-    "Wrist",
-    "Hand",
-    "Finger",
-    "Pelvis",
-    "Hip",
-    "Femur",
-    "Knee",
-    "Tibia/Fibula",
-    "Ankle",
-    "Foot",
-    "Toe",
-    "Thoracic Spine",
-    "Lumbar Spine",
-    "Sacrum & Coccyx",
-    "Abdomen"
-  ],
-  "Xray Views": ["AP", "PA", "Lateral", "Oblique", "Towne", "Waters", "Caldwell", "Decubitus", "Lordotic", "Expiratory", "Axillary", "Skyline", "Mortise", "Supine", "Erect"],
   "Xray Types": [
     "Skull X-ray – AP view",
     "Skull X-ray – Lateral view (Right)",
@@ -715,15 +698,35 @@ router.get("/tests-structure", verifyToken, async (req, res) => {
 
     const dbTests = await DiagnosisTest.find().sort({ Group: 1, Test_Name: 1 }).lean();
 
-    const categoriesSet = new Set(
-      dbTests.map((test) => String(test.Group || "").trim()).filter(Boolean)
-    );
-
+    // Build set of valid categories
+    const validCategoriesSet = new Set(VALID_TEST_CATEGORIES);
+    
+    // Get custom test category names
+    const customCategoryNames = new Set();
     customValues
       .filter((value) => value?.meta?.kind === "category")
       .forEach((value) => {
-        if (value.value_name) categoriesSet.add(String(value.value_name).trim());
+        if (value.value_name) {
+          customCategoryNames.add(String(value.value_name).trim());
+        }
       });
+
+    // Build set of categories: static + custom only
+    const categoriesSet = new Set();
+    
+    // Add all valid static categories
+    validCategoriesSet.forEach(cat => categoriesSet.add(cat));
+    
+    // Add custom categories
+    customCategoryNames.forEach(cat => categoriesSet.add(cat));
+    
+    // Also check DiagnosisTest for categories that match our valid list or are custom
+    dbTests.forEach((test) => {
+      const group = String(test.Group || "").trim();
+      if (group && (validCategoriesSet.has(group) || customCategoryNames.has(group))) {
+        categoriesSet.add(group);
+      }
+    });
 
     const testsByCategory = {};
     const seenByCategory = new Map();
@@ -733,51 +736,76 @@ router.get("/tests-structure", verifyToken, async (req, res) => {
       seenByCategory.set(category, new Set());
     });
 
+    // Add tests from DiagnosisTest - only for valid categories
     dbTests.forEach((test) => {
       const category = String(test.Group || "").trim();
-      if (!category) return;
-      if (!testsByCategory[category]) {
-        testsByCategory[category] = [];
-        seenByCategory.set(category, new Set());
+      const testName = String(test.Test_Name || "").trim();
+      
+      // Only add if category is valid (static or custom)
+      if (!category || !testsByCategory.hasOwnProperty(category)) {
+        if (test.Group && test.Group.length > 0) {
+          console.warn(`Skipping test "${testName}" - invalid category "${category}"`);
+        }
+        return;
       }
-      const key = normalize(test.Test_Name);
+      
+      if (!testName) return;
+
+      const key = normalize(testName);
       if (seenByCategory.get(category).has(key)) return;
       seenByCategory.get(category).add(key);
+      
       testsByCategory[category].push({
         id: test._id,
-        name: test.Test_Name,
+        name: testName,
         reference: test.Reference_Range || "",
         unit: test.Units || "",
         source: "diagnosis-test"
       });
     });
 
+    // Add custom test entries from MasterValue
     customValues
       .filter((value) => value?.meta?.kind === "test")
       .forEach((value) => {
         const category = String(value?.meta?.category || "").trim();
-        if (!category) return;
+        const testName = String(value.value_name || "").trim();
+        
+        if (!category || !testName) return;
+        
+        // Only add if category exists in our valid set
         if (!testsByCategory[category]) {
-          testsByCategory[category] = [];
-          seenByCategory.set(category, new Set());
+          console.warn(`Skipping custom test "${testName}" - invalid category "${category}"`);
+          return;
         }
-        const key = normalize(value.value_name);
+        
+        const key = normalize(testName);
         if (seenByCategory.get(category).has(key)) return;
         seenByCategory.get(category).add(key);
+        
         testsByCategory[category].push({
           id: value._id,
-          name: value.value_name,
+          name: testName,
           reference: value?.meta?.reference || "",
           unit: value?.meta?.unit || "",
           source: "master"
         });
       });
 
+    // Sort tests within each category
     Object.keys(testsByCategory).forEach((category) => {
-      testsByCategory[category].sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+      testsByCategory[category].sort((a, b) => 
+        String(a.name || "").localeCompare(String(b.name || ""))
+      );
     });
 
-    const categories = Object.keys(testsByCategory).sort((a, b) => a.localeCompare(b));
+    const categories = Object.keys(testsByCategory).sort((a, b) => 
+      a.localeCompare(b)
+    );
+    
+    const totalTests = Object.values(testsByCategory).reduce((sum, arr) => sum + arr.length, 0);
+    console.log(`Tests structure loaded: ${categories.length} categories, ${totalTests} total tests`);
+    
     res.json({ categories, testsByCategory });
   } catch (err) {
     console.error("GET /master-data-api/tests-structure error", err);
@@ -825,6 +853,79 @@ router.post("/tests/category", verifyToken, requireInstituteAdmin, async (req, r
   } catch (err) {
     console.error("POST /master-data-api/tests/category error", err);
     res.status(500).json({ message: "Failed to create test category", error: err.message });
+  }
+});
+
+router.delete("/tests/category/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+
+    if (!id || id === "undefined") {
+      return res.status(400).json({ message: "Invalid category ID provided" });
+    }
+
+    const testsCategory = await getCategoryByName(instituteId, "Tests");
+    if (!testsCategory) {
+      console.warn(`Tests category not found for institute ${instituteId}`);
+      return res.status(404).json({ message: "Tests category not found" });
+    }
+
+    // Find the category to delete
+    const categoryValue = await MasterValue.findOne({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: testsCategory._id,
+      "meta.kind": "category"
+    });
+
+    if (!categoryValue) {
+      console.warn(`Test category not found: id=${id}, category_id=${testsCategory._id}`);
+      return res.status(404).json({ message: "Test category not found or is not a custom category" });
+    }
+
+    const categoryName = String(categoryValue.value_name || "").trim();
+    console.log(`Deleting test category: ${categoryName} (ID: ${id})`);
+
+    // Delete the category itself
+    await MasterValue.deleteOne({
+      _id: categoryValue._id
+    });
+
+    // Delete all tests in this category
+    const deleteResult = await MasterValue.deleteMany({
+      Institute_ID: instituteId,
+      category_id: testsCategory._id,
+      $or: [
+        { "meta.category": categoryName },
+        { "meta.categoryNormalized": normalize(categoryName) }
+      ]
+    });
+
+    console.log(`Deleted ${deleteResult.deletedCount} tests from category ${categoryName}`);
+
+    // Also delete from DiagnosisTest if it exists
+    const diagnosisDeleteResult = await DiagnosisTest.deleteMany({
+      Group: { $regex: `^${escapeRegex(categoryName)}$`, $options: "i" }
+    }).catch(err => {
+      console.warn("DiagnosisTest deletion failed (may not exist):", err.message);
+      return { deletedCount: 0 };
+    });
+
+    console.log(`Deleted ${diagnosisDeleteResult.deletedCount} diagnosis tests from group ${categoryName}`);
+
+    res.json({ 
+      message: "Test category deleted successfully",
+      categoryName,
+      testsDeleted: deleteResult.deletedCount,
+      diagnosisTestsDeleted: diagnosisDeleteResult.deletedCount
+    });
+  } catch (err) {
+    console.error("DELETE /master-data-api/tests/category/:id error", err);
+    res.status(500).json({ 
+      message: "Failed to delete test category", 
+      error: err.message 
+    });
   }
 });
 

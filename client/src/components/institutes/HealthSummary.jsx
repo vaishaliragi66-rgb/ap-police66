@@ -3,6 +3,7 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 import {
@@ -274,11 +275,23 @@ const rowsPerPage = 10;
     const imgData = canvas.toDataURL("image/png");
 
     const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const downloadedAt = formatReportTimestamp();
+
+    addCenteredReportHeader(pdf, {
+      centerX: pageWidth / 2,
+      left: 14,
+      right: pageWidth - 14,
+      institutionName: getReportInstitutionName("POLICE HOSPITAL MANAGEMENT"),
+      title: "HEALTH SUMMARY REPORT",
+      lineY: 30
+    });
+    addDownloadTimestamp(pdf, { x: pageWidth - 14, y: 12, align: "right", timestamp: downloadedAt });
 
     const imgWidth = 190;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+    pdf.addImage(imgData, "PNG", 10, 36, imgWidth, imgHeight);
 
     pdf.save("HealthSummary.pdf");
 

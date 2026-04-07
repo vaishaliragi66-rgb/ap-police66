@@ -5,6 +5,7 @@ import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
+import { mergeXrayTypes } from "../../data/xrayTypes";
 
 const DoctorPrescriptionForm = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
@@ -657,8 +658,8 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
 useEffect(() => {
   axios
     .get(`${BACKEND_URL}/xray-api/types`)
-    .then(res => setXrayMaster(res.data || []))
-    .catch(() => setXrayMaster([]));
+    .then(res => setXrayMaster(mergeXrayTypes(res.data || [])))
+    .catch(() => setXrayMaster(mergeXrayTypes([])));
 }, []);
 
 

@@ -3,7 +3,7 @@ const diagnosticTestsByCategory = {
     { name: "Hemoglobin", reference: "M: 13.0–17.0 | F: 12.0–15.0", unit: "g/dL" },
     { name: "RBC Count", reference: "M: 4.7–6.1 | F: 4.2–5.4", unit: "million/µL" },
     { name: "WBC Count (TLC)", reference: "4,000–11,000", unit: "/µL" },
-    { name: "Platelet Count", reference: "150,000–450,000", unit: "/µL" },
+    { name: "Platelet Count", reference: "1,50,000–4,50,000", unit: "/µL" },
     { name: "Hematocrit (PCV)", reference: "M: 40–54 | F: 36–48", unit: "%" },
     { name: "MCV", reference: "80–96", unit: "fL" },
     { name: "MCH", reference: "27–33", unit: "pg" },
@@ -105,7 +105,7 @@ const diagnosticTestsByCategory = {
   "COAGULATION STUDIES": [
     { name: "Prothrombin Time (PT)", reference: "11.0–13.5", unit: "sec" },
     { name: "INR", reference: "0.8–1.2", unit: "Ratio" },
-    { name: "Aptt", reference: "30–40", unit: "sec" },
+    { name: "APTT", reference: "30–40", unit: "sec" },
     { name: "Fibrinogen", reference: "200–400", unit: "mg/dL" },
     { name: "D-Dimer", reference: "<0.5", unit: "µg/mL FEU" },
     { name: "Bleeding Time (BT)", reference: "2–7", unit: "min" }

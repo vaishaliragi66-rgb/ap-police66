@@ -2,6 +2,7 @@
 import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const PrescriptionReport = () => {
@@ -68,28 +69,33 @@ const PrescriptionReport = () => {
   const downloadReceipt = (prescription) => {
   const doc = new jsPDF();
 
-  const billDate = prescription.Timestamp
+  const testDate = prescription.Timestamp
     ? new Date(prescription.Timestamp).toLocaleString()
     : "-";
+  const downloadedAt = formatReportTimestamp();
+  const institutionName = getReportInstitutionName(prescription.Institute?.Institute_Name);
 
   const issuedTo = prescription.IsFamilyMember
     ? `${prescription.FamilyMember?.Name} (${prescription.FamilyMember?.Relationship})`
     : `${prescription.Employee?.Name} (Employee)`;
 
-  doc.setFontSize(14);
-  doc.text("OUT-PATIENT PHARMACY", 105, 15, { align: "center" });
-  doc.text("PHARMACY ISSUE RECEIPT", 105, 22, { align: "center" });
+  addCenteredReportHeader(doc, {
+    centerX: 105,
+    left: 14,
+    right: 196,
+    institutionName,
+    title: "PHARMACY ISSUE RECEIPT",
+    subtitle: "OUT-PATIENT PHARMACY",
+    lineY: 30
+  });
+  addDownloadTimestamp(doc, { x: 196, y: 12, align: "right", timestamp: downloadedAt });
 
   doc.setFontSize(10);
-  doc.text(`Receipt No: ${prescription._id.slice(-6)}`, 14, 35);
-  doc.text(`Bill Date: ${billDate}`, 14, 42);
+  doc.text(`Receipt No: ${prescription._id.slice(-6)}`, 14, 38);
+  doc.text(`Test Date: ${testDate}`, 14, 45);
 
-  doc.text(
-    `Institute: ${prescription.Institute?.Institute_Name || "-"}`,
-    14,
-    52
-  );
-  doc.text(`Issued To: ${issuedTo}`, 14, 59);
+  doc.text(`Institute: ${prescription.Institute?.Institute_Name || "-"}`, 14, 55);
+  doc.text(`Issued To: ${issuedTo}`, 14, 62);
 
   // 🔥 FULL MEDICINES TABLE
   const tableData = prescription.Medicines.map((m) => [
@@ -100,7 +106,7 @@ const PrescriptionReport = () => {
   ]);
 
   autoTable(doc, {
-    startY: 70,
+    startY: 73,
     head: [["Medicine", "Code", "Quantity", "Status"]],
     body: tableData
   });
