@@ -5,7 +5,9 @@ import {
   DEFAULT_MASTER_OPTIONS,
   getMergedMasterValueObjects,
   fetchMasterDataMap,
-  getMasterMedicineEntries
+  getMasterMedicineEntries,
+  canonicalizeMedicineTypeLabel,
+  getCanonicalMedicineTypeKey
 } from "../../utils/masterData";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { mergeXrayTypes } from "../../data/xrayTypes";
@@ -21,13 +23,22 @@ const FIXED_CATEGORIES = Object.keys(DEFAULT_MASTER_OPTIONS).filter(
 );
 
 const sortUnique = (items) =>
-  [...new Set((items || []).map((item) => String(item || "").trim()).filter(Boolean))].sort((a, b) =>
-    a.toLowerCase().localeCompare(b.toLowerCase())
-  );
+  [...(items || []).reduce((map, item) => {
+    const value = String(item || "").trim();
+    const key = value.toLowerCase();
+    if (value && !map.has(key)) {
+      map.set(key, value);
+    }
+    return map;
+  }, new Map()).values()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
 const makePairKey = (left, right) => `${normalizeText(left)}::${normalizeText(right)}`;
-const makeTripleKey = (a, b, c) => `${normalizeText(a)}::${normalizeText(b)}::${normalizeText(c)}`;
+const makeMedicineKey = (medicineType, dosageForm, valueName, strength) =>
+  `${normalizeText(medicineType)}::${normalizeText(dosageForm)}::${normalizeText(valueName)}::${normalizeText(strength)}`;
+const isPersistedId = (value) => /^[a-f\d]{24}$/i.test(String(value || "").trim());
+const getMedicineTypeLabel = (value) => canonicalizeMedicineTypeLabel(value || "Others") || "Others";
+const getMedicineTypeKey = (value) => getCanonicalMedicineTypeKey(value || "Others");
 
 const getStaticTestsStructure = () => {
   const testsByCategory = {};
@@ -101,7 +112,7 @@ const MasterData = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [values, setValues] = useState([]);
   const [testsStructure, setTestsStructure] = useState({ categories: [], testsByCategory: {} });
-  const [customTestMap, setCustomTestMap] = useState({});
+  const [, setCustomTestMap] = useState({});
   const [customTestCategoryMap, setCustomTestCategoryMap] = useState({});
   const [selectedTestCategory, setSelectedTestCategory] = useState("");
   const [newTestCategoryName, setNewTestCategoryName] = useState("");
@@ -109,7 +120,7 @@ const MasterData = () => {
   const [newTestReference, setNewTestReference] = useState("");
   const [newTestUnit, setNewTestUnit] = useState("");
   const [diseasesStructure, setDiseasesStructure] = useState({ communicable: [], nonCommunicable: [] });
-  const [customDiseaseMap, setCustomDiseaseMap] = useState({});
+  const [, setCustomDiseaseMap] = useState({});
   const [selectedDiseaseGroup, setSelectedDiseaseGroup] = useState("Communicable");
   const [newDiseaseName, setNewDiseaseName] = useState("");
   const [xrayTypes, setXrayTypes] = useState([]);
@@ -120,7 +131,7 @@ const MasterData = () => {
   const [newXrayFilmSize, setNewXrayFilmSize] = useState("");
   const [customBodyPartMap, setCustomBodyPartMap] = useState({});
   const [medicinesStructure, setMedicinesStructure] = useState({ medicineTypes: [], dosageForms: [], medicines: [], medicinesByType: {} });
-  const [customMedicineMap, setCustomMedicineMap] = useState({});
+  const [, setCustomMedicineMap] = useState({});
   const [customMedicineTypeMap, setCustomMedicineTypeMap] = useState({});
   const [selectedMedicineType, setSelectedMedicineType] = useState("");
   const [selectedMedicineDosageForm, setSelectedMedicineDosageForm] = useState("");
@@ -517,31 +528,32 @@ const MasterData = () => {
       try {
         const masterMap = await fetchMasterDataMap();
         masterMedicines = getMasterMedicineEntries(masterMap || {});
-      } catch (e) {
+      } catch {
         masterMedicines = [];
       }
 
       // Merge API medicines (prefer records with _id) and masterMedicines (fallback pasted/built-in)
       const mergedMap = new Map();
       const makeMergeKey = (it) =>
-        `${String(it?.medicineType || it?.meta?.medicineType || "").trim().toLowerCase()}::${String(
-          it?.dosageForm || it?.meta?.dosageForm || it?.meta?.form || ""
-        ).trim().toLowerCase()}::${String(it?.value_name || it?.value_name || "").trim().toLowerCase()}::${String(
-          it?.strength || it?.meta?.strength || ""
-        ).trim().toLowerCase()}`;
+        makeMedicineKey(
+          getMedicineTypeLabel(it?.medicineType || it?.meta?.medicineType),
+          it?.dosageForm || it?.meta?.dosageForm || it?.meta?.form,
+          it?.value_name,
+          it?.strength || it?.meta?.strength
+        );
 
       apiMedicines.forEach((it) => {
         const key = makeMergeKey(it);
         if (!mergedMap.has(key)) mergedMap.set(key, it);
       });
 
-      masterMedicines.forEach((it, idx) => {
+      masterMedicines.forEach((it) => {
         const key = makeMergeKey(it);
         if (!mergedMap.has(key)) {
           mergedMap.set(key, {
-            _id: `master-${idx}`,
+            _id: null,
             value_name: it.value_name,
-            medicineType: it.medicineType,
+            medicineType: getMedicineTypeLabel(it.medicineType),
             dosageForm: it.dosageForm,
             strength: it.strength,
             status: it.status || "Active"
@@ -549,49 +561,49 @@ const MasterData = () => {
         }
       });
 
-      const medicines = Array.from(mergedMap.values());
+      const medicines = Array.from(mergedMap.values()).map((item) => ({
+        ...item,
+        medicineType: getMedicineTypeLabel(item?.medicineType || item?.meta?.medicineType)
+      }));
 
       // Build combined medicine types and dosage forms from API + master map so pasted values are visible
-      const apiTypes = Array.isArray(data.medicineTypes) ? data.medicineTypes : [];
+      const apiTypes = Array.isArray(data.medicineTypes) ? data.medicineTypes.map((item) => getMedicineTypeLabel(item)) : [];
       const masterTypes = masterMedicines.map((m) => m.medicineType).filter(Boolean);
-      const combinedTypes = [...new Set([...apiTypes, ...masterTypes])];
+      const combinedTypes = sortUnique([...apiTypes, ...masterTypes.map((item) => getMedicineTypeLabel(item))]);
 
       const apiDosageForms = Array.isArray(data.dosageForms) ? data.dosageForms : [];
       const masterForms = masterMedicines.map((m) => m.dosageForm).filter(Boolean);
-      const combinedForms = [...new Set([...apiDosageForms, ...masterForms])];
+      const combinedForms = sortUnique([...apiDosageForms, ...masterForms]);
 
       // Merge medicineTypeEntries with any master types missing in API entries
       const masterTypeEntries = masterTypes
         .filter((t) => t)
-        .map((t) => ({ _id: null, value_name: t, status: "Active" }));
+        .map((t) => ({ _id: null, value_name: getMedicineTypeLabel(t), status: "Active" }));
       const combinedTypeEntriesMap = new Map();
       [...medicineTypeEntries, ...masterTypeEntries].forEach((it) => {
-        const key = normalizeText(it?.value_name);
-        if (!combinedTypeEntriesMap.has(key)) combinedTypeEntriesMap.set(key, it);
+        const label = getMedicineTypeLabel(it?.value_name);
+        const key = getMedicineTypeKey(label);
+        if (!key) return;
+        if (!combinedTypeEntriesMap.has(key) || (it?._id && !combinedTypeEntriesMap.get(key)?._id)) {
+          combinedTypeEntriesMap.set(key, { ...it, value_name: label });
+        }
       });
       const combinedTypeEntries = Array.from(combinedTypeEntriesMap.values());
 
-      // Debug: log fetched medicines data to help diagnose empty UI
-      try {
-        // eslint-disable-next-line no-console
-        console.debug("loadMedicinesStructure: medicineTypes:", Array.isArray(data.medicineTypes) ? data.medicineTypes.length : 0, data.medicineTypes);
-        // eslint-disable-next-line no-console
-        console.debug("loadMedicinesStructure: medicines count:", medicines.length, medicines.slice(0, 10));
-      } catch (e) {
-        // ignore logging failures
-      }
+      console.debug("loadMedicinesStructure: medicineTypes:", Array.isArray(data.medicineTypes) ? data.medicineTypes.length : 0, data.medicineTypes);
+      console.debug("loadMedicinesStructure: medicines count:", medicines.length, medicines.slice(0, 10));
 
       const medicineTypeMap = {};
       (combinedTypeEntries || []).forEach((item) => {
-        const key = normalizeText(item?.value_name);
+        const key = getMedicineTypeKey(item?.value_name);
         if (key && !medicineTypeMap[key]) medicineTypeMap[key] = item;
       });
       setCustomMedicineTypeMap(medicineTypeMap);
 
       const medicineMap = {};
       medicines.forEach((item) => {
-        const key = makeTripleKey(item?.medicineType, item?.dosageForm, item?.value_name);
-        if (key !== "::" && item?._id) {
+        const key = makeMedicineKey(item?.medicineType, item?.dosageForm, item?.value_name, item?.strength);
+        if (item?.value_name && isPersistedId(item?._id)) {
           medicineMap[key] = {
             _id: item._id,
             value_name: item.value_name,
@@ -609,13 +621,20 @@ const MasterData = () => {
 
       const buildTypeRows = (type, entries) =>
         entries
-          .filter((entry) => normalizeText(entry.medicineType) === normalizeText(type))
+          .filter((entry) => getMedicineTypeKey(entry.medicineType) === getMedicineTypeKey(type))
           .map((entry) => {
             const masterValue =
-              medicineMap[makeTripleKey(entry.medicineType, entry.dosageForm, entry.value_name)] || null;
+              medicineMap[
+                makeMedicineKey(
+                  getMedicineTypeLabel(entry.medicineType),
+                  entry.dosageForm,
+                  entry.value_name,
+                  entry.strength
+                )
+              ] || null;
             return {
               value_name: entry.value_name,
-              medicineType: entry.medicineType || "",
+              medicineType: getMedicineTypeLabel(entry.medicineType),
               dosageForm: entry.dosageForm || "",
               strength: entry.strength || "",
               masterValue,
@@ -631,18 +650,19 @@ const MasterData = () => {
         medicinesByType[type] = buildTypeRows(type, medicines);
       });
 
-      // Debug: inspect computed medicinesByType keys and counts
-      try {
-        // eslint-disable-next-line no-console
-        console.debug("loadMedicinesStructure: medicinesByType keys:", Object.keys(medicinesByType).map((k) => [k, medicinesByType[k]?.length || 0]));
-      } catch (e) {
-        // ignore
-      }
+      console.debug(
+        "loadMedicinesStructure: medicinesByType keys:",
+        Object.keys(medicinesByType).map((k) => [k, medicinesByType[k]?.length || 0])
+      );
       setMedicinesStructure({
-        medicineTypes,
-        medicines,
+        medicineTypes: sortUnique(medicineTypes),
+        medicines: [...medicines].sort((a, b) =>
+          `${String(a.value_name || "")} ${String(a.strength || "")}`.localeCompare(
+            `${String(b.value_name || "")} ${String(b.strength || "")}`
+          )
+        ),
         medicinesByType,
-        dosageForms: combinedForms || []
+        dosageForms: sortUnique(combinedForms || [])
       });
 
       if (medicineTypes.length > 0) {
@@ -759,11 +779,16 @@ const MasterData = () => {
 
   const medicinesBySelectedType = medicinesStructure.medicinesByType?.[selectedMedicineType] || [];
   const fallbackMedicines = (medicinesStructure.medicines || []).filter((item) =>
-    (!selectedMedicineType || normalizeText(item.medicineType) === normalizeText(selectedMedicineType)) &&
+    (!selectedMedicineType || getMedicineTypeKey(item.medicineType) === getMedicineTypeKey(selectedMedicineType)) &&
     (!selectedMedicineDosageForm || normalizeText(item.dosageForm) === normalizeText(selectedMedicineDosageForm))
   );
 
   const filteredMedicines = (medicinesBySelectedType.length ? medicinesBySelectedType : fallbackMedicines)
+    .filter(
+      (item) =>
+        !selectedMedicineDosageForm ||
+        normalizeText(item.dosageForm) === normalizeText(selectedMedicineDosageForm)
+    )
     .filter((item) => String(item.value_name || "").toLowerCase().includes(searchText.toLowerCase()));
 
   const xrayBodyParts = useMemo(
@@ -784,8 +809,6 @@ const MasterData = () => {
   });
 
   const handleEditSpecialValue = async (item, reloadFn) => {
-    const itemId = item?.masterValue?._id || item?.id;
-
     const updated = window.prompt("Edit value", item.name || item.value_name);
     if (updated === null) return;
     const valueName = updated.trim();
@@ -815,8 +838,6 @@ const MasterData = () => {
   };
 
   const handleToggleSpecialValue = async (item, reloadFn) => {
-    const itemId = item?.masterValue?._id || item?.id;
-
     setSaving(true);
     setMessage("");
     setError("");
@@ -840,8 +861,6 @@ const MasterData = () => {
   };
 
   const handleDeleteSpecialValue = async (item, reloadFn) => {
-    const itemId = item?.masterValue?._id || item?.id;
-
     const ok = window.confirm(`Delete '${item.name || item.value_name}'?`);
     if (!ok) return;
 
@@ -887,7 +906,7 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      const response = await axios.delete(`${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`);
+      await axios.delete(`${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`);
       setMessage("Test category deleted successfully");
       await loadTestsStructure();
       invalidateMasterDataCache();
@@ -1004,7 +1023,7 @@ const MasterData = () => {
     setError("");
     try {
       // Use the primary endpoint which handles Tests category internally
-      const response = await axios.post(`${BACKEND_URL}/master-data-api/tests/category`, {
+      await axios.post(`${BACKEND_URL}/master-data-api/tests/category`, {
         name: newTestCategoryName.trim()
       });
       setNewTestCategoryName("");
@@ -1179,7 +1198,7 @@ const MasterData = () => {
   };
 
   const handleDeleteMedicineType = async (medicineType) => {
-    const medicineTypeKey = String(medicineType || "").trim().toLowerCase();
+    const medicineTypeKey = getMedicineTypeKey(medicineType);
     const medicineTypeRecord = customMedicineTypeMap[medicineTypeKey];
 
     if (!medicineTypeRecord || !medicineTypeRecord._id) {
@@ -1194,7 +1213,7 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.delete(`${BACKEND_URL}/master-data-api/values/${medicineTypeRecord._id}`);
+      await axios.delete(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`);
       setMessage("Medicine type deleted successfully");
       if (selectedMedicineType === medicineType) {
         setSelectedMedicineType("");
@@ -1205,6 +1224,152 @@ const MasterData = () => {
       console.error("Delete medicine type error:", err);
       const errorMsg = err.response?.data?.message || err.message || "Failed to delete medicine type";
       setError(errorMsg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditMedicineType = async (medicineType) => {
+    const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)] || null;
+    if (!medicineTypeRecord?._id) {
+      setMessage("Built-in medicine types cannot be edited");
+      return;
+    }
+
+    const updated = window.prompt("Edit medicine type", medicineType);
+    if (updated === null) return;
+    const nextName = updated.trim();
+    if (!nextName) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`, {
+        name: nextName
+      });
+      setMessage("Medicine type updated successfully");
+      if (getMedicineTypeKey(selectedMedicineType) === getMedicineTypeKey(medicineType)) {
+        setSelectedMedicineType(getMedicineTypeLabel(nextName));
+      }
+      await loadMedicinesStructure();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Edit medicine type error:", err);
+      setError(err.response?.data?.message || "Failed to update medicine type");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleMedicineType = async (medicineType, status) => {
+    const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)] || null;
+    if (!medicineTypeRecord?._id) {
+      setMessage("Built-in medicine types cannot be deactivated");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`, {
+        status: status === "Active" ? "Inactive" : "Active"
+      });
+      setMessage("Medicine type status updated");
+      await loadMedicinesStructure();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Toggle medicine type error:", err);
+      setError(err.response?.data?.message || "Failed to toggle medicine type");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditMedicine = async (item) => {
+    const medicineId = item?.masterValue?._id;
+    if (!isPersistedId(medicineId)) {
+      setMessage("Built-in medicines cannot be edited");
+      return;
+    }
+
+    const nextName = window.prompt("Edit medicine name", item.value_name || "");
+    if (nextName === null) return;
+    const nextMedicineType = window.prompt("Edit medicine type", item.medicineType || "");
+    if (nextMedicineType === null) return;
+    const nextDosageForm = window.prompt("Edit dosage form", item.dosageForm || "");
+    if (nextDosageForm === null) return;
+    const nextStrength = window.prompt("Edit strength", item.strength || "");
+    if (nextStrength === null) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`, {
+        medicineName: nextName.trim(),
+        medicineType: nextMedicineType.trim(),
+        dosageForm: nextDosageForm.trim(),
+        strength: nextStrength.trim()
+      });
+      setMessage("Medicine updated successfully");
+      await loadMedicinesStructure();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Edit medicine error:", err);
+      setError(err.response?.data?.message || "Failed to update medicine");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleMedicine = async (item) => {
+    const medicineId = item?.masterValue?._id;
+    if (!isPersistedId(medicineId)) {
+      setMessage("Built-in medicines cannot be deactivated");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`, {
+        status: item.status === "Active" ? "Inactive" : "Active"
+      });
+      setMessage("Medicine status updated");
+      await loadMedicinesStructure();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Toggle medicine error:", err);
+      setError(err.response?.data?.message || "Failed to toggle medicine status");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteMedicine = async (item) => {
+    const medicineId = item?.masterValue?._id;
+    if (!isPersistedId(medicineId)) {
+      setMessage("Built-in medicines cannot be deleted");
+      return;
+    }
+
+    const ok = window.confirm(`Delete '${item.value_name}'?`);
+    if (!ok) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.delete(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`);
+      setMessage("Medicine deleted successfully");
+      await loadMedicinesStructure();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Delete medicine error:", err);
+      setError(err.response?.data?.message || "Failed to delete medicine");
     } finally {
       setSaving(false);
     }
@@ -1825,7 +1990,7 @@ const MasterData = () => {
                               <td className="d-flex flex-wrap gap-2">
                                 <button
                                   className="btn btn-sm btn-outline-primary"
-                                  onClick={() => handleEditSpecialValue({ masterValue, name: item, value_name: item, id: masterValue?._id }, loadMedicinesStructure)}
+                                  onClick={() => handleEditMedicineType(item)}
                                   disabled={!isInstituteAdmin || saving}
                                   title={isCustom ? "Edit this type" : "Cannot edit built-in types"}
                                 >
@@ -1833,7 +1998,7 @@ const MasterData = () => {
                                 </button>
                                 <button
                                   className="btn btn-sm btn-outline-warning"
-                                  onClick={() => handleToggleSpecialValue({ masterValue, name: item, value_name: item, status, id: masterValue?._id }, loadMedicinesStructure)}
+                                  onClick={() => handleToggleMedicineType(item, status)}
                                   disabled={!isInstituteAdmin || saving}
                                   title={isCustom ? "Toggle status" : "Cannot deactivate built-in types"}
                                 >
@@ -1971,7 +2136,7 @@ const MasterData = () => {
                               let parsed = null;
                               try {
                                 parsed = JSON.parse(importText);
-                              } catch (e) {
+                              } catch {
                                 // Fallback: extract object literals
                                 const matches = importText.match(/\{[\s\S]*?\}/g) || [];
                                 parsed = matches.map((s) => JSON.parse(s));
@@ -1992,14 +2157,15 @@ const MasterData = () => {
                               // Build merge key and add to current medicines
                               const current = medicinesStructure.medicines || [];
                               const merged = new Map();
-                              const makeKey = (it) => `${String(it.medicineType||"").trim().toLowerCase()}::${String(it.dosageForm||"").trim().toLowerCase()}::${String(it.value_name||"").trim().toLowerCase()}::${String(it.strength||"").trim().toLowerCase()}`;
+                              const makeKey = (it) =>
+                                makeMedicineKey(it.medicineType, it.dosageForm, it.value_name, it.strength);
 
                               current.forEach((m) => merged.set(makeKey(m), m));
 
                               items.forEach((raw, idx) => {
                                 const item = {
                                   value_name: String(raw.value_name || raw.Value || raw.name || "").trim(),
-                                  medicineType: String(raw.medicineType || raw.type || "").trim(),
+                                  medicineType: getMedicineTypeLabel(raw.medicineType || raw.type || ""),
                                   dosageForm: String(raw.dosageForm || raw.form || "").trim(),
                                   strength: String(raw.strength || "").trim(),
                                   status: raw.status || "Active",
@@ -2012,8 +2178,14 @@ const MasterData = () => {
                               const newMedicines = Array.from(merged.values());
 
                               // Update types and forms
-                              const newTypes = Array.from(new Set([...(medicinesStructure.medicineTypes || []), ...newMedicines.map((m) => m.medicineType).filter(Boolean)]));
-                              const newForms = Array.from(new Set([...(medicinesStructure.dosageForms || []), ...newMedicines.map((m) => m.dosageForm).filter(Boolean)]));
+                              const newTypes = sortUnique([
+                                ...(medicinesStructure.medicineTypes || []),
+                                ...newMedicines.map((m) => m.medicineType).filter(Boolean)
+                              ]);
+                              const newForms = sortUnique([
+                                ...(medicinesStructure.dosageForms || []),
+                                ...newMedicines.map((m) => m.dosageForm).filter(Boolean)
+                              ]);
 
                               // Rebuild medicinesByType
                               const newMedicinesByType = {};
@@ -2024,8 +2196,19 @@ const MasterData = () => {
                               setCustomMedicineMap((prev) => {
                                 const map = { ...(prev || {}) };
                                 newMedicines.forEach((m) => {
-                                  const key = makeTripleKey(m.medicineType, m.dosageForm, m.value_name);
-                                  map[key] = { _id: m._id, value_name: m.value_name, status: m.status || "Active", meta: { kind: "medicine", medicineType: m.medicineType, dosageForm: m.dosageForm, strength: m.strength } };
+                                  const key = makeMedicineKey(m.medicineType, m.dosageForm, m.value_name, m.strength);
+                                  if (!isPersistedId(m._id)) return;
+                                  map[key] = {
+                                    _id: m._id,
+                                    value_name: m.value_name,
+                                    status: m.status || "Active",
+                                    meta: {
+                                      kind: "medicine",
+                                      medicineType: m.medicineType,
+                                      dosageForm: m.dosageForm,
+                                      strength: m.strength
+                                    }
+                                  };
                                 });
                                 return map;
                               });
@@ -2125,7 +2308,7 @@ const MasterData = () => {
                             <td className="d-flex flex-wrap gap-2">
                               <button
                                 className="btn btn-sm btn-outline-primary"
-                                onClick={() => handleEditSpecialValue(item, loadMedicinesStructure)}
+                                onClick={() => handleEditMedicine(item)}
                                 disabled={!isInstituteAdmin || saving}
                                 title={item.masterValue?._id ? "Edit this medicine" : "Cannot edit built-in medicines"}
                               >
@@ -2133,7 +2316,7 @@ const MasterData = () => {
                               </button>
                               <button
                                 className="btn btn-sm btn-outline-warning"
-                                onClick={() => handleToggleSpecialValue(item, loadMedicinesStructure)}
+                                onClick={() => handleToggleMedicine(item)}
                                 disabled={!isInstituteAdmin || saving}
                                 title={item.masterValue?._id ? "Toggle status" : "Cannot deactivate built-in medicines"}
                               >
@@ -2141,7 +2324,7 @@ const MasterData = () => {
                               </button>
                               <button
                                 className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleDeleteSpecialValue(item, loadMedicinesStructure)}
+                                onClick={() => handleDeleteMedicine(item)}
                                 disabled={!isInstituteAdmin || saving}
                                 title={item.masterValue?._id ? "Delete this medicine" : "Cannot delete built-in medicines"}
                               >
