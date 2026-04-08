@@ -2,6 +2,8 @@
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
+import PersonFilterDropdown from "../common/PersonFilterDropdown";
+import { usePersonFilter } from "../../context/PersonFilterContext";
 
 const EmployeeDiseaseReport = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -11,10 +13,9 @@ const EmployeeDiseaseReport = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [showType, setShowType] = useState("ALL"); // ALL | SELF | FAMILY
-  const [familyFilter, setFamilyFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [masterMap, setMasterMap] = useState({});
+  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
 
   const diseaseCategoryOptions = getMasterOptions(masterMap, "Disease Categories");
 
@@ -41,38 +42,35 @@ const EmployeeDiseaseReport = () => {
   useEffect(() => {
     if (!employeeId) return;
 
-    axios
-      .get(
-        `${BACKEND_URL}/disease-api/employee/${employeeId}`
-      )
-      .then((res) => {
-        setDiseases(res.data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [employeeId]);
+    setLoading(true);
 
-  const familyMembers = useMemo(() => {
-    const set = new Map();
-    diseases.forEach((d) => {
-      if (d.FamilyMember_ID) {
-        set.set(d.FamilyMember_ID._id, d.FamilyMember_ID);
-      }
-    });
-    return Array.from(set.values());
-  }, [diseases]);
+    axios
+      .get(`${BACKEND_URL}/disease-api/employee/${employeeId}`, {
+        params: {
+          employeeId,
+          personId: selectedPersonId,
+        },
+      })
+      .then((res) => {
+        const incoming = Array.isArray(res.data) ? res.data : [];
+        const filtered =
+          selectedPersonId === "all"
+            ? incoming
+            : selectedPersonId === "self"
+            ? incoming.filter((d) => !d.IsFamilyMember)
+            : incoming.filter(
+                (d) =>
+                  d.IsFamilyMember &&
+                  String(d.FamilyMember_ID?._id || d.FamilyMember_ID || "") === String(selectedPersonId)
+              );
+        setDiseases(filtered);
+      })
+      .catch(() => setDiseases([]))
+      .finally(() => setLoading(false));
+  }, [employeeId, selectedPersonId]);
 
   const filteredDiseases = useMemo(() => {
     return diseases.filter((d) => {
-      if (showType === "SELF" && d.IsFamilyMember) return false;
-      if (showType === "FAMILY" && !d.IsFamilyMember) return false;
-
-      if (
-        familyFilter !== "ALL" &&
-        d.FamilyMember_ID?._id !== familyFilter
-      )
-        return false;
-
       if (
         categoryFilter !== "ALL" &&
         d.Category !== categoryFilter
@@ -81,7 +79,7 @@ const EmployeeDiseaseReport = () => {
 
       return true;
     });
-  }, [diseases, showType, familyFilter, categoryFilter]);
+  }, [diseases, categoryFilter]);
 
   if (loading) {
     return (
@@ -165,34 +163,12 @@ const cleanNotesWithoutSymptoms = (notes) => {
           <div className="row g-3">
   
             <div className="col-md-3">
-              <label className="form-label fw-semibold">Show</label>
-              <select
-                className="form-select"
-                value={showType}
-                onChange={(e) => setShowType(e.target.value)}
-              >
-                <option value="ALL">Self & Family</option>
-                <option value="SELF">Self</option>
-                <option value="FAMILY">Family</option>
-              </select>
-            </div>
-  
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">
-                Family Member
-              </label>
-              <select
-                className="form-select"
-                value={familyFilter}
-                onChange={(e) => setFamilyFilter(e.target.value)}
-              >
-                <option value="ALL">All</option>
-                {familyMembers.map((f) => (
-                  <option key={f._id} value={f._id}>
-                    {f.Name} ({f.Relationship})
-                  </option>
-                ))}
-              </select>
+              <PersonFilterDropdown
+                options={options}
+                value={selectedPersonId}
+                onChange={setSelectedPersonId}
+                loading={loadingFamily}
+              />
             </div>
   
             <div className="col-md-3">
@@ -253,7 +229,7 @@ const cleanNotesWithoutSymptoms = (notes) => {
                   {filteredDiseases.length === 0 && (
                     <tr>
                       <td colSpan="7" className="text-center text-muted">
-                        No disease records found
+                        No records found for selected person
                       </td>
                     </tr>
                   )}

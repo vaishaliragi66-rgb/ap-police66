@@ -3,27 +3,57 @@ import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
+import PersonFilterDropdown from "../common/PersonFilterDropdown";
+import { usePersonFilter } from "../../context/PersonFilterContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const PrescriptionReport = () => {
   const [prescriptions, setPrescriptions] = useState([]);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const [loading, setLoading] = useState(true);
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:6100';
   const employeeId = localStorage.getItem("employeeId");
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
 
   useEffect(() => {
     if (employeeId) fetchPrescriptions();
-  }, [employeeId]);
+  }, [employeeId, selectedPersonId]);
+
+  const getFamilyMemberId = (row) => {
+    if (!row) return "";
+    if (typeof row.FamilyMember === "string") return row.FamilyMember;
+    if (row.FamilyMember?._id) return row.FamilyMember._id;
+    if (row.FamilyMember_ID) return row.FamilyMember_ID;
+    return "";
+  };
+
+  const filterByPerson = (rows, personId) => {
+    const list = Array.isArray(rows) ? rows : [];
+    if (personId === "all") return list;
+    if (personId === "self") return list.filter((p) => !p.IsFamilyMember);
+    return list.filter((p) => p.IsFamilyMember && String(getFamilyMemberId(p)) === String(personId));
+  };
 
   const fetchPrescriptions = async () => {
+    setLoading(true);
     try {
       const res = await axios.get(
-        `${BACKEND_URL}/prescription-api/employee/${employeeId}`
+        `${BACKEND_URL}/prescription-api/employee/${employeeId}`,
+        {
+          params: {
+            employeeId,
+            personId: selectedPersonId,
+          },
+        }
       );
-      setPrescriptions(res.data || []);
+      const payload = res.data && res.data.value ? res.data.value : res.data;
+      setPrescriptions(filterByPerson(payload || [], selectedPersonId));
     } catch (err) {
       console.error("Error fetching prescriptions:", err);
+      setPrescriptions([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,6 +186,17 @@ const PrescriptionReport = () => {
           <p style={{ color: "#6B7280", marginBottom: 0 }}>
             All medicines issued to you and your family members
           </p>
+          <div className="mt-3" style={{ maxWidth: "320px" }}>
+            <PersonFilterDropdown
+              options={options}
+              value={selectedPersonId}
+              onChange={(val) => {
+                setSelectedPersonId(val);
+                setSelectedPrescription(null);
+              }}
+              loading={loadingFamily}
+            />
+          </div>
         </div>
   
         {/* SUMMARY BAR */}
@@ -206,9 +247,13 @@ const PrescriptionReport = () => {
         >
           <div className="card-body">
   
-            {prescriptions.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-4">
+                <div className="spinner-border text-secondary" role="status" />
+              </div>
+            ) : prescriptions.length === 0 ? (
               <p className="text-center text-muted">
-                No prescriptions found.
+                No records found for selected person.
               </p>
             ) : (
               <div className="table-responsive">

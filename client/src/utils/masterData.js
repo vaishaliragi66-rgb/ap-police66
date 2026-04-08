@@ -117,6 +117,17 @@ export const DEFAULT_MASTER_OPTIONS = {
   "Relationships": ["Father", "Mother", "Wife", "Husband", "Son", "Daughter"],
   "Employee Report Roles": ["Employee", "Family"],
   "Medicine Types": [
+    "Antibiotics",
+    "Analgesics",
+    "Antipyretics",
+    "Antacids",
+    "Antihistamines",
+    "Vitamins",
+    "Antifungals",
+    "Antivirals",
+    "Others"
+  ],
+  "Dosage Forms": [
     "Tablet",
     "Capsule",
     "Syrup",
@@ -173,17 +184,6 @@ export const DEFAULT_MASTER_OPTIONS = {
     "Pelvis X-ray – AP view",
     "Abdomen X-ray – Supine view"
   ],
-  "Medicine Categories": [
-    "Antibiotic",
-    "Analgesic",
-    "Antipyretic",
-    "Antihistamine",
-    "Antacid",
-    "Vitamin",
-    "Cardiac",
-    "Diabetic",
-    "Other"
-  ],
   "Food Timings": ["Before Food", "After Food"],
   "Institute Roles": ["doctor", "pharmacist", "diagnosis", "xray", "front_desk"],
   "Issued From Sources": [
@@ -222,7 +222,12 @@ export const DEFAULT_MASTER_OPTIONS = {
   ],
   "Ledger Directions": ["IN", "OUT"],
   "Rows Per Page": ["5", "10", "25", "50", "100"],
-  "Medicines": ["Paracetamol", "Amoxicillin", "Ibuprofen", "Vitamin D"],
+  "Medicines": [
+    { value_name: "Paracetamol", meta: { kind: "medicine", medicineType: "Antipyretics", dosageForm: "Tablet", strength: "500mg" } },
+    { value_name: "Amoxicillin", meta: { kind: "medicine", medicineType: "Antibiotics", dosageForm: "Capsule", strength: "500mg" } },
+    { value_name: "Ibuprofen", meta: { kind: "medicine", medicineType: "Analgesics", dosageForm: "Tablet", strength: "400mg" } },
+    { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
+  ],
   "Residential Areas": [
     "Hyderabad",
     "Secunderabad",
@@ -308,6 +313,55 @@ export const getMasterOptions = (masterMap, categoryName) => {
   return [...new Set([...fallback, ...dbValues].filter(Boolean))];
 };
 
+export const getMasterMedicineEntries = (masterMap) => {
+  const fallback = [
+    { value_name: "Paracetamol", meta: { kind: "medicine", medicineType: "Antipyretics", dosageForm: "Tablet", strength: "500mg" } },
+    { value_name: "Amoxicillin", meta: { kind: "medicine", medicineType: "Antibiotics", dosageForm: "Capsule", strength: "500mg" } },
+    { value_name: "Ibuprofen", meta: { kind: "medicine", medicineType: "Analgesics", dosageForm: "Tablet", strength: "400mg" } },
+    { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
+  ];
+
+  const combined = [...fallback, ...(masterMap?.Medicines || [])];
+  const seen = new Set();
+
+  return combined
+    .map((item) => ({
+      value_name: String(item?.value_name || "").trim(),
+      medicineType: String(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory || "").trim(),
+      dosageForm: String(item?.meta?.dosageForm || item?.meta?.dosage_form || item?.meta?.form || "").trim(),
+      strength: String(item?.meta?.strength || "").trim(),
+      status: item?.status || "Active"
+    }))
+    .filter((item) => item.value_name)
+    .filter((item) => {
+      const key = `${item.value_name.toLowerCase()}::${item.medicineType.toLowerCase()}::${item.dosageForm.toLowerCase()}::${item.strength.toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+};
+
+export const getMasterMedicinesByType = (masterMap, medicineType) => {
+  const type = String(medicineType || "").trim().toLowerCase();
+  if (!type) return [];
+
+  return getMasterMedicineEntries(masterMap)
+    .filter((item) => String(item.medicineType || "").trim().toLowerCase() === type)
+    .map((item) => item.value_name)
+    .sort((a, b) => a.localeCompare(b));
+};
+
+export const getMasterMedicinesByTypeAndForm = (masterMap, medicineType, dosageForm = "") => {
+  const type = String(medicineType || "").trim().toLowerCase();
+  const form = String(dosageForm || "").trim().toLowerCase();
+  if (!type) return [];
+
+  return getMasterMedicineEntries(masterMap)
+    .filter((item) => String(item.medicineType || "").trim().toLowerCase() === type)
+    .filter((item) => !form || String(item.dosageForm || "").trim().toLowerCase() === form)
+    .sort((a, b) => String(a.value_name || "").localeCompare(String(b.value_name || "")));
+};
+
 export const getMergedMasterValueObjects = (masterMap, categoryName) => {
   const fallback = (DEFAULT_MASTER_OPTIONS[categoryName] || []).map((value_name, index) => ({
     _id: `default-${categoryName}-${index}`,
@@ -323,7 +377,7 @@ export const getMergedMasterValueObjects = (masterMap, categoryName) => {
     if (!key) return;
     if (!merged.has(key)) {
       merged.set(key, item);
-    } else if (!String(merged.get(key)?._id || "").startsWith("default-") && item._id) {
+    } else if (String(merged.get(key)?._id || "").startsWith("default-") && item._id) {
       merged.set(key, item);
     }
   });

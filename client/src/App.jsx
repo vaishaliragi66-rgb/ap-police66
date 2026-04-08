@@ -53,6 +53,7 @@ import RiskHotspots from "./components/institutes/RiskHotspots";
 import Predict from "./components/institutes/Predict";
 import ForecastDashboard from "./components/institutes/ForecastTable";
 import MasterData from "./components/institutes/MasterData";
+import { PersonFilterProvider } from "./context/PersonFilterContext";
 const token = localStorage.getItem("instituteToken");
 
 if (token) {
@@ -344,7 +345,9 @@ function App() {
 
     return (
       <div>
-        <RouterProvider router={router} />
+          <PersonFilterProvider>
+            <RouterProvider router={router} />
+          </PersonFilterProvider>
       </div>
     );
   }

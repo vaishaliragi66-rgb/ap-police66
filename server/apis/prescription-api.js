@@ -35,6 +35,24 @@ prescriptionApp.get("/debug-medicines", async (req, res) => {
   }
 });
 
+// Debug: return a sample employee/family IDs if present
+prescriptionApp.get('/debug-sample', async (req, res) => {
+  try {
+    const Institute = require('../models/master_institute');
+    const Employee = require('../models/employee');
+    const FamilyMember = require('../models/family_member');
+
+    const institute = await Institute.findOne({ Institute_Name: 'Imported Institute' }).lean();
+    if (!institute) return res.json({ message: 'no-sample-institute' });
+
+    const employee = await Employee.findOne({}).sort({ createdAt: -1 }).lean();
+    const family = await FamilyMember.findOne({ Employee: employee?._id }).lean();
+
+    return res.json({ instituteId: institute._id, employeeId: employee?._id, familyMemberId: family?._id });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
 // =======================================================
 // ADD PRESCRIPTION (SUBSTORE → PATIENT) - FIXED VERSION
 // =======================================================
@@ -211,6 +229,7 @@ prescriptionApp.post("/add",verifyToken,
 prescriptionApp.get("/employee/:employeeId", async (req, res) => {
   try {
     const { employeeId } = req.params;
+    const { personId, isFamily, familyId } = req.query;
 
     if (!mongoose.Types.ObjectId.isValid(employeeId)) {
       return res.status(400).json({ message: "Invalid Employee ID" });
@@ -222,17 +241,34 @@ prescriptionApp.get("/employee/:employeeId", async (req, res) => {
 
     const familyIds = familyMembers.map(f => f._id);
 
+    const baseFilter = {
+      $or: [
+        { Employee: employeeId },
+        { FamilyMember: { $in: familyIds } }
+      ]
+    };
+
+    let personFilter = {};
+
+    if (personId === "self") {
+      personFilter = { IsFamilyMember: false };
+    } else if (personId && personId !== "all") {
+      personFilter = { IsFamilyMember: true, FamilyMember: personId };
+    } else if (isFamily === "true") {
+      personFilter = { IsFamilyMember: true, FamilyMember: familyId };
+    } else if (isFamily === "false") {
+      personFilter = { IsFamilyMember: false };
+    }
+
     const prescriptions = await Prescription.find({
-  $or: [
-    { Employee: employeeId },
-    { FamilyMember: { $in: familyIds } }
-  ]
-})
-  .populate("Institute", "Institute_Name")
-  .populate("Employee", "Name ABS_NO")
-  .populate("FamilyMember", "Name Relationship")
-  .populate("Medicines.Medicine_ID", "Medicine_Code Expiry_Date Strength")  // 🔥 ADD THIS
-  .sort({ Timestamp: -1 });
+      ...baseFilter,
+      ...personFilter
+    })
+      .populate("Institute", "Institute_Name")
+      .populate("Employee", "Name ABS_NO")
+      .populate("FamilyMember", "Name Relationship")
+      .populate("Medicines.Medicine_ID", "Medicine_Code Expiry_Date Strength")
+      .sort({ Timestamp: -1 });
 
     return res.status(200).json(prescriptions);
 

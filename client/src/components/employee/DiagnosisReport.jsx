@@ -5,33 +5,60 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
+import PersonFilterDropdown from "../common/PersonFilterDropdown";
+import { usePersonFilter } from "../../context/PersonFilterContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const DiagnosisReport = () => {
   const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   console.log("EmployeeObjectId from localStorage:", localStorage.getItem("employeeObjectId"));
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const employeeObjectId = localStorage.getItem("employeeObjectId")
+  const employeeObjectId = localStorage.getItem("employeeObjectId");
+  const employeeId = localStorage.getItem("employeeId") || employeeObjectId;
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
 
+const getFamilyMemberId = (row) => {
+  if (!row) return "";
+  if (typeof row.FamilyMember === "string") return row.FamilyMember;
+  if (row.FamilyMember?._id) return row.FamilyMember._id;
+  if (row.FamilyMember_ID) return row.FamilyMember_ID;
+  return "";
+};
+
+const filterReportsByPerson = (rows, personId) => {
+  const list = Array.isArray(rows) ? rows : [];
+  if (personId === "all") return list;
+  if (personId === "self") return list.filter((r) => !r.IsFamilyMember);
+  return list.filter((r) => r.IsFamilyMember && String(getFamilyMemberId(r)) === String(personId));
+};
 
 useEffect(() => {
   if (!employeeObjectId) return;
 
+  setLoading(true);
+
   axios
-    .get(`${BACKEND_URL}/diagnosis-api/records/${employeeObjectId}`)
-    .then(res => setReports(res.data || []))
+    .get(`${BACKEND_URL}/diagnosis-api/records/${employeeObjectId}`, {
+      params: {
+        employeeId,
+        personId: selectedPersonId
+      }
+    })
+    .then(res => setReports(filterReportsByPerson(res.data || [], selectedPersonId)))
     .catch(err => {
       if (err.response?.status === 404) {
         setReports([]);
       } else {
         console.error(err);
       }
-    });
-}, [employeeObjectId, refreshKey]); // ✅ IMPORTANT
+    })
+    .finally(() => setLoading(false));
+}, [employeeObjectId, employeeId, selectedPersonId, refreshKey]); // ✅ IMPORTANT
 
   /* ================= DATE FIX (ONLY createdAt) ================= */
   const formatDate = (report) => {
@@ -325,31 +352,49 @@ return (
           }}
           className="d-flex justify-content-between align-items-center"
         >
-          <h4 style={{ fontWeight: 600, color: "#1F2933", margin: 0 }}>
-            Diagnosis Reports
-          </h4>
-
-          <button
-            className="btn btn-sm"
-            style={{
-              backgroundColor: "#4A70A9",
-              color: "#FFFFFF",
-              borderRadius: "999px",
-              padding: "6px 16px",
-              fontWeight: 500,
-              border: "none",
-            }}
-            onClick={() => setRefreshKey((p) => p + 1)}
-          >
-            Refresh
-          </button>
+          <div className="d-flex align-items-center justify-content-between gap-3 w-100 flex-wrap">
+            <h4 style={{ fontWeight: 600, color: "#1F2933", margin: 0 }}>
+              Diagnosis Reports
+            </h4>
+            <div className="d-flex gap-2 align-items-end">
+              <PersonFilterDropdown
+                options={options}
+                value={selectedPersonId}
+                onChange={(val) => {
+                  setSelectedPersonId(val);
+                  setSelectedReport(null);
+                }}
+                loading={loadingFamily}
+                className="mb-0"
+              />
+              <button
+                className="btn btn-sm"
+                style={{
+                  backgroundColor: "#4A70A9",
+                  color: "#FFFFFF",
+                  borderRadius: "999px",
+                  padding: "6px 16px",
+                  fontWeight: 500,
+                  border: "none",
+                  height: "38px"
+                }}
+                onClick={() => setRefreshKey((p) => p + 1)}
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
         </div>
 
 
           {/* Empty State */}
-          {reports.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-secondary" role="status" />
+            </div>
+          ) : reports.length === 0 ? (
             <p className="text-center text-muted">
-              No diagnosis reports found.
+              No records found for selected person.
             </p>
           ) : (
             <div className="table-responsive">

@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
+import PersonFilterDropdown from "../common/PersonFilterDropdown";
+import { usePersonFilter } from "../../context/PersonFilterContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const XrayReport = () => {
   const [reports, setReports] = useState([]);
-  const [showType, setShowType] = useState("ALL"); // ALL | SELF | FAMILY
-  const [familyFilter, setFamilyFilter] = useState("ALL");
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
@@ -21,18 +22,33 @@ const XrayReport = () => {
     return `${base}/${String(u).replace(/^\/+/, '')}`;
   };
   const employeeObjectId = localStorage.getItem("employeeObjectId");
+  const employeeId = localStorage.getItem("employeeId") || employeeObjectId;
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
+
+  const filterByPerson = (rows, personId) => {
+    const list = Array.isArray(rows) ? rows : [];
+    if (personId === "all") return list;
+    if (personId === "self") return list.filter((r) => !r.IsFamilyMember);
+    return list.filter((r) => r.IsFamilyMember && String(r.FamilyMember?._id || "") === String(personId));
+  };
 
   useEffect(() => {
     if (!employeeObjectId) return;
+    setLoading(true);
 
     axios
-      .get(`${BACKEND_URL}/xray-api/records/${employeeObjectId}`)
+      .get(`${BACKEND_URL}/xray-api/records/${employeeObjectId}`, {
+        params: {
+          employeeId,
+          personId: selectedPersonId,
+        },
+      })
       .then((res) => {
         console.log("X-ray records fetched", res.data);
-        setReports(res.data || []);
+        setReports(filterByPerson(res.data || [], selectedPersonId));
       })
       .catch((err) => {
         if (err.response?.status === 404) {
@@ -40,8 +56,9 @@ const XrayReport = () => {
         } else {
           console.error(err);
         }
-      });
-  }, [employeeObjectId, refreshKey]);
+      })
+      .finally(() => setLoading(false));
+  }, [employeeObjectId, employeeId, selectedPersonId, refreshKey]);
 
   const formatDate = (record) => {
     if (record?.Xrays?.length > 0 && record.Xrays[0].Timestamp) {
@@ -139,21 +156,7 @@ const XrayReport = () => {
   };
 
   // derive filtered list
-  const filteredReports = React.useMemo(() => {
-    let list = reports || [];
-
-    if (showType === "SELF") {
-      list = list.filter(r => !r.IsFamilyMember);
-    } else if (showType === "FAMILY") {
-      list = list.filter(r => r.IsFamilyMember);
-    }
-
-    if (familyFilter !== "ALL") {
-      list = list.filter(r => r.FamilyMember?._id === familyFilter);
-    }
-
-    return list;
-  }, [reports, showType, familyFilter]);
+  const filteredReports = reports || [];
 
   return (
     <div
@@ -222,37 +225,16 @@ const XrayReport = () => {
               </div>
 
               {/* filter section */}
-              <div className="d-flex gap-3 align-items-center">
-                <select
-                  className="form-select form-select-sm"
-                  style={{ width: 140 }}
-                  value={showType}
-                  onChange={(e) => setShowType(e.target.value)}
-                >
-                  <option value="ALL">Show: All</option>
-                  <option value="SELF">Self</option>
-                  <option value="FAMILY">Family</option>
-                </select>
-
-                {showType !== "SELF" && (
-                  <select
-                    className="form-select form-select-sm"
-                    style={{ width: 200 }}
-                    value={familyFilter}
-                    onChange={(e) => setFamilyFilter(e.target.value)}
-                  >
-                    <option value="ALL">Any family member</option>
-                    {reports
-                      .map(r => r.FamilyMember)
-                      .filter(Boolean)
-                      .filter((v, i, a) => a.findIndex(x => x._id === v._id) === i)
-                      .map(fm => (
-                        <option key={fm._id} value={fm._id}>
-                          {fm.Name} ({fm.Relationship})
-                        </option>
-                      ))}
-                  </select>
-                )}
+              <div style={{ maxWidth: 320 }}>
+                <PersonFilterDropdown
+                  options={options}
+                  value={selectedPersonId}
+                  onChange={(val) => {
+                    setSelectedPersonId(val);
+                    setSelectedReport(null);
+                  }}
+                  loading={loadingFamily}
+                />
               </div>
             </div>
 
@@ -261,8 +243,12 @@ const XrayReport = () => {
               Showing {filteredReports.length} of {reports.length} report{reports.length === 1 ? "" : "s"}
             </div>
 
-            {filteredReports.length === 0 ? (
-              <p className="text-center text-muted">No x‑ray reports found.</p>
+            {loading ? (
+              <div className="text-center py-4">
+                <div className="spinner-border text-secondary" role="status" />
+              </div>
+            ) : filteredReports.length === 0 ? (
+              <p className="text-center text-muted">No records found for selected person.</p>
             ) : (
               <div className="table-responsive">
                 <table className="table align-middle" style={{ border: "1px solid #D6E0F0", borderRadius: "12px", overflow: "hidden" }}>
