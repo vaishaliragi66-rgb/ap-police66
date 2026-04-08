@@ -1,6 +1,44 @@
 import axios from "axios";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const MEDICINE_TYPE_LABELS = {
+  analgesics: "Analgesics",
+  antacids: "Antacids",
+  antibiotics: "Antibiotics",
+  antidiabetics: "Antidiabetics",
+  antifungals: "Antifungals",
+  antihelmenthics: "Antihelminthics",
+  antihelminthics: "Antihelminthics",
+  antihelmintics: "Antihelminthics",
+  antihistamines: "Antihistamines",
+  antihypertensives: "Antihypertensives",
+  antimalarials: "Antimalarials",
+  antipyretics: "Antipyretics",
+  antivirals: "Antivirals",
+  others: "Others",
+  vitamins: "Vitamins"
+};
+const normalizeLoose = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+const startCase = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+export const getCanonicalMedicineTypeKey = (value) => normalizeLoose(value);
+export const canonicalizeMedicineTypeLabel = (value) => {
+  const raw = String(value || "").trim();
+  const key = getCanonicalMedicineTypeKey(raw);
+  if (!key) return "";
+  if (MEDICINE_TYPE_LABELS[key]) return MEDICINE_TYPE_LABELS[key];
+  if (key.startsWith("anti") && key.length > 4) {
+    return `Anti${key.charAt(4).toUpperCase()}${key.slice(5)}`;
+  }
+  return startCase(raw);
+};
 
 export const DEFAULT_MASTER_OPTIONS = {
   "Blood Groups": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
@@ -310,6 +348,17 @@ export const fetchMasterDataMap = async ({ force = false } = {}) => {
 export const getMasterOptions = (masterMap, categoryName) => {
   const fallback = DEFAULT_MASTER_OPTIONS[categoryName] || [];
   const dbValues = (masterMap?.[categoryName] || []).map((item) => item.value_name);
+  if (categoryName === "Medicine Types") {
+    const merged = new Map();
+    [...fallback, ...dbValues]
+      .map((item) => canonicalizeMedicineTypeLabel(item))
+      .filter(Boolean)
+      .forEach((item) => {
+        const key = getCanonicalMedicineTypeKey(item);
+        if (!merged.has(key)) merged.set(key, item);
+      });
+    return [...merged.values()];
+  }
   return [...new Set([...fallback, ...dbValues].filter(Boolean))];
 };
 
@@ -327,7 +376,9 @@ export const getMasterMedicineEntries = (masterMap) => {
   return combined
     .map((item) => ({
       value_name: String(item?.value_name || "").trim(),
-      medicineType: String(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory || "").trim(),
+      medicineType: canonicalizeMedicineTypeLabel(
+        item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory || ""
+      ),
       dosageForm: String(item?.meta?.dosageForm || item?.meta?.dosage_form || item?.meta?.form || "").trim(),
       strength: String(item?.meta?.strength || "").trim(),
       status: item?.status || "Active"
@@ -342,22 +393,22 @@ export const getMasterMedicineEntries = (masterMap) => {
 };
 
 export const getMasterMedicinesByType = (masterMap, medicineType) => {
-  const type = String(medicineType || "").trim().toLowerCase();
+  const type = getCanonicalMedicineTypeKey(medicineType);
   if (!type) return [];
 
   return getMasterMedicineEntries(masterMap)
-    .filter((item) => String(item.medicineType || "").trim().toLowerCase() === type)
+    .filter((item) => getCanonicalMedicineTypeKey(item.medicineType) === type)
     .map((item) => item.value_name)
     .sort((a, b) => a.localeCompare(b));
 };
 
 export const getMasterMedicinesByTypeAndForm = (masterMap, medicineType, dosageForm = "") => {
-  const type = String(medicineType || "").trim().toLowerCase();
+  const type = getCanonicalMedicineTypeKey(medicineType);
   const form = String(dosageForm || "").trim().toLowerCase();
   if (!type) return [];
 
   return getMasterMedicineEntries(masterMap)
-    .filter((item) => String(item.medicineType || "").trim().toLowerCase() === type)
+    .filter((item) => getCanonicalMedicineTypeKey(item.medicineType) === type)
     .filter((item) => !form || String(item.dosageForm || "").trim().toLowerCase() === form)
     .sort((a, b) => String(a.value_name || "").localeCompare(String(b.value_name || "")));
 };

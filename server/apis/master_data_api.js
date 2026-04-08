@@ -275,10 +275,67 @@ const DEFAULT_VALUE_SEEDS = {
 };
 
 const normalize = (value) => String(value || "").trim().toLowerCase();
+const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(String(value || "").trim());
+const normalizeLoose = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+const MEDICINE_TYPE_LABELS = {
+  analgesics: "Analgesics",
+  antacids: "Antacids",
+  antibiotics: "Antibiotics",
+  antidiabetics: "Antidiabetics",
+  antifungals: "Antifungals",
+  antihelmenthics: "Antihelminthics",
+  antihelminthics: "Antihelminthics",
+  antihelmintics: "Antihelminthics",
+  antihistamines: "Antihistamines",
+  antihypertensives: "Antihypertensives",
+  antimalarials: "Antimalarials",
+  antipyretics: "Antipyretics",
+  antivirals: "Antivirals",
+  others: "Others",
+  vitamins: "Vitamins"
+};
+const normalizeMedicineMetaValue = (value, fallback = "") => String(value || fallback || "").trim();
+const getCanonicalMedicineTypeKey = (value) => normalizeLoose(value);
+const canonicalizeMedicineTypeLabel = (value) => {
+  const raw = String(value || "").trim();
+  const key = getCanonicalMedicineTypeKey(raw);
+  if (!key) return "";
+  if (MEDICINE_TYPE_LABELS[key]) return MEDICINE_TYPE_LABELS[key];
+  if (key.startsWith("anti") && key.length > 4) {
+    return `Anti${key.charAt(4).toUpperCase()}${key.slice(5)}`;
+  }
+  return raw
+    .toLowerCase()
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+const getMedicineTypeFromMeta = (meta = {}) =>
+  canonicalizeMedicineTypeLabel(
+    normalizeMedicineMetaValue(meta?.medicineType || meta?.medicine_type || meta?.typeCategory, "Others")
+  );
+const getMedicineDosageFormFromMeta = (meta = {}) =>
+  normalizeMedicineMetaValue(meta?.dosageForm || meta?.dosage_form || meta?.form || meta?.type, "Other");
+const getMedicineStrengthFromMeta = (meta = {}) => normalizeMedicineMetaValue(meta?.strength);
+const makeMedicineKey = ({ value_name, medicineType, dosageForm, strength }) =>
+  [
+    normalize(medicineType || "Others"),
+    normalize(dosageForm || "Other"),
+    normalize(value_name),
+    normalize(strength)
+  ].join("::");
 
 const sortUnique = (arr) => {
   if (!Array.isArray(arr)) return [];
-  return [...new Set(arr.map((item) => String(item || "").trim()).filter(Boolean))].sort((a, b) =>
+  const uniqueValues = new Map();
+  arr.forEach((item) => {
+    const value = String(item || "").trim();
+    const key = normalize(value);
+    if (!value || uniqueValues.has(key)) return;
+    uniqueValues.set(key, value);
+  });
+  return [...uniqueValues.values()].sort((a, b) =>
     a.toLowerCase().localeCompare(b.toLowerCase())
   );
 };
@@ -375,7 +432,7 @@ const getCategoryByName = async (instituteId, categoryName) => {
 router.get("/public-map", async (req, res) => {
   try {
     const instituteId = String(req.query.instituteId || "").trim();
-    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+    if (!isValidObjectId(instituteId)) {
       return res.status(400).json({ message: "Valid instituteId is required" });
     }
 
@@ -1200,10 +1257,10 @@ router.get("/medicines-structure", async (req, res) => {
 
     const typeMetaByName = new Map();
     medicineTypeValues.forEach((row) => {
-      const typeName = String(row?.value_name || "").trim();
+      const typeName = canonicalizeMedicineTypeLabel(row?.value_name || "");
       if (!typeName) return;
-      const key = normalize(typeName);
-      if (!typeMetaByName.has(key)) {
+      const key = getCanonicalMedicineTypeKey(typeName);
+      if (!typeMetaByName.has(key) || (row?._id && !typeMetaByName.get(key)?._id)) {
         typeMetaByName.set(key, {
           _id: row?._id || null,
           value_name: typeName,
@@ -1220,7 +1277,7 @@ router.get("/medicines-structure", async (req, res) => {
         hintsByMedicineName.set(normalizedName, []);
       }
       const bucket = hintsByMedicineName.get(normalizedName);
-      const hintMedicineType = String(medicineType || "").trim() || "Others";
+      const hintMedicineType = canonicalizeMedicineTypeLabel(medicineType || "Others") || "Others";
       const hintDosageForm = String(dosageForm || "").trim() || "Other";
       const hintStrength = String(strength || "").trim();
       const dedupeKey = `${normalize(hintMedicineType)}::${normalize(hintDosageForm)}::${normalize(hintStrength)}`;
@@ -1260,13 +1317,9 @@ router.get("/medicines-structure", async (req, res) => {
         medicineRows.push({
           _id: row?._id || null,
           value_name: name,
-          medicineType:
-            String(
-              row?.meta?.medicineType || row?.meta?.medicine_type || row?.meta?.typeCategory || ""
-            ).trim() || "Others",
-          dosageForm:
-            String(row?.meta?.dosageForm || row?.meta?.dosage_form || row?.meta?.form || "").trim() || "Other",
-          strength: String(row?.meta?.strength || "").trim(),
+          medicineType: getMedicineTypeFromMeta(row?.meta),
+          dosageForm: getMedicineDosageFormFromMeta(row?.meta),
+          strength: getMedicineStrengthFromMeta(row?.meta),
           status: row?.status || "Active"
         });
         return;
@@ -1314,7 +1367,7 @@ router.get("/medicines-structure", async (req, res) => {
     const medicines = (medicineRows || [])
       .filter((item) => String(item?.value_name || "").trim())
       .filter((item) => {
-        const key = `${normalize(item.medicineType)}::${normalize(item.dosageForm)}::${normalize(item.value_name)}::${normalize(item.strength)}`;
+        const key = makeMedicineKey(item);
         if (seenMedicine.has(key)) return false;
         seenMedicine.add(key);
         return true;
@@ -1323,7 +1376,7 @@ router.get("/medicines-structure", async (req, res) => {
 
     const medicineTypes = sortUnique([
       ...defaultTypes,
-      ...medicineTypeValues.map((row) => row?.value_name),
+      ...medicineTypeValues.map((row) => canonicalizeMedicineTypeLabel(row?.value_name || "")),
       ...medicines.map((item) => item?.medicineType)
     ]);
 
@@ -1334,10 +1387,10 @@ router.get("/medicines-structure", async (req, res) => {
     ]);
 
     const medicineTypeEntries = medicineTypes.map((type) => {
-      const meta = typeMetaByName.get(normalize(type));
+      const meta = typeMetaByName.get(getCanonicalMedicineTypeKey(type));
       return {
         _id: meta?._id || null,
-        value_name: type,
+        value_name: canonicalizeMedicineTypeLabel(type),
         status: meta?.status || "Active"
       };
     });
@@ -1345,7 +1398,7 @@ router.get("/medicines-structure", async (req, res) => {
     const medicinesByType = {};
     medicineTypes.forEach((type) => {
       medicinesByType[type] = medicines
-        .filter((item) => normalize(item.medicineType) === normalize(type))
+        .filter((item) => getCanonicalMedicineTypeKey(item.medicineType) === getCanonicalMedicineTypeKey(type))
         .sort((a, b) => String(a.value_name || "").localeCompare(String(b.value_name || "")));
     });
 
@@ -1420,7 +1473,7 @@ router.post("/medicines", verifyToken, requireInstituteAdmin, async (req, res) =
   try {
     const instituteId = req.user.instituteId;
     const medicineName = String(req.body.medicineName || "").trim();
-    const medicineType = String(req.body.medicineType || "").trim();
+    const medicineType = canonicalizeMedicineTypeLabel(req.body.medicineType || "");
     const dosageForm = String(req.body.dosageForm || "").trim();
     const strength = String(req.body.strength || "").trim();
 
@@ -1486,7 +1539,7 @@ router.post("/medicines", verifyToken, requireInstituteAdmin, async (req, res) =
 router.post("/medicines/type", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
     const instituteId = req.user.instituteId;
-    const typeName = String(req.body.name || "").trim();
+    const typeName = canonicalizeMedicineTypeLabel(req.body.name || "");
 
     if (!typeName) {
       return res.status(400).json({ message: "name is required" });
@@ -1501,11 +1554,13 @@ router.post("/medicines/type", verifyToken, requireInstituteAdmin, async (req, r
     }
 
     // Check for duplicate
-    const duplicate = await MasterValue.findOne({
+    const existingTypes = await MasterValue.find({
       Institute_ID: instituteId,
-      category_id: medicineTypesCategory._id,
-      normalized_value: normalize(typeName)
-    });
+      category_id: medicineTypesCategory._id
+    }).select("value_name");
+    const duplicate = existingTypes.find(
+      (row) => getCanonicalMedicineTypeKey(row?.value_name) === getCanonicalMedicineTypeKey(typeName)
+    );
 
     if (duplicate) {
       return res.status(409).json({ message: "Medicine type already exists" });
@@ -1523,6 +1578,263 @@ router.post("/medicines/type", verifyToken, requireInstituteAdmin, async (req, r
   } catch (err) {
     console.error("POST /master-data-api/medicines/type error", err);
     res.status(500).json({ message: "Failed to add medicine type", error: err.message });
+  }
+});
+
+router.put("/medicines/type/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+    const nextName = canonicalizeMedicineTypeLabel(req.body.name || "");
+    const nextStatus = req.body.status;
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const medicineTypesCategory = await getCategoryByName(instituteId, "Medicine Types");
+    const medicinesCategory = await getCategoryByName(instituteId, "Medicines");
+
+    if (!medicineTypesCategory) {
+      return res.status(404).json({ message: "Medicine Types category not found" });
+    }
+
+    const typeDoc = await MasterValue.findOne({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: medicineTypesCategory._id
+    });
+
+    if (!typeDoc) {
+      return res.status(404).json({ message: "Medicine type not found" });
+    }
+
+    const previousName = canonicalizeMedicineTypeLabel(typeDoc.value_name || "");
+
+    if (nextName) {
+      const existingTypes = await MasterValue.find({
+        Institute_ID: instituteId,
+        category_id: medicineTypesCategory._id
+      }).select("_id value_name");
+      const duplicate = existingTypes.find(
+        (row) =>
+          String(row?._id) !== String(id) &&
+          getCanonicalMedicineTypeKey(row?.value_name) === getCanonicalMedicineTypeKey(nextName)
+      );
+
+      if (duplicate) {
+        return res.status(409).json({ message: "Medicine type already exists" });
+      }
+
+      typeDoc.value_name = nextName;
+      typeDoc.normalized_value = normalize(nextName);
+    }
+
+    if (nextStatus === "Active" || nextStatus === "Inactive") {
+      typeDoc.status = nextStatus;
+    }
+
+    await typeDoc.save();
+
+    if (nextName && medicinesCategory && getCanonicalMedicineTypeKey(previousName) !== getCanonicalMedicineTypeKey(nextName)) {
+      const relatedMedicines = await MasterValue.find({
+        Institute_ID: instituteId,
+        category_id: medicinesCategory._id,
+        "meta.kind": "medicine"
+      });
+
+      const updates = relatedMedicines
+        .filter(
+          (row) => getCanonicalMedicineTypeKey(getMedicineTypeFromMeta(row.meta)) === getCanonicalMedicineTypeKey(previousName)
+        )
+        .map(async (row) => {
+          row.meta = {
+            ...(row.meta || {}),
+            kind: "medicine",
+            medicineType: nextName,
+            dosageForm: getMedicineDosageFormFromMeta(row.meta),
+            type: getMedicineDosageFormFromMeta(row.meta),
+            strength: getMedicineStrengthFromMeta(row.meta),
+            typeNormalized: normalize(nextName)
+          };
+          await row.save();
+        });
+
+      if (updates.length) {
+        await Promise.all(updates);
+      }
+    }
+
+    res.json(typeDoc);
+  } catch (err) {
+    console.error("PUT /master-data-api/medicines/type/:id error", err);
+    res.status(500).json({ message: "Failed to update medicine type", error: err.message });
+  }
+});
+
+router.delete("/medicines/type/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const medicineTypesCategory = await getCategoryByName(instituteId, "Medicine Types");
+    const medicinesCategory = await getCategoryByName(instituteId, "Medicines");
+
+    if (!medicineTypesCategory) {
+      return res.status(404).json({ message: "Medicine Types category not found" });
+    }
+
+    const typeDoc = await MasterValue.findOne({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: medicineTypesCategory._id
+    });
+
+    if (!typeDoc) {
+      return res.status(404).json({ message: "Medicine type not found" });
+    }
+
+    if (medicinesCategory) {
+      const relatedMedicines = await MasterValue.find({
+        Institute_ID: instituteId,
+        category_id: medicinesCategory._id,
+        "meta.kind": "medicine"
+      }).select("value_name meta");
+
+      const linkedCount = relatedMedicines.filter(
+        (row) =>
+          getCanonicalMedicineTypeKey(getMedicineTypeFromMeta(row.meta)) ===
+          getCanonicalMedicineTypeKey(typeDoc.value_name)
+      ).length;
+
+      if (linkedCount > 0) {
+        return res.status(409).json({
+          message: `Cannot delete medicine type while ${linkedCount} medicine${linkedCount === 1 ? "" : "s"} still use it`
+        });
+      }
+    }
+
+    await typeDoc.deleteOne();
+    res.json({ message: "Medicine type deleted" });
+  } catch (err) {
+    console.error("DELETE /master-data-api/medicines/type/:id error", err);
+    res.status(500).json({ message: "Failed to delete medicine type", error: err.message });
+  }
+});
+
+router.put("/medicines/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+    const nextName = String(req.body.medicineName || req.body.value_name || "").trim();
+    const nextMedicineType = canonicalizeMedicineTypeLabel(req.body.medicineType || "");
+    const nextDosageForm = String(req.body.dosageForm || "").trim();
+    const nextStrength = String(req.body.strength || "").trim();
+    const nextStatus = req.body.status;
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const medicinesCategory = await getCategoryByName(instituteId, "Medicines");
+    if (!medicinesCategory) {
+      return res.status(404).json({ message: "Medicines category not found" });
+    }
+
+    const medicineDoc = await MasterValue.findOne({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: medicinesCategory._id
+    });
+
+    if (!medicineDoc) {
+      return res.status(404).json({ message: "Medicine not found" });
+    }
+
+    const resolvedName = nextName || String(medicineDoc.value_name || "").trim();
+    const resolvedMedicineType = nextMedicineType || getMedicineTypeFromMeta(medicineDoc.meta);
+    const resolvedDosageForm = nextDosageForm || getMedicineDosageFormFromMeta(medicineDoc.meta);
+    const resolvedStrength = nextStrength || getMedicineStrengthFromMeta(medicineDoc.meta);
+
+    const existingMedicines = await MasterValue.find({
+      _id: { $ne: id },
+      Institute_ID: instituteId,
+      category_id: medicinesCategory._id,
+      "meta.kind": "medicine"
+    }).select("value_name meta");
+
+    const duplicate = existingMedicines.find((row) =>
+      makeMedicineKey({
+        value_name: row.value_name,
+        medicineType: getMedicineTypeFromMeta(row.meta),
+        dosageForm: getMedicineDosageFormFromMeta(row.meta),
+        strength: getMedicineStrengthFromMeta(row.meta)
+      }) ===
+      makeMedicineKey({
+        value_name: resolvedName,
+        medicineType: resolvedMedicineType,
+        dosageForm: resolvedDosageForm,
+        strength: resolvedStrength
+      })
+    );
+
+    if (duplicate) {
+      return res.status(409).json({ message: "Medicine with the same type, dosage form, and strength already exists" });
+    }
+
+    medicineDoc.value_name = resolvedName;
+    medicineDoc.normalized_value = normalize(resolvedName);
+    medicineDoc.meta = {
+      ...(medicineDoc.meta || {}),
+      kind: "medicine",
+      medicineType: resolvedMedicineType || "Others",
+      dosageForm: resolvedDosageForm || "Other",
+      type: resolvedDosageForm || "Other",
+      strength: resolvedStrength,
+      typeNormalized: normalize(resolvedMedicineType || "Others")
+    };
+
+    if (nextStatus === "Active" || nextStatus === "Inactive") {
+      medicineDoc.status = nextStatus;
+    }
+
+    await medicineDoc.save();
+    res.json(medicineDoc);
+  } catch (err) {
+    console.error("PUT /master-data-api/medicines/:id error", err);
+    res.status(500).json({ message: "Failed to update medicine", error: err.message });
+  }
+});
+
+router.delete("/medicines/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const medicinesCategory = await getCategoryByName(instituteId, "Medicines");
+    if (!medicinesCategory) {
+      return res.status(404).json({ message: "Medicines category not found" });
+    }
+
+    const medicineDoc = await MasterValue.findOne({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: medicinesCategory._id
+    });
+
+    if (!medicineDoc) {
+      return res.status(404).json({ message: "Medicine not found" });
+    }
+
+    await medicineDoc.deleteOne();
+    res.json({ message: "Medicine deleted" });
+  } catch (err) {
+    console.error("DELETE /master-data-api/medicines/:id error", err);
+    res.status(500).json({ message: "Failed to delete medicine", error: err.message });
   }
 });
 
