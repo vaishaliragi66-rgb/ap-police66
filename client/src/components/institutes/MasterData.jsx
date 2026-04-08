@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { invalidateMasterDataCache } from "../../utils/masterData";
-import { DEFAULT_MASTER_OPTIONS, getMergedMasterValueObjects } from "../../utils/masterData";
+import {
+  invalidateMasterDataCache,
+  DEFAULT_MASTER_OPTIONS,
+  getMergedMasterValueObjects,
+  fetchMasterDataMap,
+  getMasterMedicineEntries
+} from "../../utils/masterData";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { mergeXrayTypes } from "../../data/xrayTypes";
 
@@ -22,6 +27,7 @@ const sortUnique = (items) =>
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
 const makePairKey = (left, right) => `${normalizeText(left)}::${normalizeText(right)}`;
+const makeTripleKey = (a, b, c) => `${normalizeText(a)}::${normalizeText(b)}::${normalizeText(c)}`;
 
 const getStaticTestsStructure = () => {
   const testsByCategory = {};
@@ -113,6 +119,18 @@ const MasterData = () => {
   const [newXraySide, setNewXraySide] = useState("NA");
   const [newXrayFilmSize, setNewXrayFilmSize] = useState("");
   const [customBodyPartMap, setCustomBodyPartMap] = useState({});
+  const [medicinesStructure, setMedicinesStructure] = useState({ medicineTypes: [], dosageForms: [], medicines: [], medicinesByType: {} });
+  const [customMedicineMap, setCustomMedicineMap] = useState({});
+  const [customMedicineTypeMap, setCustomMedicineTypeMap] = useState({});
+  const [selectedMedicineType, setSelectedMedicineType] = useState("");
+  const [selectedMedicineDosageForm, setSelectedMedicineDosageForm] = useState("");
+  const [newMedicineName, setNewMedicineName] = useState("");
+  const [newMedicineType, setNewMedicineType] = useState("");
+  const [newMedicineDosageForm, setNewMedicineDosageForm] = useState("");
+  const [newMedicineStrength, setNewMedicineStrength] = useState("");
+  const [showImportArea, setShowImportArea] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -482,6 +500,170 @@ const MasterData = () => {
     }
   };
 
+  const loadMedicinesStructure = async () => {
+    try {
+      const instituteId = localStorage.getItem("instituteId") || "";
+      const res = await axios.get(`${BACKEND_URL}/master-data-api/medicines-structure`, {
+        params: instituteId ? { instituteId } : {}
+      });
+      // support both old shape (direct fields) and new shape { success, data }
+      const data = res.data && res.data.data ? res.data.data : res.data || {};
+
+      const medicineTypeEntries = Array.isArray(data.medicineTypeEntries) ? data.medicineTypeEntries : [];
+      const apiMedicines = Array.isArray(data.medicines) ? data.medicines : [];
+
+      // Also fetch masterMap (local DB map) to include any pasted/built-in medicines
+      let masterMedicines = [];
+      try {
+        const masterMap = await fetchMasterDataMap();
+        masterMedicines = getMasterMedicineEntries(masterMap || {});
+      } catch (e) {
+        masterMedicines = [];
+      }
+
+      // Merge API medicines (prefer records with _id) and masterMedicines (fallback pasted/built-in)
+      const mergedMap = new Map();
+      const makeMergeKey = (it) =>
+        `${String(it?.medicineType || it?.meta?.medicineType || "").trim().toLowerCase()}::${String(
+          it?.dosageForm || it?.meta?.dosageForm || it?.meta?.form || ""
+        ).trim().toLowerCase()}::${String(it?.value_name || it?.value_name || "").trim().toLowerCase()}::${String(
+          it?.strength || it?.meta?.strength || ""
+        ).trim().toLowerCase()}`;
+
+      apiMedicines.forEach((it) => {
+        const key = makeMergeKey(it);
+        if (!mergedMap.has(key)) mergedMap.set(key, it);
+      });
+
+      masterMedicines.forEach((it, idx) => {
+        const key = makeMergeKey(it);
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, {
+            _id: `master-${idx}`,
+            value_name: it.value_name,
+            medicineType: it.medicineType,
+            dosageForm: it.dosageForm,
+            strength: it.strength,
+            status: it.status || "Active"
+          });
+        }
+      });
+
+      const medicines = Array.from(mergedMap.values());
+
+      // Build combined medicine types and dosage forms from API + master map so pasted values are visible
+      const apiTypes = Array.isArray(data.medicineTypes) ? data.medicineTypes : [];
+      const masterTypes = masterMedicines.map((m) => m.medicineType).filter(Boolean);
+      const combinedTypes = [...new Set([...apiTypes, ...masterTypes])];
+
+      const apiDosageForms = Array.isArray(data.dosageForms) ? data.dosageForms : [];
+      const masterForms = masterMedicines.map((m) => m.dosageForm).filter(Boolean);
+      const combinedForms = [...new Set([...apiDosageForms, ...masterForms])];
+
+      // Merge medicineTypeEntries with any master types missing in API entries
+      const masterTypeEntries = masterTypes
+        .filter((t) => t)
+        .map((t) => ({ _id: null, value_name: t, status: "Active" }));
+      const combinedTypeEntriesMap = new Map();
+      [...medicineTypeEntries, ...masterTypeEntries].forEach((it) => {
+        const key = normalizeText(it?.value_name);
+        if (!combinedTypeEntriesMap.has(key)) combinedTypeEntriesMap.set(key, it);
+      });
+      const combinedTypeEntries = Array.from(combinedTypeEntriesMap.values());
+
+      // Debug: log fetched medicines data to help diagnose empty UI
+      try {
+        // eslint-disable-next-line no-console
+        console.debug("loadMedicinesStructure: medicineTypes:", Array.isArray(data.medicineTypes) ? data.medicineTypes.length : 0, data.medicineTypes);
+        // eslint-disable-next-line no-console
+        console.debug("loadMedicinesStructure: medicines count:", medicines.length, medicines.slice(0, 10));
+      } catch (e) {
+        // ignore logging failures
+      }
+
+      const medicineTypeMap = {};
+      (combinedTypeEntries || []).forEach((item) => {
+        const key = normalizeText(item?.value_name);
+        if (key && !medicineTypeMap[key]) medicineTypeMap[key] = item;
+      });
+      setCustomMedicineTypeMap(medicineTypeMap);
+
+      const medicineMap = {};
+      medicines.forEach((item) => {
+        const key = makeTripleKey(item?.medicineType, item?.dosageForm, item?.value_name);
+        if (key !== "::" && item?._id) {
+          medicineMap[key] = {
+            _id: item._id,
+            value_name: item.value_name,
+            status: item.status || "Active",
+            meta: {
+              kind: "medicine",
+              medicineType: item.medicineType || "",
+              dosageForm: item.dosageForm || "",
+              strength: item.strength || ""
+            }
+          };
+        }
+      });
+      setCustomMedicineMap(medicineMap);
+
+      const buildTypeRows = (type, entries) =>
+        entries
+          .filter((entry) => normalizeText(entry.medicineType) === normalizeText(type))
+          .map((entry) => {
+            const masterValue =
+              medicineMap[makeTripleKey(entry.medicineType, entry.dosageForm, entry.value_name)] || null;
+            return {
+              value_name: entry.value_name,
+              medicineType: entry.medicineType || "",
+              dosageForm: entry.dosageForm || "",
+              strength: entry.strength || "",
+              masterValue,
+              status: masterValue?.status || entry.status || "Active"
+            };
+          })
+          .sort((a, b) => a.value_name.localeCompare(b.value_name));
+
+      const medicineTypes = combinedTypes || [];
+      const medicinesByType = {};
+
+      medicineTypes.forEach((type) => {
+        medicinesByType[type] = buildTypeRows(type, medicines);
+      });
+
+      // Debug: inspect computed medicinesByType keys and counts
+      try {
+        // eslint-disable-next-line no-console
+        console.debug("loadMedicinesStructure: medicinesByType keys:", Object.keys(medicinesByType).map((k) => [k, medicinesByType[k]?.length || 0]));
+      } catch (e) {
+        // ignore
+      }
+      setMedicinesStructure({
+        medicineTypes,
+        medicines,
+        medicinesByType,
+        dosageForms: combinedForms || []
+      });
+
+      if (medicineTypes.length > 0) {
+        if (!selectedMedicineType || !medicineTypes.includes(selectedMedicineType)) {
+          setSelectedMedicineType(medicineTypes[0]);
+        }
+      } else {
+        setSelectedMedicineType("");
+      }
+
+      setSelectedMedicineDosageForm("");
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status && status !== 404) {
+        throw err;
+      }
+      // If endpoint doesn't exist, show empty structure
+      setMedicinesStructure({ medicineTypes: [], dosageForms: [], medicines: [], medicinesByType: {} });
+    }
+  };
+
   const loadXrayTypes = async () => {
     try {
       const [xrayRes, bodyPartRes] = await Promise.all([
@@ -544,6 +726,8 @@ const MasterData = () => {
         ? loadTestsStructure
         : selected.category_name === "Diseases"
         ? loadDiseasesStructure
+        : selected.category_name === "Medicines"
+        ? loadMedicinesStructure
         : selected.category_name === "Xray Types"
         ? loadXrayTypes
         : () => loadValues(selectedCategoryId);
@@ -573,6 +757,15 @@ const MasterData = () => {
           String(item?.name || "").toLowerCase().includes(searchText.toLowerCase())
         );
 
+  const medicinesBySelectedType = medicinesStructure.medicinesByType?.[selectedMedicineType] || [];
+  const fallbackMedicines = (medicinesStructure.medicines || []).filter((item) =>
+    (!selectedMedicineType || normalizeText(item.medicineType) === normalizeText(selectedMedicineType)) &&
+    (!selectedMedicineDosageForm || normalizeText(item.dosageForm) === normalizeText(selectedMedicineDosageForm))
+  );
+
+  const filteredMedicines = (medicinesBySelectedType.length ? medicinesBySelectedType : fallbackMedicines)
+    .filter((item) => String(item.value_name || "").toLowerCase().includes(searchText.toLowerCase()));
+
   const xrayBodyParts = useMemo(
     () =>
       [...new Set([...xrayTypes, newXrayBodyPart, selectedXrayBodyPart].map((item) => String(item?.Body_Part || item || "").trim()).filter(Boolean))].sort((a, b) =>
@@ -592,7 +785,6 @@ const MasterData = () => {
 
   const handleEditSpecialValue = async (item, reloadFn) => {
     const itemId = item?.masterValue?._id || item?.id;
-    if (!itemId) return;
 
     const updated = window.prompt("Edit value", item.name || item.value_name);
     if (updated === null) return;
@@ -624,7 +816,6 @@ const MasterData = () => {
 
   const handleToggleSpecialValue = async (item, reloadFn) => {
     const itemId = item?.masterValue?._id || item?.id;
-    if (!itemId) return;
 
     setSaving(true);
     setMessage("");
@@ -650,7 +841,6 @@ const MasterData = () => {
 
   const handleDeleteSpecialValue = async (item, reloadFn) => {
     const itemId = item?.masterValue?._id || item?.id;
-    if (!itemId) return;
 
     const ok = window.confirm(`Delete '${item.name || item.value_name}'?`);
     if (!ok) return;
@@ -742,6 +932,10 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
+      if (item?.isDefault) {
+        setMessage("Built-in values cannot be renamed directly");
+        return;
+      }
       await axios.put(`${BACKEND_URL}/master-data-api/values/${item._id}`, {
         value_name: valueName
       });
@@ -761,6 +955,10 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
+      if (item?.isDefault) {
+        setMessage("Built-in values cannot be deactivated directly");
+        return;
+      }
       await axios.put(`${BACKEND_URL}/master-data-api/values/${item._id}`, {
         status: item.status === "Active" ? "Inactive" : "Active"
       });
@@ -783,6 +981,10 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
+      if (item?.isDefault) {
+        setMessage("Built-in values cannot be deleted directly");
+        return;
+      }
       await axios.delete(`${BACKEND_URL}/master-data-api/values/${item._id}`);
       setMessage("Value deleted successfully");
       await loadValues(selectedCategoryId);
@@ -905,6 +1107,104 @@ const MasterData = () => {
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to add disease");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddMedicine = async () => {
+    if (!newMedicineName.trim() || !selectedMedicineType.trim() || !newMedicineDosageForm.trim() || !newMedicineStrength.trim()) {
+      setError("Please fill in all medicine fields (name, type, dosage form, strength)");
+      return;
+    }
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      try {
+        await axios.post(`${BACKEND_URL}/master-data-api/medicines`, {
+          medicineName: newMedicineName.trim(),
+          medicineType: selectedMedicineType.trim(),
+          dosageForm: newMedicineDosageForm.trim(),
+          strength: newMedicineStrength.trim()
+        });
+      } catch (err) {
+        if (err?.response?.status !== 404) throw err;
+        await axios.post(`${BACKEND_URL}/master-data-api/values`, {
+          category_id: selectedCategoryId,
+          value_name: newMedicineName.trim(),
+          meta: {
+            kind: "medicine",
+            medicineType: selectedMedicineType.trim(),
+            dosageForm: newMedicineDosageForm.trim(),
+            type: newMedicineDosageForm.trim(),
+            strength: newMedicineStrength.trim(),
+            typeNormalized: selectedMedicineType.trim().toLowerCase()
+          }
+        });
+      }
+      setNewMedicineName("");
+      setNewMedicineDosageForm("");
+      setNewMedicineStrength("");
+      setMessage("Medicine added successfully");
+      await loadMedicinesStructure();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to add medicine");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddMedicineType = async () => {
+    if (!newMedicineType.trim()) return;
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.post(`${BACKEND_URL}/master-data-api/medicines/type`, {
+        name: newMedicineType.trim()
+      });
+      setNewMedicineType("");
+      setMessage("Medicine type added successfully");
+      await loadMedicinesStructure();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Error adding medicine type:", err);
+      setError(err.response?.data?.message || "Failed to add medicine type");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteMedicineType = async (medicineType) => {
+    const medicineTypeKey = String(medicineType || "").trim().toLowerCase();
+    const medicineTypeRecord = customMedicineTypeMap[medicineTypeKey];
+
+    if (!medicineTypeRecord || !medicineTypeRecord._id) {
+      setError("This is a built-in medicine type and cannot be deleted");
+      return;
+    }
+
+    const ok = window.confirm(`Delete medicine type '${medicineType}'?`);
+    if (!ok) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.delete(`${BACKEND_URL}/master-data-api/values/${medicineTypeRecord._id}`);
+      setMessage("Medicine type deleted successfully");
+      if (selectedMedicineType === medicineType) {
+        setSelectedMedicineType("");
+      }
+      await loadMedicinesStructure();
+      invalidateMasterDataCache();
+    } catch (err) {
+      console.error("Delete medicine type error:", err);
+      const errorMsg = err.response?.data?.message || err.message || "Failed to delete medicine type";
+      setError(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -1186,6 +1486,8 @@ const MasterData = () => {
                   ? `${filteredTests.length} items`
                   : selectedCategory?.category_name === "Diseases"
                   ? `${filteredDiseases.length} items`
+                  : selectedCategory?.category_name === "Medicines"
+                  ? `${filteredMedicines.length} items`
                   : selectedCategory?.category_name === "Xray Types"
                   ? `${filteredXrays.length} items`
                   : `${filteredValues.length} items`}
@@ -1233,7 +1535,7 @@ const MasterData = () => {
                               <td className="d-flex flex-wrap gap-2">
                                 <button
                                   className="btn btn-sm btn-outline-primary"
-                                  onClick={() => handleEditSpecialValue({...masterValue, name: item}, loadTestsStructure)}
+                                  onClick={() => handleEditSpecialValue({ masterValue, name: item, value_name: item, id: masterValue?._id }, loadTestsStructure)}
                                   disabled={!isInstituteAdmin || saving}
                                   title={isCustom ? "Edit this category" : "Cannot edit built-in categories"}
                                 >
@@ -1241,7 +1543,7 @@ const MasterData = () => {
                                 </button>
                                 <button
                                   className="btn btn-sm btn-outline-warning"
-                                  onClick={() => handleToggleSpecialValue({...masterValue, name: item, status}, loadTestsStructure)}
+                                  onClick={() => handleToggleSpecialValue({ masterValue, name: item, value_name: item, status, id: masterValue?._id }, loadTestsStructure)}
                                   disabled={!isInstituteAdmin || saving}
                                   title={isCustom ? "Toggle status" : "Cannot deactivate built-in categories"}
                                 >
@@ -1493,6 +1795,367 @@ const MasterData = () => {
                 </>
               )}
 
+              {selectedCategory?.category_name === "Medicines" && (
+                <>
+                  <div className="table-responsive mb-3">
+                    <table className="table table-bordered table-striped align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: 80 }}>ID</th>
+                          <th>Medicine Type</th>
+                          <th style={{ width: 120 }}>Status</th>
+                          <th style={{ width: 240 }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {medicinesStructure.medicineTypes.map((item, idx) => {
+                          const masterValue = customMedicineTypeMap[normalizeText(item)] || null;
+                          const isCustom = Boolean(masterValue?._id);
+                          const status = masterValue?.status || "Active";
+
+                          return (
+                            <tr key={item}>
+                              <td>{idx + 1}</td>
+                              <td>{item}</td>
+                              <td>
+                                <span className={`badge ${status === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                  {status}
+                                </span>
+                              </td>
+                              <td className="d-flex flex-wrap gap-2">
+                                <button
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() => handleEditSpecialValue({ masterValue, name: item, value_name: item, id: masterValue?._id }, loadMedicinesStructure)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={isCustom ? "Edit this type" : "Cannot edit built-in types"}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-warning"
+                                  onClick={() => handleToggleSpecialValue({ masterValue, name: item, value_name: item, status, id: masterValue?._id }, loadMedicinesStructure)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={isCustom ? "Toggle status" : "Cannot deactivate built-in types"}
+                                >
+                                  {status === "Active" ? "Deactivate" : "Activate"}
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDeleteMedicineType(item)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={isCustom ? "Delete this type" : "Cannot delete built-in types"}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-8">
+                      <input
+                        className="form-control"
+                        placeholder="Add new medicine type"
+                        value={newMedicineType}
+                        onChange={(e) => setNewMedicineType(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <button
+                        className="btn btn-success w-100"
+                        onClick={handleAddMedicineType}
+                        disabled={!isInstituteAdmin || saving || !newMedicineType.trim()}
+                      >
+                        Add Type
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-4">
+                      <select
+                        className="form-select"
+                        value={selectedMedicineType}
+                        onChange={(e) => setSelectedMedicineType(e.target.value)}
+                      >
+                        <option value="">Select medicine type</option>
+                        {medicinesStructure.medicineTypes.map((type) => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <select
+                        className="form-select"
+                        value={selectedMedicineDosageForm}
+                        onChange={(e) => setSelectedMedicineDosageForm(e.target.value)}
+                      >
+                        <option value="">All dosage forms</option>
+                        {(medicinesStructure.dosageForms || []).map((form) => (
+                          <option key={form} value={form}>{form}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <input
+                        className="form-control"
+                        placeholder="Medicine name"
+                        value={newMedicineName}
+                        onChange={(e) => setNewMedicineName(e.target.value)}
+                        disabled={!isInstituteAdmin || saving || !selectedMedicineType}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-6">
+                      <select
+                        className="form-select"
+                        value={newMedicineDosageForm}
+                        onChange={(e) => setNewMedicineDosageForm(e.target.value)}
+                        disabled={!isInstituteAdmin || saving || !selectedMedicineType}
+                      >
+                        <option value="">Select dosage form for new medicine</option>
+                        {(medicinesStructure.dosageForms || []).map((form) => (
+                          <option key={form} value={form}>{form}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-6">
+                      <input
+                        className="form-control"
+                        placeholder="Strength (e.g., 500mg)"
+                        value={newMedicineStrength}
+                        onChange={(e) => setNewMedicineStrength(e.target.value)}
+                        disabled={!isInstituteAdmin || saving || !selectedMedicineType}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleAddMedicine}
+                      disabled={!isInstituteAdmin || saving || !selectedMedicineType || !newMedicineDosageForm || !newMedicineName.trim() || !newMedicineStrength.trim()}
+                    >
+                      Add Medicine
+                    </button>
+                    <button
+                      className="btn btn-secondary ms-2"
+                      onClick={() => {
+                        setShowImportArea((s) => !s);
+                        setImportError("");
+                      }}
+                    >
+                      {showImportArea ? "Hide Import" : "Import Medicines JSON"}
+                    </button>
+                  </div>
+
+                  {showImportArea && (
+                    <div className="mb-3">
+                      <div className="mb-2 small text-muted">Paste medicines JSON (array or multiple arrays). Fields: value_name, medicineType, dosageForm, strength.</div>
+                      <textarea className="form-control mb-2" rows={8} value={importText} onChange={(e) => setImportText(e.target.value)} />
+                      {importError && <div className="text-danger small mb-2">{importError}</div>}
+                      <div>
+                        <button
+                          className="btn btn-success"
+                          onClick={async () => {
+                            setImportError("");
+                            try {
+                              // Try parse as JSON first
+                              let parsed = null;
+                              try {
+                                parsed = JSON.parse(importText);
+                              } catch (e) {
+                                // Fallback: extract object literals
+                                const matches = importText.match(/\{[\s\S]*?\}/g) || [];
+                                parsed = matches.map((s) => JSON.parse(s));
+                              }
+
+                              // Normalize to array of objects
+                              let items = [];
+                              if (Array.isArray(parsed)) {
+                                // flatten nested arrays
+                                const flatten = (arr) => arr.reduce((acc, v) => acc.concat(Array.isArray(v) ? flatten(v) : v), []);
+                                items = flatten(parsed);
+                              } else if (parsed && typeof parsed === "object") {
+                                items = [parsed];
+                              }
+
+                              if (!items.length) throw new Error("No medicine objects found in pasted data");
+
+                              // Build merge key and add to current medicines
+                              const current = medicinesStructure.medicines || [];
+                              const merged = new Map();
+                              const makeKey = (it) => `${String(it.medicineType||"").trim().toLowerCase()}::${String(it.dosageForm||"").trim().toLowerCase()}::${String(it.value_name||"").trim().toLowerCase()}::${String(it.strength||"").trim().toLowerCase()}`;
+
+                              current.forEach((m) => merged.set(makeKey(m), m));
+
+                              items.forEach((raw, idx) => {
+                                const item = {
+                                  value_name: String(raw.value_name || raw.Value || raw.name || "").trim(),
+                                  medicineType: String(raw.medicineType || raw.type || "").trim(),
+                                  dosageForm: String(raw.dosageForm || raw.form || "").trim(),
+                                  strength: String(raw.strength || "").trim(),
+                                  status: raw.status || "Active",
+                                  _id: raw._id || `import-${Date.now()}-${idx}`
+                                };
+                                const key = makeKey(item);
+                                if (item.value_name && !merged.has(key)) merged.set(key, item);
+                              });
+
+                              const newMedicines = Array.from(merged.values());
+
+                              // Update types and forms
+                              const newTypes = Array.from(new Set([...(medicinesStructure.medicineTypes || []), ...newMedicines.map((m) => m.medicineType).filter(Boolean)]));
+                              const newForms = Array.from(new Set([...(medicinesStructure.dosageForms || []), ...newMedicines.map((m) => m.dosageForm).filter(Boolean)]));
+
+                              // Rebuild medicinesByType
+                              const newMedicinesByType = {};
+                              newTypes.forEach((type) => {
+                                newMedicinesByType[type] = newMedicines.filter((m) => String(m.medicineType || "").trim().toLowerCase() === String(type || "").trim().toLowerCase()).sort((a,b)=>a.value_name.localeCompare(b.value_name));
+                              });
+
+                              setCustomMedicineMap((prev) => {
+                                const map = { ...(prev || {}) };
+                                newMedicines.forEach((m) => {
+                                  const key = makeTripleKey(m.medicineType, m.dosageForm, m.value_name);
+                                  map[key] = { _id: m._id, value_name: m.value_name, status: m.status || "Active", meta: { kind: "medicine", medicineType: m.medicineType, dosageForm: m.dosageForm, strength: m.strength } };
+                                });
+                                return map;
+                              });
+
+                              setMedicinesStructure({ medicineTypes: newTypes, medicines: newMedicines, medicinesByType: newMedicinesByType, dosageForms: newForms });
+
+                              // Ask to persist to server if user is institute admin/token present
+                              try {
+                                const token = localStorage.getItem("instituteToken");
+                                if (token && window.confirm("Persist imported medicines to server? This will attempt to create medicine types and medicines (you must be an institute admin). Continue?")) {
+                                  setSaving(true);
+                                  // Create missing types
+                                  const existingTypes = medicinesStructure.medicineTypes || [];
+                                  const typesToCreate = newTypes.filter((t) => t && !existingTypes.includes(t));
+                                  for (const t of typesToCreate) {
+                                    try {
+                                      await axios.post(`${BACKEND_URL}/master-data-api/medicines/type`, { name: t });
+                                    } catch (err) {
+                                      // ignore duplicates or failures
+                                      if (err?.response?.status && err.response.status !== 409) {
+                                        console.warn(`Failed to create medicine type ${t}`, err?.response?.data || err?.message);
+                                      }
+                                    }
+                                  }
+
+                                  // Create medicines
+                                  for (const m of newMedicines) {
+                                    try {
+                                      await axios.post(`${BACKEND_URL}/master-data-api/medicines`, {
+                                        medicineName: m.value_name,
+                                        medicineType: m.medicineType || "Others",
+                                        dosageForm: m.dosageForm || "Other",
+                                        strength: m.strength || ""
+                                      });
+                                    } catch (err) {
+                                      if (err?.response?.status === 409) {
+                                        // already exists - ignore
+                                        continue;
+                                      }
+                                      console.warn(`Failed to create medicine ${m.value_name}`, err?.response?.data || err?.message);
+                                    }
+                                  }
+
+                                  // Reload from server to reflect persisted data
+                                  await loadMedicinesStructure();
+                                  invalidateMasterDataCache();
+                                }
+                              } finally {
+                                setSaving(false);
+                                setImportError("");
+                                setShowImportArea(false);
+                                setImportText("");
+                              }
+                            } catch (err) {
+                              setImportError(err.message || String(err));
+                            }
+                          }}
+                        >
+                          Apply Import
+                        </button>
+                        <button className="btn btn-link ms-2" onClick={() => { setImportText(""); setImportError(""); }}>Clear</button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="table-responsive">
+                    <table className="table table-bordered table-striped align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: 80 }}>ID</th>
+                          <th>Medicine Name</th>
+                          <th style={{ width: 160 }}>Medicine Type</th>
+                          <th style={{ width: 160 }}>Dosage Form</th>
+                          <th style={{ width: 200 }}>Strength</th>
+                          <th style={{ width: 120 }}>Status</th>
+                          <th style={{ width: 240 }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {!loading && filteredMedicines.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="text-center py-4 text-muted">No medicines found</td>
+                          </tr>
+                        )}
+                        {filteredMedicines.map((item, idx) => (
+                          <tr key={`${item.value_name}-${idx}`}>
+                            <td>{idx + 1}</td>
+                            <td>{item.value_name}</td>
+                            <td>{item.medicineType || "-"}</td>
+                            <td>{item.dosageForm || "-"}</td>
+                            <td>{item.strength || "-"}</td>
+                            <td>
+                              <span className={`badge ${item.status === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                {item.status || "Active"}
+                              </span>
+                            </td>
+                            <td className="d-flex flex-wrap gap-2">
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => handleEditSpecialValue(item, loadMedicinesStructure)}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Edit this medicine" : "Cannot edit built-in medicines"}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-warning"
+                                onClick={() => handleToggleSpecialValue(item, loadMedicinesStructure)}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Toggle status" : "Cannot deactivate built-in medicines"}
+                              >
+                                {item.status === "Active" ? "Deactivate" : "Activate"}
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => handleDeleteSpecialValue(item, loadMedicinesStructure)}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Delete this medicine" : "Cannot delete built-in medicines"}
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
               {selectedCategory?.category_name === "Xray Types" && (
                 <>
                   <div className="alert alert-light border py-2 px-3 small mb-3">
@@ -1709,7 +2372,7 @@ const MasterData = () => {
                 </>
               )}
 
-              {selectedCategory && !["Tests", "Diseases", "Xray Types"].includes(selectedCategory.category_name) && (
+              {selectedCategory && !["Tests", "Diseases", "Medicines", "Xray Types"].includes(selectedCategory.category_name) && (
                 <>
                   <div className="row g-2 mb-3">
                     <div className="col-md-7">
@@ -1772,21 +2435,21 @@ const MasterData = () => {
                               <button
                                 className="btn btn-sm btn-outline-primary"
                                 onClick={() => handleEditValue(item)}
-                                disabled={!isInstituteAdmin || saving || item.isDefault}
+                                disabled={!isInstituteAdmin || saving}
                               >
                                 Edit
                               </button>
                               <button
                                 className="btn btn-sm btn-outline-warning"
                                 onClick={() => handleToggleValue(item)}
-                                disabled={!isInstituteAdmin || saving || item.isDefault}
+                                disabled={!isInstituteAdmin || saving}
                               >
                                 {item.status === "Active" ? "Deactivate" : "Activate"}
                               </button>
                               <button
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => handleDeleteValue(item)}
-                                disabled={!isInstituteAdmin || saving || item.isDefault}
+                                disabled={!isInstituteAdmin || saving}
                               >
                                 Delete
                               </button>

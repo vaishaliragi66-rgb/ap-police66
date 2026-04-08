@@ -6,6 +6,8 @@ const { verifyToken } = require("./instituteAuth");
 const MasterCategory = require("../models/master_category");
 const MasterValue = require("../models/master_value");
 const DiagnosisTest = require("../models/diagnostics_test");
+const Medicine = require("../models/master_medicine");
+const MainStoreMedicine = require("../models/main_store");
 
 const router = express.Router();
 const DISEASES_FILE = path.join(__dirname, "..", "data", "diseases.json");
@@ -19,7 +21,7 @@ const DEFAULT_CATEGORIES = [
   "Relationships",
   "Employee Report Roles",
   "Medicine Types",
-  "Medicine Categories",
+  "Dosage Forms",
   "Xray Types",
   "Food Timings",
   "Institute Roles",
@@ -170,6 +172,17 @@ const DEFAULT_VALUE_SEEDS = {
   "Relationships": ["Father", "Mother", "Wife", "Husband", "Son", "Daughter"],
   "Employee Report Roles": ["Employee", "Family"],
   "Medicine Types": [
+    "Antibiotics",
+    "Analgesics",
+    "Antipyretics",
+    "Antacids",
+    "Antihistamines",
+    "Vitamins",
+    "Antifungals",
+    "Antivirals",
+    "Others"
+  ],
+  "Dosage Forms": [
     "Tablet",
     "Capsule",
     "Syrup",
@@ -178,17 +191,6 @@ const DEFAULT_VALUE_SEEDS = {
     "Drops",
     "Inhaler",
     "Powder",
-    "Other"
-  ],
-  "Medicine Categories": [
-    "Antibiotic",
-    "Analgesic",
-    "Antipyretic",
-    "Antihistamine",
-    "Antacid",
-    "Vitamin",
-    "Cardiac",
-    "Diabetic",
     "Other"
   ],
   "Xray Types": [
@@ -241,7 +243,12 @@ const DEFAULT_VALUE_SEEDS = {
   ],
   "Ledger Directions": ["IN", "OUT"],
   "Rows Per Page": ["5", "10", "25", "50", "100"],
-  "Medicines": ["Paracetamol", "Amoxicillin", "Ibuprofen", "Vitamin D"],
+  "Medicines": [
+    { value_name: "Paracetamol", meta: { kind: "medicine", medicineType: "Antipyretics", dosageForm: "Tablet", strength: "500mg" } },
+    { value_name: "Amoxicillin", meta: { kind: "medicine", medicineType: "Antibiotics", dosageForm: "Capsule", strength: "500mg" } },
+    { value_name: "Ibuprofen", meta: { kind: "medicine", medicineType: "Analgesics", dosageForm: "Tablet", strength: "400mg" } },
+    { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
+  ],
   "Residential Areas": [
     "Hyderabad",
     "Secunderabad",
@@ -326,11 +333,21 @@ const ensureDefaultValues = async (instituteId) => {
     const seedValues = DEFAULT_VALUE_SEEDS[category.category_name] || [];
     const existingSet = existingByCategory.get(String(category._id)) || new Set();
 
-    seedValues.forEach((value_name) => {
+    seedValues.forEach((seedItem) => {
+      const value_name = String(
+        typeof seedItem === "string" ? seedItem : seedItem?.value_name || ""
+      ).trim();
+      if (!value_name) return;
+
       const normalized_value = normalize(value_name);
       if (existingSet.has(normalized_value)) {
         return;
       }
+
+      const meta =
+        seedItem && typeof seedItem === "object" && !Array.isArray(seedItem)
+          ? seedItem.meta || {}
+          : {};
 
       docs.push({
         Institute_ID: instituteId,
@@ -338,7 +355,7 @@ const ensureDefaultValues = async (instituteId) => {
         value_name,
         normalized_value,
         status: "Active",
-        meta: {}
+        meta
       });
     });
   });
@@ -415,7 +432,10 @@ router.get("/categories", verifyToken, async (req, res) => {
 
 router.post("/categories", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
-    const instituteId = req.user.instituteId;
+    const instituteId = String(req.user?.instituteId || req.query?.instituteId || req.headers['x-institute-id'] || "").trim();
+    if (!instituteId) {
+      return res.status(400).json({ message: "Institute id missing in request (provide via token or ?instituteId)" });
+    }
     const categoryName = String(req.body.category_name || "").trim();
 
     if (!categoryName) {
@@ -1064,6 +1084,287 @@ router.get("/diseases-structure", verifyToken, async (req, res) => {
   }
 });
 
+// Temporary debug route - returns default seeded medicines without requiring instituteId
+router.get("/medicines-debug", async (req, res) => {
+  try {
+    const medicineDefaults = DEFAULT_VALUE_SEEDS["Medicines"] || [];
+    const medicineTypes = DEFAULT_VALUE_SEEDS["Medicine Types"] || [];
+    const dosageForms = DEFAULT_VALUE_SEEDS["Dosage Forms"] || [];
+    const medicines = medicineDefaults.map((m, idx) => ({
+      _id: m._id || `default-${idx}`,
+      value_name: m.value_name || m,
+      medicineType: m.meta?.medicineType || "",
+      dosageForm: m.meta?.dosageForm || "",
+      strength: m.meta?.strength || "",
+      status: m.status || "Active"
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        medicineTypes: Array.isArray(medicineTypes) ? medicineTypes : [],
+        dosageForms: Array.isArray(dosageForms) ? dosageForms : [],
+        medicineTypeEntries: (Array.isArray(medicineTypes) ? medicineTypes : []).map((t) => ({ _id: null, value_name: t, status: "Active" })),
+        medicines,
+        medicinesByType: {}
+      }
+    });
+  } catch (err) {
+    console.error("GET /master-data-api/medicines-debug error", err);
+    res.status(500).json({ success: false, message: "Failed to load debug medicines", error: err?.message || String(err) });
+  }
+});
+
+// Public endpoint: returns medicines structure for an institute.
+// Accepts instituteId via token (verifyToken) or via query param `?instituteId=` or header `x-institute-id` for unauthenticated requests.
+router.get("/medicines-structure", async (req, res) => {
+  try {
+    // defensively extract instituteId (token, query param, or header)
+    let instituteId = "";
+    try {
+      instituteId = String(req.user?.instituteId || req.query?.instituteId || req.headers["x-institute-id"] || "").trim();
+    } catch (e) {
+      instituteId = "";
+    }
+
+    // If no valid instituteId provided, return default seeded medicines so UI can still display values
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      const medicineDefaults = DEFAULT_VALUE_SEEDS["Medicines"] || [];
+      const medicineTypes = DEFAULT_VALUE_SEEDS["Medicine Types"] || [];
+      const dosageForms = DEFAULT_VALUE_SEEDS["Dosage Forms"] || [];
+
+      const medicines = (medicineDefaults || []).map((m, idx) => ({
+        _id: m._id || `default-${idx}`,
+        value_name: m.value_name || m,
+        medicineType: m.meta?.medicineType || "",
+        dosageForm: m.meta?.dosageForm || "",
+        strength: m.meta?.strength || "",
+        status: m.status || "Active"
+      }));
+
+      return res.json({
+        success: true,
+        data: {
+          medicineTypes: Array.isArray(medicineTypes) ? medicineTypes : [],
+          dosageForms: Array.isArray(dosageForms) ? dosageForms : [],
+          medicineTypeEntries: (Array.isArray(medicineTypes) ? medicineTypes : []).map((t) => ({ _id: null, value_name: t, status: "Active" })),
+          medicines,
+          medicinesByType: {}
+        }
+      });
+    }
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const medicinesCategory = await getCategoryByName(instituteId, "Medicines");
+    const medicineTypesCategory = await getCategoryByName(instituteId, "Medicine Types");
+
+    const [medicineValues, medicineTypeValues, subStoreRows, mainStoreRows] = await Promise.all([
+      medicinesCategory
+        ? MasterValue.find({
+            Institute_ID: instituteId,
+            category_id: medicinesCategory._id
+          }).lean()
+        : Promise.resolve([]),
+      medicineTypesCategory
+        ? MasterValue.find({
+            Institute_ID: instituteId,
+            category_id: medicineTypesCategory._id
+          }).lean()
+        : Promise.resolve([]),
+      Medicine.find({ Institute_ID: instituteId })
+        .select("Medicine_Name Type Strength")
+        .lean()
+        .catch(() => []),
+      MainStoreMedicine.find({ Institute_ID: instituteId })
+        .select("Medicine_Name Type Strength")
+        .lean()
+        .catch(() => [])
+    ]);
+
+    const defaultTypes = Array.isArray(DEFAULT_VALUE_SEEDS["Medicine Types"])
+      ? DEFAULT_VALUE_SEEDS["Medicine Types"]
+      : [];
+    const defaultDosageForms = Array.isArray(DEFAULT_VALUE_SEEDS["Dosage Forms"])
+      ? DEFAULT_VALUE_SEEDS["Dosage Forms"]
+      : [];
+
+    const dosageFormsCategory = await getCategoryByName(instituteId, "Dosage Forms");
+    const dosageFormValues = dosageFormsCategory
+      ? await MasterValue.find({
+          Institute_ID: instituteId,
+          category_id: dosageFormsCategory._id
+        }).lean()
+      : [];
+
+    const typeMetaByName = new Map();
+    medicineTypeValues.forEach((row) => {
+      const typeName = String(row?.value_name || "").trim();
+      if (!typeName) return;
+      const key = normalize(typeName);
+      if (!typeMetaByName.has(key)) {
+        typeMetaByName.set(key, {
+          _id: row?._id || null,
+          value_name: typeName,
+          status: row?.status || "Active"
+        });
+      }
+    });
+
+    const hintsByMedicineName = new Map();
+    const addHint = (name, medicineType, dosageForm, strength) => {
+      const normalizedName = normalize(name);
+      if (!normalizedName) return;
+      if (!hintsByMedicineName.has(normalizedName)) {
+        hintsByMedicineName.set(normalizedName, []);
+      }
+      const bucket = hintsByMedicineName.get(normalizedName);
+      const hintMedicineType = String(medicineType || "").trim() || "Others";
+      const hintDosageForm = String(dosageForm || "").trim() || "Other";
+      const hintStrength = String(strength || "").trim();
+      const dedupeKey = `${normalize(hintMedicineType)}::${normalize(hintDosageForm)}::${normalize(hintStrength)}`;
+      if (!bucket.some((item) => item.key === dedupeKey)) {
+        bucket.push({
+          key: dedupeKey,
+          medicineType: hintMedicineType,
+          dosageForm: hintDosageForm,
+          strength: hintStrength
+        });
+      }
+    };
+
+    medicineValues.forEach((row) => {
+      const name = String(row?.value_name || "").trim();
+      if (!name) return;
+      if (row?.meta?.kind === "medicine") {
+        addHint(
+          name,
+          row?.meta?.medicineType || row?.meta?.medicine_type || row?.meta?.typeCategory,
+          row?.meta?.dosageForm || row?.meta?.dosage_form || row?.meta?.form,
+          row?.meta?.strength
+        );
+      }
+    });
+
+    [...subStoreRows, ...mainStoreRows].forEach((row) => {
+      addHint(row?.Medicine_Name, "", row?.Type, row?.Strength);
+    });
+
+    const medicineRows = [];
+    medicineValues.forEach((row) => {
+      const name = String(row?.value_name || "").trim();
+      if (!name) return;
+
+      if (row?.meta?.kind === "medicine") {
+        medicineRows.push({
+          _id: row?._id || null,
+          value_name: name,
+          medicineType:
+            String(
+              row?.meta?.medicineType || row?.meta?.medicine_type || row?.meta?.typeCategory || ""
+            ).trim() || "Others",
+          dosageForm:
+            String(row?.meta?.dosageForm || row?.meta?.dosage_form || row?.meta?.form || "").trim() || "Other",
+          strength: String(row?.meta?.strength || "").trim(),
+          status: row?.status || "Active"
+        });
+        return;
+      }
+
+      const hints = hintsByMedicineName.get(normalize(name)) || [];
+      if (hints.length === 0) {
+        medicineRows.push({
+          _id: row?._id || null,
+          value_name: name,
+          medicineType: "Others",
+          dosageForm: "Other",
+          strength: "",
+          status: row?.status || "Active"
+        });
+        return;
+      }
+
+      hints.forEach((hint) => {
+        medicineRows.push({
+          _id: row?._id || null,
+          value_name: name,
+          medicineType: hint.medicineType || "Others",
+          dosageForm: hint.dosageForm || "Other",
+          strength: hint.strength || "",
+          status: row?.status || "Active"
+        });
+      });
+    });
+
+    [...subStoreRows, ...mainStoreRows].forEach((row) => {
+      const name = String(row?.Medicine_Name || "").trim();
+      if (!name) return;
+      medicineRows.push({
+        _id: null,
+        value_name: name,
+        medicineType: "Others",
+        dosageForm: String(row?.Type || "").trim() || "Other",
+        strength: String(row?.Strength || "").trim(),
+        status: "Active"
+      });
+    });
+
+    const seenMedicine = new Set();
+    const medicines = (medicineRows || [])
+      .filter((item) => String(item?.value_name || "").trim())
+      .filter((item) => {
+        const key = `${normalize(item.medicineType)}::${normalize(item.dosageForm)}::${normalize(item.value_name)}::${normalize(item.strength)}`;
+        if (seenMedicine.has(key)) return false;
+        seenMedicine.add(key);
+        return true;
+      })
+      .sort((a, b) => String(a.value_name || "").localeCompare(String(b.value_name || "")));
+
+    const medicineTypes = sortUnique([
+      ...defaultTypes,
+      ...medicineTypeValues.map((row) => row?.value_name),
+      ...medicines.map((item) => item?.medicineType)
+    ]);
+
+    const dosageForms = sortUnique([
+      ...defaultDosageForms,
+      ...dosageFormValues.map((row) => row?.value_name),
+      ...medicines.map((item) => item?.dosageForm)
+    ]);
+
+    const medicineTypeEntries = medicineTypes.map((type) => {
+      const meta = typeMetaByName.get(normalize(type));
+      return {
+        _id: meta?._id || null,
+        value_name: type,
+        status: meta?.status || "Active"
+      };
+    });
+
+    const medicinesByType = {};
+    medicineTypes.forEach((type) => {
+      medicinesByType[type] = medicines
+        .filter((item) => normalize(item.medicineType) === normalize(type))
+        .sort((a, b) => String(a.value_name || "").localeCompare(String(b.value_name || "")));
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        medicineTypes: Array.isArray(medicineTypes) ? medicineTypes : [],
+        dosageForms: Array.isArray(dosageForms) ? dosageForms : [],
+        medicineTypeEntries: Array.isArray(medicineTypeEntries) ? medicineTypeEntries : [],
+        medicines: Array.isArray(medicines) ? medicines : [],
+        medicinesByType: medicinesByType || {}
+      }
+    });
+  } catch (err) {
+    console.error("GET /master-data-api/medicines-structure error", err?.stack || err);
+    res.status(500).json({ success: false, message: "Failed to load medicines structure", error: err?.message || String(err) });
+  }
+});
+
 router.post("/diseases", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
     const instituteId = req.user.instituteId;
@@ -1112,6 +1413,116 @@ router.post("/diseases", verifyToken, requireInstituteAdmin, async (req, res) =>
   } catch (err) {
     console.error("POST /master-data-api/diseases error", err);
     res.status(500).json({ message: "Failed to add disease", error: err.message });
+  }
+});
+
+router.post("/medicines", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const medicineName = String(req.body.medicineName || "").trim();
+    const medicineType = String(req.body.medicineType || "").trim();
+    const dosageForm = String(req.body.dosageForm || "").trim();
+    const strength = String(req.body.strength || "").trim();
+
+    if (!medicineName) {
+      return res.status(400).json({ message: "medicineName is required" });
+    }
+    if (!medicineType) {
+      return res.status(400).json({ message: "medicineType is required" });
+    }
+    if (!dosageForm) {
+      return res.status(400).json({ message: "dosageForm is required" });
+    }
+    if (!strength) {
+      return res.status(400).json({ message: "strength is required" });
+    }
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const medicinesCategory = await getCategoryByName(instituteId, "Medicines");
+    if (!medicinesCategory) {
+      return res.status(404).json({ message: "Medicines category not found" });
+    }
+
+    // Check for duplicate (same name + type + strength combination)
+    const duplicate = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: medicinesCategory._id,
+      normalized_value: normalize(medicineName),
+      "meta.kind": "medicine",
+      "meta.medicineType": medicineType,
+      "meta.dosageForm": dosageForm,
+      "meta.strength": strength
+    });
+
+    if (duplicate) {
+      return res.status(409).json({ message: "Medicine with this type and strength already exists" });
+    }
+
+    const created = await MasterValue.create({
+      Institute_ID: instituteId,
+      category_id: medicinesCategory._id,
+      value_name: medicineName,
+      normalized_value: normalize(medicineName),
+      status: "Active",
+      meta: {
+        kind: "medicine",
+        medicineType,
+        dosageForm,
+        type: dosageForm,
+        strength: strength,
+        typeNormalized: normalize(medicineType)
+      }
+    });
+
+    res.status(201).json(created);
+  } catch (err) {
+    console.error("POST /master-data-api/medicines error", err);
+    res.status(500).json({ message: "Failed to add medicine", error: err.message });
+  }
+});
+
+router.post("/medicines/type", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const typeName = String(req.body.name || "").trim();
+
+    if (!typeName) {
+      return res.status(400).json({ message: "name is required" });
+    }
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const medicineTypesCategory = await getCategoryByName(instituteId, "Medicine Types");
+    if (!medicineTypesCategory) {
+      return res.status(404).json({ message: "Medicine Types category not found" });
+    }
+
+    // Check for duplicate
+    const duplicate = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: medicineTypesCategory._id,
+      normalized_value: normalize(typeName)
+    });
+
+    if (duplicate) {
+      return res.status(409).json({ message: "Medicine type already exists" });
+    }
+
+    const created = await MasterValue.create({
+      Institute_ID: instituteId,
+      category_id: medicineTypesCategory._id,
+      value_name: typeName,
+      normalized_value: normalize(typeName),
+      status: "Active"
+    });
+
+    res.status(201).json(created);
+  } catch (err) {
+    console.error("POST /master-data-api/medicines/type error", err);
+    res.status(500).json({ message: "Failed to add medicine type", error: err.message });
   }
 });
 

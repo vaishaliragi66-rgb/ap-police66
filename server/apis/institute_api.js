@@ -313,6 +313,7 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
         _id: null,
         Medicine_Code: m.Medicine_Code,
         Medicine_Name: m.Medicine_Name,
+        Type: m.Type || "",
         Strength: m.Strength || "",
         mainQty: m.Quantity,
         subQty: 0,
@@ -328,6 +329,7 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
           _id: m._id,
           Medicine_Code: m.Medicine_Code,
           Medicine_Name: m.Medicine_Name,
+          Type: m.Type || "",
           Strength: m.Strength || "",
           mainQty: 0,
           subQty: m.Quantity,
@@ -338,6 +340,8 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
         inventoryMap[m.Medicine_Code]._id = m._id;
         inventoryMap[m.Medicine_Code].subQty = m.Quantity;
         inventoryMap[m.Medicine_Code].subExpiry = m.Expiry_Date;
+        inventoryMap[m.Medicine_Code].Type =
+          m.Type || inventoryMap[m.Medicine_Code].Type || "";
         inventoryMap[m.Medicine_Code].Strength =
           m.Strength || inventoryMap[m.Medicine_Code].Strength || "";
       }
@@ -366,6 +370,7 @@ instituteApp.get("/inventory/:instituteId",verifyToken,
         _id: item._id,
         Medicine_Code: item.Medicine_Code,
         Medicine_Name: item.Medicine_Name,
+        Type: item.Type || "",
         Strength: item.Strength || "",
         Quantity: quantity,
         Status: status,

@@ -474,13 +474,25 @@ diagnosisApp.get("/records/:employeeId", async (req, res) => {
   try {
 
     const { employeeId } = req.params;
-    const { isFamily, familyId } = req.query;
+    const { isFamily, familyId, personId } = req.query;
 
     const filter = {
       Employee: employeeId
     };
 
-    if (isFamily === "true") {
+    // Backward compatible filter handling:
+    // - personId=all  => no person filter
+    // - personId=self => self only
+    // - personId=<id> => specific family member
+    // - legacy isFamily/familyId still supported
+    if (personId === "all") {
+      // Include both self and family records
+    } else if (personId === "self") {
+      filter.IsFamilyMember = false;
+    } else if (personId) {
+      filter.IsFamilyMember = true;
+      filter.FamilyMember = personId;
+    } else if (isFamily === "true") {
       filter.IsFamilyMember = true;
       filter.FamilyMember = familyId;
     } else {
@@ -488,6 +500,10 @@ diagnosisApp.get("/records/:employeeId", async (req, res) => {
     }
 
     const records = await DiagnosisRecord.find(filter)
+      .populate("Institute", "Institute_Name")
+      .populate("Employee", "Name ABS_NO")
+      .populate("FamilyMember", "Name Relationship")
+      .populate("Tests.Test_ID", "Test_Name Reference_Range Units")
       .sort({ createdAt: -1 });
 
     res.json(records);

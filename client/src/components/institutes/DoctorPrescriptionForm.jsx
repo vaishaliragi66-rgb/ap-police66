@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
-import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData";
 import { mergeXrayTypes } from "../../data/xrayTypes";
 
 const DoctorPrescriptionForm = () => {
@@ -33,7 +33,7 @@ const DoctorPrescriptionForm = () => {
   const [selectedDiagnosisReport, setSelectedDiagnosisReport] = useState(null);
   const [selectedXrayReport, setSelectedXrayReport] = useState(null); // { record, xray }
   const [selectedPrescriptionReport, setSelectedPrescriptionReport] = useState(null);
-  const [uniqueMedicines, setUniqueMedicines] = useState([]);
+  const [inventoryMedicines, setInventoryMedicines] = useState([]);
   const [medicineStrengths, setMedicineStrengths] = useState({});
   const notesTextareaRef = React.useRef(null);
 const [xrayMaster, setXrayMaster] = useState([]);
@@ -52,6 +52,10 @@ const [masterMap, setMasterMap] = useState({});
 const [selectedType, setSelectedType] = useState("");
 const [selectedSubgroup, setSelectedSubgroup] = useState("");
 const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resetting PatientSelector
+
+const normalizeMedicineText = (value) => String(value || "").trim().toLowerCase();
+const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
+  `${normalizeMedicineText(medicineType)}::${normalizeMedicineText(dosageForm)}::${normalizeMedicineText(name)}`;
 
 
 
@@ -104,6 +108,7 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
   const diseaseCategoryOptions = getMasterOptions(masterMap, "Disease Categories");
   const diseaseSeverityOptions = getMasterOptions(masterMap, "Disease Severity Levels");
   const medicineTypeOptions = getMasterOptions(masterMap, "Medicine Types");
+  const dosageFormOptions = getMasterOptions(masterMap, "Dosage Forms");
   const foodTimingOptions = getMasterOptions(masterMap, "Food Timings");
   const effectiveDiseaseSeverityOptions = diseaseSeverityOptions.length > 0
     ? diseaseSeverityOptions
@@ -114,13 +119,38 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Medicines: [{ Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+    Medicines: [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
     Notes: "",
     Disease_Name: ""
   });
 
-  const getStrengthOptions = (medicineName) =>
-    medicineName ? medicineStrengths[medicineName] || [] : [];
+  const getStrengthOptions = (medicineName, medicineType = "", dosageForm = "") => {
+    if (!medicineName) return [];
+    const strictKey = makeMedicineLookupKey(medicineType, dosageForm, medicineName);
+    const typeFallbackKey = makeMedicineLookupKey(medicineType, "", medicineName);
+    const fullFallbackKey = makeMedicineLookupKey("", "", medicineName);
+    return medicineStrengths[strictKey] || medicineStrengths[typeFallbackKey] || medicineStrengths[fullFallbackKey] || [];
+  };
+
+  const getMedicineOptionsByType = (selectedMedicineType = "", selectedDosageForm = "") => {
+    const typeKey = normalizeMedicineText(selectedMedicineType);
+    if (!typeKey) return [];
+
+    const dosageKey = normalizeMedicineText(selectedDosageForm);
+
+    const names = new Set();
+    (inventoryMedicines || []).forEach((med) => {
+      if (normalizeMedicineText(med?.Medicine_Type) === typeKey) {
+        if (dosageKey && normalizeMedicineText(med?.Dosage_Form) !== dosageKey) {
+          return;
+        }
+        const name = String(med?.Medicine_Name || "").trim();
+        if (name) names.add(name);
+      }
+    });
+
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  };
 
   const calculateQuantity = (morning, afternoon, night, duration) => {
     if (!duration) return 0;
@@ -338,6 +368,7 @@ const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resettin
   const normalizePharmacyMedicine = (medicine) => ({
     Medicine_Name: medicine?.Medicine_Name || medicine?.Medicine_ID?.Medicine_Name || "",
     Type: medicine?.Type || medicine?.Medicine_ID?.Type || "",
+    Dosage_Form: medicine?.Dosage_Form || medicine?.Medicine_ID?.Type || "",
     FoodTiming: medicine?.FoodTiming || "",
     Strength: medicine?.Strength || medicine?.Medicine_ID?.Strength || "",
     Morning: medicine?.Morning ?? "",
@@ -666,49 +697,67 @@ useEffect(() => {
   /* ================= INITIAL LOAD ================= */
 
   useEffect(() => {
-    if (!formData.Institute_ID) return;
+    const hydrateMedicines = async () => {
+      let medicineEntries = [];
 
-    axios
-      .get(`${BACKEND_URL}/institute-api/inventory/${formData.Institute_ID}`)
-      .then(res => {
-        const inventory = (res.data || []).filter(
-          (item) => Number(item?.Quantity || 0) > 0 && !isMedicineExpired(item?.Expiry_Date)
-        );
+      try {
+          const instituteId = localStorage.getItem("instituteId") || "";
+          const res = await axios.get(`${BACKEND_URL}/master-data-api/medicines-structure`, {
+            params: instituteId ? { instituteId } : {}
+          });
+        const payload = res.data && res.data.data ? res.data.data : res.data || {};
+        medicineEntries = Array.isArray(payload?.medicines)
+          ? payload.medicines.map((item) => ({
+              value_name: item?.value_name,
+              medicineType: item?.medicineType,
+              dosageForm: item?.dosageForm,
+              strength: item?.strength,
+              status: item?.status || "Active"
+            }))
+          : [];
+      } catch {
+        medicineEntries = getMasterMedicineEntries(masterMap);
+      }
 
-        const names = [];
-        const seenNames = new Set();
-        const strengthMap = {};
+      setInventoryMedicines(
+        medicineEntries.map((item) => ({
+          Medicine_Name: item.value_name,
+          Medicine_Type: item.medicineType,
+          Dosage_Form: item.dosageForm,
+          Strength: item.strength
+        }))
+      );
 
-        inventory.forEach(med => {
-          const name = med.Medicine_Name?.trim();
-          const strength = (med.Strength || "").trim();
+      const strengthMap = {};
+      medicineEntries.forEach((med) => {
+        const name = String(med?.value_name || "").trim();
+        const medicineType = String(med?.medicineType || "").trim();
+        const dosageForm = String(med?.dosageForm || "").trim();
+        const strength = String(med?.strength || "").trim();
+        if (!name || !strength) return;
 
-          if (!name) {
-            return;
-          }
-
-          if (!seenNames.has(name)) {
-            seenNames.add(name);
-            names.push(name);
-          }
-
-          if (strength) {
-            strengthMap[name] = strengthMap[name] || [];
-            if (!strengthMap[name].includes(strength)) {
-              strengthMap[name].push(strength);
-            }
-          }
-        });
-
-        setUniqueMedicines(names);
-        setMedicineStrengths(strengthMap);
-      })
-      .catch(() => {
-        setUniqueMedicines([]);
-        setMedicineStrengths({});
+        const strictKey = makeMedicineLookupKey(medicineType, dosageForm, name);
+        const typeFallbackKey = makeMedicineLookupKey(medicineType, "", name);
+        const fallbackKey = makeMedicineLookupKey("", "", name);
+        strengthMap[strictKey] = strengthMap[strictKey] || [];
+        if (!strengthMap[strictKey].includes(strength)) {
+          strengthMap[strictKey].push(strength);
+        }
+        strengthMap[typeFallbackKey] = strengthMap[typeFallbackKey] || [];
+        if (!strengthMap[typeFallbackKey].includes(strength)) {
+          strengthMap[typeFallbackKey].push(strength);
+        }
+        strengthMap[fallbackKey] = strengthMap[fallbackKey] || [];
+        if (!strengthMap[fallbackKey].includes(strength)) {
+          strengthMap[fallbackKey].push(strength);
+        }
       });
 
-  }, [formData.Institute_ID]);
+      setMedicineStrengths(strengthMap);
+    };
+
+    hydrateMedicines();
+  }, [masterMap, BACKEND_URL]);
 
 
   useEffect(() => {
@@ -885,7 +934,7 @@ const relevantDiseases = diseases.filter((d) => {
       ...prev,
       Medicines: [
         ...prev.Medicines,
-        { Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }
+        { Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, _uid: `${Date.now()}-${Math.random().toString(36).slice(2,8)}` }
       ]
     }));
 
@@ -915,7 +964,8 @@ const relevantDiseases = diseases.filter((d) => {
       .filter((med) => med.Medicine_Name?.trim())
       .map((med) => ({
         Medicine_Name: med.Medicine_Name,
-        Type: med.Type,
+        Type: med.Medicine_Type || med.Type,
+        Dosage_Form: med.Dosage_Form || "",
         FoodTiming: med.FoodTiming,
         Strength: med.Strength,
         Morning: med.Morning,
@@ -950,6 +1000,7 @@ const relevantDiseases = diseases.filter((d) => {
           medicines: selectedMedicines.map(m => ({
             Medicine_Name: m.Medicine_Name,
             Type: m.Type,
+            Dosage_Form: m.Dosage_Form || "",
             FoodTiming: m.FoodTiming,
             Strength: m.Strength,
             Morning: m.Morning,
@@ -1811,7 +1862,9 @@ if (validXrays.length === 0) {
                           Medicines: prescriptionData.medicines && prescriptionData.medicines.length > 0
                             ? prescriptionData.medicines.map(med => ({
                                 Medicine_Name: med.Medicine_Name || "",
-                                Type: med.Type || "",
+                                Medicine_Type: med.Medicine_Type || med.Type || "",
+                                Dosage_Form: med.Dosage_Form || "",
+                                Type: med.Medicine_Type || med.Type || "",
                                 FoodTiming: med.FoodTiming || "",
                                 Strength: med.Strength || "",
                                 Morning: med.Morning || false,
@@ -1821,7 +1874,7 @@ if (validXrays.length === 0) {
                                 Remarks: med.Remarks || "",
                                 Quantity: med.Quantity || 0
                               }))
-                            : [{ Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+                            : [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
                           Notes: prescriptionData.notes || prev.Notes
                         }));
                       }
@@ -1999,17 +2052,24 @@ if (validXrays.length === 0) {
                 <h6 className="fw-bold mt-4">Medicines</h6>
 
                 {formData.Medicines.map((med, i) => (
-      <div key={i} className="mb-4 border rounded p-3 bg-light">
+      <div key={med._uid || i} className="mb-4 border rounded p-3 bg-light">
         {/* First Row: Medicine Selection */}
         <div className="row g-2 align-items-end mb-3">
           <div className="col-md-2">
-            <label className="form-label fw-semibold">Type</label>
+            <label className="form-label fw-semibold">Medicine Type</label>
             <select
               className="form-select"
-              value={med.Type}
+              value={med.Medicine_Type}
               onChange={(e) => {
                 const copy = [...formData.Medicines];
+                copy[i].Medicine_Type = e.target.value;
                 copy[i].Type = e.target.value;
+                copy[i].Dosage_Form = "";
+                const allowedMedicines = getMedicineOptionsByType(copy[i].Medicine_Type, copy[i].Dosage_Form);
+                if (!allowedMedicines.includes(copy[i].Medicine_Name)) {
+                  copy[i].Medicine_Name = "";
+                  copy[i].Strength = "";
+                }
                 setFormData(prev => ({ ...prev, Medicines: copy }));
               }}
             >
@@ -2021,27 +2081,49 @@ if (validXrays.length === 0) {
           </div>
 
           <div className="col-md-2">
-            <label className="form-label fw-semibold">Medicine</label>
-            <input
-              type="text"
-              className="form-control"
-              list={`medicine-list-${i}`}
-              value={med.Medicine_Name}
+            <label className="form-label fw-semibold">Dosage Form</label>
+            <select
+              className="form-select"
+              value={med.Dosage_Form}
+              disabled={!med.Medicine_Type}
               onChange={(e) => {
                 const copy = [...formData.Medicines];
-                copy[i].Medicine_Name = e.target.value;
-                if (!getStrengthOptions(e.target.value).includes(copy[i].Strength)) {
+                copy[i].Dosage_Form = e.target.value;
+                const allowedMedicines = getMedicineOptionsByType(copy[i].Medicine_Type, copy[i].Dosage_Form);
+                if (!allowedMedicines.includes(copy[i].Medicine_Name)) {
+                  copy[i].Medicine_Name = "";
                   copy[i].Strength = "";
                 }
                 setFormData(prev => ({ ...prev, Medicines: copy }));
               }}
-              placeholder="Type or select medicine"
-            />
-            <datalist id={`medicine-list-${i}`}>
-              {uniqueMedicines.map((name, idx) => (
-                <option key={idx} value={name} />
+            >
+              <option value="">{med.Medicine_Type ? "Select Dosage Form" : "Select Medicine Type First"}</option>
+              {dosageFormOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
               ))}
-            </datalist>
+            </select>
+          </div>
+
+          <div className="col-md-2">
+            <label className="form-label fw-semibold">Medicine</label>
+            <select
+              className="form-select"
+              value={med.Medicine_Name}
+              disabled={!med.Medicine_Type}
+              onChange={(e) => {
+                const copy = [...formData.Medicines];
+                copy[i].Medicine_Name = e.target.value;
+                if (!getStrengthOptions(e.target.value, copy[i].Medicine_Type, copy[i].Dosage_Form).includes(copy[i].Strength)) {
+                  copy[i].Strength = "";
+                }
+                setFormData(prev => ({ ...prev, Medicines: copy }));
+              }}
+            >
+              <option value="">{med.Medicine_Type ? "Select Medicine" : "Select Medicine Type First"}</option>
+              {getMedicineOptionsByType(med.Medicine_Type, med.Dosage_Form).map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="col-md-2">
@@ -2075,12 +2157,12 @@ if (validXrays.length === 0) {
               }}
             >
               <option value="">
-                {getStrengthOptions(med.Medicine_Name).length > 0
+                {getStrengthOptions(med.Medicine_Name, med.Medicine_Type, med.Dosage_Form).length > 0
                   ? "Select Strength"
                   : "Not specified"}
               </option>
-              {getStrengthOptions(med.Medicine_Name).map((strength, idx) => (
-                <option key={idx} value={strength}>
+              {getStrengthOptions(med.Medicine_Name, med.Medicine_Type, med.Dosage_Form).map((strength, idx) => (
+                <option key={`${med._uid || i}-str-${idx}`} value={strength}>
                   {strength}
                 </option>
               ))}
