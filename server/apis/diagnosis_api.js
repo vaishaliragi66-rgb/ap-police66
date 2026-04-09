@@ -13,6 +13,140 @@ const FamilyMember = require("../models/family_member");
 const MedicalAction = require("../models/medical_action");
 const DailyVisit = require("../models/daily_visit");
 
+const parseDateInput = (value, endOfDay = false) => {
+  if (!value) return null;
+
+  const raw = String(value).trim();
+  const ddmmyyyy = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  const yyyymmdd = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  let parsed = null;
+
+  if (ddmmyyyy) {
+    parsed = new Date(
+      parseInt(ddmmyyyy[3], 10),
+      parseInt(ddmmyyyy[2], 10) - 1,
+      parseInt(ddmmyyyy[1], 10)
+    );
+  } else if (yyyymmdd) {
+    parsed = new Date(
+      parseInt(yyyymmdd[1], 10),
+      parseInt(yyyymmdd[2], 10) - 1,
+      parseInt(yyyymmdd[3], 10)
+    );
+  } else {
+    parsed = new Date(raw);
+  }
+
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  if (endOfDay) parsed.setHours(23, 59, 59, 999);
+  else parsed.setHours(0, 0, 0, 0);
+
+  return parsed;
+};
+
+const buildDateRange = (fromDate, toDate) => {
+  let start = parseDateInput(fromDate, false);
+  let end = parseDateInput(toDate, true);
+
+  if (start && end && start > end) {
+    const temp = start;
+    start = end;
+    end = temp;
+  }
+
+  return { start, end };
+};
+
+const isWithinDateRange = (value, start, end) => {
+  if (!value) return false;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  if (start && date < start) return false;
+  if (end && date > end) return false;
+
+  return true;
+};
+
+const filterDiagnosisTestsByDate = (record, start, end) => {
+  const tests = Array.isArray(record?.Tests) ? record.Tests : [];
+  if (!start && !end) return tests;
+
+  return tests.filter((test) =>
+    isWithinDateRange(test?.Timestamp, start, end)
+  );
+};
+
+const filterDiagnosisRecordsByDate = (records, start, end) => {
+  const list = Array.isArray(records) ? records : [];
+
+  return list
+    .map((record) => {
+      const filteredTests = filterDiagnosisTestsByDate(record, start, end);
+      if (filteredTests.length === 0) return null;
+
+      return {
+        ...record,
+        Tests: filteredTests
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      const aTime = new Date(a.Tests[a.Tests.length - 1]?.Timestamp || a.createdAt || 0).getTime();
+      const bTime = new Date(b.Tests[b.Tests.length - 1]?.Timestamp || b.createdAt || 0).getTime();
+      return bTime - aTime;
+    });
+};
+
+const splitDiagnosisRecordsByDate = (records) => {
+  const rows = [];
+
+  (records || []).forEach((record) => {
+    const tests = Array.isArray(record?.Tests) ? record.Tests : [];
+    const groupedByDate = new Map();
+
+    tests.forEach((test) => {
+      const timestamp = test?.Timestamp ? new Date(test.Timestamp) : null;
+      if (!timestamp || Number.isNaN(timestamp.getTime())) return;
+
+      const key = timestamp.toISOString().split("T")[0];
+      if (!groupedByDate.has(key)) groupedByDate.set(key, []);
+      groupedByDate.get(key).push(test);
+    });
+
+    groupedByDate.forEach((groupedTests) => {
+      rows.push({
+        ...record,
+        Tests: groupedTests
+      });
+    });
+  });
+
+  return rows.sort((a, b) => {
+    const aTime = new Date(a.Tests[0]?.Timestamp || a.createdAt || 0).getTime();
+    const bTime = new Date(b.Tests[0]?.Timestamp || b.createdAt || 0).getTime();
+    return bTime - aTime;
+  });
+};
+
+const formatPdfDateTime = (value) => {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  }).format(date);
+};
+
 const reportStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, reportsDir);
@@ -476,9 +610,23 @@ diagnosisApp.get("/records/:employeeId", async (req, res) => {
     const { employeeId } = req.params;
     const { isFamily, familyId, personId } = req.query;
 
+    const { fromDate, toDate } = req.query;
+
+    console.debug('Diagnosis /records request', { employeeIdParam: employeeId, query: req.query });
+
     const filter = {
       Employee: employeeId
     };
+
+    // Date range filter: match createdAt, top-level Timestamp or any Tests[].Timestamp
+    const { start, end } = buildDateRange(fromDate, toDate);
+
+    if (start || end) {
+      const dateFilter = {};
+      if (start) dateFilter.$gte = start;
+      if (end) dateFilter.$lte = end;
+      filter["Tests.Timestamp"] = dateFilter;
+    }
 
     // Backward compatible filter handling:
     // - personId=all  => no person filter
@@ -506,7 +654,16 @@ diagnosisApp.get("/records/:employeeId", async (req, res) => {
       .populate("Tests.Test_ID", "Test_Name Reference_Range Units")
       .sort({ createdAt: -1 });
 
-    res.json(records);
+    const filteredRecords = filterDiagnosisRecordsByDate(
+      records.map((record) => record.toObject()),
+      start,
+      end
+    );
+
+    console.debug('Diagnosis /records result count', {
+      count: Array.isArray(filteredRecords) ? filteredRecords.length : 0
+    });
+    res.json(filteredRecords);
 
   } catch (err) {
 
@@ -582,6 +739,123 @@ diagnosisApp.get('/records-with-reports/:employeeId', async (req, res) => {
   } catch (err) {
     console.error('Records with reports error:', err);
     res.status(500).json({ message: 'Failed to fetch records with reports', error: err.message });
+  }
+});
+
+// Download PDF for diagnosis records within an optional date range
+const PDFDocument = require('pdfkit');
+diagnosisApp.get('/download-pdf', async (req, res) => {
+  try {
+    const { employeeId, personId, fromDate, toDate } = req.query;
+    if (!employeeId) return res.status(400).json({ message: 'employeeId is required' });
+
+    console.debug('Diagnosis /download-pdf request', { query: req.query });
+
+    const filter = { Employee: employeeId };
+    if (personId === 'self') filter.IsFamilyMember = false;
+    else if (personId && personId !== 'all') filter.IsFamilyMember = true, filter.FamilyMember = personId;
+
+    const { start, end } = buildDateRange(fromDate, toDate);
+
+    if (start || end) {
+      const dateFilter = {};
+      if (start) dateFilter.$gte = start;
+      if (end) dateFilter.$lte = end;
+      filter["Tests.Timestamp"] = dateFilter;
+    }
+
+    const records = await DiagnosisRecord.find(filter)
+      .populate('Employee', 'Name ABS_NO')
+      .populate('FamilyMember', 'Name Relationship')
+      .populate('Institute', 'Institute_Name')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const filteredRecords = filterDiagnosisRecordsByDate(records, start, end);
+    const rows = splitDiagnosisRecordsByDate(filteredRecords);
+
+    console.debug('Diagnosis /download-pdf result count', {
+      count: Array.isArray(rows) ? rows.length : 0
+    });
+
+    // PDF generation
+    const doc = new PDFDocument({ margin: 40 });
+    const filename = `Diagnosis_Report_${employeeId}.pdf`;
+    res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-type', 'application/pdf');
+    doc.pipe(res);
+
+    doc.fontSize(16).text('Diagnosis Reports', { align: 'center' });
+    doc.moveDown(0.2);
+    const rangeText = fromDate || toDate ? `From: ${fromDate || '-'} To: ${toDate || '-'}` : 'All dates';
+    doc.fontSize(10).text(`Patient: ${filteredRecords[0]?.Employee?.Name || 'Employee'} (${filteredRecords[0]?.Employee?.ABS_NO || '-'})`, { align: 'left' });
+    doc.text(rangeText, { align: 'left' });
+    doc.moveDown(0.5);
+
+    if (!rows || rows.length === 0) {
+      doc.text('No records found for the selected criteria.', { align: 'center' });
+      doc.end();
+      return;
+    }
+
+    let y = doc.y + 8;
+    const pageBottom = () => doc.page.height - doc.page.margins.bottom;
+    const columnX = [40, 65, 165, 290, 360, 440];
+    const columnWidths = [25, 100, 125, 70, 80, 110];
+
+    const drawHeader = () => {
+      doc.font('Helvetica-Bold').fontSize(10);
+      doc.text('#', columnX[0], y, { width: columnWidths[0] });
+      doc.text('Patient', columnX[1], y, { width: columnWidths[1] });
+      doc.text('Report For', columnX[2], y, { width: columnWidths[2] });
+      doc.text('Institute', columnX[3], y, { width: columnWidths[3] });
+      doc.text('No. of Tests', columnX[4], y, { width: columnWidths[4] });
+      doc.text('Test Date', columnX[5], y, { width: columnWidths[5] });
+      y += 18;
+      doc.moveTo(40, y - 4).lineTo(555, y - 4).strokeColor('#cccccc').stroke();
+      doc.font('Helvetica').fillColor('black');
+    };
+
+    drawHeader();
+
+    rows.forEach((row, index) => {
+      const patientText = `${row.Employee?.Name || '-'}${row.Employee?.ABS_NO ? ` (${row.Employee.ABS_NO})` : ''}`;
+      const reportForText = row.IsFamilyMember
+        ? `${row.FamilyMember?.Name || '-'} (${row.FamilyMember?.Relationship || '-'})`
+        : 'Self';
+      const instituteText = row.Institute?.Institute_Name || 'Medical Institute';
+      const testDateText = formatPdfDateTime(row.Tests[0]?.Timestamp || row.createdAt);
+      const lineHeight = Math.max(
+        doc.heightOfString(String(index + 1), { width: columnWidths[0] }),
+        doc.heightOfString(patientText, { width: columnWidths[1] }),
+        doc.heightOfString(reportForText, { width: columnWidths[2] }),
+        doc.heightOfString(instituteText, { width: columnWidths[3] }),
+        doc.heightOfString(String(row.Tests.length), { width: columnWidths[4] }),
+        doc.heightOfString(testDateText, { width: columnWidths[5] })
+      ) + 8;
+
+      if (y + lineHeight > pageBottom()) {
+        doc.addPage();
+        y = 40;
+        drawHeader();
+      }
+
+      doc.fontSize(10);
+      doc.text(String(index + 1), columnX[0], y, { width: columnWidths[0] });
+      doc.text(patientText, columnX[1], y, { width: columnWidths[1] });
+      doc.text(reportForText, columnX[2], y, { width: columnWidths[2] });
+      doc.text(instituteText, columnX[3], y, { width: columnWidths[3] });
+      doc.text(String(row.Tests.length), columnX[4], y, { width: columnWidths[4] });
+      doc.text(testDateText, columnX[5], y, { width: columnWidths[5] });
+
+      y += lineHeight;
+      doc.moveTo(40, y - 4).lineTo(555, y - 4).strokeColor('#e5e7eb').stroke();
+    });
+
+    doc.end();
+  } catch (err) {
+    console.error('Diagnosis PDF error:', err);
+    res.status(500).json({ message: 'Failed to generate PDF', error: err.message });
   }
 });
 

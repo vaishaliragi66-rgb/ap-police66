@@ -5,20 +5,25 @@ import autoTable from "jspdf-autotable";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
+import DateRangeFilter from "../common/DateRangeFilter";
+import PDFDownloadButton from "../common/PDFDownloadButton";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const PrescriptionReport = () => {
   const [prescriptions, setPrescriptions] = useState([]);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [loading, setLoading] = useState(true);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:6100';
-  const employeeId = localStorage.getItem("employeeId");
+  const employeeObjectId = localStorage.getItem("employeeObjectId");
+  const employeeId = localStorage.getItem("employeeId") || employeeObjectId;
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
+  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeObjectId || employeeId);
 
   useEffect(() => {
-    if (employeeId) fetchPrescriptions();
-  }, [employeeId, selectedPersonId]);
+    if (employeeObjectId) fetchPrescriptions();
+  }, [employeeObjectId, selectedPersonId, fromDate, toDate]);
 
   const getFamilyMemberId = (row) => {
     if (!row) return "";
@@ -39,22 +44,33 @@ const PrescriptionReport = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${BACKEND_URL}/prescription-api/employee/${employeeId}`,
+        `${BACKEND_URL}/prescription-api/employee/${employeeObjectId}`,
         {
           params: {
-            employeeId,
+            employeeId: employeeObjectId,
             personId: selectedPersonId,
+            fromDate: fromDate || undefined,
+            toDate: toDate || undefined
           },
         }
       );
       const payload = res.data && res.data.value ? res.data.value : res.data;
-      setPrescriptions(filterByPerson(payload || [], selectedPersonId));
+      const list = filterByPerson(payload || [], selectedPersonId);
+      setPrescriptions(list);
     } catch (err) {
       console.error("Error fetching prescriptions:", err);
       setPrescriptions([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilter = () => {
+    if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
+      alert('From Date cannot be after To Date');
+      return;
+    }
+    fetchPrescriptions();
   };
 
   const groupPrescriptionsByDate = (records) => {
@@ -186,16 +202,40 @@ const PrescriptionReport = () => {
           <p style={{ color: "#6B7280", marginBottom: 0 }}>
             All medicines issued to you and your family members
           </p>
-          <div className="mt-3" style={{ maxWidth: "320px" }}>
-            <PersonFilterDropdown
-              options={options}
-              value={selectedPersonId}
-              onChange={(val) => {
-                setSelectedPersonId(val);
-                setSelectedPrescription(null);
-              }}
-              loading={loadingFamily}
-            />
+          <div className="mt-3" style={{ maxWidth: "100%" }}>
+            <div className="d-flex align-items-end gap-3 flex-wrap">
+              <PersonFilterDropdown
+                options={options}
+                value={selectedPersonId}
+                onChange={(val) => {
+                  setSelectedPersonId(val);
+                  setSelectedPrescription(null);
+                }}
+                loading={loadingFamily}
+              />
+
+              <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={applyFilter} />
+
+              <div className="d-flex gap-2">
+                <button
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: "#4A70A9",
+                    color: "#FFFFFF",
+                    borderRadius: "999px",
+                    padding: "6px 16px",
+                    fontWeight: 500,
+                    border: "none",
+                    height: "38px"
+                  }}
+                  onClick={() => fetchPrescriptions()}
+                >
+                  Refresh
+                </button>
+
+                <PDFDownloadButton modulePath="prescription-api" params={{ employeeId: employeeObjectId, personId: selectedPersonId, fromDate: fromDate, toDate: toDate }} filenamePrefix={`Prescriptions_${employeeId}`} />
+              </div>
+            </div>
           </div>
         </div>
   

@@ -4,18 +4,23 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
+import DateRangeFilter from "../common/DateRangeFilter";
+import PDFDownloadButton from "../common/PDFDownloadButton";
 
 const EmployeeDiseaseReport = () => {
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const employeeId = localStorage.getItem("employeeId");
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
+  const employeeObjectId = localStorage.getItem("employeeObjectId");
+  const employeeId = localStorage.getItem("employeeId") || employeeObjectId;
 
   const [diseases, setDiseases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   // Filters
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [masterMap, setMasterMap] = useState({});
-  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
+  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeObjectId || employeeId);
 
   const diseaseCategoryOptions = getMasterOptions(masterMap, "Disease Categories");
 
@@ -40,15 +45,17 @@ const EmployeeDiseaseReport = () => {
   }, []);
 
   useEffect(() => {
-    if (!employeeId) return;
+    if (!employeeObjectId) return;
 
     setLoading(true);
 
     axios
-      .get(`${BACKEND_URL}/disease-api/employee/${employeeId}`, {
+      .get(`${BACKEND_URL}/disease-api/employee/${employeeObjectId}`, {
         params: {
-          employeeId,
+          employeeId: employeeObjectId,
           personId: selectedPersonId,
+          fromDate: fromDate || undefined,
+          toDate: toDate || undefined,
         },
       })
       .then((res) => {
@@ -67,7 +74,7 @@ const EmployeeDiseaseReport = () => {
       })
       .catch(() => setDiseases([]))
       .finally(() => setLoading(false));
-  }, [employeeId, selectedPersonId]);
+  }, [employeeObjectId, selectedPersonId, fromDate, toDate]);
 
   const filteredDiseases = useMemo(() => {
     return diseases.filter((d) => {
@@ -183,6 +190,20 @@ const cleanNotesWithoutSymptoms = (notes) => {
                   <option key={item} value={item}>{item}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="col-md-6 d-flex align-items-end gap-3">
+              <div style={{ minWidth: 320 }}>
+                <label className="form-label fw-semibold">Date Range</label>
+                <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={() => {
+                  if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) return alert('From Date cannot be after To Date');
+                  // setSelectedPersonId no-op to trigger effect
+                  setSelectedPersonId((s) => s);
+                }} />
+              </div>
+              <div className="ms-auto mb-2">
+                <PDFDownloadButton modulePath="disease-api" params={{ employeeId: employeeObjectId, personId: selectedPersonId, fromDate, toDate }} filenamePrefix={`DiseaseHistory_${employeeId}`} />
+              </div>
             </div>
   
           </div>
