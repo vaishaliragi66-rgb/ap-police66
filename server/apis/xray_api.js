@@ -563,7 +563,7 @@ module.exports = xrayApp;
 xrayApp.get("/records/:personId", async (req, res) => {
   try {
     const { personId } = req.params;
-    const { isFamily, familyId } = req.query;
+    const { isFamily, familyId, fromDate, toDate } = req.query;
 
     if (!mongoose.Types.ObjectId.isValid(personId))
       return res.status(400).json({ message: "Invalid ID" });
@@ -578,6 +578,13 @@ xrayApp.get("/records/:personId", async (req, res) => {
       filter.FamilyMember = familyId;
     }
     // else leave filter alone so both self and family rows are returned
+
+    if (fromDate || toDate) {
+      const dateFilter = {};
+      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
+      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
+      filter.createdAt = dateFilter;
+    }
 
     const records = await XrayRecord.find(filter)
       .populate("Employee", "Name")
@@ -594,3 +601,60 @@ xrayApp.get("/records/:personId", async (req, res) => {
 module.exports = xrayApp;
 
 // module.exports = xrayApp;
+
+// Download PDF for xray records
+const PDFDocument = require('pdfkit');
+xrayApp.get('/download-pdf', async (req, res) => {
+  try {
+    const { personId, fromDate, toDate } = req.query;
+    if (!personId) return res.status(400).json({ message: 'personId required' });
+
+    const filter = { Employee: personId };
+    if (fromDate || toDate) {
+      const dateFilter = {};
+      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
+      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
+      filter.createdAt = dateFilter;
+    }
+
+    const records = await XrayRecord.find(filter)
+      .populate('Employee', 'Name ABS_NO')
+      .populate('FamilyMember', 'Name Relationship')
+      .populate('Institute', 'Institute_Name')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+    const filename = `Xray_Reports_${personId}.pdf`;
+    res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-type', 'application/pdf');
+    doc.pipe(res);
+
+    doc.fontSize(16).text('X-ray Reports', { align: 'center' });
+    doc.moveDown(0.2);
+    doc.fontSize(10).text(`Date Range: ${fromDate || '-'} to ${toDate || '-'}`);
+    doc.moveDown(0.5);
+
+    if (!records || records.length === 0) {
+      doc.text('No X-ray records found for the selected criteria.', { align: 'center' });
+      doc.end();
+      return;
+    }
+
+    records.forEach(r => {
+      doc.fontSize(11).text(`Date: ${new Date(r.createdAt).toLocaleString()}`);
+      doc.text(`Patient: ${r.IsFamilyMember ? r.FamilyMember?.Name + ' (' + r.FamilyMember?.Relationship + ')' : 'Self'}`);
+      doc.text(`Institute: ${r.Institute?.Institute_Name || '-'}`);
+      doc.moveDown(0.2);
+      (r.Xrays || []).forEach(x => {
+        doc.fontSize(10).text(`- ${x.Xray_Type || '-'} | ${x.Body_Part || '-'} | Findings: ${x.Findings || '-'}`, { indent: 10 });
+      });
+      doc.moveDown(0.5);
+    });
+
+    doc.end();
+  } catch (err) {
+    console.error('Xray PDF error:', err);
+    res.status(500).json({ message: 'Failed to generate PDF', error: err.message });
+  }
+});

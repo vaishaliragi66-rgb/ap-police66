@@ -10,7 +10,7 @@ const Disease = require("../models/disease");
 diseaseApp.get("/employee/:employeeId", async (req, res) => {
   try {
     const { employeeId } = req.params;
-
+    const { fromDate, toDate } = req.query;
     if (!mongoose.Types.ObjectId.isValid(employeeId)) {
       return res.status(400).json({ message: "Invalid Employee ID" });
     }
@@ -18,7 +18,7 @@ diseaseApp.get("/employee/:employeeId", async (req, res) => {
     const twoMonthsAgo = new Date();
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
-    const diseases = await Disease.find({
+    const baseQuery = {
       Employee_ID: new mongoose.Types.ObjectId(employeeId),
       $or: [
         { Category: "Non-Communicable" },
@@ -27,7 +27,16 @@ diseaseApp.get("/employee/:employeeId", async (req, res) => {
           createdAt: { $gte: twoMonthsAgo }
         }
       ]
-    })
+    };
+
+    if (fromDate || toDate) {
+      const dateFilter = {};
+      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
+      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
+      baseQuery.createdAt = dateFilter;
+    }
+
+    const diseases = await Disease.find(baseQuery)
       .populate("Employee_ID", "Name ABS_NO")
       .populate("FamilyMember_ID", "Name Relationship")
       .sort({ createdAt: -1 });

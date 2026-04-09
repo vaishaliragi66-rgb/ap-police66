@@ -476,9 +476,27 @@ diagnosisApp.get("/records/:employeeId", async (req, res) => {
     const { employeeId } = req.params;
     const { isFamily, familyId, personId } = req.query;
 
+    const { fromDate, toDate } = req.query;
+
     const filter = {
       Employee: employeeId
     };
+
+    // Date range filter (applies to record createdAt)
+    if (fromDate || toDate) {
+      const dateFilter = {};
+      if (fromDate) {
+        const start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+        dateFilter.$gte = start;
+      }
+      if (toDate) {
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        dateFilter.$lte = end;
+      }
+      filter.createdAt = dateFilter;
+    }
 
     // Backward compatible filter handling:
     // - personId=all  => no person filter
@@ -582,6 +600,73 @@ diagnosisApp.get('/records-with-reports/:employeeId', async (req, res) => {
   } catch (err) {
     console.error('Records with reports error:', err);
     res.status(500).json({ message: 'Failed to fetch records with reports', error: err.message });
+  }
+});
+
+// Download PDF for diagnosis records within an optional date range
+const PDFDocument = require('pdfkit');
+diagnosisApp.get('/download-pdf', async (req, res) => {
+  try {
+    const { employeeId, personId, fromDate, toDate } = req.query;
+    if (!employeeId) return res.status(400).json({ message: 'employeeId is required' });
+
+    const filter = { Employee: employeeId };
+    if (personId === 'self') filter.IsFamilyMember = false;
+    else if (personId && personId !== 'all') filter.IsFamilyMember = true, filter.FamilyMember = personId;
+
+    if (fromDate || toDate) {
+      const dateFilter = {};
+      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
+      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
+      filter.createdAt = dateFilter;
+    }
+
+    const records = await DiagnosisRecord.find(filter)
+      .populate('Employee', 'Name ABS_NO')
+      .populate('FamilyMember', 'Name Relationship')
+      .populate('Institute', 'Institute_Name')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // PDF generation
+    const doc = new PDFDocument({ margin: 40 });
+    const filename = `Diagnosis_Report_${employeeId}.pdf`;
+    res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-type', 'application/pdf');
+    doc.pipe(res);
+
+    doc.fontSize(16).text('Diagnosis Reports', { align: 'center' });
+    doc.moveDown(0.2);
+    const rangeText = fromDate || toDate ? `From: ${fromDate || '-'} To: ${toDate || '-'}` : 'All dates';
+    doc.fontSize(10).text(`Patient: ${records[0]?.Employee?.Name || 'Employee'} (${records[0]?.Employee?.ABS_NO || '-'})`, { align: 'left' });
+    doc.text(rangeText, { align: 'left' });
+    doc.moveDown(0.5);
+
+    if (!records || records.length === 0) {
+      doc.text('No records found for the selected criteria.', { align: 'center' });
+      doc.end();
+      return;
+    }
+
+    // Table-like output
+    records.forEach((r) => {
+      doc.fontSize(11).fillColor('black').text(`Date: ${new Date(r.createdAt).toLocaleString()}`);
+      doc.fontSize(11).text(`For: ${r.IsFamilyMember ? r.FamilyMember?.Name + ' (' + r.FamilyMember?.Relationship + ')' : 'Self'}`);
+      doc.text(`Institute: ${r.Institute?.Institute_Name || '-'}`);
+      doc.moveDown(0.2);
+
+      const tests = Array.isArray(r.Tests) ? r.Tests : [];
+      tests.forEach((t) => {
+        doc.fontSize(10).text(`- ${t.Test_Name}: Result ${t.Result_Value} ${t.Units || ''}`, { indent: 10 });
+      });
+
+      doc.moveDown(0.5);
+    });
+
+    doc.end();
+  } catch (err) {
+    console.error('Diagnosis PDF error:', err);
+    res.status(500).json({ message: 'Failed to generate PDF', error: err.message });
   }
 });
 

@@ -229,7 +229,7 @@ prescriptionApp.post("/add",verifyToken,
 prescriptionApp.get("/employee/:employeeId", async (req, res) => {
   try {
     const { employeeId } = req.params;
-    const { personId, isFamily, familyId } = req.query;
+    const { personId, isFamily, familyId, fromDate, toDate } = req.query;
 
     if (!mongoose.Types.ObjectId.isValid(employeeId)) {
       return res.status(400).json({ message: "Invalid Employee ID" });
@@ -260,10 +260,19 @@ prescriptionApp.get("/employee/:employeeId", async (req, res) => {
       personFilter = { IsFamilyMember: false };
     }
 
-    const prescriptions = await Prescription.find({
+    const query = {
       ...baseFilter,
       ...personFilter
-    })
+    };
+
+    if (fromDate || toDate) {
+      const dateFilter = {};
+      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
+      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
+      query.Timestamp = dateFilter;
+    }
+
+    const prescriptions = await Prescription.find(query)
       .populate("Institute", "Institute_Name")
       .populate("Employee", "Name ABS_NO")
       .populate("FamilyMember", "Name Relationship")
@@ -379,6 +388,71 @@ const fetchInventory = async (id) => {
     setInventory([]);
   }
 };
+
+// Prescription PDF download
+const PDFDocument = require('pdfkit');
+prescriptionApp.get('/download-pdf', async (req, res) => {
+  try {
+    const { employeeId, personId, fromDate, toDate } = req.query;
+    if (!employeeId) return res.status(400).json({ message: 'employeeId required' });
+
+    const familyMembers = await FamilyMember.find({ Employee: employeeId }).select('_id');
+    const familyIds = familyMembers.map(f => f._id);
+
+    const baseFilter = { $or: [ { Employee: employeeId }, { FamilyMember: { $in: familyIds } } ] };
+    let personFilter = {};
+    if (personId === 'self') personFilter = { IsFamilyMember: false };
+    else if (personId && personId !== 'all') personFilter = { IsFamilyMember: true, FamilyMember: personId };
+
+    const query = { ...baseFilter, ...personFilter };
+    if (fromDate || toDate) {
+      const dateFilter = {};
+      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
+      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
+      query.Timestamp = dateFilter;
+    }
+
+    const prescriptions = await Prescription.find(query)
+      .populate('Employee', 'Name ABS_NO')
+      .populate('FamilyMember', 'Name Relationship')
+      .populate('Institute', 'Institute_Name')
+      .sort({ Timestamp: -1 })
+      .lean();
+
+    const doc = new PDFDocument({ margin: 40 });
+    const filename = `Prescriptions_${employeeId}.pdf`;
+    res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-type', 'application/pdf');
+    doc.pipe(res);
+
+    doc.fontSize(16).text('Prescription Records', { align: 'center' });
+    doc.moveDown(0.2);
+    doc.fontSize(10).text(`Date Range: ${fromDate || '-'} to ${toDate || '-'}`);
+    doc.moveDown(0.5);
+
+    if (!prescriptions || prescriptions.length === 0) {
+      doc.text('No prescriptions found for the selected criteria.', { align: 'center' });
+      doc.end();
+      return;
+    }
+
+    prescriptions.forEach(p => {
+      doc.fontSize(11).text(`Date: ${new Date(p.Timestamp).toLocaleString()}`);
+      doc.text(`Patient: ${p.IsFamilyMember ? p.FamilyMember?.Name + ' (' + p.FamilyMember?.Relationship + ')' : 'Self'}`);
+      doc.text(`Institute: ${p.Institute?.Institute_Name || '-'}`);
+      doc.moveDown(0.2);
+      p.Medicines.forEach(m => {
+        doc.fontSize(10).text(`- ${m.Medicine_Name} (${m.Quantity})`, { indent: 10 });
+      });
+      doc.moveDown(0.5);
+    });
+
+    doc.end();
+  } catch (err) {
+    console.error('Prescription PDF error:', err);
+    res.status(500).json({ message: 'Failed to generate PDF', error: err.message });
+  }
+});
 
 prescriptionApp.get("/queue/:instituteId", async (req, res) => {
 
