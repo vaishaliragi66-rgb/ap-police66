@@ -1231,11 +1231,11 @@ router.get("/medicines-structure", async (req, res) => {
           }).lean()
         : Promise.resolve([]),
       Medicine.find({ Institute_ID: instituteId })
-        .select("Medicine_Name Type Strength")
+        .select("Medicine_Name Type Category Strength")
         .lean()
         .catch(() => []),
       MainStoreMedicine.find({ Institute_ID: instituteId })
-        .select("Medicine_Name Type Strength")
+        .select("Medicine_Name Type Category Strength")
         .lean()
         .catch(() => [])
     ]);
@@ -1305,7 +1305,8 @@ router.get("/medicines-structure", async (req, res) => {
     });
 
     [...subStoreRows, ...mainStoreRows].forEach((row) => {
-      addHint(row?.Medicine_Name, "", row?.Type, row?.Strength);
+      const inventoryMedicineType = canonicalizeMedicineTypeLabel(row?.Type || row?.Category || "Others") || "Others";
+      addHint(row?.Medicine_Name, inventoryMedicineType, "Other", row?.Strength);
     });
 
     const medicineRows = [];
@@ -1356,8 +1357,8 @@ router.get("/medicines-structure", async (req, res) => {
       medicineRows.push({
         _id: null,
         value_name: name,
-        medicineType: "Others",
-        dosageForm: String(row?.Type || "").trim() || "Other",
+        medicineType: canonicalizeMedicineTypeLabel(row?.Type || row?.Category || "Others") || "Others",
+        dosageForm: "Other",
         strength: String(row?.Strength || "").trim(),
         status: "Active"
       });

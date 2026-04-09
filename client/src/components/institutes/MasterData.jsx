@@ -2069,7 +2069,7 @@ const MasterData = () => {
                     <div className="col-md-4">
                       <input
                         className="form-control"
-                        placeholder="Medicine name"
+                        placeholder="Add medicine name"
                         value={newMedicineName}
                         onChange={(e) => setNewMedicineName(e.target.value)}
                         disabled={!isInstituteAdmin || saving || !selectedMedicineType}
