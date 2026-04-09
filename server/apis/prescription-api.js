@@ -12,6 +12,223 @@ const DailyVisit = require("../models/daily_visit");
 // 🔴 IMPORTANT: THIS IS NOW SUBSTORE STOCK
 const Medicine = require("../models/master_medicine");
 
+const parseDateInput = (value, endOfDay = false) => {
+  if (!value) return null;
+
+  const raw = String(value).trim();
+  const ddmmyyyy = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  const yyyymmdd = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  let parsed = null;
+
+  if (ddmmyyyy) {
+    parsed = new Date(
+      parseInt(ddmmyyyy[3], 10),
+      parseInt(ddmmyyyy[2], 10) - 1,
+      parseInt(ddmmyyyy[1], 10)
+    );
+  } else if (yyyymmdd) {
+    parsed = new Date(
+      parseInt(yyyymmdd[1], 10),
+      parseInt(yyyymmdd[2], 10) - 1,
+      parseInt(yyyymmdd[3], 10)
+    );
+  } else {
+    parsed = new Date(raw);
+  }
+
+  if (Number.isNaN(parsed.getTime())) return null;
+  if (endOfDay) parsed.setHours(23, 59, 59, 999);
+  else parsed.setHours(0, 0, 0, 0);
+
+  return parsed;
+};
+
+const buildDateRange = (fromDate, toDate) => {
+  let start = parseDateInput(fromDate, false);
+  let end = parseDateInput(toDate, true);
+
+  if (start && end && start > end) {
+    const temp = start;
+    start = end;
+    end = temp;
+  }
+
+  return { start, end };
+};
+
+const isWithinDateRange = (value, start, end) => {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  if (start && date < start) return false;
+  if (end && date > end) return false;
+  return true;
+};
+
+const matchesPersonFilter = (record, personId) => {
+  if (personId === "all" || !personId) return true;
+  if (personId === "self") return !record.IsFamilyMember;
+  return record.IsFamilyMember && String(record.FamilyMember?._id || record.FamilyMember || "") === String(personId);
+};
+
+const normalizeMedicineRows = (medicines) =>
+  (Array.isArray(medicines) ? medicines : []).map((medicine, index) => ({
+    _id: medicine?._id || `med-${index}`,
+    Medicine_ID: medicine?.Medicine_ID || null,
+    Medicine_Name: medicine?.Medicine_Name || "-",
+    Strength: medicine?.Strength || "",
+    Quantity: Number(medicine?.Quantity || 0)
+  }));
+
+const groupPrescriptionRows = (records) => {
+  const grouped = new Map();
+
+  (Array.isArray(records) ? records : []).forEach((record) => {
+    const ts = record?.Timestamp ? new Date(record.Timestamp) : null;
+    if (!ts || Number.isNaN(ts.getTime())) return;
+
+    const dateKey = [
+      ts.getFullYear(),
+      String(ts.getMonth() + 1).padStart(2, "0"),
+      String(ts.getDate()).padStart(2, "0")
+    ].join("-");
+
+    const personKey = record.IsFamilyMember
+      ? `family-${record.FamilyMember?._id || record.FamilyMember || "unknown"}`
+      : `self-${record.Employee?._id || record.Employee || "employee"}`;
+
+    const key = `${dateKey}-${personKey}`;
+
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        ...record,
+        Medicines: []
+      });
+    }
+
+    grouped.get(key).Medicines.push(...normalizeMedicineRows(record.Medicines));
+  });
+
+  return Array.from(grouped.values()).sort(
+    (a, b) => new Date(b.Timestamp || 0) - new Date(a.Timestamp || 0)
+  );
+};
+
+const buildDoctorPrescriptionRecord = (action, visitMap, employeeMap, familyMap) => {
+  const actionData = action?.data || {};
+  const medicines = normalizeMedicineRows(actionData.medicines);
+  if (medicines.length === 0) return null;
+
+  const familyId = actionData.FamilyMember_ID || actionData.family_member_id || null;
+  const isFamilyMember = actionData.IsFamilyMember ?? actionData.is_family_member ?? false;
+  const visit = visitMap.get(String(action.visit_id || "")) || null;
+  const employee = employeeMap.get(String(action.employee_id || "")) || null;
+  const familyMember = familyId ? familyMap.get(String(familyId)) || null : null;
+
+  return {
+    _id: action._id,
+    Timestamp: action.created_at || action.createdAt || new Date(),
+    IsFamilyMember: Boolean(isFamilyMember),
+    FamilyMember: familyMember,
+    Employee: employee,
+    Institute: visit?.Institute_ID || null,
+    Medicines: medicines,
+    Notes: actionData.notes || action.remarks || "",
+    Source: "DOCTOR_PRESCRIPTION"
+  };
+};
+
+const fetchCombinedPrescriptionHistory = async ({ employeeId, personId, fromDate, toDate }) => {
+  const familyMembers = await FamilyMember.find({ Employee: employeeId }).select("_id Name Relationship").lean();
+  const familyIds = familyMembers.map((member) => member._id);
+
+  const { start, end } = buildDateRange(fromDate, toDate);
+
+  const baseFilter = {
+    $or: [
+      { Employee: employeeId },
+      { FamilyMember: { $in: familyIds } }
+    ]
+  };
+
+  let personFilter = {};
+  if (personId === "self") {
+    personFilter = { IsFamilyMember: false };
+  } else if (personId && personId !== "all") {
+    personFilter = { IsFamilyMember: true, FamilyMember: personId };
+  }
+
+  const prescriptionQuery = { ...baseFilter, ...personFilter };
+  if (start || end) {
+    const dateFilter = {};
+    if (start) dateFilter.$gte = start;
+    if (end) dateFilter.$lte = end;
+    prescriptionQuery.Timestamp = dateFilter;
+  }
+
+  const prescriptions = await Prescription.find(prescriptionQuery)
+    .populate("Institute", "Institute_Name")
+    .populate("Employee", "Name ABS_NO")
+    .populate("FamilyMember", "Name Relationship")
+    .populate("Medicines.Medicine_ID", "Medicine_Code Expiry_Date Strength")
+    .sort({ Timestamp: -1 })
+    .lean();
+
+  const doctorActions = await MedicalAction.find({
+    employee_id: employeeId,
+    action_type: "DOCTOR_PRESCRIPTION"
+  })
+    .sort({ created_at: -1 })
+    .lean();
+
+  const relevantActions = doctorActions.filter((action) => {
+    const actionData = action?.data || {};
+    const actionFamilyId = actionData.FamilyMember_ID || actionData.family_member_id || null;
+    const actionIsFamily = actionData.IsFamilyMember ?? actionData.is_family_member ?? false;
+
+    if (personId === "self") return !actionIsFamily;
+    if (personId && personId !== "all") return String(actionFamilyId || "") === String(personId);
+
+    return !actionIsFamily || familyIds.some((id) => String(id) === String(actionFamilyId || ""));
+  }).filter((action) => isWithinDateRange(action.created_at || action.createdAt, start, end));
+
+  const visitIds = relevantActions
+    .map((action) => action.visit_id)
+    .filter((id) => mongoose.Types.ObjectId.isValid(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+
+  const [visits, employees] = await Promise.all([
+    visitIds.length
+      ? DailyVisit.find({ _id: { $in: visitIds } }).populate("Institute_ID", "Institute_Name").lean()
+      : Promise.resolve([]),
+    Employee.find({ _id: employeeId }).select("_id Name ABS_NO").lean()
+  ]);
+
+  const visitMap = new Map(visits.map((visit) => [String(visit._id), visit]));
+  const employeeMap = new Map(employees.map((employee) => [String(employee._id), employee]));
+  const familyMap = new Map(familyMembers.map((member) => [String(member._id), member]));
+
+  const actionRecords = relevantActions
+    .map((action) => buildDoctorPrescriptionRecord(action, visitMap, employeeMap, familyMap))
+    .filter(Boolean);
+
+  const issuedVisitIds = new Set(
+    prescriptions
+      .filter((row) => row.visit_id)
+      .map((row) => String(row.visit_id))
+  );
+
+  const dedupedActionRecords = actionRecords.filter((record) => {
+    const sourceVisitId = relevantActions.find((action) => String(action._id) === String(record._id))?.visit_id;
+    if (!sourceVisitId) return true;
+    return !issuedVisitIds.has(String(sourceVisitId));
+  });
+
+  const combined = [...prescriptions, ...dedupedActionRecords].filter((record) => matchesPersonFilter(record, personId));
+
+  return groupPrescriptionRows(combined);
+};
+
 // =======================================================
 // DEBUG ENDPOINT - Check medicine structure
 // =======================================================
@@ -229,46 +446,22 @@ prescriptionApp.post("/add",verifyToken,
 prescriptionApp.get("/employee/:employeeId", async (req, res) => {
   try {
     const { employeeId } = req.params;
-    const { personId, isFamily, familyId } = req.query;
+    const { personId, isFamily, familyId, fromDate, toDate } = req.query;
 
     if (!mongoose.Types.ObjectId.isValid(employeeId)) {
       return res.status(400).json({ message: "Invalid Employee ID" });
     }
 
-    const familyMembers = await FamilyMember
-      .find({ Employee: employeeId })
-      .select("_id");
+    const effectivePersonId =
+      personId ||
+      (isFamily === "true" ? familyId : isFamily === "false" ? "self" : "all");
 
-    const familyIds = familyMembers.map(f => f._id);
-
-    const baseFilter = {
-      $or: [
-        { Employee: employeeId },
-        { FamilyMember: { $in: familyIds } }
-      ]
-    };
-
-    let personFilter = {};
-
-    if (personId === "self") {
-      personFilter = { IsFamilyMember: false };
-    } else if (personId && personId !== "all") {
-      personFilter = { IsFamilyMember: true, FamilyMember: personId };
-    } else if (isFamily === "true") {
-      personFilter = { IsFamilyMember: true, FamilyMember: familyId };
-    } else if (isFamily === "false") {
-      personFilter = { IsFamilyMember: false };
-    }
-
-    const prescriptions = await Prescription.find({
-      ...baseFilter,
-      ...personFilter
-    })
-      .populate("Institute", "Institute_Name")
-      .populate("Employee", "Name ABS_NO")
-      .populate("FamilyMember", "Name Relationship")
-      .populate("Medicines.Medicine_ID", "Medicine_Code Expiry_Date Strength")
-      .sort({ Timestamp: -1 });
+    const prescriptions = await fetchCombinedPrescriptionHistory({
+      employeeId,
+      personId: effectivePersonId,
+      fromDate,
+      toDate
+    });
 
     return res.status(200).json(prescriptions);
 
@@ -379,6 +572,97 @@ const fetchInventory = async (id) => {
     setInventory([]);
   }
 };
+
+// Prescription PDF download
+const PDFDocument = require('pdfkit');
+prescriptionApp.get('/download-pdf', async (req, res) => {
+  try {
+    const { employeeId, personId, fromDate, toDate } = req.query;
+    if (!employeeId) return res.status(400).json({ message: 'employeeId required' });
+    const prescriptions = await fetchCombinedPrescriptionHistory({
+      employeeId,
+      personId: personId || "all",
+      fromDate,
+      toDate
+    });
+
+    const doc = new PDFDocument({ margin: 40 });
+    const filename = `Prescriptions_${employeeId}.pdf`;
+    res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-type', 'application/pdf');
+    doc.pipe(res);
+
+    doc.fontSize(16).text('Prescription Records', { align: 'center' });
+    doc.moveDown(0.2);
+    doc.fontSize(10).text(`Date Range: ${fromDate || '-'} to ${toDate || '-'}`);
+    doc.moveDown(0.5);
+
+    if (!prescriptions || prescriptions.length === 0) {
+      doc.text('No prescriptions found for the selected criteria.', { align: 'center' });
+      doc.end();
+      return;
+    }
+
+    let y = doc.y + 8;
+    const pageBottom = () => doc.page.height - doc.page.margins.bottom;
+    const columnX = [40, 65, 175, 295, 445, 485];
+    const columnWidths = [25, 100, 110, 150, 40, 80];
+
+    const drawHeader = () => {
+      doc.font('Helvetica-Bold').fontSize(10);
+      doc.text('#', columnX[0], y, { width: columnWidths[0] });
+      doc.text('Institute', columnX[1], y, { width: columnWidths[1] });
+      doc.text('Person', columnX[2], y, { width: columnWidths[2] });
+      doc.text('Medicine', columnX[3], y, { width: columnWidths[3] });
+      doc.text('Qty', columnX[4], y, { width: columnWidths[4] });
+      doc.text('Date', columnX[5], y, { width: columnWidths[5] });
+      y += 18;
+      doc.moveTo(40, y - 4).lineTo(555, y - 4).strokeColor('#cccccc').stroke();
+      doc.font('Helvetica').fillColor('black');
+    };
+
+    drawHeader();
+
+    prescriptions.forEach((p, index) => {
+      const instituteText = p.Institute?.Institute_Name || '-';
+      const personText = p.IsFamilyMember
+        ? `${p.FamilyMember?.Name || '-'} (${p.FamilyMember?.Relationship || '-'})`
+        : 'Self';
+      const medicineText = (p.Medicines || []).map((m) => m.Medicine_Name).join(', ');
+      const qtyText = String((p.Medicines || []).reduce((acc, medicine) => acc + Number(medicine.Quantity || 0), 0));
+      const dateText = new Date(p.Timestamp).toLocaleString('en-IN');
+      const lineHeight = Math.max(
+        doc.heightOfString(String(index + 1), { width: columnWidths[0] }),
+        doc.heightOfString(instituteText, { width: columnWidths[1] }),
+        doc.heightOfString(personText, { width: columnWidths[2] }),
+        doc.heightOfString(medicineText, { width: columnWidths[3] }),
+        doc.heightOfString(qtyText, { width: columnWidths[4] }),
+        doc.heightOfString(dateText, { width: columnWidths[5] })
+      ) + 8;
+
+      if (y + lineHeight > pageBottom()) {
+        doc.addPage();
+        y = 40;
+        drawHeader();
+      }
+
+      doc.fontSize(10);
+      doc.text(String(index + 1), columnX[0], y, { width: columnWidths[0] });
+      doc.text(instituteText, columnX[1], y, { width: columnWidths[1] });
+      doc.text(personText, columnX[2], y, { width: columnWidths[2] });
+      doc.text(medicineText, columnX[3], y, { width: columnWidths[3] });
+      doc.text(qtyText, columnX[4], y, { width: columnWidths[4] });
+      doc.text(dateText, columnX[5], y, { width: columnWidths[5] });
+      y += lineHeight;
+      doc.moveTo(40, y - 4).lineTo(555, y - 4).strokeColor('#e5e7eb').stroke();
+    });
+
+    doc.end();
+  } catch (err) {
+    console.error('Prescription PDF error:', err);
+    res.status(500).json({ message: 'Failed to generate PDF', error: err.message });
+  }
+});
 
 prescriptionApp.get("/queue/:instituteId", async (req, res) => {
 
