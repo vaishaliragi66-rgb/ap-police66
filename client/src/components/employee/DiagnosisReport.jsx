@@ -25,7 +25,6 @@ const DiagnosisReport = () => {
   const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [filteredData, setFilteredData] = useState([]);
 
 const getFamilyMemberId = (row) => {
   if (!row) return "";
@@ -59,7 +58,6 @@ useEffect(() => {
     .then(res => {
       const list = filterReportsByPerson(res.data || [], selectedPersonId);
       setReports(list);
-      setFilteredData(list);
     })
     .catch(err => {
       if (err.response?.status === 404) {
@@ -291,10 +289,14 @@ useEffect(() => {
     record.Tests.forEach((test) => {
       if (!test.Timestamp) return;
 
-      // group by yyyy-mm-dd
-      const dateKey = new Date(test.Timestamp)
-        .toISOString()
-        .split("T")[0];
+      const testDate = new Date(test.Timestamp);
+      if (Number.isNaN(testDate.getTime())) return;
+
+      const dateKey = [
+        testDate.getFullYear(),
+        String(testDate.getMonth() + 1).padStart(2, "0"),
+        String(testDate.getDate()).padStart(2, "0")
+      ].join("-");
 
       if (!grouped[dateKey]) grouped[dateKey] = [];
       grouped[dateKey].push(test);
@@ -479,45 +481,42 @@ return (
                       <td>{formatDate(report)}</td>
 
                       <td>
-                        <td>
-                          <div className="d-flex gap-2">
+                        <div className="d-flex gap-2">
 
-                            {/* VIEW BUTTON */}
-                            <button
-                              className="btn btn-sm"
-                              style={{
-                                borderRadius: "999px",
-                                border: "1px solid #4A70A9",
-                                backgroundColor: "#4A70A9",
-                                color: "#FFFFFF",
-                                fontWeight: 500,
-                              }}
-                              onClick={() => {
-                                setSelectedReport(report);
-                                setShowModal(true);
-                              }}
-                            >
-                              View
-                            </button>
+                          {/* VIEW BUTTON */}
+                          <button
+                            className="btn btn-sm"
+                            style={{
+                              borderRadius: "999px",
+                              border: "1px solid #4A70A9",
+                              backgroundColor: "#4A70A9",
+                              color: "#FFFFFF",
+                              fontWeight: 500,
+                            }}
+                            onClick={() => {
+                              setSelectedReport(report);
+                              setShowModal(true);
+                            }}
+                          >
+                            View
+                          </button>
 
-                            {/* DOWNLOAD BUTTON */}
-                            <button
-                              className="btn btn-sm"
-                              style={{
-                                borderRadius: "999px",
-                                border: "1px solid #4A70A9",
-                                backgroundColor: "#FFFFFF",
-                                color: "#4A70A9",
-                                fontWeight: 500,
-                              }}
-                              onClick={() => downloadLabReport(report)}
-                            >
-                              Download
-                            </button>
+                          {/* DOWNLOAD BUTTON */}
+                          <button
+                            className="btn btn-sm"
+                            style={{
+                              borderRadius: "999px",
+                              border: "1px solid #4A70A9",
+                              backgroundColor: "#FFFFFF",
+                              color: "#4A70A9",
+                              fontWeight: 500,
+                            }}
+                            onClick={() => downloadLabReport(report)}
+                          >
+                            Download
+                          </button>
 
-                          </div>
-                        </td>
-
+                        </div>
                       </td>
                     </tr>
                   ))}

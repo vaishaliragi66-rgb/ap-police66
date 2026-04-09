@@ -13,17 +13,17 @@ const PrescriptionReport = () => {
   const [prescriptions, setPrescriptions] = useState([]);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:6100';
-  const employeeId = localStorage.getItem("employeeId");
+  const employeeObjectId = localStorage.getItem("employeeObjectId");
+  const employeeId = localStorage.getItem("employeeId") || employeeObjectId;
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
+  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeObjectId || employeeId);
 
   useEffect(() => {
-    if (employeeId) fetchPrescriptions();
-  }, [employeeId, selectedPersonId]);
+    if (employeeObjectId) fetchPrescriptions();
+  }, [employeeObjectId, selectedPersonId, fromDate, toDate]);
 
   const getFamilyMemberId = (row) => {
     if (!row) return "";
@@ -44,10 +44,10 @@ const PrescriptionReport = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${BACKEND_URL}/prescription-api/employee/${employeeId}`,
+        `${BACKEND_URL}/prescription-api/employee/${employeeObjectId}`,
         {
           params: {
-            employeeId,
+            employeeId: employeeObjectId,
             personId: selectedPersonId,
             fromDate: fromDate || undefined,
             toDate: toDate || undefined
@@ -57,7 +57,6 @@ const PrescriptionReport = () => {
       const payload = res.data && res.data.value ? res.data.value : res.data;
       const list = filterByPerson(payload || [], selectedPersonId);
       setPrescriptions(list);
-      setFilteredData(list);
     } catch (err) {
       console.error("Error fetching prescriptions:", err);
       setPrescriptions([]);
@@ -203,8 +202,8 @@ const PrescriptionReport = () => {
           <p style={{ color: "#6B7280", marginBottom: 0 }}>
             All medicines issued to you and your family members
           </p>
-          <div className="mt-3" style={{ maxWidth: "320px" }}>
-            <div className="d-flex flex-column gap-2">
+          <div className="mt-3" style={{ maxWidth: "100%" }}>
+            <div className="d-flex align-items-end gap-3 flex-wrap">
               <PersonFilterDropdown
                 options={options}
                 value={selectedPersonId}
@@ -214,11 +213,27 @@ const PrescriptionReport = () => {
                 }}
                 loading={loadingFamily}
               />
-              <div className="d-flex justify-content-between align-items-center">
-                <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={applyFilter} />
-                <div>
-                  <PDFDownloadButton modulePath="prescription-api" params={{ employeeId: employeeId, personId: selectedPersonId, fromDate: fromDate, toDate: toDate }} filenamePrefix={`Prescriptions_${employeeId}`} />
-                </div>
+
+              <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={applyFilter} />
+
+              <div className="d-flex gap-2">
+                <button
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: "#4A70A9",
+                    color: "#FFFFFF",
+                    borderRadius: "999px",
+                    padding: "6px 16px",
+                    fontWeight: 500,
+                    border: "none",
+                    height: "38px"
+                  }}
+                  onClick={() => fetchPrescriptions()}
+                >
+                  Refresh
+                </button>
+
+                <PDFDownloadButton modulePath="prescription-api" params={{ employeeId: employeeObjectId, personId: selectedPersonId, fromDate: fromDate, toDate: toDate }} filenamePrefix={`Prescriptions_${employeeId}`} />
               </div>
             </div>
           </div>

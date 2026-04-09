@@ -14,6 +14,119 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const parseDateInput = (value, endOfDay = false) => {
+  if (!value) return null;
+
+  const raw = String(value).trim();
+  const ddmmyyyy = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  const yyyymmdd = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  let parsed = null;
+
+  if (ddmmyyyy) {
+    parsed = new Date(
+      parseInt(ddmmyyyy[3], 10),
+      parseInt(ddmmyyyy[2], 10) - 1,
+      parseInt(ddmmyyyy[1], 10)
+    );
+  } else if (yyyymmdd) {
+    parsed = new Date(
+      parseInt(yyyymmdd[1], 10),
+      parseInt(yyyymmdd[2], 10) - 1,
+      parseInt(yyyymmdd[3], 10)
+    );
+  } else {
+    parsed = new Date(raw);
+  }
+
+  if (Number.isNaN(parsed.getTime())) return null;
+  if (endOfDay) parsed.setHours(23, 59, 59, 999);
+  else parsed.setHours(0, 0, 0, 0);
+
+  return parsed;
+};
+
+const buildDateRange = (fromDate, toDate) => {
+  let start = parseDateInput(fromDate, false);
+  let end = parseDateInput(toDate, true);
+
+  if (start && end && start > end) {
+    const temp = start;
+    start = end;
+    end = temp;
+  }
+
+  return { start, end };
+};
+
+const isWithinDateRange = (value, start, end) => {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  if (start && date < start) return false;
+  if (end && date > end) return false;
+  return true;
+};
+
+const filterXraysByDate = (record, start, end) => {
+  const xrays = Array.isArray(record?.Xrays) ? record.Xrays : [];
+  if (!start && !end) return xrays;
+  return xrays.filter((xray) => isWithinDateRange(xray?.Timestamp, start, end));
+};
+
+const filterXrayRecordsByDate = (records, start, end) => {
+  return (Array.isArray(records) ? records : [])
+    .map((record) => {
+      const filteredXrays = filterXraysByDate(record, start, end);
+      if (filteredXrays.length === 0) return null;
+      return { ...record, Xrays: filteredXrays };
+    })
+    .filter(Boolean)
+    .sort((a, b) => new Date(b.Xrays[0]?.Timestamp || b.createdAt || 0) - new Date(a.Xrays[0]?.Timestamp || a.createdAt || 0));
+};
+
+const splitXrayRecordsByDate = (records) => {
+  const rows = [];
+
+  (records || []).forEach((record) => {
+    const grouped = new Map();
+
+    (record.Xrays || []).forEach((xray) => {
+      const ts = xray?.Timestamp ? new Date(xray.Timestamp) : null;
+      if (!ts || Number.isNaN(ts.getTime())) return;
+
+      const key = [
+        ts.getFullYear(),
+        String(ts.getMonth() + 1).padStart(2, "0"),
+        String(ts.getDate()).padStart(2, "0")
+      ].join("-");
+
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(xray);
+    });
+
+    grouped.forEach((xrays) => {
+      rows.push({ ...record, Xrays: xrays });
+    });
+  });
+
+  return rows.sort((a, b) => new Date(b.Xrays[0]?.Timestamp || b.createdAt || 0) - new Date(a.Xrays[0]?.Timestamp || a.createdAt || 0));
+};
+
+const formatPdfDateTime = (value) => {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  }).format(date);
+};
+
 // Admin helper: move a record-level report into a specific Xray subdocument.
 xrayApp.post('/migrate-report', async (req, res) => {
   try {
@@ -563,7 +676,7 @@ module.exports = xrayApp;
 xrayApp.get("/records/:personId", async (req, res) => {
   try {
     const { personId } = req.params;
-    const { isFamily, familyId, fromDate, toDate } = req.query;
+    const { isFamily, familyId, personId: selectedPersonId, fromDate, toDate } = req.query;
 
     if (!mongoose.Types.ObjectId.isValid(personId))
       return res.status(400).json({ message: "Invalid ID" });
@@ -573,25 +686,38 @@ xrayApp.get("/records/:personId", async (req, res) => {
     // setting ?isFamily=true&familyId=<id> (used by institute entry form).
     const filter = { Employee: personId };
 
-    if (isFamily === "true" && familyId) {
+    if (selectedPersonId === "self") {
+      filter.IsFamilyMember = false;
+    } else if (selectedPersonId && selectedPersonId !== "all") {
+      filter.IsFamilyMember = true;
+      filter.FamilyMember = selectedPersonId;
+    } else if (isFamily === "true" && familyId) {
       filter.IsFamilyMember = true;
       filter.FamilyMember = familyId;
     }
     // else leave filter alone so both self and family rows are returned
 
-    if (fromDate || toDate) {
+    const { start, end } = buildDateRange(fromDate, toDate);
+    if (start || end) {
       const dateFilter = {};
-      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
-      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
-      filter.createdAt = dateFilter;
+      if (start) dateFilter.$gte = start;
+      if (end) dateFilter.$lte = end;
+      filter["Xrays.Timestamp"] = dateFilter;
     }
 
     const records = await XrayRecord.find(filter)
       .populate("Employee", "Name")
+      .populate("Institute", "Institute_Name")
       .populate("FamilyMember", "Name Relationship")
       .sort({ createdAt: -1 });
 
-    res.status(200).json(records);
+    const filteredRecords = filterXrayRecordsByDate(
+      records.map((record) => record.toObject()),
+      start,
+      end
+    );
+
+    res.status(200).json(filteredRecords);
 
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch records" });
@@ -606,15 +732,22 @@ module.exports = xrayApp;
 const PDFDocument = require('pdfkit');
 xrayApp.get('/download-pdf', async (req, res) => {
   try {
-    const { personId, fromDate, toDate } = req.query;
-    if (!personId) return res.status(400).json({ message: 'personId required' });
+    const { employeeId, personId, fromDate, toDate } = req.query;
+    if (!employeeId) return res.status(400).json({ message: 'employeeId required' });
 
-    const filter = { Employee: personId };
-    if (fromDate || toDate) {
+    const filter = { Employee: employeeId };
+    if (personId === "self") filter.IsFamilyMember = false;
+    else if (personId && personId !== "all") {
+      filter.IsFamilyMember = true;
+      filter.FamilyMember = personId;
+    }
+
+    const { start, end } = buildDateRange(fromDate, toDate);
+    if (start || end) {
       const dateFilter = {};
-      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
-      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
-      filter.createdAt = dateFilter;
+      if (start) dateFilter.$gte = start;
+      if (end) dateFilter.$lte = end;
+      filter["Xrays.Timestamp"] = dateFilter;
     }
 
     const records = await XrayRecord.find(filter)
@@ -624,8 +757,11 @@ xrayApp.get('/download-pdf', async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    const filteredRecords = filterXrayRecordsByDate(records, start, end);
+    const rows = splitXrayRecordsByDate(filteredRecords);
+
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
-    const filename = `Xray_Reports_${personId}.pdf`;
+    const filename = `Xray_Reports_${employeeId}.pdf`;
     res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-type', 'application/pdf');
     doc.pipe(res);
@@ -635,21 +771,65 @@ xrayApp.get('/download-pdf', async (req, res) => {
     doc.fontSize(10).text(`Date Range: ${fromDate || '-'} to ${toDate || '-'}`);
     doc.moveDown(0.5);
 
-    if (!records || records.length === 0) {
+    if (!rows || rows.length === 0) {
       doc.text('No X-ray records found for the selected criteria.', { align: 'center' });
       doc.end();
       return;
     }
 
-    records.forEach(r => {
-      doc.fontSize(11).text(`Date: ${new Date(r.createdAt).toLocaleString()}`);
-      doc.text(`Patient: ${r.IsFamilyMember ? r.FamilyMember?.Name + ' (' + r.FamilyMember?.Relationship + ')' : 'Self'}`);
-      doc.text(`Institute: ${r.Institute?.Institute_Name || '-'}`);
-      doc.moveDown(0.2);
-      (r.Xrays || []).forEach(x => {
-        doc.fontSize(10).text(`- ${x.Xray_Type || '-'} | ${x.Body_Part || '-'} | Findings: ${x.Findings || '-'}`, { indent: 10 });
-      });
-      doc.moveDown(0.5);
+    let y = doc.y + 8;
+    const pageBottom = () => doc.page.height - doc.page.margins.bottom;
+    const columnX = [40, 65, 165, 275, 370, 430];
+    const columnWidths = [25, 95, 100, 95, 60, 120];
+
+    const drawHeader = () => {
+      doc.font('Helvetica-Bold').fontSize(10);
+      doc.text('#', columnX[0], y, { width: columnWidths[0] });
+      doc.text('Patient', columnX[1], y, { width: columnWidths[1] });
+      doc.text('Report For', columnX[2], y, { width: columnWidths[2] });
+      doc.text('Institute', columnX[3], y, { width: columnWidths[3] });
+      doc.text('No. of X-rays', columnX[4], y, { width: columnWidths[4] });
+      doc.text('Test Date', columnX[5], y, { width: columnWidths[5] });
+      y += 18;
+      doc.moveTo(40, y - 4).lineTo(555, y - 4).strokeColor('#cccccc').stroke();
+      doc.font('Helvetica').fillColor('black');
+    };
+
+    drawHeader();
+
+    rows.forEach((r, index) => {
+      const patientText = `${r.Employee?.Name || '-'}${r.Employee?.ABS_NO ? ` (${r.Employee.ABS_NO})` : ''}`;
+      const reportForText = r.IsFamilyMember
+        ? `${r.FamilyMember?.Name || '-'} (${r.FamilyMember?.Relationship || '-'})`
+        : 'Self';
+      const instituteText = r.Institute?.Institute_Name || 'Medical Institute';
+      const countText = String(Array.isArray(r.Xrays) ? r.Xrays.length : 0);
+      const dateText = formatPdfDateTime(r.Xrays[0]?.Timestamp || r.createdAt);
+
+      const lineHeight = Math.max(
+        doc.heightOfString(String(index + 1), { width: columnWidths[0] }),
+        doc.heightOfString(patientText, { width: columnWidths[1] }),
+        doc.heightOfString(reportForText, { width: columnWidths[2] }),
+        doc.heightOfString(instituteText, { width: columnWidths[3] }),
+        doc.heightOfString(countText, { width: columnWidths[4] }),
+        doc.heightOfString(dateText, { width: columnWidths[5] })
+      ) + 8;
+
+      if (y + lineHeight > pageBottom()) {
+        doc.addPage();
+        y = 40;
+        drawHeader();
+      }
+
+      doc.fontSize(10);
+      doc.text(String(index + 1), columnX[0], y, { width: columnWidths[0] });
+      doc.text(patientText, columnX[1], y, { width: columnWidths[1] });
+      doc.text(reportForText, columnX[2], y, { width: columnWidths[2] });
+      doc.text(instituteText, columnX[3], y, { width: columnWidths[3] });
+      doc.text(countText, columnX[4], y, { width: columnWidths[4] });
+      doc.text(dateText, columnX[5], y, { width: columnWidths[5] });
+      y += lineHeight;
+      doc.moveTo(40, y - 4).lineTo(555, y - 4).strokeColor('#e5e7eb').stroke();
     });
 
     doc.end();

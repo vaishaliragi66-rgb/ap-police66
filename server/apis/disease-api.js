@@ -4,6 +4,27 @@ const diseaseApp = express.Router();
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Disease = require("../models/disease");
 
+const formatDiseaseDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-IN");
+};
+
+const extractSymptomsFromNotes = (notes) => {
+  if (!notes) return [];
+  const match = notes.match(/Symptoms\s*:\s*(.*)/i);
+  if (!match) return [];
+  const line = match[1].split("\n")[0];
+  return line.split(",").map((item) => item.trim()).filter(Boolean);
+};
+
+const cleanNotesWithoutSymptoms = (notes) => {
+  if (!notes) return "-";
+  const cleaned = notes.replace(/Symptoms\s*:\s*.*(\r?\n)?/i, "").trim();
+  return cleaned || "-";
+};
+
 // =======================================================
 // GET ALL DISEASES FOR AN EMPLOYEE (SELF + FAMILY)
 // =======================================================
@@ -31,9 +52,37 @@ diseaseApp.get("/employee/:employeeId", async (req, res) => {
 
     if (fromDate || toDate) {
       const dateFilter = {};
-      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
-      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
-      baseQuery.createdAt = dateFilter;
+      const parseAndClamp = (v, endOfDay = false) => {
+        if (!v) return null;
+        const dmatch = String(v).match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        let dt = null;
+        if (dmatch) dt = new Date(parseInt(dmatch[3],10), parseInt(dmatch[2],10)-1, parseInt(dmatch[1],10));
+        else dt = new Date(v);
+        if (isNaN(dt.getTime())) return null;
+        if (endOfDay) dt.setHours(23,59,59,999); else dt.setHours(0,0,0,0);
+        const now = new Date();
+        if (dt > now) {
+          if (endOfDay) {
+            const nowEnd = new Date(now);
+            nowEnd.setHours(23,59,59,999);
+            return nowEnd;
+          } else {
+            const nowStart = new Date(now);
+            nowStart.setHours(0,0,0,0);
+            return nowStart;
+          }
+        }
+        return dt;
+      };
+
+      let s = parseAndClamp(fromDate, false);
+      let e = parseAndClamp(toDate, true);
+      if (s && e && s > e) {
+        const tmp = s; s = e; e = tmp;
+      }
+      if (s) dateFilter.$gte = s;
+      if (e) dateFilter.$lte = e;
+      if (Object.keys(dateFilter).length > 0) baseQuery.createdAt = dateFilter;
     }
 
     const diseases = await Disease.find(baseQuery)
@@ -131,9 +180,37 @@ diseaseApp.get('/download-pdf', async (req, res) => {
 
     if (fromDate || toDate) {
       const dateFilter = {};
-      if (fromDate) { const s = new Date(fromDate); s.setHours(0,0,0,0); dateFilter.$gte = s; }
-      if (toDate) { const e = new Date(toDate); e.setHours(23,59,59,999); dateFilter.$lte = e; }
-      baseQuery.createdAt = dateFilter;
+      const parseAndClamp = (v, endOfDay = false) => {
+        if (!v) return null;
+        const dmatch = String(v).match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        let dt = null;
+        if (dmatch) dt = new Date(parseInt(dmatch[3],10), parseInt(dmatch[2],10)-1, parseInt(dmatch[1],10));
+        else dt = new Date(v);
+        if (isNaN(dt.getTime())) return null;
+        if (endOfDay) dt.setHours(23,59,59,999); else dt.setHours(0,0,0,0);
+        const now = new Date();
+        if (dt > now) {
+          if (endOfDay) {
+            const nowEnd = new Date(now);
+            nowEnd.setHours(23,59,59,999);
+            return nowEnd;
+          } else {
+            const nowStart = new Date(now);
+            nowStart.setHours(0,0,0,0);
+            return nowStart;
+          }
+        }
+        return dt;
+      };
+
+      let s = parseAndClamp(fromDate, false);
+      let e = parseAndClamp(toDate, true);
+      if (s && e && s > e) {
+        const tmp = s; s = e; e = tmp;
+      }
+      if (s) dateFilter.$gte = s;
+      if (e) dateFilter.$lte = e;
+      if (Object.keys(dateFilter).length > 0) baseQuery.createdAt = dateFilter;
     }
 
     if (personId === 'self') baseQuery.IsFamilyMember = false;
@@ -162,13 +239,66 @@ diseaseApp.get('/download-pdf', async (req, res) => {
       return;
     }
 
-    diseases.forEach(d => {
-      doc.fontSize(11).text(`Date: ${new Date(d.createdAt).toLocaleString()}`);
-      doc.text(`Patient: ${d.IsFamilyMember ? d.FamilyMember_ID?.Name + ' (' + d.FamilyMember_ID?.Relationship + ')' : 'Self'}`);
-      doc.text(`Disease: ${d.Disease_Name} | Category: ${d.Category} | Severity: ${d.Severity_Level}`);
-      doc.moveDown(0.2);
-      doc.fontSize(10).text(`Notes: ${d.Notes || '-'}`, { indent: 10 });
-      doc.moveDown(0.5);
+    let y = doc.y + 8;
+    const pageBottom = () => doc.page.height - doc.page.margins.bottom;
+    const columnX = [40, 92, 170, 250, 330, 392, 470];
+    const columnWidths = [52, 78, 80, 80, 62, 78, 85];
+
+    const drawHeader = () => {
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Date', columnX[0], y, { width: columnWidths[0] });
+      doc.text('Person', columnX[1], y, { width: columnWidths[1] });
+      doc.text('Disease', columnX[2], y, { width: columnWidths[2] });
+      doc.text('Category', columnX[3], y, { width: columnWidths[3] });
+      doc.text('Severity', columnX[4], y, { width: columnWidths[4] });
+      doc.text('Symptoms', columnX[5], y, { width: columnWidths[5] });
+      doc.text('Notes', columnX[6], y, { width: columnWidths[6] });
+      y += 18;
+      doc.moveTo(40, y - 4).lineTo(555, y - 4).strokeColor('#cccccc').stroke();
+      doc.font('Helvetica').fillColor('black');
+    };
+
+    drawHeader();
+
+    diseases.forEach((d) => {
+      const dateText = formatDiseaseDate(d.createdAt);
+      const personText = d.IsFamilyMember
+        ? `${d.FamilyMember_ID?.Name || '-'} (${d.FamilyMember_ID?.Relationship || '-'})`
+        : 'Self';
+      const diseaseText = d.Disease_Name || '-';
+      const categoryText = d.Category || '-';
+      const severityText = d.Severity_Level || '-';
+      const symptomsText = Array.isArray(d.Symptoms) && d.Symptoms.length > 0
+        ? d.Symptoms.join(', ')
+        : (extractSymptomsFromNotes(d.Notes).join(', ') || '-');
+      const notesText = cleanNotesWithoutSymptoms(d.Notes);
+
+      const lineHeight = Math.max(
+        doc.heightOfString(dateText, { width: columnWidths[0] }),
+        doc.heightOfString(personText, { width: columnWidths[1] }),
+        doc.heightOfString(diseaseText, { width: columnWidths[2] }),
+        doc.heightOfString(categoryText, { width: columnWidths[3] }),
+        doc.heightOfString(severityText, { width: columnWidths[4] }),
+        doc.heightOfString(symptomsText, { width: columnWidths[5] }),
+        doc.heightOfString(notesText, { width: columnWidths[6] })
+      ) + 8;
+
+      if (y + lineHeight > pageBottom()) {
+        doc.addPage();
+        y = 40;
+        drawHeader();
+      }
+
+      doc.fontSize(9);
+      doc.text(dateText, columnX[0], y, { width: columnWidths[0] });
+      doc.text(personText, columnX[1], y, { width: columnWidths[1] });
+      doc.text(diseaseText, columnX[2], y, { width: columnWidths[2] });
+      doc.text(categoryText, columnX[3], y, { width: columnWidths[3] });
+      doc.text(severityText, columnX[4], y, { width: columnWidths[4] });
+      doc.text(symptomsText, columnX[5], y, { width: columnWidths[5] });
+      doc.text(notesText, columnX[6], y, { width: columnWidths[6] });
+      y += lineHeight;
+      doc.moveTo(40, y - 4).lineTo(555, y - 4).strokeColor('#e5e7eb').stroke();
     });
 
     doc.end();

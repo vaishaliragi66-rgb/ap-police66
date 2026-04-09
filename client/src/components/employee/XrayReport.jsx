@@ -28,7 +28,7 @@ const XrayReport = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
+  const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeObjectId || employeeId);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
@@ -206,51 +206,53 @@ const XrayReport = () => {
               }}
               className="d-flex flex-column gap-2"
             >
-              <div className="d-flex justify-content-between align-items-center">
+              <div className="d-flex justify-content-between align-items-end w-100 flex-wrap gap-3">
                 <h4 style={{ fontWeight: 600, color: "#1F2933", margin: 0 }}>
                   X‑ray Reports
                 </h4>
 
-                <div className="d-flex gap-2">
-                  <button
-                    className="btn btn-sm"
-                    style={{
-                      backgroundColor: "#4A70A9",
-                      color: "#FFFFFF",
-                      borderRadius: "999px",
-                      padding: "6px 16px",
-                      fontWeight: 500,
-                      border: "none",
-                    }}
-                    onClick={() => setRefreshKey((p) => p + 1)}
-                  >
-                    Refresh
-                  </button>
-
-                  <div className="ms-2">
-                    <PDFDownloadButton modulePath="xray-api" params={{ personId: selectedPersonId, fromDate, toDate }} filenamePrefix={`Xray_${employeeId}`} />
+                <div className="d-flex gap-3 align-items-end flex-wrap">
+                  <div>
+                    <PersonFilterDropdown
+                      options={options}
+                      value={selectedPersonId}
+                      onChange={(val) => {
+                        setSelectedPersonId(val);
+                        setSelectedReport(null);
+                      }}
+                      loading={loadingFamily}
+                    />
                   </div>
 
+                  <div>
+                    <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={() => {
+                      if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) return alert('From Date cannot be after To Date');
+                      setRefreshKey(k => k + 1);
+                    }} />
                   </div>
-              </div>
 
-              {/* filter section */}
-              <div style={{ maxWidth: 320 }}>
-                <PersonFilterDropdown
-                  options={options}
-                  value={selectedPersonId}
-                  onChange={(val) => {
-                    setSelectedPersonId(val);
-                    setSelectedReport(null);
-                  }}
-                  loading={loadingFamily}
-                />
-              <div className="mt-2">
-                <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={() => {
-                  if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) return alert('From Date cannot be after To Date');
-                  setRefreshKey(k => k + 1);
-                }} />
-              </div>
+                  <div>
+                    <button
+                      className="btn btn-sm"
+                      style={{
+                        backgroundColor: "#4A70A9",
+                        color: "#FFFFFF",
+                        borderRadius: "999px",
+                        padding: "6px 16px",
+                        fontWeight: 500,
+                        border: "none",
+                        height: "38px"
+                      }}
+                      onClick={() => setRefreshKey((p) => p + 1)}
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  <div>
+                    <PDFDownloadButton modulePath="xray-api" params={{ employeeId: employeeObjectId, personId: selectedPersonId, fromDate, toDate }} filenamePrefix={`Xray_${employeeId}`} />
+                  </div>
+                </div>
               </div>
             </div>
 

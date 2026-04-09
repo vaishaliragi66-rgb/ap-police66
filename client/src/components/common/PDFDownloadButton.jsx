@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 const PDFDownloadButton = ({ modulePath, params = {}, filenamePrefix = 'report', label = 'Download PDF' }) => {
   const [loading, setLoading] = useState(false);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:6100';
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
 
   const handleDownload = async () => {
     try {
@@ -36,7 +36,12 @@ const PDFDownloadButton = ({ modulePath, params = {}, filenamePrefix = 'report',
   };
 
   return (
-    <button className="btn btn-sm btn-outline-primary" onClick={handleDownload} disabled={loading}>
+    <button
+      className="btn btn-sm btn-outline-primary"
+      onClick={handleDownload}
+      disabled={loading}
+      style={{ height: 38, whiteSpace: 'nowrap' }}
+    >
       {label}
     </button>
   );

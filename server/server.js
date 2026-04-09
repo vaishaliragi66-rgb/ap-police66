@@ -73,11 +73,11 @@ app.use("/employee-api",employeeApp);
 app.use("/family-api",FamilyApp);
 app.use("/prescription-api", prescriptionApp);
 app.use("/diagnosis-api",diagnosisApp);
+app.use("/disease-api", require("./apis/disease-api"));
 app.use("/disease-api",diseaseApp)
 app.use("/uploads", express.static("uploads"));
 app.use("/ledger-api", ledgerApp);
 app.use("/indent-api", indentApp);
-app.use("/disease-api", require("./apis/disease-api"));
 app.use("/medicine-limit-api", require("./apis/medicine_limit_api"));
 app.use("/mainstore", mainStoreApp);
 app.use("/admin-api", adminApp);
