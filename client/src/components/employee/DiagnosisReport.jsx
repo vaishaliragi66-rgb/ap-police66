@@ -7,6 +7,8 @@ import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
+import DateRangeFilter from "../common/DateRangeFilter";
+import PDFDownloadButton from "../common/PDFDownloadButton";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const DiagnosisReport = () => {
@@ -21,6 +23,9 @@ const DiagnosisReport = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [filteredData, setFilteredData] = useState([]);
 
 const getFamilyMemberId = (row) => {
   if (!row) return "";
@@ -46,10 +51,16 @@ useEffect(() => {
     .get(`${BACKEND_URL}/diagnosis-api/records/${employeeObjectId}`, {
       params: {
         employeeId,
-        personId: selectedPersonId
+        personId: selectedPersonId,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined
       }
     })
-    .then(res => setReports(filterReportsByPerson(res.data || [], selectedPersonId)))
+    .then(res => {
+      const list = filterReportsByPerson(res.data || [], selectedPersonId);
+      setReports(list);
+      setFilteredData(list);
+    })
     .catch(err => {
       if (err.response?.status === 404) {
         setReports([]);
@@ -58,7 +69,7 @@ useEffect(() => {
       }
     })
     .finally(() => setLoading(false));
-}, [employeeObjectId, employeeId, selectedPersonId, refreshKey]); // ✅ IMPORTANT
+}, [employeeObjectId, employeeId, selectedPersonId, refreshKey, fromDate, toDate]); // ✅ IMPORTANT
 
   /* ================= DATE FIX (ONLY createdAt) ================= */
   const formatDate = (report) => {
@@ -356,7 +367,7 @@ return (
             <h4 style={{ fontWeight: 600, color: "#1F2933", margin: 0 }}>
               Diagnosis Reports
             </h4>
-            <div className="d-flex gap-2 align-items-end">
+            <div className="d-flex gap-3 align-items-end">
               <PersonFilterDropdown
                 options={options}
                 value={selectedPersonId}
@@ -367,21 +378,36 @@ return (
                 loading={loadingFamily}
                 className="mb-0"
               />
-              <button
-                className="btn btn-sm"
-                style={{
-                  backgroundColor: "#4A70A9",
-                  color: "#FFFFFF",
-                  borderRadius: "999px",
-                  padding: "6px 16px",
-                  fontWeight: 500,
-                  border: "none",
-                  height: "38px"
-                }}
-                onClick={() => setRefreshKey((p) => p + 1)}
-              >
-                Refresh
-              </button>
+
+              <div className="d-flex align-items-end">
+                <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={() => {
+                  if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) return alert('From Date cannot be after To Date');
+                  setRefreshKey(k => k + 1);
+                }} />
+              </div>
+
+              <div>
+                <button
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: "#4A70A9",
+                    color: "#FFFFFF",
+                    borderRadius: "999px",
+                    padding: "6px 16px",
+                    fontWeight: 500,
+                    border: "none",
+                    height: "38px"
+                  }}
+                  onClick={() => setRefreshKey((p) => p + 1)}
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <div>
+                <PDFDownloadButton modulePath="diagnosis-api" params={{ employeeId: employeeObjectId, personId: selectedPersonId, fromDate, toDate }} filenamePrefix={`Diagnosis_${employeeObjectId}`} />
+              </div>
+
             </div>
           </div>
         </div>

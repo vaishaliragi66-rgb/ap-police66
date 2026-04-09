@@ -4,6 +4,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
 import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
+import DateRangeFilter from "../common/DateRangeFilter";
+import PDFDownloadButton from "../common/PDFDownloadButton";
 
 const EmployeeDiseaseReport = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -11,6 +13,8 @@ const EmployeeDiseaseReport = () => {
 
   const [diseases, setDiseases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   // Filters
   const [categoryFilter, setCategoryFilter] = useState("ALL");
@@ -49,6 +53,8 @@ const EmployeeDiseaseReport = () => {
         params: {
           employeeId,
           personId: selectedPersonId,
+          fromDate: fromDate || undefined,
+          toDate: toDate || undefined,
         },
       })
       .then((res) => {
@@ -67,7 +73,7 @@ const EmployeeDiseaseReport = () => {
       })
       .catch(() => setDiseases([]))
       .finally(() => setLoading(false));
-  }, [employeeId, selectedPersonId]);
+  }, [employeeId, selectedPersonId, fromDate, toDate]);
 
   const filteredDiseases = useMemo(() => {
     return diseases.filter((d) => {
@@ -183,6 +189,20 @@ const cleanNotesWithoutSymptoms = (notes) => {
                   <option key={item} value={item}>{item}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Date Range</label>
+              <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={() => {
+                if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) return alert('From Date cannot be after To Date');
+                // trigger reload
+                // simple approach: refetch by updating selectedPersonId (no-op) to trigger effect
+                setSelectedPersonId((s) => s);
+              }} />
+            </div>
+
+            <div className="col-md-3 d-flex align-items-end">
+              <PDFDownloadButton modulePath="disease-api" params={{ employeeId, personId: selectedPersonId, fromDate, toDate }} filenamePrefix={`DiseaseHistory_${employeeId}`} />
             </div>
   
           </div>

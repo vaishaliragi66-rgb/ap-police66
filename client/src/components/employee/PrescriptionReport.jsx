@@ -5,10 +5,15 @@ import autoTable from "jspdf-autotable";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
+import DateRangeFilter from "../common/DateRangeFilter";
+import PDFDownloadButton from "../common/PDFDownloadButton";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const PrescriptionReport = () => {
   const [prescriptions, setPrescriptions] = useState([]);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:6100';
   const employeeId = localStorage.getItem("employeeId");
@@ -44,17 +49,29 @@ const PrescriptionReport = () => {
           params: {
             employeeId,
             personId: selectedPersonId,
+            fromDate: fromDate || undefined,
+            toDate: toDate || undefined
           },
         }
       );
       const payload = res.data && res.data.value ? res.data.value : res.data;
-      setPrescriptions(filterByPerson(payload || [], selectedPersonId));
+      const list = filterByPerson(payload || [], selectedPersonId);
+      setPrescriptions(list);
+      setFilteredData(list);
     } catch (err) {
       console.error("Error fetching prescriptions:", err);
       setPrescriptions([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilter = () => {
+    if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
+      alert('From Date cannot be after To Date');
+      return;
+    }
+    fetchPrescriptions();
   };
 
   const groupPrescriptionsByDate = (records) => {
@@ -187,15 +204,23 @@ const PrescriptionReport = () => {
             All medicines issued to you and your family members
           </p>
           <div className="mt-3" style={{ maxWidth: "320px" }}>
-            <PersonFilterDropdown
-              options={options}
-              value={selectedPersonId}
-              onChange={(val) => {
-                setSelectedPersonId(val);
-                setSelectedPrescription(null);
-              }}
-              loading={loadingFamily}
-            />
+            <div className="d-flex flex-column gap-2">
+              <PersonFilterDropdown
+                options={options}
+                value={selectedPersonId}
+                onChange={(val) => {
+                  setSelectedPersonId(val);
+                  setSelectedPrescription(null);
+                }}
+                loading={loadingFamily}
+              />
+              <div className="d-flex justify-content-between align-items-center">
+                <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={applyFilter} />
+                <div>
+                  <PDFDownloadButton modulePath="prescription-api" params={{ employeeId: employeeId, personId: selectedPersonId, fromDate: fromDate, toDate: toDate }} filenamePrefix={`Prescriptions_${employeeId}`} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
   

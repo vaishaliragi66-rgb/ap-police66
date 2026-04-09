@@ -6,6 +6,8 @@ import autoTable from "jspdf-autotable";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
+import DateRangeFilter from "../common/DateRangeFilter";
+import PDFDownloadButton from "../common/PDFDownloadButton";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const XrayReport = () => {
@@ -27,6 +29,8 @@ const XrayReport = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   const filterByPerson = (rows, personId) => {
     const list = Array.isArray(rows) ? rows : [];
@@ -44,6 +48,8 @@ const XrayReport = () => {
         params: {
           employeeId,
           personId: selectedPersonId,
+          fromDate: fromDate || undefined,
+          toDate: toDate || undefined,
         },
       })
       .then((res) => {
@@ -58,7 +64,7 @@ const XrayReport = () => {
         }
       })
       .finally(() => setLoading(false));
-  }, [employeeObjectId, employeeId, selectedPersonId, refreshKey]);
+  }, [employeeObjectId, employeeId, selectedPersonId, refreshKey, fromDate, toDate]);
 
   const formatDate = (record) => {
     if (record?.Xrays?.length > 0 && record.Xrays[0].Timestamp) {
@@ -221,6 +227,10 @@ const XrayReport = () => {
                     Refresh
                   </button>
 
+                  <div className="ms-2">
+                    <PDFDownloadButton modulePath="xray-api" params={{ personId: selectedPersonId, fromDate, toDate }} filenamePrefix={`Xray_${employeeId}`} />
+                  </div>
+
                   </div>
               </div>
 
@@ -235,6 +245,12 @@ const XrayReport = () => {
                   }}
                   loading={loadingFamily}
                 />
+              <div className="mt-2">
+                <DateRangeFilter fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onApply={() => {
+                  if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) return alert('From Date cannot be after To Date');
+                  setRefreshKey(k => k + 1);
+                }} />
+              </div>
               </div>
             </div>
 
