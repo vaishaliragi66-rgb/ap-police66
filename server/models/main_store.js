@@ -12,6 +12,7 @@ const MainStoreMedicineSchema = new Schema({
   Strength: { type: String, trim: true },
 
   Type: { type: String },
+  Dosage_Form: { type: String, trim: true },
   Category: { type: String },
 
   Quantity: { type: Number, required: true },
