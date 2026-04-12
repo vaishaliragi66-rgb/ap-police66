@@ -1,10 +1,6 @@
 import axios from "axios";
-import DEFAULT_MEDICINE_CATALOG, {
-  DEFAULT_DOSAGE_FORMS,
-  DEFAULT_MEDICINE_TYPES
-} from "../data/defaultMedicineCatalog.js";
 
-const BACKEND_URL = import.meta.env?.VITE_BACKEND_URL;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const MEDICINE_TYPE_LABELS = {
   analgesics: "Analgesics",
   antacids: "Antacids",
@@ -16,22 +12,10 @@ const MEDICINE_TYPE_LABELS = {
   antihelmintics: "Antihelminthics",
   antihistamines: "Antihistamines",
   antihypertensives: "Antihypertensives",
-  antianemics: "Anti Anemics",
-  antiepileptics: "Anti Epileptics",
   antimalarials: "Antimalarials",
-  antiplatelets: "Anti Platelets",
-  antipsychotics: "Antipsychotics",
   antipyretics: "Antipyretics",
   antivirals: "Antivirals",
-  analgesicsantipyretics: "Analgesics & Anti Pyretics",
-  diuretics: "Diuretics",
-  gastrointestinal: "Gastro Intestinal",
-  gastrointestinals: "Gastro Intestinal",
-  laxatives: "Laxatives",
-  lipidloweringagents: "Lipid Lowering Agents",
-  minerals: "Minerals",
   others: "Others",
-  respiratory: "Respiratory",
   vitamins: "Vitamins"
 };
 const normalizeLoose = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -171,10 +155,27 @@ export const DEFAULT_MASTER_OPTIONS = {
   "Relationships": ["Father", "Mother", "Wife", "Husband", "Son", "Daughter"],
   "Employee Report Roles": ["Employee", "Family"],
   "Medicine Types": [
-    ...DEFAULT_MEDICINE_TYPES,
+    "Antibiotics",
+    "Analgesics",
+    "Antipyretics",
+    "Antacids",
+    "Antihistamines",
+    "Vitamins",
+    "Antifungals",
+    "Antivirals",
     "Others"
   ],
-  "Dosage Forms": [...DEFAULT_DOSAGE_FORMS, "Ointment", "Drops", "Other"],
+  "Dosage Forms": [
+    "Tablet",
+    "Capsule",
+    "Syrup",
+    "Injection",
+    "Ointment",
+    "Drops",
+    "Inhaler",
+    "Powder",
+    "Other"
+  ],
   "Xray Categories": [
     "Head & Neck",
     "Chest & Thorax",
@@ -259,7 +260,12 @@ export const DEFAULT_MASTER_OPTIONS = {
   ],
   "Ledger Directions": ["IN", "OUT"],
   "Rows Per Page": ["5", "10", "25", "50", "100"],
-  "Medicines": DEFAULT_MEDICINE_CATALOG,
+  "Medicines": [
+    { value_name: "Paracetamol", meta: { kind: "medicine", medicineType: "Antipyretics", dosageForm: "Tablet", strength: "500mg" } },
+    { value_name: "Amoxicillin", meta: { kind: "medicine", medicineType: "Antibiotics", dosageForm: "Capsule", strength: "500mg" } },
+    { value_name: "Ibuprofen", meta: { kind: "medicine", medicineType: "Analgesics", dosageForm: "Tablet", strength: "400mg" } },
+    { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
+  ],
   "Residential Areas": [
     "Hyderabad",
     "Secunderabad",
@@ -289,11 +295,52 @@ let cache = null;
 let cacheTime = 0;
 const TTL_MS = 5 * 60 * 1000;
 
+const REMOVED_MASTER_KEYS_STORAGE = "removed_master_keys";
+export const getRemovedMasterKeys = () => {
+  try {
+    const raw = (typeof window !== "undefined" && localStorage.getItem(REMOVED_MASTER_KEYS_STORAGE)) || "[]";
+    return JSON.parse(raw) || [];
+  } catch {
+    return [];
+  }
+};
+export const addRemovedMasterKey = (key) => {
+  try {
+    if (typeof window === "undefined") return;
+    const keys = getRemovedMasterKeys();
+    if (!keys.includes(key)) {
+      keys.push(key);
+      localStorage.setItem(REMOVED_MASTER_KEYS_STORAGE, JSON.stringify(keys));
+    }
+  } catch (e) {
+    // ignore
+  }
+};
+
+export const removeRemovedMasterKey = (key) => {
+  try {
+    if (typeof window === "undefined") return;
+    const keys = getRemovedMasterKeys().filter((k) => k !== key);
+    localStorage.setItem(REMOVED_MASTER_KEYS_STORAGE, JSON.stringify(keys));
+  } catch (e) {
+    // ignore
+  }
+};
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const makeMedicineKey = (medicineType, dosageForm, valueName, strength) =>
+  `${normalizeText(medicineType)}::${normalizeText(dosageForm)}::${normalizeText(valueName)}::${normalizeText(strength)}`;
+
 export const invalidateMasterDataCache = () => {
   cache = null;
   cacheTime = 0;
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("master-data-updated"));
+    const ev = new Event("master-data-updated");
+    try {
+      console.debug("invalidateMasterDataCache: dispatching master-data-updated", { time: Date.now() });
+    } catch (e) {
+      // ignore console issues in non-browser env
+    }
+    window.dispatchEvent(ev);
   }
 };
 
@@ -336,12 +383,21 @@ export const fetchMasterDataMap = async ({ force = false } = {}) => {
 
   cache = res.data || {};
   cacheTime = now;
+  try {
+    const categories = Object.keys(cache || {}).length;
+    const medCount = Array.isArray(cache?.Medicines) ? cache.Medicines.length : 0;
+    console.debug("fetchMasterDataMap: cached master map", { categories, medCount, time: now });
+  } catch (e) {
+    // ignore
+  }
   return cache;
 };
 
 export const getMasterOptions = (masterMap, categoryName) => {
   const fallback = DEFAULT_MASTER_OPTIONS[categoryName] || [];
-  const dbValues = (masterMap?.[categoryName] || []).map((item) => item.value_name);
+  const dbValues = (masterMap?.[categoryName] || [])
+    .filter((item) => (item?.status || "Active") !== "Inactive")
+    .map((item) => item.value_name);
   if (categoryName === "Medicine Types") {
     const merged = new Map();
     [...fallback, ...dbValues]
@@ -351,14 +407,56 @@ export const getMasterOptions = (masterMap, categoryName) => {
         const key = getCanonicalMedicineTypeKey(item);
         if (!merged.has(key)) merged.set(key, item);
       });
-    return [...merged.values()];
+    // filter out locally-removed types
+    const removed = new Set(getRemovedMasterKeys().filter((k) => String(k || "").startsWith("T::")).map((k) => k.replace(/^T::/, "")));
+    return [...merged.entries()]
+      .filter(([key]) => !removed.has(key))
+      .map(([, val]) => val);
   }
   return [...new Set([...fallback, ...dbValues].filter(Boolean))];
 };
 
 export const getMasterMedicineEntries = (masterMap) => {
-  const combined = [...DEFAULT_MEDICINE_CATALOG, ...(masterMap?.Medicines || [])];
+  const fallback = [
+    { value_name: "Paracetamol", meta: { kind: "medicine", medicineType: "Antipyretics", dosageForm: "Tablet", strength: "500mg" } },
+    { value_name: "Amoxicillin", meta: { kind: "medicine", medicineType: "Antibiotics", dosageForm: "Capsule", strength: "500mg" } },
+    { value_name: "Ibuprofen", meta: { kind: "medicine", medicineType: "Analgesics", dosageForm: "Tablet", strength: "400mg" } },
+    { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
+  ];
+
+  const combined = [...fallback, ...((masterMap?.Medicines || []).filter((m) => (m?.status || "Active") !== "Inactive"))];
   const seen = new Set();
+
+  // filter out locally-removed medicines and medicines whose type was removed
+  const removed = new Set(getRemovedMasterKeys());
+
+  // compute some lightweight diagnostics for debugging
+  try {
+    const totalCombined = combined.length;
+    const totalRemovedMed = combined.filter((item) => {
+      const medKey = `M::${makeMedicineKey(
+        String(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory || ""),
+        String(item?.meta?.dosageForm || item?.meta?.dosage_form || item?.meta?.form || "").trim(),
+        String(item?.value_name || "").trim(),
+        String(item?.meta?.strength || "").trim()
+      )}`;
+      return removed.has(medKey);
+    }).length;
+    const totalRemovedType = combined.filter((item) => {
+      const typeKey = `T::${getCanonicalMedicineTypeKey(
+        canonicalizeMedicineTypeLabel(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory || "")
+      )}`;
+      return removed.has(typeKey);
+    }).length;
+
+    console.debug("getMasterMedicineEntries: diagnostics", {
+      totalCombined,
+      totalRemovedMed,
+      totalRemovedType
+    });
+  } catch (e) {
+    // ignore diagnostics failures
+  }
 
   return combined
     .map((item) => ({
@@ -372,6 +470,14 @@ export const getMasterMedicineEntries = (masterMap) => {
     }))
     .filter((item) => item.value_name)
     .filter((item) => {
+      const medKey = `M::${makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength)}`;
+      if (removed.has(medKey)) return false;
+      // also filter if the medicine's type is blacklisted
+      const typeKey = `T::${getCanonicalMedicineTypeKey(item.medicineType)}`;
+      if (removed.has(typeKey)) return false;
+      return true;
+    })
+    .filter((item) => {
       const key = `${item.value_name.toLowerCase()}::${item.medicineType.toLowerCase()}::${item.dosageForm.toLowerCase()}::${item.strength.toLowerCase()}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -383,11 +489,10 @@ export const getMasterMedicinesByType = (masterMap, medicineType) => {
   const type = getCanonicalMedicineTypeKey(medicineType);
   if (!type) return [];
 
-  return [...new Set(
-    getMasterMedicineEntries(masterMap)
+  return getMasterMedicineEntries(masterMap)
     .filter((item) => getCanonicalMedicineTypeKey(item.medicineType) === type)
     .map((item) => item.value_name)
-  )].sort((a, b) => a.localeCompare(b));
+    .sort((a, b) => a.localeCompare(b));
 };
 
 export const getMasterMedicinesByTypeAndForm = (masterMap, medicineType, dosageForm = "") => {
@@ -420,6 +525,17 @@ export const getMergedMasterValueObjects = (masterMap, categoryName) => {
       merged.set(key, item);
     }
   });
+
+  // If category is Medicine Types, filter out locally-removed types
+  if (categoryName === "Medicine Types") {
+    const removed = new Set(getRemovedMasterKeys().filter((k) => String(k || "").startsWith("T::")).map((k) => k.replace(/^T::/, "")));
+    try {
+      console.debug("getMergedMasterValueObjects: Medicine Types merged count", { mergedCount: merged.size, removedCount: removed.size });
+    } catch (e) {
+      // ignore
+    }
+    return [...merged.entries()].filter(([key]) => !removed.has(key)).map(([, val]) => val);
+  }
 
   return [...merged.values()];
 };
