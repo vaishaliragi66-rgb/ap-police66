@@ -40,7 +40,7 @@ const AddMainStoreMedicine = () => {
       ? getMasterMedicinesByTypeAndForm(masterMap, formData.Type, formData.Dosage_Form).map((item) => item.value_name)
       : getMasterMedicinesByType(masterMap, formData.Type);
 
-    return names.map((name) => ({ Medicine_Name: name }));
+    return [...new Set(names.filter(Boolean))].map((name) => ({ Medicine_Name: name }));
   };
 
   const handleChange = (e) => {

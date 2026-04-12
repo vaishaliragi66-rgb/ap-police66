@@ -107,6 +107,53 @@ const mergeTestsStructure = (base, incoming) => {
   };
 };
 
+const buildMedicineStructureFromEntries = ({ entries = [], customMedicineMap = {}, preferredTypes = [], preferredForms = [] } = {}) => {
+  const deduped = new Map();
+
+  (entries || []).forEach((item) => {
+    const value_name = String(item?.value_name || "").trim();
+    const medicineType = getMedicineTypeLabel(item?.medicineType || item?.meta?.medicineType);
+    const dosageForm = String(item?.dosageForm || item?.meta?.dosageForm || item?.meta?.form || "").trim();
+    const strength = String(item?.strength || item?.meta?.strength || "").trim();
+
+    if (!value_name) return;
+
+    const key = makeMedicineKey(medicineType, dosageForm, value_name, strength);
+    const masterValue = customMedicineMap[key] || null;
+
+    deduped.set(key, {
+      value_name,
+      medicineType,
+      dosageForm,
+      strength,
+      masterValue,
+      status: masterValue?.status || item?.status || "Active"
+    });
+  });
+
+  const medicines = Array.from(deduped.values()).sort((a, b) =>
+    `${String(a.value_name || "")} ${String(a.strength || "")}`.localeCompare(
+      `${String(b.value_name || "")} ${String(b.strength || "")}`
+    )
+  );
+  const medicineTypes = sortUnique([...preferredTypes, ...medicines.map((item) => item.medicineType).filter(Boolean)]);
+  const dosageForms = sortUnique([...preferredForms, ...medicines.map((item) => item.dosageForm).filter(Boolean)]);
+  const medicinesByType = {};
+
+  medicineTypes.forEach((type) => {
+    medicinesByType[type] = medicines
+      .filter((item) => getMedicineTypeKey(item.medicineType) === getMedicineTypeKey(type))
+      .sort((a, b) => a.value_name.localeCompare(b.value_name));
+  });
+
+  return {
+    medicineTypes,
+    dosageForms,
+    medicines,
+    medicinesByType
+  };
+};
+
 const MasterData = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
@@ -675,12 +722,54 @@ const MasterData = () => {
 
       setSelectedMedicineDosageForm("");
     } catch (err) {
-      const status = err?.response?.status;
-      if (status && status !== 404) {
-        throw err;
+      console.warn("Falling back to master-map medicine catalog", err);
+
+      let masterMap = {};
+      try {
+        masterMap = (await fetchMasterDataMap()) || {};
+      } catch {
+        masterMap = {};
       }
-      // If endpoint doesn't exist, show empty structure
-      setMedicinesStructure({ medicineTypes: [], dosageForms: [], medicines: [], medicinesByType: {} });
+
+      const fallbackTypeEntries = Array.isArray(masterMap?.["Medicine Types"]) ? masterMap["Medicine Types"] : [];
+      const medicineTypeMap = {};
+      fallbackTypeEntries.forEach((item) => {
+        const key = getMedicineTypeKey(item?.value_name);
+        if (key && !medicineTypeMap[key]) medicineTypeMap[key] = item;
+      });
+      setCustomMedicineTypeMap(medicineTypeMap);
+
+      const medicineMap = {};
+      (masterMap?.Medicines || []).forEach((item) => {
+        const valueName = String(item?.value_name || "").trim();
+        if (!valueName) return;
+
+        const key = makeMedicineKey(
+          getMedicineTypeLabel(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory),
+          item?.meta?.dosageForm || item?.meta?.dosage_form || item?.meta?.form,
+          valueName,
+          item?.meta?.strength
+        );
+        medicineMap[key] = item;
+      });
+      setCustomMedicineMap(medicineMap);
+
+      const fallbackStructure = buildMedicineStructureFromEntries({
+        entries: getMasterMedicineEntries(masterMap),
+        customMedicineMap: medicineMap
+      });
+
+      setMedicinesStructure(fallbackStructure);
+
+      if (fallbackStructure.medicineTypes.length > 0) {
+        if (!selectedMedicineType || !fallbackStructure.medicineTypes.includes(selectedMedicineType)) {
+          setSelectedMedicineType(fallbackStructure.medicineTypes[0]);
+        }
+      } else {
+        setSelectedMedicineType("");
+      }
+
+      setSelectedMedicineDosageForm("");
     }
   };
 
