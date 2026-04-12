@@ -2,7 +2,7 @@
 import axios from "axios";
 import { FaPills, FaCalendarAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { fetchMasterDataMap, getMasterOptions, getMasterMedicinesByType } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterOptions, getMasterMedicinesByType, getMasterMedicinesByTypeAndForm } from "../../utils/masterData";
 const AddMainStoreMedicine = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -16,6 +16,7 @@ const AddMainStoreMedicine = () => {
     Medicine_Name: "",
     Strength: "",
     Type: "",
+    Dosage_Form: "",
     Quantity: "",
     Threshold_Qty: "",
     Issued_By: "",
@@ -26,14 +27,20 @@ const AddMainStoreMedicine = () => {
   const [masterMap, setMasterMap] = useState({});
 
   const medicineTypeOptions = getMasterOptions(masterMap, "Medicine Types");
+  const dosageFormOptions = getMasterOptions(masterMap, "Dosage Forms");
   const issuedFromOptions = getMasterOptions(masterMap, "Issued From Sources");
   
-  // Get medicine names filtered by selected type
+  // Get medicine names filtered by selected type and optional dosage form
   const getFilteredMedicineNames = () => {
     if (!formData.Type) {
       return [];
     }
-    return getMasterMedicinesByType(masterMap, formData.Type).map((name) => ({ Medicine_Name: name }));
+
+    const names = formData.Dosage_Form
+      ? getMasterMedicinesByTypeAndForm(masterMap, formData.Type, formData.Dosage_Form).map((item) => item.value_name)
+      : getMasterMedicinesByType(masterMap, formData.Type);
+
+    return [...new Set(names.filter(Boolean))].map((name) => ({ Medicine_Name: name }));
   };
 
   const handleChange = (e) => {
@@ -50,6 +57,19 @@ const AddMainStoreMedicine = () => {
       setFormData((prev) => ({
         ...prev,
         Type: value,
+        Dosage_Form: "",
+        Medicine_Name: "",
+        Medicine_Code: "",
+        Strength: ""
+      }));
+      if (error) setError("");
+      return;
+    }
+
+    if (name === "Dosage_Form") {
+      setFormData((prev) => ({
+        ...prev,
+        Dosage_Form: value,
         Medicine_Name: "",
         Medicine_Code: "",
         Strength: ""
@@ -166,6 +186,9 @@ const AddMainStoreMedicine = () => {
     const required = [
       "Medicine_Code",
       "Medicine_Name",
+      "Strength",
+      "Type",
+      "Dosage_Form",
       "Quantity",
       "Threshold_Qty",
       "Issued_By",
@@ -216,6 +239,7 @@ const AddMainStoreMedicine = () => {
         Medicine_Name: "",
         Strength: "",
         Type: "",
+        Dosage_Form: "",
         Quantity: "",
         Threshold_Qty: "",
         Issued_By: "",
@@ -287,10 +311,10 @@ const AddMainStoreMedicine = () => {
         {/* FORM */}
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 text-left">
 
-          {/* Type Dropdown - FIRST */}
+          {/* Classification Dropdown - FIRST */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              Type *
+              Classification *
             </label>
             <select
               name="Type"
@@ -300,8 +324,27 @@ const AddMainStoreMedicine = () => {
               required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
             >
-              <option value="">Select Type</option>
+              <option value="">Select Classification</option>
               {medicineTypeOptions.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Dosage Form *
+            </label>
+            <select
+              name="Dosage_Form"
+              value={formData.Dosage_Form}
+              onChange={handleChange}
+              disabled={loading || !formData.Type}
+              required
+              className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm"
+            >
+              <option value="">Select Dosage Form</option>
+              {dosageFormOptions.map((item) => (
                 <option key={item} value={item}>{item}</option>
               ))}
             </select>
@@ -321,7 +364,7 @@ const AddMainStoreMedicine = () => {
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-black"
             >
               <option value="">
-                {!formData.Type ? "Select Type First" : "Select Medicine"}
+                {!formData.Type ? "Select Classification First" : "Select Medicine"}
               </option>
               {getFilteredMedicineNames().map((med, idx) => (
                 <option key={idx} value={med.Medicine_Name}>
@@ -346,10 +389,10 @@ const AddMainStoreMedicine = () => {
             />
           </div>
 
-          {/* Medicine Code - THIRD (auto-filled) */}
+          {/* Batch No - THIRD (auto-filled) */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              Medicine Code *
+              Batch No *
             </label>
             <input
               name="Medicine_Code"
@@ -364,7 +407,7 @@ const AddMainStoreMedicine = () => {
             
           </div>
 
-          {/* Type selector moved above medicine to enforce type-first selection */}
+          {/* Classification selector moved above medicine to enforce classification-first selection */}
 
           {/* Received From (dropdown) */}
           <div className="col-span-2">

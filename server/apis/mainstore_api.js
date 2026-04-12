@@ -19,6 +19,7 @@ mainStoreApp.post(
         Medicine_Name,
         Strength,
         Type,
+        Dosage_Form,
         Category,
         Quantity,
         Threshold_Qty,
@@ -36,7 +37,8 @@ mainStoreApp.post(
         "Quantity",
         "Threshold_Qty",
         "Issued_By",
-        "Expiry_Date"
+        "Expiry_Date",
+        "Dosage_Form"
       ];
 
       const missing = required.filter(f => !req.body[f]);
@@ -75,6 +77,7 @@ mainStoreApp.post(
         Medicine_Name,
         Strength: (Strength || "").trim() || undefined,
         Type,
+        Dosage_Form: (Dosage_Form || "").trim() || undefined,
         Category,
         Quantity: Number(Quantity),
         Threshold_Qty: Number(Threshold_Qty),

@@ -26,6 +26,7 @@ const OthersLayout = () => {
   const menu = [
     { label: "Medicines Issued Register", path: "/institutes/medicines-issued-register", icon: <FaPills /> },
     { label: "Employee Reports", path: "/institutions/reports", icon: <FaFileMedical /> },
+    { label: "To Be Prescribed", path: "/institutes/to-be-prescribed-medicines", icon: <FaPills /> },
     { label: "Ledger", path: "/institutes/ledger", icon: <FaClipboardList /> },
     { label: "Indent", path: "/institutes/indent", icon: <FaClipboardList /> },
     { label: "Main Store", path: "/institutions/main-store", icon: <FaWarehouse /> },

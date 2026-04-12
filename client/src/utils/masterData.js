@@ -1,6 +1,10 @@
 import axios from "axios";
+import DEFAULT_MEDICINE_CATALOG, {
+  DEFAULT_DOSAGE_FORMS,
+  DEFAULT_MEDICINE_TYPES
+} from "../data/defaultMedicineCatalog.js";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const BACKEND_URL = import.meta.env?.VITE_BACKEND_URL;
 const MEDICINE_TYPE_LABELS = {
   analgesics: "Analgesics",
   antacids: "Antacids",
@@ -12,10 +16,22 @@ const MEDICINE_TYPE_LABELS = {
   antihelmintics: "Antihelminthics",
   antihistamines: "Antihistamines",
   antihypertensives: "Antihypertensives",
+  antianemics: "Anti Anemics",
+  antiepileptics: "Anti Epileptics",
   antimalarials: "Antimalarials",
+  antiplatelets: "Anti Platelets",
+  antipsychotics: "Antipsychotics",
   antipyretics: "Antipyretics",
   antivirals: "Antivirals",
+  analgesicsantipyretics: "Analgesics & Anti Pyretics",
+  diuretics: "Diuretics",
+  gastrointestinal: "Gastro Intestinal",
+  gastrointestinals: "Gastro Intestinal",
+  laxatives: "Laxatives",
+  lipidloweringagents: "Lipid Lowering Agents",
+  minerals: "Minerals",
   others: "Others",
+  respiratory: "Respiratory",
   vitamins: "Vitamins"
 };
 const normalizeLoose = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -155,27 +171,10 @@ export const DEFAULT_MASTER_OPTIONS = {
   "Relationships": ["Father", "Mother", "Wife", "Husband", "Son", "Daughter"],
   "Employee Report Roles": ["Employee", "Family"],
   "Medicine Types": [
-    "Antibiotics",
-    "Analgesics",
-    "Antipyretics",
-    "Antacids",
-    "Antihistamines",
-    "Vitamins",
-    "Antifungals",
-    "Antivirals",
+    ...DEFAULT_MEDICINE_TYPES,
     "Others"
   ],
-  "Dosage Forms": [
-    "Tablet",
-    "Capsule",
-    "Syrup",
-    "Injection",
-    "Ointment",
-    "Drops",
-    "Inhaler",
-    "Powder",
-    "Other"
-  ],
+  "Dosage Forms": [...DEFAULT_DOSAGE_FORMS, "Ointment", "Drops", "Other"],
   "Xray Categories": [
     "Head & Neck",
     "Chest & Thorax",
@@ -260,12 +259,7 @@ export const DEFAULT_MASTER_OPTIONS = {
   ],
   "Ledger Directions": ["IN", "OUT"],
   "Rows Per Page": ["5", "10", "25", "50", "100"],
-  "Medicines": [
-    { value_name: "Paracetamol", meta: { kind: "medicine", medicineType: "Antipyretics", dosageForm: "Tablet", strength: "500mg" } },
-    { value_name: "Amoxicillin", meta: { kind: "medicine", medicineType: "Antibiotics", dosageForm: "Capsule", strength: "500mg" } },
-    { value_name: "Ibuprofen", meta: { kind: "medicine", medicineType: "Analgesics", dosageForm: "Tablet", strength: "400mg" } },
-    { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
-  ],
+  "Medicines": DEFAULT_MEDICINE_CATALOG,
   "Residential Areas": [
     "Hyderabad",
     "Secunderabad",
@@ -363,14 +357,7 @@ export const getMasterOptions = (masterMap, categoryName) => {
 };
 
 export const getMasterMedicineEntries = (masterMap) => {
-  const fallback = [
-    { value_name: "Paracetamol", meta: { kind: "medicine", medicineType: "Antipyretics", dosageForm: "Tablet", strength: "500mg" } },
-    { value_name: "Amoxicillin", meta: { kind: "medicine", medicineType: "Antibiotics", dosageForm: "Capsule", strength: "500mg" } },
-    { value_name: "Ibuprofen", meta: { kind: "medicine", medicineType: "Analgesics", dosageForm: "Tablet", strength: "400mg" } },
-    { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
-  ];
-
-  const combined = [...fallback, ...(masterMap?.Medicines || [])];
+  const combined = [...DEFAULT_MEDICINE_CATALOG, ...(masterMap?.Medicines || [])];
   const seen = new Set();
 
   return combined
@@ -396,10 +383,11 @@ export const getMasterMedicinesByType = (masterMap, medicineType) => {
   const type = getCanonicalMedicineTypeKey(medicineType);
   if (!type) return [];
 
-  return getMasterMedicineEntries(masterMap)
+  return [...new Set(
+    getMasterMedicineEntries(masterMap)
     .filter((item) => getCanonicalMedicineTypeKey(item.medicineType) === type)
     .map((item) => item.value_name)
-    .sort((a, b) => a.localeCompare(b));
+  )].sort((a, b) => a.localeCompare(b));
 };
 
 export const getMasterMedicinesByTypeAndForm = (masterMap, medicineType, dosageForm = "") => {
