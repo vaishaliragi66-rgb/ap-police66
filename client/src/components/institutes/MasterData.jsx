@@ -7,7 +7,14 @@ import {
   fetchMasterDataMap,
   getMasterMedicineEntries,
   canonicalizeMedicineTypeLabel,
+<<<<<<< HEAD
   getCanonicalMedicineTypeKey
+=======
+  getCanonicalMedicineTypeKey,
+  getRemovedMasterKeys,
+  addRemovedMasterKey,
+  removeRemovedMasterKey
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 } from "../../utils/masterData";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { mergeXrayTypes } from "../../data/xrayTypes";
@@ -53,11 +60,16 @@ const getStaticTestsStructure = () => {
   });
 
   return {
+<<<<<<< HEAD
     categories: Object.keys(testsByCategory).sort((a, b) => a.localeCompare(b)),
+=======
+    categories: Object.keys(testsByCategory).sort(),
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     testsByCategory
   };
 };
 
+<<<<<<< HEAD
 const mergeTestsStructure = (base, incoming) => {
   const grouped = {};
   const addCategory = (category) => {
@@ -104,6 +116,48 @@ const mergeTestsStructure = (base, incoming) => {
   return {
     categories: Object.keys(grouped).sort((a, b) => a.localeCompare(b)),
     testsByCategory: grouped
+=======
+const buildMedicineStructureFromEntries = ({ entries = [], customMedicineMap = {} } = {}) => {
+  const rows = (entries || []).map((e) => ({
+    value_name: String(e?.value_name || "").trim(),
+    medicineType: canonicalizeMedicineTypeLabel(e?.medicineType || e?.meta?.medicineType || ""),
+    dosageForm: String(e?.dosageForm || e?.meta?.dosageForm || e?.meta?.form || "").trim() || "Other",
+    strength: String(e?.strength || e?.meta?.strength || "").trim(),
+    status: e?.status || "Active",
+    masterValue:
+      customMedicineMap[
+        makeMedicineKey(
+          canonicalizeMedicineTypeLabel(e?.medicineType || e?.meta?.medicineType || ""),
+          e?.dosageForm || e?.meta?.dosageForm || e?.meta?.form || "",
+          e?.value_name,
+          e?.strength || e?.meta?.strength || ""
+        )
+      ] || null
+  }));
+
+  const medicineTypes = sortUnique([
+    ...(DEFAULT_MASTER_OPTIONS["Medicine Types"] || []),
+    ...rows.map((r) => r.medicineType)
+  ]);
+
+  const dosageForms = sortUnique([
+    ...(DEFAULT_MASTER_OPTIONS["Dosage Forms"] || []),
+    ...rows.map((r) => r.dosageForm)
+  ]);
+
+  const medicinesByType = {};
+  medicineTypes.forEach((type) => {
+    medicinesByType[type] = (rows || [])
+      .filter((r) => getMedicineTypeKey(r.medicineType) === getMedicineTypeKey(type))
+      .sort((a, b) => String(a.value_name || "").localeCompare(String(b.value_name || "")));
+  });
+
+  return {
+    medicineTypes,
+    medicines: rows.sort((a, b) => `${String(a.value_name || "")} ${String(a.strength || "")}`.localeCompare(`${String(b.value_name || "")} ${String(b.strength || "")}`)),
+    medicinesByType,
+    dosageForms
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   };
 };
 
@@ -214,6 +268,7 @@ const MasterData = () => {
     setValues(merged);
   };
 
+<<<<<<< HEAD
   const loadTestsStructure = async () => {
     const staticStructure = getStaticTestsStructure();
     const staticCategories = staticStructure.categories || [];
@@ -368,6 +423,44 @@ const MasterData = () => {
       });
       merged.testsByCategory = Object.fromEntries(
         Object.entries(merged.testsByCategory || {}).map(([category, rows]) => [
+=======
+const loadTestsStructure = async () => {
+  const staticStructure = getStaticTestsStructure();
+  const staticCategories = staticStructure.categories || [];
+  const preferredStatic = staticCategories.includes("HEMATOLOGY") ? "HEMATOLOGY" : staticCategories[0] || "";
+
+  try {
+    const [res, valuesRes] = await Promise.all([
+      axios.get(`${BACKEND_URL}/master-data-api/tests-structure`),
+      selectedCategoryId
+        ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+        : Promise.resolve({ data: [] })
+    ]);
+
+    const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
+    const testMap = {};
+    const testCategoryMap = {};
+    masterValues
+      .filter((item) => item?.meta?.kind === "category")
+      .forEach((item) => {
+        const key = normalizeText(item?.value_name);
+        if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
+      });
+    masterValues
+      .filter((item) => item?.meta?.kind === "test")
+      .forEach((item) => {
+        const key = makePairKey(item?.meta?.category, item?.value_name);
+        if (key !== "::") testMap[key] = item;
+      });
+    setCustomTestCategoryMap(testCategoryMap);
+    setCustomTestMap(testMap);
+
+    const data = mergeTestsStructure(staticStructure, res.data || { categories: [], testsByCategory: {} });
+    const withMeta = {
+      ...data,
+      testsByCategory: Object.fromEntries(
+        Object.entries(data.testsByCategory || {}).map(([category, rows]) => [
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
           category,
           (rows || []).map((row) => {
             const masterValue = testMap[makePairKey(category, row?.name)] || null;
@@ -378,6 +471,7 @@ const MasterData = () => {
             };
           })
         ])
+<<<<<<< HEAD
       );
       const categories = merged.categories;
       setTestsStructure(merged);
@@ -391,6 +485,136 @@ const MasterData = () => {
       }
     }
   };
+=======
+      )
+    };
+    setTestsStructure(withMeta);
+    const shouldKeepSelected = selectedTestCategory && staticCategories.includes(selectedTestCategory);
+    if (shouldKeepSelected) {
+      setSelectedTestCategory(selectedTestCategory);
+    } else if (preferredStatic && withMeta.categories.includes(preferredStatic)) {
+      setSelectedTestCategory(preferredStatic);
+    } else {
+      setSelectedTestCategory(withMeta.categories[0] || "");
+    }
+  } catch (err) {
+    const status = err?.response?.status;
+    if (status && status !== 404) {
+      throw err;
+    }
+
+    const [testsRes, valuesRes] = await Promise.all([
+      axios.get(`${BACKEND_URL}/diagnosis-api/tests`).catch(() => ({ data: [] })),
+      selectedCategoryId
+        ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } }).catch(() => ({ data: [] }))
+        : Promise.resolve({ data: [] })
+    ]);
+
+    const diagnosisTests = Array.isArray(testsRes.data) ? testsRes.data : [];
+    const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
+    const testMap = {};
+    const testCategoryMap = {};
+    masterValues
+      .filter((item) => item?.meta?.kind === "category")
+      .forEach((item) => {
+        const key = normalizeText(item?.value_name);
+        if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
+      });
+    masterValues
+      .filter((item) => item?.meta?.kind === "test")
+      .forEach((item) => {
+        const key = makePairKey(item?.meta?.category, item?.value_name);
+        if (key !== "::") testMap[key] = item;
+      });
+    setCustomTestCategoryMap(testCategoryMap);
+    setCustomTestMap(testMap);
+
+    const grouped = { ...staticStructure.testsByCategory };
+    const knownCategories = new Set(Object.keys(grouped));
+
+    diagnosisTests.forEach((test) => {
+      const category = String(test?.Group || "").trim();
+      const name = String(test?.Test_Name || "").trim();
+      if (!category || !name) return;
+      if (!grouped[category]) grouped[category] = [];
+      knownCategories.add(category);
+      grouped[category].push({
+        id: test._id,
+        name,
+        reference: test.Reference_Range || "",
+        unit: test.Units || "",
+        source: "diagnosis-test"
+      });
+    });
+
+    masterValues
+      .filter((item) => item?.meta?.kind === "category")
+      .forEach((item) => {
+        const category = String(item?.value_name || "").trim();
+        if (!category) return;
+        if (!grouped[category]) grouped[category] = [];
+        knownCategories.add(category);
+      });
+
+    masterValues
+      .filter((item) => item?.meta?.kind === "test")
+      .forEach((item) => {
+        const category = String(item?.meta?.category || "").trim();
+        const name = String(item?.value_name || "").trim();
+        if (!category || !name) return;
+        if (!grouped[category]) grouped[category] = [];
+        knownCategories.add(category);
+        grouped[category].push({
+          id: item._id,
+          name,
+          reference: item?.meta?.reference || "",
+          unit: item?.meta?.unit || "",
+          source: "master"
+        });
+      });
+
+    Object.keys(grouped).forEach((category) => {
+      const seen = new Set();
+      grouped[category] = grouped[category]
+        .filter((item) => {
+          const key = String(item?.name || "").trim().toLowerCase();
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+    });
+
+    const merged = mergeTestsStructure(staticStructure, {
+      categories: [...knownCategories],
+      testsByCategory: grouped
+    });
+    merged.testsByCategory = Object.fromEntries(
+      Object.entries(merged.testsByCategory || {}).map(([category, rows]) => [
+        category,
+        (rows || []).map((row) => {
+          const masterValue = testMap[makePairKey(category, row?.name)] || null;
+          return {
+            ...row,
+            masterValue,
+            status: masterValue?.status || "Active"
+          };
+        })
+      ])
+    );
+    const categories = merged.categories;
+    setTestsStructure(merged);
+    const shouldKeepSelected = selectedTestCategory && staticCategories.includes(selectedTestCategory);
+    if (shouldKeepSelected) {
+      setSelectedTestCategory(selectedTestCategory);
+    } else if (preferredStatic && categories.includes(preferredStatic)) {
+      setSelectedTestCategory(preferredStatic);
+    } else {
+      setSelectedTestCategory(categories[0] || "");
+    }
+  }
+};
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
   const loadDiseasesStructure = async () => {
     try {
@@ -513,6 +737,12 @@ const MasterData = () => {
 
   const loadMedicinesStructure = async () => {
     try {
+<<<<<<< HEAD
+=======
+      try {
+        console.debug("loadMedicinesStructure: start", { time: Date.now() });
+      } catch (e) {}
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       const instituteId = localStorage.getItem("instituteId") || "";
       const res = await axios.get(`${BACKEND_URL}/master-data-api/medicines-structure`, {
         params: instituteId ? { instituteId } : {}
@@ -520,6 +750,7 @@ const MasterData = () => {
       // support both old shape (direct fields) and new shape { success, data }
       const data = res.data && res.data.data ? res.data.data : res.data || {};
 
+<<<<<<< HEAD
       const medicineTypeEntries = Array.isArray(data.medicineTypeEntries) ? data.medicineTypeEntries : [];
       const apiMedicines = Array.isArray(data.medicines) ? data.medicines : [];
 
@@ -530,6 +761,27 @@ const MasterData = () => {
         masterMedicines = getMasterMedicineEntries(masterMap || {});
       } catch {
         masterMedicines = [];
+=======
+      const medicineTypeEntries = Array.isArray(data.medicineTypeEntries) ? data.medicineTypeEntries.filter((it) => (it?.status || "Active") !== "Inactive") : [];
+      const apiMedicines = Array.isArray(data.medicines) ? data.medicines.filter((it) => (it?.status || "Active") !== "Inactive") : [];
+
+      // Also fetch masterMap (local DB map) to include any pasted/built-in medicines
+      // Force-refresh the cached master map so UI sees newly seeded/imported medicines
+      let masterMedicines = [];
+      let masterMapFromApi = {};
+      try {
+        masterMapFromApi = await fetchMasterDataMap({ force: true });
+        masterMedicines = getMasterMedicineEntries(masterMapFromApi || {});
+        try {
+          console.debug("loadMedicinesStructure: fetched masterMapFromApi", {
+            masterMapKeys: Object.keys(masterMapFromApi || {}).length,
+            masterMedicines: masterMedicines.length
+          });
+        } catch (e) {}
+      } catch {
+        masterMedicines = [];
+        masterMapFromApi = {};
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       }
 
       // Merge API medicines (prefer records with _id) and masterMedicines (fallback pasted/built-in)
@@ -547,9 +799,18 @@ const MasterData = () => {
         if (!mergedMap.has(key)) mergedMap.set(key, it);
       });
 
+<<<<<<< HEAD
       masterMedicines.forEach((it) => {
         const key = makeMergeKey(it);
         if (!mergedMap.has(key)) {
+=======
+      // Filter out locally-removed (blacklisted) medicine entries so they don't reappear
+      const removedMasterKeys = getRemovedMasterKeys();
+      masterMedicines.forEach((it) => {
+        const key = makeMergeKey(it);
+        const blackKey = `M::${key}`;
+        if (!mergedMap.has(key) && !removedMasterKeys.includes(blackKey)) {
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
           mergedMap.set(key, {
             _id: null,
             value_name: it.value_name,
@@ -569,18 +830,46 @@ const MasterData = () => {
       // Build combined medicine types and dosage forms from API + master map so pasted values are visible
       const apiTypes = Array.isArray(data.medicineTypes) ? data.medicineTypes.map((item) => getMedicineTypeLabel(item)) : [];
       const masterTypes = masterMedicines.map((m) => m.medicineType).filter(Boolean);
+<<<<<<< HEAD
       const combinedTypes = sortUnique([...apiTypes, ...masterTypes.map((item) => getMedicineTypeLabel(item))]);
 
       const apiDosageForms = Array.isArray(data.dosageForms) ? data.dosageForms : [];
       const masterForms = masterMedicines.map((m) => m.dosageForm).filter(Boolean);
       const combinedForms = sortUnique([...apiDosageForms, ...masterForms]);
+=======
+      const masterMapTypeEntries = Array.isArray(masterMapFromApi?.["Medicine Types"]) ? masterMapFromApi["Medicine Types"].filter((it) => (it?.status || "Active") !== "Inactive") : [];
+      const masterMapTypes = masterMapTypeEntries.map((t) => String(t?.value_name || t).trim()).filter(Boolean);
+
+      const removedMasterKeysForTypes = getRemovedMasterKeys();
+      const combinedTypes = sortUnique([
+        ...apiTypes,
+        ...masterTypes.map((item) => getMedicineTypeLabel(item)),
+        ...masterMapTypes.map((item) => getMedicineTypeLabel(item))
+      ].filter((t) => {
+        const k = getMedicineTypeKey(t);
+        return !removedMasterKeysForTypes.includes(`T::${k}`);
+      }));
+
+      const apiDosageForms = Array.isArray(data.dosageForms) ? data.dosageForms : [];
+      const masterForms = masterMedicines.map((m) => m.dosageForm).filter(Boolean);
+      const masterMapFormEntries = Array.isArray(masterMapFromApi?.["Dosage Forms"]) ? masterMapFromApi["Dosage Forms"] : [];
+      const masterMapForms = masterMapFormEntries.map((f) => String(f?.value_name || f).trim()).filter(Boolean);
+      const combinedForms = sortUnique([...apiDosageForms, ...masterForms, ...masterMapForms]);
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
       // Merge medicineTypeEntries with any master types missing in API entries
       const masterTypeEntries = masterTypes
         .filter((t) => t)
         .map((t) => ({ _id: null, value_name: getMedicineTypeLabel(t), status: "Active" }));
+<<<<<<< HEAD
       const combinedTypeEntriesMap = new Map();
       [...medicineTypeEntries, ...masterTypeEntries].forEach((it) => {
+=======
+      const masterTypeEntriesFromMap = masterMapTypeEntries
+        .map((it) => ({ _id: it?._id || null, value_name: getMedicineTypeLabel(it?.value_name || it), status: it?.status || "Active" }));
+      const combinedTypeEntriesMap = new Map();
+      [...medicineTypeEntries, ...masterTypeEntries, ...masterTypeEntriesFromMap].forEach((it) => {
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
         const label = getMedicineTypeLabel(it?.value_name);
         const key = getMedicineTypeKey(label);
         if (!key) return;
@@ -675,12 +964,63 @@ const MasterData = () => {
 
       setSelectedMedicineDosageForm("");
     } catch (err) {
+<<<<<<< HEAD
       const status = err?.response?.status;
       if (status && status !== 404) {
         throw err;
       }
       // If endpoint doesn't exist, show empty structure
       setMedicinesStructure({ medicineTypes: [], dosageForms: [], medicines: [], medicinesByType: {} });
+=======
+      console.warn("Falling back to master-map medicine catalog", err);
+
+      let masterMap = {};
+      try {
+        masterMap = (await fetchMasterDataMap()) || {};
+      } catch {
+        masterMap = {};
+      }
+
+      const fallbackTypeEntries = Array.isArray(masterMap?.["Medicine Types"]) ? masterMap["Medicine Types"] : [];
+      const medicineTypeMap = {};
+      fallbackTypeEntries.forEach((item) => {
+        const key = getMedicineTypeKey(item?.value_name);
+        if (key && !medicineTypeMap[key]) medicineTypeMap[key] = item;
+      });
+      setCustomMedicineTypeMap(medicineTypeMap);
+
+      const medicineMap = {};
+      (masterMap?.Medicines || []).forEach((item) => {
+        const valueName = String(item?.value_name || "").trim();
+        if (!valueName) return;
+
+        const key = makeMedicineKey(
+          getMedicineTypeLabel(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory),
+          item?.meta?.dosageForm || item?.meta?.dosage_form || item?.meta?.form,
+          valueName,
+          item?.meta?.strength
+        );
+        medicineMap[key] = item;
+      });
+      setCustomMedicineMap(medicineMap);
+
+      const fallbackStructure = buildMedicineStructureFromEntries({
+        entries: getMasterMedicineEntries(masterMap),
+        customMedicineMap: medicineMap
+      });
+
+      setMedicinesStructure(fallbackStructure);
+
+      if (fallbackStructure.medicineTypes.length > 0) {
+        if (!selectedMedicineType || !fallbackStructure.medicineTypes.includes(selectedMedicineType)) {
+          setSelectedMedicineType(fallbackStructure.medicineTypes[0]);
+        }
+      } else {
+        setSelectedMedicineType("");
+      }
+
+      setSelectedMedicineDosageForm("");
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     }
   };
 
@@ -829,6 +1169,10 @@ const MasterData = () => {
       }
       await reloadFn();
       invalidateMasterDataCache();
+<<<<<<< HEAD
+=======
+      window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to update value");
@@ -852,6 +1196,10 @@ const MasterData = () => {
       }
       await reloadFn();
       invalidateMasterDataCache();
+<<<<<<< HEAD
+=======
+      window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to toggle status");
@@ -876,6 +1224,10 @@ const MasterData = () => {
       }
       await reloadFn();
       invalidateMasterDataCache();
+<<<<<<< HEAD
+=======
+      window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to delete value");
@@ -910,6 +1262,10 @@ const MasterData = () => {
       setMessage("Test category deleted successfully");
       await loadTestsStructure();
       invalidateMasterDataCache();
+<<<<<<< HEAD
+=======
+      window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } catch (err) {
       console.error("Delete category error:", err);
       const errorMsg = err.response?.data?.message || err.message || "Failed to delete test category";
@@ -933,6 +1289,15 @@ const MasterData = () => {
       setMessage("Value added successfully");
       await loadValues(selectedCategoryId);
       invalidateMasterDataCache();
+<<<<<<< HEAD
+=======
+      window.dispatchEvent(new Event("master-data-updated"));
+      try {
+        await fetchMasterDataMap({ force: true });
+      } catch (e) {
+        // ignore fetch errors
+      }
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to add value");
@@ -961,6 +1326,15 @@ const MasterData = () => {
       setMessage("Value updated successfully");
       await loadValues(selectedCategoryId);
       invalidateMasterDataCache();
+<<<<<<< HEAD
+=======
+      window.dispatchEvent(new Event("master-data-updated"));
+      try {
+        await fetchMasterDataMap({ force: true });
+      } catch (e) {
+        // ignore fetch errors
+      }
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to update value");
@@ -984,6 +1358,10 @@ const MasterData = () => {
       setMessage("Value status updated");
       await loadValues(selectedCategoryId);
       invalidateMasterDataCache();
+<<<<<<< HEAD
+=======
+      window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to toggle status");
@@ -1008,6 +1386,10 @@ const MasterData = () => {
       setMessage("Value deleted successfully");
       await loadValues(selectedCategoryId);
       invalidateMasterDataCache();
+<<<<<<< HEAD
+=======
+      window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to delete value");
@@ -1030,6 +1412,10 @@ const MasterData = () => {
       setMessage("Test category added successfully");
       await loadTestsStructure();
       invalidateMasterDataCache();
+<<<<<<< HEAD
+=======
+      window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } catch (err) {
       console.error("Error adding test category:", err);
       setError(err.response?.data?.message || "Failed to add test category");
@@ -1140,6 +1526,12 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
+<<<<<<< HEAD
+=======
+      // compute keys to un-blacklist if addition succeeds
+      const newMedicineKey = makeMedicineKey(selectedMedicineType.trim(), newMedicineDosageForm.trim(), newMedicineName.trim(), newMedicineStrength.trim());
+      const newTypeKey = getMedicineTypeKey(selectedMedicineType.trim());
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       try {
         await axios.post(`${BACKEND_URL}/master-data-api/medicines`, {
           medicineName: newMedicineName.trim(),
@@ -1162,6 +1554,13 @@ const MasterData = () => {
           }
         });
       }
+<<<<<<< HEAD
+=======
+      // remove any blacklisting for this type/medicine so they are visible henceforth
+      removeRemovedMasterKey(`M::${newMedicineKey}`);
+      removeRemovedMasterKey(`T::${newTypeKey}`);
+
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       setNewMedicineName("");
       setNewMedicineDosageForm("");
       setNewMedicineStrength("");
@@ -1185,13 +1584,32 @@ const MasterData = () => {
       await axios.post(`${BACKEND_URL}/master-data-api/medicines/type`, {
         name: newMedicineType.trim()
       });
+<<<<<<< HEAD
+=======
+      // remove any blacklist for this type so it reappears after creation
+      removeRemovedMasterKey(`T::${getMedicineTypeKey(newMedicineType.trim())}`);
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       setNewMedicineType("");
       setMessage("Medicine type added successfully");
       await loadMedicinesStructure();
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Error adding medicine type:", err);
+<<<<<<< HEAD
       setError(err.response?.data?.message || "Failed to add medicine type");
+=======
+      // If server says it already exists, treat as success and refresh (un-blacklist)
+      const status = err?.response?.status;
+      if (status === 409) {
+        removeRemovedMasterKey(`T::${getMedicineTypeKey(newMedicineType.trim())}`);
+        setNewMedicineType("");
+        setMessage("Medicine type already exists — refreshed list");
+        await loadMedicinesStructure();
+        invalidateMasterDataCache();
+      } else {
+        setError(err.response?.data?.message || "Failed to add medicine type");
+      }
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     } finally {
       setSaving(false);
     }
@@ -1201,8 +1619,23 @@ const MasterData = () => {
     const medicineTypeKey = getMedicineTypeKey(medicineType);
     const medicineTypeRecord = customMedicineTypeMap[medicineTypeKey];
 
+<<<<<<< HEAD
     if (!medicineTypeRecord || !medicineTypeRecord._id) {
       setError("This is a built-in medicine type and cannot be deleted");
+=======
+    const builtInKeys = (DEFAULT_MASTER_OPTIONS["Medicine Types"] || []).map((t) => getCanonicalMedicineTypeKey(t));
+    if (!medicineTypeRecord || !medicineTypeRecord._id) {
+      // If it's a built-in default, block deletion
+      if (builtInKeys.includes(medicineTypeKey)) {
+        setError("This is a built-in medicine type and cannot be deleted");
+        return;
+      }
+
+      // Otherwise treat as local/non-persisted and remove locally
+      const okLocal = window.confirm(`Remove local medicine type '${medicineType}' and its medicines?`);
+      if (!okLocal) return;
+      removeLocalMedicineType(medicineType);
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       return;
     }
 
@@ -1229,18 +1662,64 @@ const MasterData = () => {
     }
   };
 
+<<<<<<< HEAD
   const handleEditMedicineType = async (medicineType) => {
     const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)] || null;
     if (!medicineTypeRecord?._id) {
       setMessage("Built-in medicine types cannot be edited");
       return;
     }
+=======
+  // Persist flow removed: non-persisted/master-map-only medicine types
+  // are now editable/removable locally without a separate "Persist" action.
+
+  const removeLocalMedicineType = (medicineType) => {
+    // Remove type and related medicines from local medicinesStructure state (non-persisted only)
+    setMedicinesStructure((prev) => {
+      if (!prev) return prev;
+      const newTypes = (prev.medicineTypes || []).filter((t) => getMedicineTypeKey(t) !== getMedicineTypeKey(medicineType));
+      const newMedicines = (prev.medicines || []).filter((m) => getMedicineTypeKey(m.medicineType) !== getMedicineTypeKey(medicineType));
+      const newByType = { ...(prev.medicinesByType || {}) };
+      // remove by canonical key
+      Object.keys(newByType).forEach((k) => {
+        if (getMedicineTypeKey(k) === getMedicineTypeKey(medicineType)) delete newByType[k];
+      });
+      return { ...prev, medicineTypes: newTypes, medicines: newMedicines, medicinesByType: newByType };
+    });
+    setMessage(`Removed local medicine type '${medicineType}'`);
+    invalidateMasterDataCache();
+    // also remove from custom maps so reloads don't reintroduce it
+    setCustomMedicineTypeMap((prev) => {
+      const map = { ...(prev || {}) };
+      const key = getMedicineTypeKey(medicineType);
+      Object.keys(map).forEach((k) => {
+        if (k === key) delete map[k];
+      });
+      return map;
+    });
+    setCustomMedicineMap((prev) => {
+      const map = { ...(prev || {}) };
+      Object.keys(map).forEach((k) => {
+        if (k.startsWith(`${getMedicineTypeKey(medicineType)}::`)) delete map[k];
+      });
+      return map;
+    });
+    // add to local blacklist so it doesn't reappear from master map
+    addRemovedMasterKey(`T::${getMedicineTypeKey(medicineType)}`);
+    window.dispatchEvent(new Event("master-data-updated"));
+  };
+
+  const handleEditMedicineType = async (medicineType) => {
+    const medicineTypeKey = getMedicineTypeKey(medicineType);
+    const medicineTypeRecord = customMedicineTypeMap[medicineTypeKey] || null;
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
     const updated = window.prompt("Edit medicine type", medicineType);
     if (updated === null) return;
     const nextName = updated.trim();
     if (!nextName) return;
 
+<<<<<<< HEAD
     setSaving(true);
     setMessage("");
     setError("");
@@ -1265,10 +1744,121 @@ const MasterData = () => {
   const handleToggleMedicineType = async (medicineType, status) => {
     const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)] || null;
     if (!medicineTypeRecord?._id) {
+=======
+    // Persisted -> update on server
+    if (medicineTypeRecord?._id) {
+      setSaving(true);
+      setMessage("");
+      setError("");
+      try {
+        await axios.put(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`, {
+          name: nextName
+        });
+        setMessage("Medicine type updated successfully");
+        if (getMedicineTypeKey(selectedMedicineType) === medicineTypeKey) {
+          setSelectedMedicineType(getMedicineTypeLabel(nextName));
+        }
+        // ensure any local blacklist for this type is cleared so updated server record shows
+        removeRemovedMasterKey(`T::${medicineTypeKey}`);
+        removeRemovedMasterKey(`T::${getMedicineTypeKey(nextName)}`);
+        await loadMedicinesStructure();
+        invalidateMasterDataCache();
+        window.dispatchEvent(new Event("master-data-updated"));
+        try {
+          await fetchMasterDataMap({ force: true });
+        } catch (e) {}
+        try {
+          await fetchMasterDataMap({ force: true });
+        } catch (e) {}
+      } catch (err) {
+        console.error("Edit medicine type error:", err);
+        setError(err.response?.data?.message || "Failed to update medicine type");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    // Local/non-persisted type -> update local state
+    const builtInKeys = (DEFAULT_MASTER_OPTIONS["Medicine Types"] || []).map((t) => getCanonicalMedicineTypeKey(t));
+    if (builtInKeys.includes(getMedicineTypeKey(medicineType))) {
+      setMessage("Built-in medicine types cannot be edited");
+      return;
+    }
+
+    setMedicinesStructure((prev) => {
+      if (!prev) return prev;
+      const newTypes = (prev.medicineTypes || []).map((t) => (getMedicineTypeKey(t) === medicineTypeKey ? nextName : t));
+      const newMedicines = (prev.medicines || []).map((m) =>
+        getMedicineTypeKey(m.medicineType) === medicineTypeKey ? { ...m, medicineType: nextName } : m
+      );
+      const newByType = {};
+      newTypes.forEach((t) => {
+        newByType[t] = (newMedicines || []).filter((m) => getMedicineTypeKey(m.medicineType) === getMedicineTypeKey(t)).sort((a, b) => a.value_name.localeCompare(b.value_name));
+      });
+      return { ...prev, medicineTypes: sortUnique(newTypes), medicines: newMedicines, medicinesByType: newByType };
+    });
+
+    setCustomMedicineTypeMap((prev) => {
+      const map = { ...(prev || {}) };
+      delete map[medicineTypeKey];
+      const newKey = getMedicineTypeKey(nextName);
+      map[newKey] = { _id: null, value_name: nextName, status: medicineTypeRecord?.status || "Active" };
+      return map;
+    });
+
+    if (getMedicineTypeKey(selectedMedicineType) === medicineTypeKey) {
+      setSelectedMedicineType(getMedicineTypeLabel(nextName));
+    }
+
+    setMessage("Medicine type updated locally");
+    // ensure any previous blacklist entries for this type are removed
+    removeRemovedMasterKey(`T::${medicineTypeKey}`);
+    removeRemovedMasterKey(`T::${getMedicineTypeKey(nextName)}`);
+    invalidateMasterDataCache();
+    window.dispatchEvent(new Event("master-data-updated"));
+  };
+
+  const handleToggleMedicineType = async (medicineType, status) => {
+    const medicineTypeKey = getMedicineTypeKey(medicineType);
+    const medicineTypeRecord = customMedicineTypeMap[medicineTypeKey] || null;
+
+    if (medicineTypeRecord?._id) {
+      setSaving(true);
+      setMessage("");
+      setError("");
+      try {
+        await axios.put(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`, {
+          status: status === "Active" ? "Inactive" : "Active"
+        });
+        setMessage("Medicine type status updated");
+        // if server record became active again, clear any local blacklist
+        const newKey = getMedicineTypeKey(medicineType);
+        removeRemovedMasterKey(`T::${newKey}`);
+        await loadMedicinesStructure();
+          invalidateMasterDataCache();
+          window.dispatchEvent(new Event("master-data-updated"));
+          try {
+            await fetchMasterDataMap({ force: true });
+          } catch (e) {}
+      } catch (err) {
+        console.error("Toggle medicine type error:", err);
+        setError(err.response?.data?.message || "Failed to toggle medicine type");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    // Local/non-persisted -> toggle locally unless it's a built-in default
+    const builtInKeys = (DEFAULT_MASTER_OPTIONS["Medicine Types"] || []).map((t) => getCanonicalMedicineTypeKey(t));
+    if (builtInKeys.includes(medicineTypeKey)) {
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       setMessage("Built-in medicine types cannot be deactivated");
       return;
     }
 
+<<<<<<< HEAD
     setSaving(true);
     setMessage("");
     setError("");
@@ -1285,11 +1875,87 @@ const MasterData = () => {
     } finally {
       setSaving(false);
     }
+=======
+    const nextStatus = status === "Active" ? "Inactive" : "Active";
+    setCustomMedicineTypeMap((prev) => {
+      const map = { ...(prev || {}) };
+      map[medicineTypeKey] = { ...map[medicineTypeKey], status: nextStatus };
+      return map;
+    });
+
+    setMedicinesStructure((prev) => {
+      if (!prev) return prev;
+      const newMedicines = (prev.medicines || []).map((m) =>
+        getMedicineTypeKey(m.medicineType) === medicineTypeKey ? { ...m, status: nextStatus } : m
+      );
+      const newByType = { ...(prev.medicinesByType || {}) };
+      Object.keys(newByType).forEach((t) => {
+        newByType[t] = newByType[t].map((m) => (getMedicineTypeKey(m.medicineType) === medicineTypeKey ? { ...m, status: nextStatus } : m));
+      });
+      return { ...prev, medicines: newMedicines, medicinesByType: newByType };
+    });
+
+    setMessage("Medicine type status updated locally");
+    // if activated locally, clear blacklist so it appears in dropdowns
+    if (nextStatus === "Active") {
+      removeRemovedMasterKey(`T::${medicineTypeKey}`);
+    }
+    invalidateMasterDataCache();
+    window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   };
 
   const handleEditMedicine = async (item) => {
     const medicineId = item?.masterValue?._id;
+<<<<<<< HEAD
     if (!isPersistedId(medicineId)) {
+=======
+
+    // Persisted -> update on server
+    if (isPersistedId(medicineId)) {
+      const nextName = window.prompt("Edit medicine name", item.value_name || "");
+      if (nextName === null) return;
+      const nextMedicineType = window.prompt("Edit medicine type", item.medicineType || "");
+      if (nextMedicineType === null) return;
+      const nextDosageForm = window.prompt("Edit dosage form", item.dosageForm || "");
+      if (nextDosageForm === null) return;
+      const nextStrength = window.prompt("Edit strength", item.strength || "");
+      if (nextStrength === null) return;
+
+      setSaving(true);
+      setMessage("");
+      setError("");
+      try {
+        await axios.put(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`, {
+          medicineName: nextName.trim(),
+          medicineType: nextMedicineType.trim(),
+          dosageForm: nextDosageForm.trim(),
+          strength: nextStrength.trim()
+        });
+        setMessage("Medicine updated successfully");
+        // clear any local blacklist entries for this medicine (old/new keys)
+        const oldKey = makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength);
+        const newKey = makeMedicineKey(nextMedicineType.trim(), nextDosageForm.trim(), nextName.trim(), nextStrength.trim());
+        removeRemovedMasterKey(`M::${oldKey}`);
+        removeRemovedMasterKey(`M::${newKey}`);
+        // also ensure its type is not blacklisted
+        removeRemovedMasterKey(`T::${getMedicineTypeKey(nextMedicineType.trim())}`);
+        await loadMedicinesStructure();
+        invalidateMasterDataCache();
+        window.dispatchEvent(new Event("master-data-updated"));
+      } catch (err) {
+        console.error("Edit medicine error:", err);
+        setError(err.response?.data?.message || "Failed to update medicine");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    // Local/non-persisted -> update local state unless it's a built-in default
+    const builtInMedicineNames = (DEFAULT_MASTER_OPTIONS["Medicines"] || []).map((m) => String(m.value_name || "").trim().toLowerCase());
+    if (builtInMedicineNames.includes(String(item.value_name || "").trim().toLowerCase())) {
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       setMessage("Built-in medicines cannot be edited");
       return;
     }
@@ -1303,6 +1969,7 @@ const MasterData = () => {
     const nextStrength = window.prompt("Edit strength", item.strength || "");
     if (nextStrength === null) return;
 
+<<<<<<< HEAD
     setSaving(true);
     setMessage("");
     setError("");
@@ -1322,15 +1989,73 @@ const MasterData = () => {
     } finally {
       setSaving(false);
     }
+=======
+    setMedicinesStructure((prev) => {
+      if (!prev) return prev;
+      const key = makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength);
+      const newMedicines = (prev.medicines || []).map((m) =>
+        makeMedicineKey(m.medicineType, m.dosageForm, m.value_name, m.strength) === key
+          ? { ...m, value_name: nextName.trim(), medicineType: nextMedicineType.trim(), dosageForm: nextDosageForm.trim(), strength: nextStrength.trim() }
+          : m
+      );
+      const newTypes = sortUnique([...(prev.medicineTypes || []), nextMedicineType.trim()]);
+      const newByType = {};
+      newTypes.forEach((t) => {
+        newByType[t] = (newMedicines || []).filter((m) => getMedicineTypeKey(m.medicineType) === getMedicineTypeKey(t)).sort((a, b) => a.value_name.localeCompare(b.value_name));
+      });
+      return { ...prev, medicines: newMedicines, medicineTypes: newTypes, medicinesByType: newByType };
+    });
+
+    setMessage("Medicine updated locally");
+    // clear any blacklist for the new key so it appears in dropdowns
+    const newKey = makeMedicineKey(nextMedicineType.trim(), nextDosageForm.trim(), nextName.trim(), nextStrength.trim());
+    const oldKey = makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength);
+    removeRemovedMasterKey(`M::${oldKey}`);
+    removeRemovedMasterKey(`M::${newKey}`);
+    removeRemovedMasterKey(`T::${getMedicineTypeKey(nextMedicineType.trim())}`);
+    invalidateMasterDataCache();
+    window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   };
 
   const handleToggleMedicine = async (item) => {
     const medicineId = item?.masterValue?._id;
+<<<<<<< HEAD
     if (!isPersistedId(medicineId)) {
+=======
+
+    if (isPersistedId(medicineId)) {
+      setSaving(true);
+      setMessage("");
+      setError("");
+      try {
+        await axios.put(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`, {
+          status: item.status === "Active" ? "Inactive" : "Active"
+        });
+        setMessage("Medicine status updated");
+        // clear any local blacklist for this medicine so server status is reflected
+        const medKey = makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength);
+        removeRemovedMasterKey(`M::${medKey}`);
+        await loadMedicinesStructure();
+        invalidateMasterDataCache();
+        window.dispatchEvent(new Event("master-data-updated"));
+      } catch (err) {
+        console.error("Toggle medicine error:", err);
+        setError(err.response?.data?.message || "Failed to toggle medicine status");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    const builtInMedicineNames = (DEFAULT_MASTER_OPTIONS["Medicines"] || []).map((m) => String(m.value_name || "").trim().toLowerCase());
+    if (builtInMedicineNames.includes(String(item.value_name || "").trim().toLowerCase())) {
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       setMessage("Built-in medicines cannot be deactivated");
       return;
     }
 
+<<<<<<< HEAD
     setSaving(true);
     setMessage("");
     setError("");
@@ -1347,15 +2072,77 @@ const MasterData = () => {
     } finally {
       setSaving(false);
     }
+=======
+    // toggle locally
+    const nextStatus = item.status === "Active" ? "Inactive" : "Active";
+    setMedicinesStructure((prev) => {
+      if (!prev) return prev;
+      const newMedicines = (prev.medicines || []).map((m) =>
+        makeMedicineKey(m.medicineType, m.dosageForm, m.value_name, m.strength) === makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength)
+          ? { ...m, status: nextStatus }
+          : m
+      );
+      const newByType = { ...(prev.medicinesByType || {}) };
+      Object.keys(newByType).forEach((t) => {
+        newByType[t] = newByType[t].map((m) =>
+          makeMedicineKey(m.medicineType, m.dosageForm, m.value_name, m.strength) === makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength)
+            ? { ...m, status: nextStatus }
+            : m
+        );
+      });
+      return { ...prev, medicines: newMedicines, medicinesByType: newByType };
+    });
+
+    setMessage("Medicine status updated locally");
+    invalidateMasterDataCache();
+    // if toggled active locally, remove any blacklist so it appears in dropdowns
+    if (nextStatus === "Active") {
+      const medKey = makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength);
+      removeRemovedMasterKey(`M::${medKey}`);
+      removeRemovedMasterKey(`T::${getMedicineTypeKey(item.medicineType)}`);
+    }
+    window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   };
 
   const handleDeleteMedicine = async (item) => {
     const medicineId = item?.masterValue?._id;
+<<<<<<< HEAD
     if (!isPersistedId(medicineId)) {
+=======
+
+    // Persisted -> server delete
+    if (isPersistedId(medicineId)) {
+      const ok = window.confirm(`Delete '${item.value_name}'?`);
+      if (!ok) return;
+
+      setSaving(true);
+      setMessage("");
+      setError("");
+      try {
+        await axios.delete(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`);
+        setMessage("Medicine deleted successfully");
+        await loadMedicinesStructure();
+        invalidateMasterDataCache();
+        window.dispatchEvent(new Event("master-data-updated"));
+      } catch (err) {
+        console.error("Delete medicine error:", err);
+        setError(err.response?.data?.message || "Failed to delete medicine");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    // Local/non-persisted -> remove locally unless built-in
+    const builtInMedicineNames = (DEFAULT_MASTER_OPTIONS["Medicines"] || []).map((m) => String(m.value_name || "").trim().toLowerCase());
+    if (builtInMedicineNames.includes(String(item.value_name || "").trim().toLowerCase())) {
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       setMessage("Built-in medicines cannot be deleted");
       return;
     }
 
+<<<<<<< HEAD
     const ok = window.confirm(`Delete '${item.value_name}'?`);
     if (!ok) return;
 
@@ -1373,6 +2160,41 @@ const MasterData = () => {
     } finally {
       setSaving(false);
     }
+=======
+    const ok = window.confirm(`Remove local medicine '${item.value_name}'?`);
+    if (!ok) return;
+    removeLocalMedicine(item);
+  };
+
+  // Persist flow removed: non-persisted/master-map-only medicines are now editable/removable locally.
+
+  const removeLocalMedicine = (item) => {
+    if (!item) return;
+    const keyToRemove = makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength);
+    setMedicinesStructure((prev) => {
+      if (!prev) return prev;
+      const newMedicines = (prev.medicines || []).filter((m) => makeMedicineKey(m.medicineType, m.dosageForm, m.value_name, m.strength) !== keyToRemove);
+      const newByType = { ...(prev.medicinesByType || {}) };
+      Object.keys(newByType).forEach((t) => {
+        newByType[t] = (newByType[t] || []).filter((m) => makeMedicineKey(m.medicineType, m.dosageForm, m.value_name, m.strength) !== keyToRemove);
+      });
+      return { ...prev, medicines: newMedicines, medicinesByType: newByType };
+    });
+    setMessage(`Removed local medicine '${item.value_name}'`);
+    invalidateMasterDataCache();
+    // also remove from custom medicine map so it doesn't reappear
+    setCustomMedicineMap((prev) => {
+      const map = { ...(prev || {}) };
+      const key = makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength);
+      Object.keys(map).forEach((k) => {
+        if (k === key) delete map[k];
+      });
+      return map;
+    });
+    // add to blacklist so it won't be pulled again from master map
+    addRemovedMasterKey(`M::${keyToRemove}`);
+    window.dispatchEvent(new Event("master-data-updated"));
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   };
 
   const handleAddXray = async () => {
@@ -2004,6 +2826,7 @@ const MasterData = () => {
                                 >
                                   {status === "Active" ? "Deactivate" : "Activate"}
                                 </button>
+<<<<<<< HEAD
                                 <button
                                   className="btn btn-sm btn-outline-danger"
                                   onClick={() => handleDeleteMedicineType(item)}
@@ -2012,6 +2835,30 @@ const MasterData = () => {
                                 >
                                   Delete
                                 </button>
+=======
+                                  {isCustom ? (
+                                      <button
+                                        className="btn btn-sm btn-outline-danger"
+                                        onClick={() => handleDeleteMedicineType(item)}
+                                        disabled={!isInstituteAdmin || saving}
+                                        title={"Delete this type"}
+                                      >
+                                        Delete
+                                      </button>
+                                    ) : (
+                                      // non-persisted / master-map-only types: allow delete locally via handler
+                                      <>
+                                        <button
+                                          className="btn btn-sm btn-outline-danger"
+                                          onClick={() => handleDeleteMedicineType(item)}
+                                          disabled={!isInstituteAdmin || saving}
+                                          title={"Delete this local type"}
+                                        >
+                                          Delete
+                                        </button>
+                                      </>
+                                    )}
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
                               </td>
                             </tr>
                           );
@@ -2110,6 +2957,7 @@ const MasterData = () => {
                     >
                       Add Medicine
                     </button>
+<<<<<<< HEAD
                     <button
                       className="btn btn-secondary ms-2"
                       onClick={() => {
@@ -2273,6 +3121,13 @@ const MasterData = () => {
                       </div>
                     </div>
                   )}
+=======
+                    
+                  </div>
+
+                  
+                  {/* Removed legacy pasted-import handling block to fix JSX parse errors */}
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
                   <div className="table-responsive">
                     <table className="table table-bordered table-striped align-middle">
@@ -2322,6 +3177,7 @@ const MasterData = () => {
                               >
                                 {item.status === "Active" ? "Deactivate" : "Activate"}
                               </button>
+<<<<<<< HEAD
                               <button
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => handleDeleteMedicine(item)}
@@ -2330,6 +3186,18 @@ const MasterData = () => {
                               >
                                 Delete
                               </button>
+=======
+                              <>
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDeleteMedicine(item)}
+                                  disabled={!isInstituteAdmin || saving}
+                                  title={item.masterValue?._id ? "Delete this medicine" : "Delete this local medicine"}
+                                >
+                                  Delete
+                                </button>
+                              </>
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
                             </td>
                           </tr>
                         ))}

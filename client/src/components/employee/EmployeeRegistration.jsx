@@ -91,9 +91,15 @@ const EmployeeRegister = () => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
+<<<<<<< HEAD
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         setError("Please select a valid image file (JPEG, PNG, WebP)");
+=======
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        setError("Please select a valid image file (JPEG, PNG, GIF)");
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
         return;
       }
 
@@ -114,12 +120,15 @@ const EmployeeRegister = () => {
     }
   };
 
+<<<<<<< HEAD
   const handleRemoveProfilePic = () => {
     setProfilePic(null);
     setProfilePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
@@ -373,7 +382,10 @@ if (validationErrors.length > 0) {
       height: "120px",
       border: "2px dashed #D6E0F0",
       backgroundColor: profilePreview ? "#FFFFFF" : "#F8FAFC",
+<<<<<<< HEAD
       position: "relative",
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       cursor: "pointer",
       overflow: "hidden",
       transition: "border-color 0.2s ease",
@@ -389,6 +401,7 @@ if (validationErrors.length > 0) {
     ) : (
       <FaUser size={38} style={{ color: "#9AA4B2" }} />
     )}
+<<<<<<< HEAD
     {/* Camera badge */}
     <div
       style={{
@@ -407,6 +420,8 @@ if (validationErrors.length > 0) {
     >
       <FaCamera size={12} color="#fff" />
     </div>
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   </div>
 
   {/* Hint text */}
@@ -425,6 +440,7 @@ if (validationErrors.length > 0) {
     type="file"
     ref={fileInputRef}
     onChange={handleProfilePicChange}
+<<<<<<< HEAD
     accept="image/jpeg,image/jpg,image/png,image/webp"
     className="d-none"
   />
@@ -465,6 +481,14 @@ if (validationErrors.length > 0) {
       </button>
     )}
   </div>
+=======
+    accept="image/*"
+    className="d-none"
+  />
+
+  {/* Action button */}
+ 
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
   {profilePic && (
     <p className="text-muted small mt-1">

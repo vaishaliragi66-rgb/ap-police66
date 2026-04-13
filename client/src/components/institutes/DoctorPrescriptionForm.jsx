@@ -119,7 +119,11 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
+<<<<<<< HEAD
     Medicines: [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+=======
+    Medicines: [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false }],
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     Notes: "",
     Disease_Name: ""
   });
@@ -404,6 +408,10 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     pharmacyRecords = [],
     diagnosisRecords = [],
     xrayRecords = [],
+<<<<<<< HEAD
+=======
+    toBePrescribedMedicines = [],
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     familyId = null
   ) => {
     const patientActions = actions.filter((action) =>
@@ -447,9 +455,33 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
           : { tests: [], xrays: [] };
         const doctorMedicines = (prescription?.data?.medicines || []).map(normalizeDoctorMedicine);
 
+<<<<<<< HEAD
         return {
           ...prescription,
           combinedMedicines: doctorMedicines,
+=======
+        // Get to-be-prescribed medicines for this prescription
+        const prescriptionToBePrescribedMedicines = toBePrescribedMedicines
+          .filter(med => String(med.prescription_id) === String(prescription?._id))
+          .map(med => ({
+            Medicine_Name: med.Medicine_Name,
+            Type: med.Type,
+            Dosage_Form: med.Dosage_Form,
+            FoodTiming: med.FoodTiming,
+            Strength: med.Strength,
+            Morning: med.Morning,
+            Afternoon: med.Afternoon,
+            Night: med.Night,
+            Duration: med.Duration,
+            Remarks: med.Remarks,
+            Quantity: med.Quantity,
+            _source: "ToBePrescribed"
+          }));
+
+        return {
+          ...prescription,
+          combinedMedicines: [...doctorMedicines, ...prescriptionToBePrescribedMedicines],
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
           doctorNotes: prescription?.data?.notes || "",
           pharmacyNotes: [],
           instituteDisplayName: instituteName || "-",
@@ -632,12 +664,21 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
       familyId: formData.IsFamilyMember ? formData.FamilyMember_ID : null
     };
 
+<<<<<<< HEAD
     const [diseaseRes, diagnosisRes, xrayRes, doctorPrescriptionRes, pharmacyPrescriptionRes] = await Promise.all([
+=======
+    const [diseaseRes, diagnosisRes, xrayRes, doctorPrescriptionRes, pharmacyPrescriptionRes, toBePrescribedRes] = await Promise.all([
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       axios.get(`${BACKEND_URL}/disease-api/employee/${formData.Employee_ID}`),
       axios.get(`${BACKEND_URL}/diagnosis-api/records/${formData.Employee_ID}`, { params }),
       axios.get(`${BACKEND_URL}/xray-api/records/${formData.Employee_ID}`, { params }),
       axios.get(`${BACKEND_URL}/api/medical-actions/employee/${formData.Employee_ID}`),
+<<<<<<< HEAD
       axios.get(`${BACKEND_URL}/prescription-api/employee/${formData.Employee_ID}`)
+=======
+      axios.get(`${BACKEND_URL}/prescription-api/employee/${formData.Employee_ID}`),
+      axios.get(`${BACKEND_URL}/doctor-prescription-api/to-be-prescribed/${formData.Employee_ID}`, { params })
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     ]);
 
     const allDiseases =
@@ -666,6 +707,10 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
         pharmacyPrescriptionRes.data || [],
         diagnosisRes.data || [],
         xrayRes.data || [],
+<<<<<<< HEAD
+=======
+        toBePrescribedRes.data || [],
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
         formData.IsFamilyMember ? formData.FamilyMember_ID : null
       ).slice(0, 5)
     };
@@ -776,11 +821,20 @@ useEffect(() => {
         familyId: familyId || null
       };
 
+<<<<<<< HEAD
       const [actionsRes, diagnosisRes, xrayRes, pharmacyRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/api/medical-actions/employee/${employeeId}`),
         axios.get(`${BACKEND_URL}/diagnosis-api/records/${employeeId}`, { params }),
         axios.get(`${BACKEND_URL}/xray-api/records/${employeeId}`, { params }),
         axios.get(`${BACKEND_URL}/prescription-api/employee/${employeeId}`)
+=======
+      const [actionsRes, diagnosisRes, xrayRes, pharmacyRes, toBePrescribedRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/api/medical-actions/employee/${employeeId}`),
+        axios.get(`${BACKEND_URL}/diagnosis-api/records/${employeeId}`, { params }),
+        axios.get(`${BACKEND_URL}/xray-api/records/${employeeId}`, { params }),
+        axios.get(`${BACKEND_URL}/prescription-api/employee/${employeeId}`),
+        axios.get(`${BACKEND_URL}/doctor-prescription-api/to-be-prescribed/${employeeId}`, { params })
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       ]);
 
       const data = getEnrichedPrescriptionHistory(
@@ -788,6 +842,10 @@ useEffect(() => {
         pharmacyRes.data || [],
         diagnosisRes.data || [],
         xrayRes.data || [],
+<<<<<<< HEAD
+=======
+        toBePrescribedRes.data || [],
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
         familyId
       );
       setLastTwoVisits(data.slice(0, 2));
@@ -934,7 +992,11 @@ const relevantDiseases = diseases.filter((d) => {
       ...prev,
       Medicines: [
         ...prev.Medicines,
+<<<<<<< HEAD
         { Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, _uid: `${Date.now()}-${Math.random().toString(36).slice(2,8)}` }
+=======
+        { Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false, _uid: `${Date.now()}-${Math.random().toString(36).slice(2,8)}` }
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       ]
     }));
 
@@ -961,7 +1023,11 @@ const relevantDiseases = diseases.filter((d) => {
 
 
     const selectedMedicines = formData.Medicines
+<<<<<<< HEAD
       .filter((med) => med.Medicine_Name?.trim())
+=======
+      .filter((med) => med.Medicine_Name?.trim() || med.ToBePrescribed)
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       .map((med) => ({
         Medicine_Name: med.Medicine_Name,
         Type: med.Medicine_Type || med.Type,
@@ -973,7 +1039,12 @@ const relevantDiseases = diseases.filter((d) => {
         Night: med.Night,
         Duration: med.Duration,
         Remarks: med.Remarks,
+<<<<<<< HEAD
         Quantity: med.Quantity
+=======
+        Quantity: med.Quantity,
+        ToBePrescribed: med.ToBePrescribed || false
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       }));
 
     // Removed validation - allow custom medicine names
@@ -986,6 +1057,33 @@ const relevantDiseases = diseases.filter((d) => {
 
     // Medicines are now optional - removed validation
     
+<<<<<<< HEAD
+=======
+    // ✅ Create the actual prescription record
+    await axios.post(`${BACKEND_URL}/doctor-prescription-api/add`, {
+      Institute_ID: formData.Institute_ID,
+      Employee_ID: formData.Employee_ID,
+      IsFamilyMember: formData.IsFamilyMember,
+      FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
+      Medicines: selectedMedicines.map(m => ({
+        Medicine_Name: m.Medicine_Name,
+        Type: m.Type,
+        Dosage_Form: m.Dosage_Form || "",
+        FoodTiming: m.FoodTiming,
+        Strength: m.Strength,
+        Morning: m.Morning,
+        Afternoon: m.Afternoon,
+        Night: m.Night,
+        Duration: m.Duration,
+        Remarks: m.Remarks,
+        Quantity: m.Quantity,
+        ToBePrescribed: m.ToBePrescribed
+      })),
+      Notes: formData.Notes,
+      visit_id: formData.visit_id || null
+    });
+
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     await axios.post(`${BACKEND_URL}/api/medical-actions`, {
       Institute_ID: formData.Institute_ID,
       employee_id: formData.Employee_ID,
@@ -1008,7 +1106,12 @@ const relevantDiseases = diseases.filter((d) => {
             Night: m.Night,
             Duration: m.Duration,
             Remarks: m.Remarks,
+<<<<<<< HEAD
             Quantity: m.Quantity
+=======
+            Quantity: m.Quantity,
+            ToBePrescribed: m.ToBePrescribed
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
           })),
         notes: formData.Notes
       }
@@ -1055,7 +1158,11 @@ const relevantDiseases = diseases.filter((d) => {
       Employee_ID: "",
       IsFamilyMember: false,
       FamilyMember_ID: "",
+<<<<<<< HEAD
       Medicines: [{ Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+=======
+      Medicines: [{ Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false }],
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       Notes: "",
       Disease_Name: ""
     });
@@ -1581,6 +1688,10 @@ if (validXrays.length === 0) {
                                   <th>#</th>
                                   <th>Medicine</th>
                                   <th>Source</th>
+<<<<<<< HEAD
+=======
+                                  <th>To Be Prescribed</th>
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
                                   <th>Type</th>
                                   <th>Food Timing</th>
                                   <th>Strength</th>
@@ -1599,10 +1710,28 @@ if (validXrays.length === 0) {
                                       <td>{index + 1}</td>
                                       <td>{medicine?.Medicine_Name || "-"}</td>
                                       <td>
+<<<<<<< HEAD
                                         <span className={`badge ${medicine?._source === "Pharmacy" ? "bg-info text-dark" : "bg-secondary"}`}>
                                           {medicine?._source || "Doctor"}
                                         </span>
                                       </td>
+=======
+                                        <span className={`badge ${
+                                          medicine?._source === "Pharmacy" ? "bg-info text-dark" :
+                                          medicine?._source === "ToBePrescribed" ? "bg-warning text-dark" :
+                                          "bg-secondary"
+                                        }`}>
+                                          {medicine?._source === "ToBePrescribed" ? "To Be Prescribed" : (medicine?._source || "Doctor")}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        {medicine?.ToBePrescribed ? (
+                                          <span className="badge bg-warning text-dark">Yes</span>
+                                        ) : (
+                                          <span className="text-muted">No</span>
+                                        )}
+                                      </td>
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
                                       <td>{medicine?.Type || "-"}</td>
                                       <td>{medicine?.FoodTiming || "-"}</td>
                                       <td>{medicine?.Strength || "-"}</td>
@@ -1616,7 +1745,11 @@ if (validXrays.length === 0) {
                                   ))
                                 ) : (
                                   <tr>
+<<<<<<< HEAD
                                     <td colSpan="12" className="text-center text-muted">
+=======
+                                    <td colSpan="13" className="text-center text-muted">
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
                                       No medicine details available
                                     </td>
                                   </tr>
@@ -1872,9 +2005,16 @@ if (validXrays.length === 0) {
                                 Night: med.Night || false,
                                 Duration: med.Duration || "",
                                 Remarks: med.Remarks || "",
+<<<<<<< HEAD
                                 Quantity: med.Quantity || 0
                               }))
                             : [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+=======
+                                Quantity: med.Quantity || 0,
+                                ToBePrescribed: med.ToBePrescribed || false
+                              }))
+                            : [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false }],
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
                           Notes: prescriptionData.notes || prev.Notes
                         }));
                       }
@@ -2053,6 +2193,32 @@ if (validXrays.length === 0) {
 
                 {formData.Medicines.map((med, i) => (
       <div key={med._uid || i} className="mb-4 border rounded p-3 bg-light">
+<<<<<<< HEAD
+=======
+        {/* To Be Prescribed Checkbox */}
+        <div className="row g-2 mb-3">
+          <div className="col-md-12">
+            <div className="form-check">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                id={`to-be-prescribed-${i}`}
+                checked={med.ToBePrescribed}
+                onChange={(e) => {
+                  const copy = [...formData.Medicines];
+                  copy[i].ToBePrescribed = e.target.checked;
+                  // Don't clear medicine name - allow manual entry for to-be-prescribed medicines
+                  setFormData(prev => ({ ...prev, Medicines: copy }));
+                }}
+              />
+              <label className="form-check-label fw-semibold" htmlFor={`to-be-prescribed-${i}`}>
+                To be prescribed
+              </label>
+            </div>
+          </div>
+        </div>
+
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
         {/* First Row: Medicine Selection */}
         <div className="row g-2 align-items-end mb-3">
           <div className="col-md-2">
@@ -2106,6 +2272,7 @@ if (validXrays.length === 0) {
 
           <div className="col-md-2">
             <label className="form-label fw-semibold">Medicine</label>
+<<<<<<< HEAD
             <select
               className="form-select"
               value={med.Medicine_Name}
@@ -2124,6 +2291,40 @@ if (validXrays.length === 0) {
                 <option key={name} value={name}>{name}</option>
               ))}
             </select>
+=======
+            {med.ToBePrescribed ? (
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter medicine name"
+                value={med.Medicine_Name}
+                onChange={(e) => {
+                  const copy = [...formData.Medicines];
+                  copy[i].Medicine_Name = e.target.value;
+                  setFormData(prev => ({ ...prev, Medicines: copy }));
+                }}
+              />
+            ) : (
+              <select
+                className="form-select"
+                value={med.Medicine_Name}
+                disabled={!med.Medicine_Type}
+                onChange={(e) => {
+                  const copy = [...formData.Medicines];
+                  copy[i].Medicine_Name = e.target.value;
+                  if (!getStrengthOptions(e.target.value, copy[i].Medicine_Type, copy[i].Dosage_Form).includes(copy[i].Strength)) {
+                    copy[i].Strength = "";
+                  }
+                  setFormData(prev => ({ ...prev, Medicines: copy }));
+                }}
+              >
+                <option value="">{med.Medicine_Type ? "Select Medicine" : "Select Medicine Type First"}</option>
+                {getMedicineOptionsByType(med.Medicine_Type, med.Dosage_Form).map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            )}
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
           </div>
 
           <div className="col-md-2">

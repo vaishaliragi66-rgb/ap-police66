@@ -53,6 +53,10 @@ import RiskHotspots from "./components/institutes/RiskHotspots";
 import Predict from "./components/institutes/Predict";
 import ForecastDashboard from "./components/institutes/ForecastTable";
 import MasterData from "./components/institutes/MasterData";
+<<<<<<< HEAD
+=======
+import ToBePrescribedMedicines from "./components/institutes/ToBePrescribedMedicines";
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 import { PersonFilterProvider } from "./context/PersonFilterContext";
 const token = localStorage.getItem("instituteToken");
 
@@ -230,6 +234,13 @@ function App() {
             {
               path: "/institutes/master-data",
               element: <MasterData />
+<<<<<<< HEAD
+=======
+            },
+            {
+              path: "/institutes/to-be-prescribed-medicines",
+              element: <ToBePrescribedMedicines />
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
             }
           ]
         },

@@ -17,9 +17,12 @@ const EmployeeProfile = () => {
   const [absCardUploading, setAbsCardUploading] = useState(false);
   const [absCardDeleting, setAbsCardDeleting] = useState(false);
   const [masterMap, setMasterMap] = useState({});
+<<<<<<< HEAD
   const [abhaEditMode, setAbhaEditMode] = useState(false);
   const [abhaValue, setAbhaValue] = useState("");
   const [abhaSaving, setAbhaSaving] = useState(false);
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
   const designationOptions = getMasterOptions(masterMap, "Designations");
   const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
@@ -40,6 +43,7 @@ const EmployeeProfile = () => {
   }, [employeeId, BACKEND_URL]);
 
   useEffect(() => {
+<<<<<<< HEAD
     if (employee) setAbhaValue(employee.ABHA || "");
   }, [employee]);
 
@@ -76,6 +80,8 @@ const EmployeeProfile = () => {
   };
 
   useEffect(() => {
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     let mounted = true;
     const loadMaster = async () => {
       try {
@@ -100,6 +106,7 @@ const EmployeeProfile = () => {
   };
 
   const handleSave = () => {
+<<<<<<< HEAD
     // Validate ABHA (if entered)
     const abha = (editData.ABHA || "").toString().trim();
     if (abha && !/^\d{14}$/.test(abha)) {
@@ -107,6 +114,8 @@ const EmployeeProfile = () => {
       return;
     }
 
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     axios.put(`${BACKEND_URL}/employee-api/update-profile/${employeeId}`, editData)
       .then((res) => {
         setEmployee(res.data.employee);
@@ -114,8 +123,12 @@ const EmployeeProfile = () => {
         alert("Profile updated successfully");
       })
       .catch((err) => {
+<<<<<<< HEAD
         const m = err?.response?.data?.message || "Failed to update profile";
         alert(m);
+=======
+        alert("Failed to update profile");
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
         console.error(err);
       });
   };
@@ -446,6 +459,7 @@ const EmployeeProfile = () => {
         )}
       </p>
 
+<<<<<<< HEAD
       <p className="mb-2" style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <strong>ABHA Number:</strong>{" "}
         {isEditing ? (
@@ -497,6 +511,8 @@ const EmployeeProfile = () => {
         )}
       </p>
 
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       <div className="mt-3">
         <strong>ABS Card:</strong>{" "}
         {absCardUrl ? (

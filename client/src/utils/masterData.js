@@ -295,11 +295,59 @@ let cache = null;
 let cacheTime = 0;
 const TTL_MS = 5 * 60 * 1000;
 
+<<<<<<< HEAD
+=======
+const REMOVED_MASTER_KEYS_STORAGE = "removed_master_keys";
+export const getRemovedMasterKeys = () => {
+  try {
+    const raw = (typeof window !== "undefined" && localStorage.getItem(REMOVED_MASTER_KEYS_STORAGE)) || "[]";
+    return JSON.parse(raw) || [];
+  } catch {
+    return [];
+  }
+};
+export const addRemovedMasterKey = (key) => {
+  try {
+    if (typeof window === "undefined") return;
+    const keys = getRemovedMasterKeys();
+    if (!keys.includes(key)) {
+      keys.push(key);
+      localStorage.setItem(REMOVED_MASTER_KEYS_STORAGE, JSON.stringify(keys));
+    }
+  } catch (e) {
+    // ignore
+  }
+};
+
+export const removeRemovedMasterKey = (key) => {
+  try {
+    if (typeof window === "undefined") return;
+    const keys = getRemovedMasterKeys().filter((k) => k !== key);
+    localStorage.setItem(REMOVED_MASTER_KEYS_STORAGE, JSON.stringify(keys));
+  } catch (e) {
+    // ignore
+  }
+};
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const makeMedicineKey = (medicineType, dosageForm, valueName, strength) =>
+  `${normalizeText(medicineType)}::${normalizeText(dosageForm)}::${normalizeText(valueName)}::${normalizeText(strength)}`;
+
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 export const invalidateMasterDataCache = () => {
   cache = null;
   cacheTime = 0;
   if (typeof window !== "undefined") {
+<<<<<<< HEAD
     window.dispatchEvent(new Event("master-data-updated"));
+=======
+    const ev = new Event("master-data-updated");
+    try {
+      console.debug("invalidateMasterDataCache: dispatching master-data-updated", { time: Date.now() });
+    } catch (e) {
+      // ignore console issues in non-browser env
+    }
+    window.dispatchEvent(ev);
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   }
 };
 
@@ -342,12 +390,28 @@ export const fetchMasterDataMap = async ({ force = false } = {}) => {
 
   cache = res.data || {};
   cacheTime = now;
+<<<<<<< HEAD
+=======
+  try {
+    const categories = Object.keys(cache || {}).length;
+    const medCount = Array.isArray(cache?.Medicines) ? cache.Medicines.length : 0;
+    console.debug("fetchMasterDataMap: cached master map", { categories, medCount, time: now });
+  } catch (e) {
+    // ignore
+  }
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   return cache;
 };
 
 export const getMasterOptions = (masterMap, categoryName) => {
   const fallback = DEFAULT_MASTER_OPTIONS[categoryName] || [];
+<<<<<<< HEAD
   const dbValues = (masterMap?.[categoryName] || []).map((item) => item.value_name);
+=======
+  const dbValues = (masterMap?.[categoryName] || [])
+    .filter((item) => (item?.status || "Active") !== "Inactive")
+    .map((item) => item.value_name);
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   if (categoryName === "Medicine Types") {
     const merged = new Map();
     [...fallback, ...dbValues]
@@ -357,7 +421,15 @@ export const getMasterOptions = (masterMap, categoryName) => {
         const key = getCanonicalMedicineTypeKey(item);
         if (!merged.has(key)) merged.set(key, item);
       });
+<<<<<<< HEAD
     return [...merged.values()];
+=======
+    // filter out locally-removed types
+    const removed = new Set(getRemovedMasterKeys().filter((k) => String(k || "").startsWith("T::")).map((k) => k.replace(/^T::/, "")));
+    return [...merged.entries()]
+      .filter(([key]) => !removed.has(key))
+      .map(([, val]) => val);
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   }
   return [...new Set([...fallback, ...dbValues].filter(Boolean))];
 };
@@ -370,9 +442,46 @@ export const getMasterMedicineEntries = (masterMap) => {
     { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
   ];
 
+<<<<<<< HEAD
   const combined = [...fallback, ...(masterMap?.Medicines || [])];
   const seen = new Set();
 
+=======
+  const combined = [...fallback, ...((masterMap?.Medicines || []).filter((m) => (m?.status || "Active") !== "Inactive"))];
+  const seen = new Set();
+
+  // filter out locally-removed medicines and medicines whose type was removed
+  const removed = new Set(getRemovedMasterKeys());
+
+  // compute some lightweight diagnostics for debugging
+  try {
+    const totalCombined = combined.length;
+    const totalRemovedMed = combined.filter((item) => {
+      const medKey = `M::${makeMedicineKey(
+        String(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory || ""),
+        String(item?.meta?.dosageForm || item?.meta?.dosage_form || item?.meta?.form || "").trim(),
+        String(item?.value_name || "").trim(),
+        String(item?.meta?.strength || "").trim()
+      )}`;
+      return removed.has(medKey);
+    }).length;
+    const totalRemovedType = combined.filter((item) => {
+      const typeKey = `T::${getCanonicalMedicineTypeKey(
+        canonicalizeMedicineTypeLabel(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory || "")
+      )}`;
+      return removed.has(typeKey);
+    }).length;
+
+    console.debug("getMasterMedicineEntries: diagnostics", {
+      totalCombined,
+      totalRemovedMed,
+      totalRemovedType
+    });
+  } catch (e) {
+    // ignore diagnostics failures
+  }
+
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   return combined
     .map((item) => ({
       value_name: String(item?.value_name || "").trim(),
@@ -385,6 +494,17 @@ export const getMasterMedicineEntries = (masterMap) => {
     }))
     .filter((item) => item.value_name)
     .filter((item) => {
+<<<<<<< HEAD
+=======
+      const medKey = `M::${makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength)}`;
+      if (removed.has(medKey)) return false;
+      // also filter if the medicine's type is blacklisted
+      const typeKey = `T::${getCanonicalMedicineTypeKey(item.medicineType)}`;
+      if (removed.has(typeKey)) return false;
+      return true;
+    })
+    .filter((item) => {
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       const key = `${item.value_name.toLowerCase()}::${item.medicineType.toLowerCase()}::${item.dosageForm.toLowerCase()}::${item.strength.toLowerCase()}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -433,5 +553,19 @@ export const getMergedMasterValueObjects = (masterMap, categoryName) => {
     }
   });
 
+<<<<<<< HEAD
+=======
+  // If category is Medicine Types, filter out locally-removed types
+  if (categoryName === "Medicine Types") {
+    const removed = new Set(getRemovedMasterKeys().filter((k) => String(k || "").startsWith("T::")).map((k) => k.replace(/^T::/, "")));
+    try {
+      console.debug("getMergedMasterValueObjects: Medicine Types merged count", { mergedCount: merged.size, removedCount: removed.size });
+    } catch (e) {
+      // ignore
+    }
+    return [...merged.entries()].filter(([key]) => !removed.has(key)).map(([, val]) => val);
+  }
+
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   return [...merged.values()];
 };

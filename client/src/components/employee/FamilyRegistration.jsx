@@ -17,7 +17,10 @@ const FamilyMemberRegistration = () => {
     Height: "",
     Weight: "",
     Phone_No: "",
+<<<<<<< HEAD
     ABHA: "",
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     Address: {
       Street: "",
       District: "",
@@ -29,8 +32,11 @@ const FamilyMemberRegistration = () => {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
   const [employeeProfile, setEmployeeProfile] = useState(null);
   const [employeeLoading, setEmployeeLoading] = useState(false);
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   const [masterMap, setMasterMap] = useState({});
   const fileInputRef = useRef(null);
 
@@ -60,6 +66,7 @@ const FamilyMemberRegistration = () => {
   const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
 
   const handleChange = (e) => {
+<<<<<<< HEAD
     const { name } = e.target;
     let { value } = e.target;
 
@@ -69,6 +76,9 @@ const FamilyMemberRegistration = () => {
       if (value.length > 14) value = value.slice(0, 14);
     }
 
+=======
+    const { name, value } = e.target;
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     if (name.startsWith("Address.")) {
       const key = name.split(".")[1];
       setFormData({ ...formData, Address: { ...formData.Address, [key]: value } });
@@ -101,6 +111,7 @@ const FamilyMemberRegistration = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+<<<<<<< HEAD
   const loadEmployeeProfile = async () => {
     if (!employeeId) return null;
     if (employeeProfile) return employeeProfile;
@@ -147,6 +158,8 @@ const FamilyMemberRegistration = () => {
     }));
   };
 
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -155,6 +168,7 @@ const FamilyMemberRegistration = () => {
       return;
     }
 
+<<<<<<< HEAD
     // Validate ABHA (optional) - must be 14 digits when provided
     const abhaVal = (formData.ABHA || "").toString().trim();
     if (abhaVal && !/^\d{14}$/.test(abhaVal)) {
@@ -162,6 +176,8 @@ const FamilyMemberRegistration = () => {
       return;
     }
 
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     setLoading(true);
     try {
       const data = new FormData();
@@ -174,7 +190,10 @@ const FamilyMemberRegistration = () => {
       data.append("Height", formData.Height);
       data.append("Weight", formData.Weight);
       data.append("Phone_No", formData.Phone_No);
+<<<<<<< HEAD
       data.append("ABHA", formData.ABHA || "");
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       data.append("Address", JSON.stringify(formData.Address));
       if (photoFile) data.append("Photo", photoFile);
 
@@ -195,7 +214,10 @@ const FamilyMemberRegistration = () => {
         Height: "",
         Weight: "",
         Phone_No: "",
+<<<<<<< HEAD
         ABHA: "",
+=======
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
         Address: { Street: "", District: "", State: "", Pincode: "" },
       });
       handleRemovePhoto();
@@ -448,6 +470,7 @@ const FamilyMemberRegistration = () => {
           {/* Phone */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Phone Number</label>
+<<<<<<< HEAD
             <div className="d-flex">
               <input
                 type="text"
@@ -510,6 +533,24 @@ const FamilyMemberRegistration = () => {
               {employeeLoading ? "Loading..." : "Same as Employee"}
             </button>
           </div>
+=======
+            <input
+              type="text"
+              className="form-control"
+              name="Phone_No"
+              value={formData.Phone_No}
+              onChange={handleChange}
+            />
+          </div>
+  
+          {/* Address */}
+          <h6
+            className="fw-semibold mt-4 mb-2"
+            style={{ color: "#4A70A9" }}
+          >
+            Address Details
+          </h6>
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   
           <input
             className="form-control mb-2"

@@ -190,6 +190,7 @@ useEffect(() => {
   };
 
 
+<<<<<<< HEAD
   /* ================= LAB REPORT PDF (SARCPL A4 Layout) ================= */
   const downloadLabReport = (report) => {
     const doc = new jsPDF("p", "mm", "a4");
@@ -219,10 +220,36 @@ useEffect(() => {
     doc.text("LOGO", left + 12, 20, { align: "center" });
 
     // Title centered
+=======
+  /* ================= LAB REPORT PDF ================= */
+  const downloadLabReport = (report) => {
+    const doc = new jsPDF("p", "mm", "a4");
+
+    // Margins
+    const left = 15;
+    const right = 195;
+
+    const instituteName = getReportInstitutionName(report.Institute?.Institute_Name);
+
+    const reportDate = formatDate(report);
+    const downloadedAt = formatReportTimestamp();
+
+    const patientName = report.Employee?.Name || "Employee";
+    const employeeIdText = report.Employee?.ABS_NO
+      ? `(${report.Employee.ABS_NO})`
+      : "";
+
+    const issuedTo = report.IsFamilyMember
+      ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})`
+      : "Self";
+
+    /* ---------- HEADER ---------- */
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     addCenteredReportHeader(doc, {
       centerX: 105,
       left,
       right,
+<<<<<<< HEAD
       institutionName: "SARCPL Police Hospital",
       title: "DIAGNOSTIC REPORT",
       subtitle: instituteName,
@@ -569,6 +596,67 @@ useEffect(() => {
 
     const fileName = `Diagnosis_Report_${String(report._id || '').slice(-6) || reportId}.pdf`;
     doc.save(fileName);
+=======
+      institutionName: instituteName,
+      title: "DIAGNOSTIC LABORATORY REPORT",
+      lineY: 32
+    });
+    addDownloadTimestamp(doc, { x: right, y: 12, align: "right", timestamp: downloadedAt });
+
+    /* ---------- PATIENT DETAILS ---------- */
+    doc.setFontSize(10);
+    doc.text(`Employee Name: ${patientName} ${employeeIdText}`, left, 42);
+    doc.text(`Report For: ${issuedTo}`, left, 48);
+    doc.text(`Test Date: ${reportDate}`, left, 54);
+
+    /* ---------- TEST TABLE ---------- */
+    const tableData = report.Tests.map((t) => {
+      // determine category: prefer saved Category, else use Test_ID.group, else try to infer from test name
+      const category = t.Category || t.Test_ID?.Group || (() => {
+        try {
+          const allCats = Object.keys(diagnosticTestsByCategory || {});
+          for (const c of allCats) {
+            const found = (diagnosticTestsByCategory[c] || []).find(x => x.name === t.Test_Name);
+            if (found) return c;
+          }
+        } catch (e) {}
+        return "";
+      })();
+
+      return [
+        category,
+        t.Test_Name,
+        `${t.Result_Value} ${t.Units || ""}`,
+        t.Test_ID?.Reference_Range || t.Reference_Range || "-",
+        getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range, report.Employee?.Gender)
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 62,
+      head: [["Category", "Test Name", "Result", "Reference Range", "Status"]],
+      body: tableData,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [40, 40, 40] },
+      didParseCell: (data) => {
+        if (data.section === "body" && data.row.raw?.[4] === "Risk" && data.column.index === 2) {
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
+      margin: { left, right: 15 }
+    });
+
+    /* ---------- FOOTER ---------- */
+    doc.setFontSize(9);
+    doc.text(
+      "This is a system-generated diagnostic laboratory report.",
+      105,
+      doc.lastAutoTable.finalY + 15,
+      { align: "center" }
+    );
+
+    doc.save(`Lab_Report_${report._id.slice(-6)}.pdf`);
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   };
 
   const splitReportsByDate = (records) => {

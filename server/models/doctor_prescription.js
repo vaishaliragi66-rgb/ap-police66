@@ -42,7 +42,12 @@ const DoctorPrescriptionSchema = new Schema(
         Night: { type: Number, default: 0 },       // Night dosage
         Duration: { type: String },        // optional (5 days)
         Remarks: { type: String },         // Doctor remarks for this medicine
+<<<<<<< HEAD
         Quantity: { type: Number, default: 0 }
+=======
+        Quantity: { type: Number, default: 0 },
+        ToBePrescribed: { type: Boolean, default: false }
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       }
     ],
 

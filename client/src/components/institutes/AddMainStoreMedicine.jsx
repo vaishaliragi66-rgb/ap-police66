@@ -31,6 +31,7 @@ const AddMainStoreMedicine = () => {
   const issuedFromOptions = getMasterOptions(masterMap, "Issued From Sources");
   
   // Get medicine names filtered by selected type and optional dosage form
+<<<<<<< HEAD
   const getFilteredMedicineNames = () => {
     if (!formData.Type) {
       return [];
@@ -42,6 +43,19 @@ const AddMainStoreMedicine = () => {
 
     return names.map((name) => ({ Medicine_Name: name }));
   };
+=======
+  const getFilteredMedicineNames = () => {
+    if (!formData.Type) {
+      return [];
+    }
+
+    const names = formData.Dosage_Form
+      ? getMasterMedicinesByTypeAndForm(masterMap, formData.Type, formData.Dosage_Form).map((item) => item.value_name)
+      : getMasterMedicinesByType(masterMap, formData.Type);
+
+    return [...new Set(names.filter(Boolean))].map((name) => ({ Medicine_Name: name }));
+  };
+>>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
   const handleChange = (e) => {
     const { name, value } = e.target;
