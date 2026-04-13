@@ -1,0 +1,111 @@
+﻿{
+    "success":  true,
+    "data":  {
+                 "medicineTypes":  [
+                                       "Antibiotics",
+                                       "Analgesics",
+                                       "Antipyretics",
+                                       "Antacids",
+                                       "Antihistamines",
+                                       "Vitamins",
+                                       "Antifungals",
+                                       "Antivirals",
+                                       "Others"
+                                   ],
+                 "dosageForms":  [
+                                     "Tablet",
+                                     "Capsule",
+                                     "Syrup",
+                                     "Injection",
+                                     "Ointment",
+                                     "Drops",
+                                     "Inhaler",
+                                     "Powder",
+                                     "Other"
+                                 ],
+                 "medicineTypeEntries":  [
+                                             {
+                                                 "_id":  null,
+                                                 "value_name":  "Antibiotics",
+                                                 "status":  "Active"
+                                             },
+                                             {
+                                                 "_id":  null,
+                                                 "value_name":  "Analgesics",
+                                                 "status":  "Active"
+                                             },
+                                             {
+                                                 "_id":  null,
+                                                 "value_name":  "Antipyretics",
+                                                 "status":  "Active"
+                                             },
+                                             {
+                                                 "_id":  null,
+                                                 "value_name":  "Antacids",
+                                                 "status":  "Active"
+                                             },
+                                             {
+                                                 "_id":  null,
+                                                 "value_name":  "Antihistamines",
+                                                 "status":  "Active"
+                                             },
+                                             {
+                                                 "_id":  null,
+                                                 "value_name":  "Vitamins",
+                                                 "status":  "Active"
+                                             },
+                                             {
+                                                 "_id":  null,
+                                                 "value_name":  "Antifungals",
+                                                 "status":  "Active"
+                                             },
+                                             {
+                                                 "_id":  null,
+                                                 "value_name":  "Antivirals",
+                                                 "status":  "Active"
+                                             },
+                                             {
+                                                 "_id":  null,
+                                                 "value_name":  "Others",
+                                                 "status":  "Active"
+                                             }
+                                         ],
+                 "medicines":  [
+                                   {
+                                       "_id":  "default-0",
+                                       "value_name":  "Paracetamol",
+                                       "medicineType":  "Antipyretics",
+                                       "dosageForm":  "Tablet",
+                                       "strength":  "500mg",
+                                       "status":  "Active"
+                                   },
+                                   {
+                                       "_id":  "default-1",
+                                       "value_name":  "Amoxicillin",
+                                       "medicineType":  "Antibiotics",
+                                       "dosageForm":  "Capsule",
+                                       "strength":  "500mg",
+                                       "status":  "Active"
+                                   },
+                                   {
+                                       "_id":  "default-2",
+                                       "value_name":  "Ibuprofen",
+                                       "medicineType":  "Analgesics",
+                                       "dosageForm":  "Tablet",
+                                       "strength":  "400mg",
+                                       "status":  "Active"
+                                   },
+                                   {
+                                       "_id":  "default-3",
+                                       "value_name":  "Vitamin D",
+                                       "medicineType":  "Vitamins",
+                                       "dosageForm":  "Tablet",
+                                       "strength":  "60000 IU",
+                                       "status":  "Active"
+                                   }
+                               ],
+                 "medicinesByType":  {
+
+                                     }
+             }
+}

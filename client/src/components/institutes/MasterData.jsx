@@ -1004,6 +1004,11 @@ const loadTestsStructure = async () => {
       await loadValues(selectedCategoryId);
       invalidateMasterDataCache();
       window.dispatchEvent(new Event("master-data-updated"));
+      try {
+        await fetchMasterDataMap({ force: true });
+      } catch (e) {
+        // ignore fetch errors
+      }
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to add value");
@@ -1033,6 +1038,11 @@ const loadTestsStructure = async () => {
       await loadValues(selectedCategoryId);
       invalidateMasterDataCache();
       window.dispatchEvent(new Event("master-data-updated"));
+      try {
+        await fetchMasterDataMap({ force: true });
+      } catch (e) {
+        // ignore fetch errors
+      }
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to update value");
@@ -1400,6 +1410,12 @@ const loadTestsStructure = async () => {
         await loadMedicinesStructure();
         invalidateMasterDataCache();
         window.dispatchEvent(new Event("master-data-updated"));
+        try {
+          await fetchMasterDataMap({ force: true });
+        } catch (e) {}
+        try {
+          await fetchMasterDataMap({ force: true });
+        } catch (e) {}
       } catch (err) {
         console.error("Edit medicine type error:", err);
         setError(err.response?.data?.message || "Failed to update medicine type");
@@ -1466,8 +1482,11 @@ const loadTestsStructure = async () => {
         const newKey = getMedicineTypeKey(medicineType);
         removeRemovedMasterKey(`T::${newKey}`);
         await loadMedicinesStructure();
-        invalidateMasterDataCache();
-        window.dispatchEvent(new Event("master-data-updated"));
+          invalidateMasterDataCache();
+          window.dispatchEvent(new Event("master-data-updated"));
+          try {
+            await fetchMasterDataMap({ force: true });
+          } catch (e) {}
       } catch (err) {
         console.error("Toggle medicine type error:", err);
         setError(err.response?.data?.message || "Failed to toggle medicine type");

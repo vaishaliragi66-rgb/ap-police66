@@ -1,0 +1,2300 @@
+﻿[
+    {
+        "name":  "MEDICINE",
+        "medicineType":  "",
+        "dosageForm":  "Dosage Form",
+        "strength":  ""
+    },
+    {
+        "name":  "Amoxicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Amoxicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Amoxicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Amoxicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Amoxicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Amoxicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Amoxicillin + Clavulanate",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Amoxicillin + Clavulanate",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Amoxicillin + Clavulanate",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Amoxicillin + Clavulanate",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Ampicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Ampicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Ampicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Ampicillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cloxacillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Cloxacillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Cloxacillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cloxacillin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cephalexin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Cephalexin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Cephalexin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cephalexin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cefuroxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Cefuroxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Cefuroxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cefuroxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cefixime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Cefixime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Cefixime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Cefixime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Cefpodoxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Cefpodoxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Cefpodoxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Cefpodoxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Doxycycline",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Doxycycline",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Ciprofloxacin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Ciprofloxacin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Ofloxacin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Ofloxacin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Levofloxacin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Levofloxacin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Azithromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Azithromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Azithromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Azithromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Clarithromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Clarithromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Erythromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Erythromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Erythromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Erythromycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Metronidazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Metronidazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Metronidazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Metronidazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Tinidazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Tinidazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cotrimoxazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "480mg"
+    },
+    {
+        "name":  "Cotrimoxazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "480mg"
+    },
+    {
+        "name":  "Cotrimoxazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "960mg"
+    },
+    {
+        "name":  "Cotrimoxazole",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Syrup",
+        "strength":  "960mg"
+    },
+    {
+        "name":  "Nitrofurantoin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Linezolid",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "600mg"
+    },
+    {
+        "name":  "Vancomycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Vancomycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Gentamicin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "40mg/ml"
+    },
+    {
+        "name":  "Amikacin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "250mg/ml"
+    },
+    {
+        "name":  "Amikacin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg/ml"
+    },
+    {
+        "name":  "Ceftriaxone",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Ceftriaxone",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Cefotaxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cefotaxime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Cefepime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Cefepime",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Meropenem",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Meropenem",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Imipenem + Cilastatin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Imipenem + Cilastatin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Piperacillin + Tazobactam",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "2.25g"
+    },
+    {
+        "name":  "Piperacillin + Tazobactam",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "4.5g"
+    },
+    {
+        "name":  "Aztreonam",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Aztreonam",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Colistin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1MU"
+    },
+    {
+        "name":  "Colistin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "2MU"
+    },
+    {
+        "name":  "Sulbactam",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Sulbactam",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Tazobactam",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Tazobactam",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Clindamycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Clindamycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Clindamycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Clindamycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Teicoplanin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Teicoplanin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Tigecycline",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Polymyxin B",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "5000U/ml"
+    },
+    {
+        "name":  "Rifampicin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Rifampicin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Isoniazid",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Isoniazid",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Pyrazinamide",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Ethambutol",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Streptomycin",
+        "medicineType":  "ANTI BIOTICS",
+        "dosageForm":  "Injection",
+        "strength":  "1g"
+    },
+    {
+        "name":  "Acyclovir",
+        "medicineType":  "ANTI VIRALS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Acyclovir",
+        "medicineType":  "ANTI VIRALS",
+        "dosageForm":  "Cream",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Acyclovir",
+        "medicineType":  "ANTI VIRALS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Acyclovir",
+        "medicineType":  "ANTI VIRALS",
+        "dosageForm":  "Cream",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Fluconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Fluconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Syrup",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Fluconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Tablet",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Fluconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Syrup",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Fluconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Fluconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Syrup",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Itraconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Capsule",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Itraconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Capsule",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Ketoconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Ketoconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Cream",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Clotrimazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Cream",
+        "strength":  "1%"
+    },
+    {
+        "name":  "Miconazole",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Cream",
+        "strength":  "2%"
+    },
+    {
+        "name":  "Terbinafine",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Terbinafine",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Cream",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Amphotericin B",
+        "medicineType":  "ANTI FUNGALS",
+        "dosageForm":  "Injection",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Albendazole",
+        "medicineType":  "ANTI HELMENTHICS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Albendazole",
+        "medicineType":  "ANTI HELMENTHICS",
+        "dosageForm":  "Syrup",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Albendazole",
+        "medicineType":  "ANTI HELMENTHICS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Albendazole",
+        "medicineType":  "ANTI HELMENTHICS",
+        "dosageForm":  "Syrup",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Chloroquine",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Tablet",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Chloroquine",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Syrup",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Chloroquine",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Tablet",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Chloroquine",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Syrup",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Hydroxychloroquine",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Hydroxychloroquine",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Quinine",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Tablet",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Artesunate",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Artesunate",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Injection",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Artesunate",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Artesunate",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Injection",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Artemether",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Injection",
+        "strength":  "80mg/ml"
+    },
+    {
+        "name":  "Lumefantrine",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Tablet",
+        "strength":  "120mg"
+    },
+    {
+        "name":  "Artemether + Lumefantrine 20mg +",
+        "medicineType":  "ANTI MALARIALS",
+        "dosageForm":  "Tablet",
+        "strength":  "120mg"
+    },
+    {
+        "name":  "Metformin",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Metformin",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "850mg"
+    },
+    {
+        "name":  "Metformin",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Glibenclamide",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "2.5mg"
+    },
+    {
+        "name":  "Glibenclamide",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "5mg"
+    },
+    {
+        "name":  "Gliclazide",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Gliclazide",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "80mg"
+    },
+    {
+        "name":  "Glimepiride",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "1mg"
+    },
+    {
+        "name":  "Glimepiride",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "2mg"
+    },
+    {
+        "name":  "Glimepiride",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "4mg"
+    },
+    {
+        "name":  "Pioglitazone",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "15mg"
+    },
+    {
+        "name":  "Pioglitazone",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "30mg"
+    },
+    {
+        "name":  "Sitagliptin",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Sitagliptin",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Vildagliptin",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Insulin (Regular)",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Injection",
+        "strength":  "40IU/ml"
+    },
+    {
+        "name":  "Insulin (Regular)",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Injection",
+        "strength":  "100IU/ml"
+    },
+    {
+        "name":  "Insulin (NPH)",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Injection",
+        "strength":  "40IU/ml"
+    },
+    {
+        "name":  "Insulin (NPH)",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Injection",
+        "strength":  "100IU/ml"
+    },
+    {
+        "name":  "Insulin (Glargine)",
+        "medicineType":  "ANTI DIABETICS",
+        "dosageForm":  "Injection",
+        "strength":  "100IU/ml"
+    },
+    {
+        "name":  "Omeprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Capsule",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Omeprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Omeprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Capsule",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Omeprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Pantoprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Pantoprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Rabeprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Esomeprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Esomeprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Lansoprazole",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Capsule",
+        "strength":  "30mg"
+    },
+    {
+        "name":  "Ranitidine",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Ranitidine",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Famotidine",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Famotidine",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Sucralfate",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Tablet",
+        "strength":  "1g"
+    },
+    {
+        "name":  "Sucralfate",
+        "medicineType":  "ANTACIDS",
+        "dosageForm":  "Syrup",
+        "strength":  "1g"
+    },
+    {
+        "name":  "Lactulose",
+        "medicineType":  "LAXATIVES",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Bisacodyl",
+        "medicineType":  "LAXATIVES",
+        "dosageForm":  "Tablet",
+        "strength":  ""
+    },
+    {
+        "name":  "Bisacodyl",
+        "medicineType":  "LAXATIVES",
+        "dosageForm":  "Suppository",
+        "strength":  ""
+    },
+    {
+        "name":  "Senna",
+        "medicineType":  "LAXATIVES",
+        "dosageForm":  "Tablet",
+        "strength":  ""
+    },
+    {
+        "name":  "Senna",
+        "medicineType":  "LAXATIVES",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Magnesium Hydroxide",
+        "medicineType":  "LAXATIVES",
+        "dosageForm":  "Suspension",
+        "strength":  ""
+    },
+    {
+        "name":  "Sodium Picosulfate",
+        "medicineType":  "LAXATIVES",
+        "dosageForm":  "Tablet",
+        "strength":  ""
+    },
+    {
+        "name":  "Sodium Picosulfate",
+        "medicineType":  "LAXATIVES",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Atorvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Atorvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Atorvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Atorvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "80mg"
+    },
+    {
+        "name":  "Simvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Simvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Simvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Simvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "80mg"
+    },
+    {
+        "name":  "Rosuvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "5mg"
+    },
+    {
+        "name":  "Rosuvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Rosuvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Rosuvastatin",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Fenofibrate",
+        "medicineType":  "LIPID LOWERING AGENTS",
+        "dosageForm":  "Tablet",
+        "strength":  "160mg"
+    },
+    {
+        "name":  "Amlodipine",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "2.5mg"
+    },
+    {
+        "name":  "Amlodipine",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "5mg"
+    },
+    {
+        "name":  "Amlodipine",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Atenolol",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "25mg"
+    },
+    {
+        "name":  "Atenolol",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Atenolol",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Metoprolol",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "25mg"
+    },
+    {
+        "name":  "Metoprolol",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Metoprolol",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Propranolol",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Propranolol",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Propranolol",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "80mg"
+    },
+    {
+        "name":  "Enalapril",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "2.5mg"
+    },
+    {
+        "name":  "Ramipril",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "5mg"
+    },
+    {
+        "name":  "Ramipril",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Losartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "25mg"
+    },
+    {
+        "name":  "Losartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Losartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Telmisartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Telmisartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Telmisartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "80mg"
+    },
+    {
+        "name":  "Valsartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Valsartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "80mg"
+    },
+    {
+        "name":  "Valsartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "160mg"
+    },
+    {
+        "name":  "Valsartan",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "320mg"
+    },
+    {
+        "name":  "Hydralazine",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "25mg"
+    },
+    {
+        "name":  "Hydralazine",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Clonidine",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "0.1mg"
+    },
+    {
+        "name":  "Clonidine",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "0.2mg"
+    },
+    {
+        "name":  "Clonidine",
+        "medicineType":  "ANTI HYPERTENSIVES",
+        "dosageForm":  "Tablet",
+        "strength":  "0.3mg"
+    },
+    {
+        "name":  "Furosemide",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Furosemide",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Furosemide",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "80mg"
+    },
+    {
+        "name":  "Furosemide",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Injection",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Furosemide",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Injection",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Hydrochlorothiazide",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "12.5mg"
+    },
+    {
+        "name":  "Hydrochlorothiazide",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "25mg"
+    },
+    {
+        "name":  "Hydrochlorothiazide",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Spironolactone",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "25mg"
+    },
+    {
+        "name":  "Spironolactone",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Spironolactone",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Acetazolamide",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Mannitol",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Injection",
+        "strength":  "20%"
+    },
+    {
+        "name":  "Mannitol",
+        "medicineType":  "DIURETICS",
+        "dosageForm":  "Injection",
+        "strength":  "25%"
+    },
+    {
+        "name":  "Aspirin",
+        "medicineType":  "ANTI PLATELETS",
+        "dosageForm":  "Tablet",
+        "strength":  "75mg"
+    },
+    {
+        "name":  "Aspirin",
+        "medicineType":  "ANTI PLATELETS",
+        "dosageForm":  "Tablet",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Aspirin",
+        "medicineType":  "ANTI PLATELETS",
+        "dosageForm":  "Tablet",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Clopidogrel",
+        "medicineType":  "ANTI PLATELETS",
+        "dosageForm":  "Tablet",
+        "strength":  "75mg"
+    },
+    {
+        "name":  "Clopidogrel",
+        "medicineType":  "ANTI PLATELETS",
+        "dosageForm":  "Tablet",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Levothyroxine",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "25mcg"
+    },
+    {
+        "name":  "Levothyroxine",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mcg"
+    },
+    {
+        "name":  "Levothyroxine",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "75mcg"
+    },
+    {
+        "name":  "Levothyroxine",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mcg"
+    },
+    {
+        "name":  "Levothyroxine",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "125mcg"
+    },
+    {
+        "name":  "Levothyroxine",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "150mcg"
+    },
+    {
+        "name":  "Prednisolone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "5mg"
+    },
+    {
+        "name":  "Prednisolone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Prednisolone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Hydrocortisone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Hydrocortisone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Hydrocortisone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Dexamethasone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "0.5mg"
+    },
+    {
+        "name":  "Dexamethasone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "4mg"
+    },
+    {
+        "name":  "Dexamethasone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Estrogen (Conjugated)",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "0.625mg"
+    },
+    {
+        "name":  "Estrogen (Conjugated)",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Tablet",
+        "strength":  "1.25mg"
+    },
+    {
+        "name":  "Progesterone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Capsule",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Progesterone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Capsule",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Progesterone",
+        "medicineType":  "ANTI ANEMICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Vitamin A",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Capsule",
+        "strength":  "5000IU"
+    },
+    {
+        "name":  "Vitamin A",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Capsule",
+        "strength":  "10000IU"
+    },
+    {
+        "name":  "Vitamin D3",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Tablet",
+        "strength":  "400IU"
+    },
+    {
+        "name":  "Vitamin D3",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Tablet",
+        "strength":  "1000IU"
+    },
+    {
+        "name":  "Vitamin D3",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Capsule",
+        "strength":  "60000IU"
+    },
+    {
+        "name":  "Vitamin E",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Capsule",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Vitamin E",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Capsule",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Vitamin C",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Vitamin C",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Vitamin C",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Vitamin B Complex",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Tablet",
+        "strength":  ""
+    },
+    {
+        "name":  "Vitamin B Complex",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Multivitamin",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Tablet",
+        "strength":  ""
+    },
+    {
+        "name":  "Multivitamin",
+        "medicineType":  "VITAMINS",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Calcium Carbonate",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Calcium Carbonate",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Calcium Citrate",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Calcium Citrate",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "1000mg"
+    },
+    {
+        "name":  "Zinc Sulfate",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Zinc Sulfate",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Magnesium Oxide",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Magnesium Oxide",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Potassium Chloride",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "600mg"
+    },
+    {
+        "name":  "Potassium Chloride",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Potassium Chloride",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Sodium Bicarbonate",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Sodium Bicarbonate",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Selenium",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mcg"
+    },
+    {
+        "name":  "Selenium",
+        "medicineType":  "MINERALS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mcg"
+    },
+    {
+        "name":  "Paracetamol",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Paracetamol",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Paracetamol",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "650mg"
+    },
+    {
+        "name":  "Paracetamol",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Paracetamol",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Ibuprofen",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Ibuprofen",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Diclofenac",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Diclofenac",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Diclofenac",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Naproxen",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "250mg"
+    },
+    {
+        "name":  "Naproxen",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "500mg"
+    },
+    {
+        "name":  "Tramadol",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Tramadol",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Tramadol",
+        "medicineType":  "ANALGESICS \u0026 ANTI PYRETICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Haloperidol",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "1mg"
+    },
+    {
+        "name":  "Haloperidol",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "5mg"
+    },
+    {
+        "name":  "Haloperidol",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Haloperidol",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Chlorpromazine",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "25mg"
+    },
+    {
+        "name":  "Chlorpromazine",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Chlorpromazine",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Risperidone",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "1mg"
+    },
+    {
+        "name":  "Risperidone",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "2mg"
+    },
+    {
+        "name":  "Risperidone",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "4mg"
+    },
+    {
+        "name":  "Risperidone",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "6mg"
+    },
+    {
+        "name":  "Olanzapine",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "5mg"
+    },
+    {
+        "name":  "Olanzapine",
+        "medicineType":  "ANTIPSYCHOTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Phenytoin",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Phenytoin",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Phenytoin",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Carbamazepine",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Carbamazepine",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Phenobarbital",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "30mg"
+    },
+    {
+        "name":  "Phenobarbital",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Phenobarbital",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Topiramate",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "25mg"
+    },
+    {
+        "name":  "Topiramate",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "50mg"
+    },
+    {
+        "name":  "Topiramate",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Gabapentin",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Gabapentin",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Gabapentin",
+        "medicineType":  "ANTI EPILEPTICS",
+        "dosageForm":  "Capsule",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Salbutamol",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Tablet",
+        "strength":  "2mg"
+    },
+    {
+        "name":  "Salbutamol",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Tablet",
+        "strength":  "4mg"
+    },
+    {
+        "name":  "Salbutamol",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Salbutamol",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Inhaler",
+        "strength":  ""
+    },
+    {
+        "name":  "Terbutaline",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Tablet",
+        "strength":  "2.5mg"
+    },
+    {
+        "name":  "Terbutaline",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Terbutaline",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Inhaler",
+        "strength":  ""
+    },
+    {
+        "name":  "Theophylline",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Tablet",
+        "strength":  "100mg"
+    },
+    {
+        "name":  "Theophylline",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Tablet",
+        "strength":  "200mg"
+    },
+    {
+        "name":  "Theophylline",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Tablet",
+        "strength":  "400mg"
+    },
+    {
+        "name":  "Aminophylline",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Beclomethasone",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Inhaler",
+        "strength":  ""
+    },
+    {
+        "name":  "Budesonide",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Inhaler",
+        "strength":  ""
+    },
+    {
+        "name":  "Fluticasone",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Inhaler",
+        "strength":  ""
+    },
+    {
+        "name":  "Montelukast",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Tablet",
+        "strength":  "4mg"
+    },
+    {
+        "name":  "Montelukast",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Tablet",
+        "strength":  "5mg"
+    },
+    {
+        "name":  "Montelukast",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Ipratropium",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Inhaler",
+        "strength":  ""
+    },
+    {
+        "name":  "Tiotropium",
+        "medicineType":  "RESPIRATORY",
+        "dosageForm":  "Inhaler",
+        "strength":  ""
+    },
+    {
+        "name":  "Omeprazole",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Capsule",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Omeprazole",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Capsule",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Omeprazole",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Pantoprazole",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Pantoprazole",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Pantoprazole",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Ranitidine",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "150mg"
+    },
+    {
+        "name":  "Ranitidine",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "300mg"
+    },
+    {
+        "name":  "Ranitidine",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Famotidine",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Famotidine",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "40mg"
+    },
+    {
+        "name":  "Famotidine",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Domperidone",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Domperidone",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "20mg"
+    },
+    {
+        "name":  "Domperidone",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Metoclopramide",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "10mg"
+    },
+    {
+        "name":  "Metoclopramide",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Ondansetron",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "4mg"
+    },
+    {
+        "name":  "Ondansetron",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "8mg"
+    },
+    {
+        "name":  "Ondansetron",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Injection",
+        "strength":  ""
+    },
+    {
+        "name":  "Loperamide",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "2mg"
+    },
+    {
+        "name":  "Loperamide",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Syrup",
+        "strength":  ""
+    },
+    {
+        "name":  "Oral Rehydration Salt (ORS)",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Powder",
+        "strength":  ""
+    },
+    {
+        "name":  "Sucralfate",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Suspension",
+        "strength":  ""
+    },
+    {
+        "name":  "Sucralfate",
+        "medicineType":  "GASTRO INTESTINAL",
+        "dosageForm":  "Tablet",
+        "strength":  "1g"
+    }
+]
