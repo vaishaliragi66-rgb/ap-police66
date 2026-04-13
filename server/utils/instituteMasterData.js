@@ -69,25 +69,50 @@ const loadDiseaseSeedGroups = () => {
 const resolveInstituteIdFromRequest = (req) =>
   trimString(req?.user?.instituteId || req?.query?.instituteId || req?.headers?.["x-institute-id"] || "");
 
+// A small compatibility feature: allow certain top-level categories (like Tests)
+// to be backed by a single shared category document across institutes.
+const GLOBAL_MASTER_INSTITUTE_ID = process.env.GLOBAL_MASTER_INSTITUTE_ID || "000000000000000000000000";
+
 const ensureCategoryDoc = async (instituteId, categoryName) => {
+  const normalizedName = normalize(categoryName);
+
+  // Prefer a per-institute category when available
+  if (isValidObjectId(instituteId)) {
+    let category = await MasterCategory.findOne({ Institute_ID: instituteId, normalized_name: normalizedName });
+    if (category) return category;
+  }
+
+  // For Tests we support a shared global category id so all institutes can reference the same category doc
+  if (String(categoryName) === TEST_CATEGORY_NAME) {
+    // try global first
+    let globalCat = await MasterCategory.findOne({ Institute_ID: GLOBAL_MASTER_INSTITUTE_ID, normalized_name: normalizedName });
+    if (!globalCat) {
+      // create a global category doc (Institute_ID will be the reserved global id)
+      globalCat = await MasterCategory.create({
+        Institute_ID: GLOBAL_MASTER_INSTITUTE_ID,
+        category_name: categoryName,
+        normalized_name: normalizedName,
+        status: "Active",
+        seed_version: 0
+      });
+    }
+    return globalCat;
+  }
+
+  // fallback: create per-institute category (only when instituteId is valid)
   if (!isValidObjectId(instituteId)) return null;
 
-  const normalizedName = normalize(categoryName);
-  let category = await MasterCategory.findOne({
-    Institute_ID: instituteId,
-    normalized_name: normalizedName
-  });
-
+  const normalized = normalizedName;
+  let category = await MasterCategory.findOne({ Institute_ID: instituteId, normalized_name: normalized });
   if (!category) {
     category = await MasterCategory.create({
       Institute_ID: instituteId,
       category_name: categoryName,
-      normalized_name: normalizedName,
+      normalized_name: normalized,
       status: "Active",
       seed_version: 0
     });
   }
-
   return category;
 };
 
@@ -467,6 +492,7 @@ module.exports = {
   DISEASE_CATEGORY_NAME,
   XRAY_CATEGORY_NAME,
   DEFAULT_TEST_CATEGORIES,
+  GLOBAL_MASTER_INSTITUTE_ID,
   normalize,
   trimString,
   isValidObjectId,

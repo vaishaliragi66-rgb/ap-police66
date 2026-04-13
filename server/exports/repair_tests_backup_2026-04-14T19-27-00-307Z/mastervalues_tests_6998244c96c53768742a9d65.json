@@ -1,0 +1,4448 @@
+[
+  {
+    "_id": "69de94a93fdf85404dd77639",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "1",
+    "normalized_value": "1",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Hemoglobin",
+      "categoryNormalized": "hemoglobin",
+      "reference": "M: 13.0–17.0 | F: 12.0–15.0",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T19:25:29.725Z",
+    "updatedAt": "2026-04-14T19:25:29.725Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ac3fdf85404dd7766c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "10",
+    "normalized_value": "10",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Neutrophils (DLC)",
+      "categoryNormalized": "neutrophils (dlc)",
+      "reference": "50–70",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T19:25:32.931Z",
+    "updatedAt": "2026-04-14T19:25:32.931Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a43fdf85404dd775e3",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "100",
+    "normalized_value": "100",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "CA-125",
+      "categoryNormalized": "ca-125",
+      "reference": "<35",
+      "unit": "U/mL"
+    },
+    "createdAt": "2026-04-14T19:25:24.297Z",
+    "updatedAt": "2026-04-14T19:25:24.297Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a33fdf85404dd775e0",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "101",
+    "normalized_value": "101",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "CA 19-9",
+      "categoryNormalized": "ca 19-9",
+      "reference": "<37",
+      "unit": "U/mL"
+    },
+    "createdAt": "2026-04-14T19:25:23.515Z",
+    "updatedAt": "2026-04-14T19:25:23.515Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b03fdf85404dd776a8",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "102",
+    "normalized_value": "102",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Testosterone (Total) – M",
+      "categoryNormalized": "testosterone (total) – m",
+      "reference": "270–1070",
+      "unit": "ng/dL"
+    },
+    "createdAt": "2026-04-14T19:25:36.790Z",
+    "updatedAt": "2026-04-14T19:25:36.790Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a73fdf85404dd7760f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "103",
+    "normalized_value": "103",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "FSH",
+      "categoryNormalized": "fsh",
+      "reference": "M: 1.5–12.4 | F: varies by phase",
+      "unit": "mIU/mL"
+    },
+    "createdAt": "2026-04-14T19:25:27.062Z",
+    "updatedAt": "2026-04-14T19:25:27.062Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94aa3fdf85404dd7764e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "104",
+    "normalized_value": "104",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "LH",
+      "categoryNormalized": "lh",
+      "reference": "M: 1.7–8.6 | F: varies by phase",
+      "unit": "mIU/mL"
+    },
+    "createdAt": "2026-04-14T19:25:30.953Z",
+    "updatedAt": "2026-04-14T19:25:30.953Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ae3fdf85404dd77687",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "105",
+    "normalized_value": "105",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Prolactin",
+      "categoryNormalized": "prolactin",
+      "reference": "M: 2–18 | F: 2–29",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:34.640Z",
+    "updatedAt": "2026-04-14T19:25:34.640Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a53fdf85404dd775f8",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "106",
+    "normalized_value": "106",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Cortisol (Morning)",
+      "categoryNormalized": "cortisol (morning)",
+      "reference": "6.2–19.4",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:25.731Z",
+    "updatedAt": "2026-04-14T19:25:25.731Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a63fdf85404dd77601",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "107",
+    "normalized_value": "107",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "DHEA-S",
+      "categoryNormalized": "dhea-s",
+      "reference": "M: 80–560 | F: 35–430",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:26.346Z",
+    "updatedAt": "2026-04-14T19:25:26.346Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a53fdf85404dd775ef",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "108",
+    "normalized_value": "108",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Calcium (Serum)",
+      "categoryNormalized": "calcium (serum)",
+      "reference": "8.5–10.5",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:25.293Z",
+    "updatedAt": "2026-04-14T19:25:25.293Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ae3fdf85404dd7767b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "109",
+    "normalized_value": "109",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Phosphorus (Serum)",
+      "categoryNormalized": "phosphorus (serum)",
+      "reference": "2.5–4.5",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:34.026Z",
+    "updatedAt": "2026-04-14T19:25:34.026Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ab3fdf85404dd77654",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "11",
+    "normalized_value": "11",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Lymphocytes (DLC)",
+      "categoryNormalized": "lymphocytes (dlc)",
+      "reference": "20–40",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T19:25:31.362Z",
+    "updatedAt": "2026-04-14T19:25:31.362Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ad3fdf85404dd77675",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "110",
+    "normalized_value": "110",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "PTH (Parathyroid Hormone)",
+      "categoryNormalized": "pth (parathyroid hormone)",
+      "reference": "10–65",
+      "unit": "pg/mL"
+    },
+    "createdAt": "2026-04-14T19:25:33.719Z",
+    "updatedAt": "2026-04-14T19:25:33.719Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a03fdf85404dd775b9",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "111",
+    "normalized_value": "111",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Alkaline Phosphatase (Bone)",
+      "categoryNormalized": "alkaline phosphatase (bone)",
+      "reference": "15–41",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T19:25:20.305Z",
+    "updatedAt": "2026-04-14T19:25:20.305Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94aa3fdf85404dd77642",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "112",
+    "normalized_value": "112",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "IgE (Total)",
+      "categoryNormalized": "ige (total)",
+      "reference": "< 100 (adults)",
+      "unit": "IU/mL"
+    },
+    "createdAt": "2026-04-14T19:25:30.338Z",
+    "updatedAt": "2026-04-14T19:25:30.338Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de949f3fdf85404dd775ad",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "113",
+    "normalized_value": "113",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "ANA (Antinuclear Antibody)",
+      "categoryNormalized": "ana (antinuclear antibody)",
+      "reference": "Negative (<1:40)",
+      "unit": "Titer"
+    },
+    "createdAt": "2026-04-14T19:25:19.511Z",
+    "updatedAt": "2026-04-14T19:25:19.511Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94af3fdf85404dd77696",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "114",
+    "normalized_value": "114",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Rheumatoid Factor (RF)",
+      "categoryNormalized": "rheumatoid factor (rf)",
+      "reference": "<20",
+      "unit": "IU/mL"
+    },
+    "createdAt": "2026-04-14T19:25:35.562Z",
+    "updatedAt": "2026-04-14T19:25:35.562Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a53fdf85404dd775ec",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "115",
+    "normalized_value": "115",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "CRP (C-Reactive Protein)",
+      "categoryNormalized": "crp (c-reactive protein)",
+      "reference": "<6.0",
+      "unit": "mg/L"
+    },
+    "createdAt": "2026-04-14T19:25:25.076Z",
+    "updatedAt": "2026-04-14T19:25:25.076Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a63fdf85404dd7760c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "12",
+    "normalized_value": "12",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Eosinophils (DLC)",
+      "categoryNormalized": "eosinophils (dlc)",
+      "reference": "1–6",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T19:25:26.858Z",
+    "updatedAt": "2026-04-14T19:25:26.858Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ac3fdf85404dd77669",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "13",
+    "normalized_value": "13",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Monocytes (DLC)",
+      "categoryNormalized": "monocytes (dlc)",
+      "reference": "2–8",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T19:25:32.809Z",
+    "updatedAt": "2026-04-14T19:25:32.809Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a13fdf85404dd775c8",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "14",
+    "normalized_value": "14",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Basophils (DLC)",
+      "categoryNormalized": "basophils (dlc)",
+      "reference": "0–1",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T19:25:21.226Z",
+    "updatedAt": "2026-04-14T19:25:21.226Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94af3fdf85404dd77690",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "15",
+    "normalized_value": "15",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "RDW (Red Cell Distrib. Width)",
+      "categoryNormalized": "rdw (red cell distrib. width)",
+      "reference": "11.5–14.5",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T19:25:35.152Z",
+    "updatedAt": "2026-04-14T19:25:35.152Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a73fdf85404dd77612",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "16",
+    "normalized_value": "16",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Fasting Blood Sugar (FBS)",
+      "categoryNormalized": "fasting blood sugar (fbs)",
+      "reference": "70–100",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:27.267Z",
+    "updatedAt": "2026-04-14T19:25:27.267Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ae3fdf85404dd77681",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "17",
+    "normalized_value": "17",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Postprandial Blood Sugar (PPBS)",
+      "categoryNormalized": "postprandial blood sugar (ppbs)",
+      "reference": "<140",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:34.333Z",
+    "updatedAt": "2026-04-14T19:25:34.333Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a93fdf85404dd77633",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "18",
+    "normalized_value": "18",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "HbA1c",
+      "categoryNormalized": "hba1c",
+      "reference": "<5.7% Normal | 5.7–6.4% Pre | ≥6.5% DM",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T19:25:29.324Z",
+    "updatedAt": "2026-04-14T19:25:29.324Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94af3fdf85404dd77693",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "19",
+    "normalized_value": "19",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Random Blood Sugar (RBS)",
+      "categoryNormalized": "random blood sugar (rbs)",
+      "reference": "<200",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:35.357Z",
+    "updatedAt": "2026-04-14T19:25:35.357Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ae3fdf85404dd7768d",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "2",
+    "normalized_value": "2",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "RBC Count",
+      "categoryNormalized": "rbc count",
+      "reference": "M: 4.7–6.1 | F: 4.2–5.4",
+      "unit": "million/µL"
+    },
+    "createdAt": "2026-04-14T19:25:34.947Z",
+    "updatedAt": "2026-04-14T19:25:34.947Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94aa3fdf85404dd77645",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "20",
+    "normalized_value": "20",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Insulin (Fasting)",
+      "categoryNormalized": "insulin (fasting)",
+      "reference": "2.6–24.9",
+      "unit": "µIU/mL"
+    },
+    "createdAt": "2026-04-14T19:25:30.545Z",
+    "updatedAt": "2026-04-14T19:25:30.545Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a23fdf85404dd775dd",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "21",
+    "normalized_value": "21",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "C-Peptide (Fasting)",
+      "categoryNormalized": "c-peptide (fasting)",
+      "reference": "1.1–4.4",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:22.441Z",
+    "updatedAt": "2026-04-14T19:25:22.441Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b03fdf85404dd776ab",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "22",
+    "normalized_value": "22",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Total Cholesterol",
+      "categoryNormalized": "total cholesterol",
+      "reference": "<200",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:36.994Z",
+    "updatedAt": "2026-04-14T19:25:36.994Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94aa3fdf85404dd77648",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "23",
+    "normalized_value": "23",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "LDL Cholesterol",
+      "categoryNormalized": "ldl cholesterol",
+      "reference": "<100 (Optimal)",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:30.629Z",
+    "updatedAt": "2026-04-14T19:25:30.629Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a83fdf85404dd7762d",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "24",
+    "normalized_value": "24",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "HDL Cholesterol",
+      "categoryNormalized": "hdl cholesterol",
+      "reference": "M: >40 | F: >50",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:28.975Z",
+    "updatedAt": "2026-04-14T19:25:28.975Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b13fdf85404dd776b7",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "25",
+    "normalized_value": "25",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Triglycerides",
+      "categoryNormalized": "triglycerides",
+      "reference": "<150",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:37.814Z",
+    "updatedAt": "2026-04-14T19:25:37.814Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b43fdf85404dd776e1",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "26",
+    "normalized_value": "26",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "VLDL Cholesterol",
+      "categoryNormalized": "vldl cholesterol",
+      "reference": "5–40",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:40.373Z",
+    "updatedAt": "2026-04-14T19:25:40.373Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ad3fdf85404dd7766f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "27",
+    "normalized_value": "27",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Non-HDL Cholesterol",
+      "categoryNormalized": "non-hdl cholesterol",
+      "reference": "<130",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:33.084Z",
+    "updatedAt": "2026-04-14T19:25:33.084Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94aa3fdf85404dd7764b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "28",
+    "normalized_value": "28",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "LDL/HDL Ratio",
+      "categoryNormalized": "ldl/hdl ratio",
+      "reference": "<3.0",
+      "unit": "Ratio"
+    },
+    "createdAt": "2026-04-14T19:25:30.750Z",
+    "updatedAt": "2026-04-14T19:25:30.750Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a13fdf85404dd775d4",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "29",
+    "normalized_value": "29",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Bilirubin – Total",
+      "categoryNormalized": "bilirubin – total",
+      "reference": "0.3–1.2",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:21.820Z",
+    "updatedAt": "2026-04-14T19:25:21.820Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b53fdf85404dd776ed",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "3",
+    "normalized_value": "3",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "WBC Count (TLC)",
+      "categoryNormalized": "wbc count (tlc)",
+      "reference": "4,000–11,000",
+      "unit": "/µL"
+    },
+    "createdAt": "2026-04-14T19:25:41.193Z",
+    "updatedAt": "2026-04-14T19:25:41.193Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a13fdf85404dd775ce",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "30",
+    "normalized_value": "30",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Bilirubin – Direct",
+      "categoryNormalized": "bilirubin – direct",
+      "reference": "0.0–0.3",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:21.573Z",
+    "updatedAt": "2026-04-14T19:25:21.573Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a13fdf85404dd775d1",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "31",
+    "normalized_value": "31",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Bilirubin – Indirect",
+      "categoryNormalized": "bilirubin – indirect",
+      "reference": "0.1–1.0",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:21.738Z",
+    "updatedAt": "2026-04-14T19:25:21.738Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de949f3fdf85404dd775aa",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "32",
+    "normalized_value": "32",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "ALT (SGPT)",
+      "categoryNormalized": "alt (sgpt)",
+      "reference": "7–56",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T19:25:19.347Z",
+    "updatedAt": "2026-04-14T19:25:19.347Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de949f3fdf85404dd775b0",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "33",
+    "normalized_value": "33",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "AST (SGOT)",
+      "categoryNormalized": "ast (sgot)",
+      "reference": "10–40",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T19:25:19.689Z",
+    "updatedAt": "2026-04-14T19:25:19.689Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a03fdf85404dd775b6",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "34",
+    "normalized_value": "34",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Alkaline Phosphatase (ALP)",
+      "categoryNormalized": "alkaline phosphatase (alp)",
+      "reference": "44–147",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T19:25:20.114Z",
+    "updatedAt": "2026-04-14T19:25:20.114Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a83fdf85404dd77624",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "35",
+    "normalized_value": "35",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "GGT (Gamma GT)",
+      "categoryNormalized": "ggt (gamma gt)",
+      "reference": "M: 8–61 | F: 5–36",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T19:25:28.392Z",
+    "updatedAt": "2026-04-14T19:25:28.392Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b13fdf85404dd776ae",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "36",
+    "normalized_value": "36",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Total Protein",
+      "categoryNormalized": "total protein",
+      "reference": "6.0–8.3",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T19:25:37.200Z",
+    "updatedAt": "2026-04-14T19:25:37.200Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de949f3fdf85404dd775b3",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "37",
+    "normalized_value": "37",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Albumin",
+      "categoryNormalized": "albumin",
+      "reference": "3.5–5.0",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T19:25:19.893Z",
+    "updatedAt": "2026-04-14T19:25:19.893Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a83fdf85404dd77627",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "38",
+    "normalized_value": "38",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Globulin",
+      "categoryNormalized": "globulin",
+      "reference": "2.0–3.5",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T19:25:28.598Z",
+    "updatedAt": "2026-04-14T19:25:28.598Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de949f3fdf85404dd775a4",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "39",
+    "normalized_value": "39",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "A/G Ratio",
+      "categoryNormalized": "a/g ratio",
+      "reference": "1.0–2.2",
+      "unit": "Ratio"
+    },
+    "createdAt": "2026-04-14T19:25:19.022Z",
+    "updatedAt": "2026-04-14T19:25:19.022Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ae3fdf85404dd7767e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "4",
+    "normalized_value": "4",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Platelet Count",
+      "categoryNormalized": "platelet count",
+      "reference": "1,50,000–4,50,000",
+      "unit": "/µL"
+    },
+    "createdAt": "2026-04-14T19:25:34.230Z",
+    "updatedAt": "2026-04-14T19:25:34.230Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94af3fdf85404dd77699",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "40",
+    "normalized_value": "40",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Serum Creatinine",
+      "categoryNormalized": "serum creatinine",
+      "reference": "M: 0.6–1.2 | F: 0.5–1.1",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:35.766Z",
+    "updatedAt": "2026-04-14T19:25:35.766Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a23fdf85404dd775da",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "41",
+    "normalized_value": "41",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Blood Urea Nitrogen (BUN)",
+      "categoryNormalized": "blood urea nitrogen (bun)",
+      "reference": "10–20",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:22.249Z",
+    "updatedAt": "2026-04-14T19:25:22.249Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b23fdf85404dd776bd",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "42",
+    "normalized_value": "42",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urea",
+      "categoryNormalized": "urea",
+      "reference": "15–40",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:38.122Z",
+    "updatedAt": "2026-04-14T19:25:38.122Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b23fdf85404dd776c0",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "43",
+    "normalized_value": "43",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Uric Acid",
+      "categoryNormalized": "uric acid",
+      "reference": "M: 3.5–7.2 | F: 2.6–6.0",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:38.300Z",
+    "updatedAt": "2026-04-14T19:25:38.300Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b63fdf85404dd776f9",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "44",
+    "normalized_value": "44",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "eGFR",
+      "categoryNormalized": "egfr",
+      "reference": ">90 (Normal)",
+      "unit": "mL/min/1.73m²"
+    },
+    "createdAt": "2026-04-14T19:25:42.013Z",
+    "updatedAt": "2026-04-14T19:25:42.013Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a13fdf85404dd775c5",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "45",
+    "normalized_value": "45",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "BUN/Creatinine Ratio",
+      "categoryNormalized": "bun/creatinine ratio",
+      "reference": "10:1–20:1",
+      "unit": "Ratio"
+    },
+    "createdAt": "2026-04-14T19:25:21.021Z",
+    "updatedAt": "2026-04-14T19:25:21.021Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a53fdf85404dd775fb",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "46",
+    "normalized_value": "46",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Cystatin C",
+      "categoryNormalized": "cystatin c",
+      "reference": "0.52–0.98",
+      "unit": "mg/L"
+    },
+    "createdAt": "2026-04-14T19:25:25.903Z",
+    "updatedAt": "2026-04-14T19:25:25.903Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b03fdf85404dd776a5",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "47",
+    "normalized_value": "47",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "TSH",
+      "categoryNormalized": "tsh",
+      "reference": "0.4–4.0",
+      "unit": "mIU/L"
+    },
+    "createdAt": "2026-04-14T19:25:36.586Z",
+    "updatedAt": "2026-04-14T19:25:36.586Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a83fdf85404dd77621",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "48",
+    "normalized_value": "48",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Free T4 (fT4)",
+      "categoryNormalized": "free t4 (ft4)",
+      "reference": "0.8–2.0",
+      "unit": "ng/dL"
+    },
+    "createdAt": "2026-04-14T19:25:28.216Z",
+    "updatedAt": "2026-04-14T19:25:28.216Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a83fdf85404dd7761e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "49",
+    "normalized_value": "49",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Free T3 (fT3)",
+      "categoryNormalized": "free t3 (ft3)",
+      "reference": "2.3–4.2",
+      "unit": "pg/mL"
+    },
+    "createdAt": "2026-04-14T19:25:28.054Z",
+    "updatedAt": "2026-04-14T19:25:28.054Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a93fdf85404dd77636",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "5",
+    "normalized_value": "5",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Hematocrit (PCV)",
+      "categoryNormalized": "hematocrit (pcv)",
+      "reference": "M: 40–54 | F: 36–48",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T19:25:29.526Z",
+    "updatedAt": "2026-04-14T19:25:29.526Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b13fdf85404dd776b4",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "50",
+    "normalized_value": "50",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Total T4",
+      "categoryNormalized": "total t4",
+      "reference": "4.5–12.5",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:37.578Z",
+    "updatedAt": "2026-04-14T19:25:37.578Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b13fdf85404dd776b1",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "51",
+    "normalized_value": "51",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Total T3",
+      "categoryNormalized": "total t3",
+      "reference": "80–200",
+      "unit": "ng/dL"
+    },
+    "createdAt": "2026-04-14T19:25:37.405Z",
+    "updatedAt": "2026-04-14T19:25:37.405Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a03fdf85404dd775bf",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "52",
+    "normalized_value": "52",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Anti-TPO Antibody",
+      "categoryNormalized": "anti-tpo antibody",
+      "reference": "<35",
+      "unit": "IU/mL"
+    },
+    "createdAt": "2026-04-14T19:25:20.713Z",
+    "updatedAt": "2026-04-14T19:25:20.713Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b03fdf85404dd7769f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "53",
+    "normalized_value": "53",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Sodium (Na+)",
+      "categoryNormalized": "sodium (na+)",
+      "reference": "135–145",
+      "unit": "mEq/L"
+    },
+    "createdAt": "2026-04-14T19:25:36.176Z",
+    "updatedAt": "2026-04-14T19:25:36.176Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ae3fdf85404dd77684",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "54",
+    "normalized_value": "54",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Potassium (K+)",
+      "categoryNormalized": "potassium (k+)",
+      "reference": "3.5–5.0",
+      "unit": "mEq/L"
+    },
+    "createdAt": "2026-04-14T19:25:34.435Z",
+    "updatedAt": "2026-04-14T19:25:34.435Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a53fdf85404dd775f5",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "55",
+    "normalized_value": "55",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Chloride (Cl-)",
+      "categoryNormalized": "chloride (cl-)",
+      "reference": "98–106",
+      "unit": "mEq/L"
+    },
+    "createdAt": "2026-04-14T19:25:25.629Z",
+    "updatedAt": "2026-04-14T19:25:25.629Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a53fdf85404dd775f2",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "56",
+    "normalized_value": "56",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Calcium (Total)",
+      "categoryNormalized": "calcium (total)",
+      "reference": "8.5–10.5",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:25.445Z",
+    "updatedAt": "2026-04-14T19:25:25.445Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ac3fdf85404dd77660",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "57",
+    "normalized_value": "57",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Magnesium",
+      "categoryNormalized": "magnesium",
+      "reference": "1.7–2.2",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:32.181Z",
+    "updatedAt": "2026-04-14T19:25:32.181Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ad3fdf85404dd77678",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "58",
+    "normalized_value": "58",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Phosphate (Inorganic)",
+      "categoryNormalized": "phosphate (inorganic)",
+      "reference": "2.5–4.5",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:33.876Z",
+    "updatedAt": "2026-04-14T19:25:33.876Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a13fdf85404dd775cb",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "59",
+    "normalized_value": "59",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Bicarbonate (HCO3-)",
+      "categoryNormalized": "bicarbonate (hco3-)",
+      "reference": "22–29",
+      "unit": "mEq/L"
+    },
+    "createdAt": "2026-04-14T19:25:21.430Z",
+    "updatedAt": "2026-04-14T19:25:21.430Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ab3fdf85404dd7765d",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "6",
+    "normalized_value": "6",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "MCV",
+      "categoryNormalized": "mcv",
+      "reference": "80–96",
+      "unit": "fL"
+    },
+    "createdAt": "2026-04-14T19:25:31.976Z",
+    "updatedAt": "2026-04-14T19:25:31.976Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b33fdf85404dd776db",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "60",
+    "normalized_value": "60",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urine pH",
+      "categoryNormalized": "urine ph",
+      "reference": "4.5–8.0",
+      "unit": "pH"
+    },
+    "createdAt": "2026-04-14T19:25:39.964Z",
+    "updatedAt": "2026-04-14T19:25:39.964Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b33fdf85404dd776d5",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "61",
+    "normalized_value": "61",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urine Specific Gravity",
+      "categoryNormalized": "urine specific gravity",
+      "reference": "1.005–1.030",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:39.613Z",
+    "updatedAt": "2026-04-14T19:25:39.613Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b33fdf85404dd776cf",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "62",
+    "normalized_value": "62",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urine Protein",
+      "categoryNormalized": "urine protein",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:39.252Z",
+    "updatedAt": "2026-04-14T19:25:39.252Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b23fdf85404dd776c6",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "63",
+    "normalized_value": "63",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urine Glucose",
+      "categoryNormalized": "urine glucose",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:38.736Z",
+    "updatedAt": "2026-04-14T19:25:38.736Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b23fdf85404dd776c9",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "64",
+    "normalized_value": "64",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urine Ketones",
+      "categoryNormalized": "urine ketones",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:38.947Z",
+    "updatedAt": "2026-04-14T19:25:38.947Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b33fdf85404dd776d2",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "65",
+    "normalized_value": "65",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urine RBC",
+      "categoryNormalized": "urine rbc",
+      "reference": "0–2",
+      "unit": "/HPF"
+    },
+    "createdAt": "2026-04-14T19:25:39.424Z",
+    "updatedAt": "2026-04-14T19:25:39.424Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b33fdf85404dd776d8",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "66",
+    "normalized_value": "66",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urine WBC",
+      "categoryNormalized": "urine wbc",
+      "reference": "0–5",
+      "unit": "/HPF"
+    },
+    "createdAt": "2026-04-14T19:25:39.759Z",
+    "updatedAt": "2026-04-14T19:25:39.759Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b33fdf85404dd776cc",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "67",
+    "normalized_value": "67",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urine Nitrite",
+      "categoryNormalized": "urine nitrite",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:39.041Z",
+    "updatedAt": "2026-04-14T19:25:39.041Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b23fdf85404dd776c3",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "68",
+    "normalized_value": "68",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Urine Bilirubin",
+      "categoryNormalized": "urine bilirubin",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:38.530Z",
+    "updatedAt": "2026-04-14T19:25:38.530Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ac3fdf85404dd77666",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "69",
+    "normalized_value": "69",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Microalbuminuria (Spot)",
+      "categoryNormalized": "microalbuminuria (spot)",
+      "reference": "<30",
+      "unit": "mg/g creatinine"
+    },
+    "createdAt": "2026-04-14T19:25:32.591Z",
+    "updatedAt": "2026-04-14T19:25:32.591Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ab3fdf85404dd77657",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "7",
+    "normalized_value": "7",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "MCH",
+      "categoryNormalized": "mch",
+      "reference": "27–33",
+      "unit": "pg"
+    },
+    "createdAt": "2026-04-14T19:25:31.568Z",
+    "updatedAt": "2026-04-14T19:25:31.568Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b23fdf85404dd776ba",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "70",
+    "normalized_value": "70",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Troponin I (High Sensitivity)",
+      "categoryNormalized": "troponin i (high sensitivity)",
+      "reference": "<0.04",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:38.020Z",
+    "updatedAt": "2026-04-14T19:25:38.020Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a43fdf85404dd775e9",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "71",
+    "normalized_value": "71",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "CK-MB",
+      "categoryNormalized": "ck-mb",
+      "reference": "<5",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:24.912Z",
+    "updatedAt": "2026-04-14T19:25:24.912Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a03fdf85404dd775c2",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "72",
+    "normalized_value": "72",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "BNP (B-type Natriuretic Peptide)",
+      "categoryNormalized": "bnp (b-type natriuretic peptide)",
+      "reference": "<100",
+      "unit": "pg/mL"
+    },
+    "createdAt": "2026-04-14T19:25:20.852Z",
+    "updatedAt": "2026-04-14T19:25:20.852Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b63fdf85404dd776fc",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "73",
+    "normalized_value": "73",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "hs-CRP",
+      "categoryNormalized": "hs-crp",
+      "reference": "<3.0",
+      "unit": "mg/L"
+    },
+    "createdAt": "2026-04-14T19:25:42.218Z",
+    "updatedAt": "2026-04-14T19:25:42.218Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a93fdf85404dd7763c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "74",
+    "normalized_value": "74",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Homocysteine",
+      "categoryNormalized": "homocysteine",
+      "reference": "5–15",
+      "unit": "µmol/L"
+    },
+    "createdAt": "2026-04-14T19:25:29.930Z",
+    "updatedAt": "2026-04-14T19:25:29.930Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ab3fdf85404dd77651",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "75",
+    "normalized_value": "75",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Lipoprotein(a) [Lp(a)]",
+      "categoryNormalized": "lipoprotein(a) [lp(a)]",
+      "reference": "<30",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:31.158Z",
+    "updatedAt": "2026-04-14T19:25:31.158Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b43fdf85404dd776ea",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "76",
+    "normalized_value": "76",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Vitamin D (25-OH)",
+      "categoryNormalized": "vitamin d (25-oh)",
+      "reference": "20–50 (Sufficient)",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:40.991Z",
+    "updatedAt": "2026-04-14T19:25:40.991Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b43fdf85404dd776e7",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "77",
+    "normalized_value": "77",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Vitamin B12",
+      "categoryNormalized": "vitamin b12",
+      "reference": "200–900",
+      "unit": "pg/mL"
+    },
+    "createdAt": "2026-04-14T19:25:40.744Z",
+    "updatedAt": "2026-04-14T19:25:40.744Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a73fdf85404dd7761b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "78",
+    "normalized_value": "78",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Folate (Folic Acid)",
+      "categoryNormalized": "folate (folic acid)",
+      "reference": "2.0–20.0",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:27.881Z",
+    "updatedAt": "2026-04-14T19:25:27.881Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94af3fdf85404dd7769c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "79",
+    "normalized_value": "79",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Serum Iron",
+      "categoryNormalized": "serum iron",
+      "reference": "M: 60–170 | F: 50–170",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:35.971Z",
+    "updatedAt": "2026-04-14T19:25:35.971Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ab3fdf85404dd7765a",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "8",
+    "normalized_value": "8",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "MCHC",
+      "categoryNormalized": "mchc",
+      "reference": "32–36",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T19:25:31.773Z",
+    "updatedAt": "2026-04-14T19:25:31.773Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a73fdf85404dd77615",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "80",
+    "normalized_value": "80",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Ferritin",
+      "categoryNormalized": "ferritin",
+      "reference": "M: 12–300 | F: 12–150",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:27.472Z",
+    "updatedAt": "2026-04-14T19:25:27.472Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b03fdf85404dd776a2",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "81",
+    "normalized_value": "81",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "TIBC (Total Iron Binding Capacity)",
+      "categoryNormalized": "tibc (total iron binding capacity)",
+      "reference": "250–370",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:36.381Z",
+    "updatedAt": "2026-04-14T19:25:36.381Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b53fdf85404dd776f3",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "82",
+    "normalized_value": "82",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Zinc",
+      "categoryNormalized": "zinc",
+      "reference": "70–120",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:41.604Z",
+    "updatedAt": "2026-04-14T19:25:41.604Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b43fdf85404dd776e4",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "83",
+    "normalized_value": "83",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Vitamin B1 (Thiamine)",
+      "categoryNormalized": "vitamin b1 (thiamine)",
+      "reference": "2.5–7.5",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:40.582Z",
+    "updatedAt": "2026-04-14T19:25:40.582Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ae3fdf85404dd7768a",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "84",
+    "normalized_value": "84",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Prothrombin Time (PT)",
+      "categoryNormalized": "prothrombin time (pt)",
+      "reference": "11.0–13.5",
+      "unit": "sec"
+    },
+    "createdAt": "2026-04-14T19:25:34.798Z",
+    "updatedAt": "2026-04-14T19:25:34.798Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94aa3fdf85404dd7763f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "85",
+    "normalized_value": "85",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "INR",
+      "categoryNormalized": "inr",
+      "reference": "0.8–1.2",
+      "unit": "Ratio"
+    },
+    "createdAt": "2026-04-14T19:25:30.148Z",
+    "updatedAt": "2026-04-14T19:25:30.148Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b53fdf85404dd776f6",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "86",
+    "normalized_value": "86",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "aPTT",
+      "categoryNormalized": "aptt",
+      "reference": "30–40",
+      "unit": "sec"
+    },
+    "createdAt": "2026-04-14T19:25:41.808Z",
+    "updatedAt": "2026-04-14T19:25:41.808Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a73fdf85404dd77618",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "87",
+    "normalized_value": "87",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Fibrinogen",
+      "categoryNormalized": "fibrinogen",
+      "reference": "200–400",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T19:25:27.634Z",
+    "updatedAt": "2026-04-14T19:25:27.634Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a63fdf85404dd775fe",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "88",
+    "normalized_value": "88",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "D-Dimer",
+      "categoryNormalized": "d-dimer",
+      "reference": "<0.5",
+      "unit": "µg/mL FEU"
+    },
+    "createdAt": "2026-04-14T19:25:26.141Z",
+    "updatedAt": "2026-04-14T19:25:26.141Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a23fdf85404dd775d7",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "89",
+    "normalized_value": "89",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Bleeding Time (BT)",
+      "categoryNormalized": "bleeding time (bt)",
+      "reference": "2–7",
+      "unit": "min"
+    },
+    "createdAt": "2026-04-14T19:25:22.050Z",
+    "updatedAt": "2026-04-14T19:25:22.050Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a63fdf85404dd77609",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "9",
+    "normalized_value": "9",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "ESR",
+      "categoryNormalized": "esr",
+      "reference": "M: 0–15 | F: 0–20",
+      "unit": "mm/hr"
+    },
+    "createdAt": "2026-04-14T19:25:26.680Z",
+    "updatedAt": "2026-04-14T19:25:26.680Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a83fdf85404dd7762a",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "90",
+    "normalized_value": "90",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "HBsAg",
+      "categoryNormalized": "hbsag",
+      "reference": "Negative (Non-Reactive)",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:28.802Z",
+    "updatedAt": "2026-04-14T19:25:28.802Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a03fdf85404dd775bc",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "91",
+    "normalized_value": "91",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Anti-HCV",
+      "categoryNormalized": "anti-hcv",
+      "reference": "Negative (Non-Reactive)",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:20.502Z",
+    "updatedAt": "2026-04-14T19:25:20.502Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a93fdf85404dd77630",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "92",
+    "normalized_value": "92",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "HIV 1 & 2 ELISA",
+      "categoryNormalized": "hiv 1 & 2 elisa",
+      "reference": "Non-Reactive",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:29.084Z",
+    "updatedAt": "2026-04-14T19:25:29.084Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b43fdf85404dd776de",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "93",
+    "normalized_value": "93",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "VDRL / RPR (Syphilis)",
+      "categoryNormalized": "vdrl / rpr (syphilis)",
+      "reference": "Non-Reactive",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:40.183Z",
+    "updatedAt": "2026-04-14T19:25:40.183Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a63fdf85404dd77604",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "94",
+    "normalized_value": "94",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Dengue NS1 Antigen",
+      "categoryNormalized": "dengue ns1 antigen",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:26.523Z",
+    "updatedAt": "2026-04-14T19:25:26.523Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ac3fdf85404dd77663",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "95",
+    "normalized_value": "95",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Malaria Parasite (MP)",
+      "categoryNormalized": "malaria parasite (mp)",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T19:25:32.348Z",
+    "updatedAt": "2026-04-14T19:25:32.348Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94b53fdf85404dd776f0",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "96",
+    "normalized_value": "96",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Widal Test",
+      "categoryNormalized": "widal test",
+      "reference": "O <1:80 | H <1:80",
+      "unit": "Titer"
+    },
+    "createdAt": "2026-04-14T19:25:41.398Z",
+    "updatedAt": "2026-04-14T19:25:41.398Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94ad3fdf85404dd77672",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "97",
+    "normalized_value": "97",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "PSA (Prostate Specific Antigen)",
+      "categoryNormalized": "psa (prostate specific antigen)",
+      "reference": "<4.0",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:33.568Z",
+    "updatedAt": "2026-04-14T19:25:33.568Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de94a43fdf85404dd775e6",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "98",
+    "normalized_value": "98",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "CEA (Carcinoembryonic Ag)",
+      "categoryNormalized": "cea (carcinoembryonic ag)",
+      "reference": "<3 (non-smoker), <5 (smoker)",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:24.605Z",
+    "updatedAt": "2026-04-14T19:25:24.605Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de949f3fdf85404dd775a7",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "99",
+    "normalized_value": "99",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "AFP (Alpha-Fetoprotein)",
+      "categoryNormalized": "afp (alpha-fetoprotein)",
+      "reference": "<10",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T19:25:19.178Z",
+    "updatedAt": "2026-04-14T19:25:19.178Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4a67c592599744a383",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "A/G Ratio",
+    "normalized_value": "a/g ratio",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "1.0–2.2",
+      "unit": "Ratio"
+    },
+    "createdAt": "2026-04-14T18:41:14.363Z",
+    "updatedAt": "2026-04-14T19:24:53.585Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5667c592599744a437",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "AFP (Alpha-Fetoprotein)",
+    "normalized_value": "afp (alpha-fetoprotein)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<10",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:26.323Z",
+    "updatedAt": "2026-04-14T19:24:53.772Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4a67c592599744a37d",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Albumin",
+    "normalized_value": "albumin",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "3.5–5.0",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T18:41:14.235Z",
+    "updatedAt": "2026-04-14T19:24:54.100Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4967c592599744a374",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Alkaline Phosphatase (ALP)",
+    "normalized_value": "alkaline phosphatase (alp)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "44–147",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T18:41:13.625Z",
+    "updatedAt": "2026-04-14T19:24:54.294Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5867c592599744a45b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Alkaline Phosphatase (Bone)",
+    "normalized_value": "alkaline phosphatase (bone)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "BONE HEALTH",
+      "categoryNormalized": "bone health",
+      "reference": "15–41",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T18:41:28.677Z",
+    "updatedAt": "2026-04-14T19:24:54.500Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4967c592599744a36e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "ALT (SGPT)",
+    "normalized_value": "alt (sgpt)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "7–56",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T18:41:13.179Z",
+    "updatedAt": "2026-04-14T19:24:54.704Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5967c592599744a461",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "ANA (Antinuclear Antibody)",
+    "normalized_value": "ana (antinuclear antibody)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "Negative (<1:40)",
+      "unit": "Titer"
+    },
+    "createdAt": "2026-04-14T18:41:29.090Z",
+    "updatedAt": "2026-04-14T19:24:54.806Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5467c592599744a41f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Anti-HCV",
+    "normalized_value": "anti-hcv",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "INFECTIOUS DISEASE PANEL",
+      "categoryNormalized": "infectious disease panel",
+      "reference": "Negative (Non-Reactive)",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:24.992Z",
+    "updatedAt": "2026-04-14T19:24:55.011Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4c67c592599744a3aa",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Anti-TPO Antibody",
+    "normalized_value": "anti-tpo antibody",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "THYROID PROFILE",
+      "categoryNormalized": "thyroid profile",
+      "reference": "<35",
+      "unit": "IU/mL"
+    },
+    "createdAt": "2026-04-14T18:41:16.390Z",
+    "updatedAt": "2026-04-14T19:24:55.215Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5367c592599744a410",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "aPTT",
+    "normalized_value": "aptt",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "COAGULATION STUDIES",
+      "categoryNormalized": "coagulation studies",
+      "reference": "30–40",
+      "unit": "sec"
+    },
+    "createdAt": "2026-04-14T18:41:23.221Z",
+    "updatedAt": "2026-04-14T19:24:55.421Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4967c592599744a371",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "AST (SGOT)",
+    "normalized_value": "ast (sgot)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "10–40",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T18:41:13.382Z",
+    "updatedAt": "2026-04-14T19:24:55.625Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a338",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Basophils (DLC)",
+    "normalized_value": "basophils (dlc)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "0–1",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T18:41:10.786Z",
+    "updatedAt": "2026-04-14T19:24:55.830Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4567c592599744a30e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "bhavs",
+    "normalized_value": "bhavs",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:09.632Z",
+    "updatedAt": "2026-04-14T19:25:26.580Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4d67c592599744a3bf",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Bicarbonate (HCO3-)",
+    "normalized_value": "bicarbonate (hco3-)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "22–29",
+      "unit": "mEq/L"
+    },
+    "createdAt": "2026-04-14T18:41:17.785Z",
+    "updatedAt": "2026-04-14T19:24:56.035Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4867c592599744a368",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Bilirubin – Direct",
+    "normalized_value": "bilirubin – direct",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "0.0–0.3",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:12.773Z",
+    "updatedAt": "2026-04-14T19:24:56.157Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4967c592599744a36b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Bilirubin – Indirect",
+    "normalized_value": "bilirubin – indirect",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "0.1–1.0",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:13.011Z",
+    "updatedAt": "2026-04-14T19:24:56.342Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4867c592599744a365",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Bilirubin – Total",
+    "normalized_value": "bilirubin – total",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "0.3–1.2",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:12.601Z",
+    "updatedAt": "2026-04-14T19:24:56.546Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5467c592599744a419",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Bleeding Time (BT)",
+    "normalized_value": "bleeding time (bt)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "COAGULATION STUDIES",
+      "categoryNormalized": "coagulation studies",
+      "reference": "2–7",
+      "unit": "min"
+    },
+    "createdAt": "2026-04-14T18:41:24.685Z",
+    "updatedAt": "2026-04-14T19:24:56.751Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4a67c592599744a389",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Blood Urea Nitrogen (BUN)",
+    "normalized_value": "blood urea nitrogen (bun)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "KIDNEY FUNCTION TESTS (KFT)",
+      "categoryNormalized": "kidney function tests (kft)",
+      "reference": "10–20",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:14.752Z",
+    "updatedAt": "2026-04-14T19:24:56.956Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5067c592599744a3e6",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "BNP (B-type Natriuretic Peptide)",
+    "normalized_value": "bnp (b-type natriuretic peptide)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<100",
+      "unit": "pg/mL"
+    },
+    "createdAt": "2026-04-14T18:41:20.487Z",
+    "updatedAt": "2026-04-14T19:24:57.161Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4567c592599744a308",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "BONE HEALTH",
+    "normalized_value": "bone health",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:09.222Z",
+    "updatedAt": "2026-04-14T19:25:16.106Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4b67c592599744a395",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "BUN/Creatinine Ratio",
+    "normalized_value": "bun/creatinine ratio",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "KIDNEY FUNCTION TESTS (KFT)",
+      "categoryNormalized": "kidney function tests (kft)",
+      "reference": "10:1–20:1",
+      "unit": "Ratio"
+    },
+    "createdAt": "2026-04-14T18:41:15.425Z",
+    "updatedAt": "2026-04-14T19:24:57.468Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4767c592599744a34d",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "C-Peptide (Fasting)",
+    "normalized_value": "c-peptide (fasting)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "DIABETES & GLUCOSE",
+      "categoryNormalized": "diabetes & glucose",
+      "reference": "1.1–4.4",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:11.667Z",
+    "updatedAt": "2026-04-14T19:24:57.673Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5667c592599744a43d",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CA 19-9",
+    "normalized_value": "ca 19-9",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<37",
+      "unit": "U/mL"
+    },
+    "createdAt": "2026-04-14T18:41:26.743Z",
+    "updatedAt": "2026-04-14T19:24:57.879Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5667c592599744a43a",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CA-125",
+    "normalized_value": "ca-125",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<35",
+      "unit": "U/mL"
+    },
+    "createdAt": "2026-04-14T18:41:26.531Z",
+    "updatedAt": "2026-04-14T19:24:58.037Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5867c592599744a452",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Calcium (Serum)",
+    "normalized_value": "calcium (serum)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "BONE HEALTH",
+      "categoryNormalized": "bone health",
+      "reference": "8.5–10.5",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:28.065Z",
+    "updatedAt": "2026-04-14T19:24:58.185Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4d67c592599744a3b6",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Calcium (Total)",
+    "normalized_value": "calcium (total)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "8.5–10.5",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:17.106Z",
+    "updatedAt": "2026-04-14T19:24:58.288Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4467c592599744a2f6",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CARDIAC MARKERS",
+    "normalized_value": "cardiac markers",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:08.070Z",
+    "updatedAt": "2026-04-14T19:25:16.310Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5667c592599744a434",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CEA (Carcinoembryonic Ag)",
+    "normalized_value": "cea (carcinoembryonic ag)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<3 (non-smoker), <5 (smoker)",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:26.132Z",
+    "updatedAt": "2026-04-14T19:24:58.595Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4c67c592599744a3b3",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Chloride (Cl-)",
+    "normalized_value": "chloride (cl-)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "98–106",
+      "unit": "mEq/L"
+    },
+    "createdAt": "2026-04-14T18:41:16.902Z",
+    "updatedAt": "2026-04-14T19:24:58.808Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5067c592599744a3e3",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CK-MB",
+    "normalized_value": "ck-mb",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<5",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:20.280Z",
+    "updatedAt": "2026-04-14T19:24:58.933Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4467c592599744a2fc",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "COAGULATION STUDIES",
+    "normalized_value": "coagulation studies",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:08.430Z",
+    "updatedAt": "2026-04-14T19:25:16.421Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5767c592599744a44c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Cortisol (Morning)",
+    "normalized_value": "cortisol (morning)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "6.2–19.4",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:27.654Z",
+    "updatedAt": "2026-04-14T19:24:59.209Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5967c592599744a467",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CRP (C-Reactive Protein)",
+    "normalized_value": "crp (c-reactive protein)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "<6.0",
+      "unit": "mg/L"
+    },
+    "createdAt": "2026-04-14T18:41:29.499Z",
+    "updatedAt": "2026-04-14T19:24:59.333Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4b67c592599744a398",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Cystatin C",
+    "normalized_value": "cystatin c",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "KIDNEY FUNCTION TESTS (KFT)",
+      "categoryNormalized": "kidney function tests (kft)",
+      "reference": "0.52–0.98",
+      "unit": "mg/L"
+    },
+    "createdAt": "2026-04-14T18:41:15.571Z",
+    "updatedAt": "2026-04-14T19:24:59.524Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5467c592599744a416",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "D-Dimer",
+    "normalized_value": "d-dimer",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "COAGULATION STUDIES",
+      "categoryNormalized": "coagulation studies",
+      "reference": "<0.5",
+      "unit": "µg/mL FEU"
+    },
+    "createdAt": "2026-04-14T18:41:24.495Z",
+    "updatedAt": "2026-04-14T19:24:59.722Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5567c592599744a428",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Dengue NS1 Antigen",
+    "normalized_value": "dengue ns1 antigen",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "INFECTIOUS DISEASE PANEL",
+      "categoryNormalized": "infectious disease panel",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:25.506Z",
+    "updatedAt": "2026-04-14T19:24:59.867Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5767c592599744a44f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "DHEA-S",
+    "normalized_value": "dhea-s",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "M: 80–560 | F: 35–430",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:27.858Z",
+    "updatedAt": "2026-04-14T19:25:00.012Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4267c592599744a2e1",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "DIABETES & GLUCOSE",
+    "normalized_value": "diabetes & glucose",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:06.870Z",
+    "updatedAt": "2026-04-14T19:25:16.618Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4b67c592599744a392",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "eGFR",
+    "normalized_value": "egfr",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "KIDNEY FUNCTION TESTS (KFT)",
+      "categoryNormalized": "kidney function tests (kft)",
+      "reference": ">90 (Normal)",
+      "unit": "mL/min/1.73m²"
+    },
+    "createdAt": "2026-04-14T18:41:15.316Z",
+    "updatedAt": "2026-04-14T19:25:00.448Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4367c592599744a2f0",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "ELECTROLYTES",
+    "normalized_value": "electrolytes",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:07.757Z",
+    "updatedAt": "2026-04-14T19:25:16.822Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a332",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Eosinophils (DLC)",
+    "normalized_value": "eosinophils (dlc)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "1–6",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T18:41:10.611Z",
+    "updatedAt": "2026-04-14T19:25:00.745Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a329",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "ESR",
+    "normalized_value": "esr",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "M: 0–15 | F: 0–20",
+      "unit": "mm/hr"
+    },
+    "createdAt": "2026-04-14T18:41:10.391Z",
+    "updatedAt": "2026-04-14T19:25:00.949Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a33e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Fasting Blood Sugar (FBS)",
+    "normalized_value": "fasting blood sugar (fbs)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "DIABETES & GLUCOSE",
+      "categoryNormalized": "diabetes & glucose",
+      "reference": "70–100",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:10.989Z",
+    "updatedAt": "2026-04-14T19:25:01.154Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5167c592599744a3fe",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Ferritin",
+    "normalized_value": "ferritin",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "M: 12–300 | F: 12–150",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:21.780Z",
+    "updatedAt": "2026-04-14T19:25:01.361Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5367c592599744a413",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Fibrinogen",
+    "normalized_value": "fibrinogen",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "COAGULATION STUDIES",
+      "categoryNormalized": "coagulation studies",
+      "reference": "200–400",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:23.558Z",
+    "updatedAt": "2026-04-14T19:25:01.564Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5167c592599744a3f8",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Folate (Folic Acid)",
+    "normalized_value": "folate (folic acid)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "2.0–20.0",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:21.510Z",
+    "updatedAt": "2026-04-14T19:25:01.770Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4b67c592599744a3a1",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Free T3 (fT3)",
+    "normalized_value": "free t3 (ft3)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "THYROID PROFILE",
+      "categoryNormalized": "thyroid profile",
+      "reference": "2.3–4.2",
+      "unit": "pg/mL"
+    },
+    "createdAt": "2026-04-14T18:41:15.886Z",
+    "updatedAt": "2026-04-14T19:25:01.975Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4b67c592599744a39e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Free T4 (fT4)",
+    "normalized_value": "free t4 (ft4)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "THYROID PROFILE",
+      "categoryNormalized": "thyroid profile",
+      "reference": "0.8–2.0",
+      "unit": "ng/dL"
+    },
+    "createdAt": "2026-04-14T18:41:15.756Z",
+    "updatedAt": "2026-04-14T19:25:02.180Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5767c592599744a443",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "FSH",
+    "normalized_value": "fsh",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "M: 1.5–12.4 | F: varies by phase",
+      "unit": "mIU/mL"
+    },
+    "createdAt": "2026-04-14T18:41:27.099Z",
+    "updatedAt": "2026-04-14T19:25:02.384Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4967c592599744a377",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "GGT (Gamma GT)",
+    "normalized_value": "ggt (gamma gt)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "M: 8–61 | F: 5–36",
+      "unit": "U/L"
+    },
+    "createdAt": "2026-04-14T18:41:13.830Z",
+    "updatedAt": "2026-04-14T19:25:02.588Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4a67c592599744a380",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Globulin",
+    "normalized_value": "globulin",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "2.0–3.5",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T18:41:14.299Z",
+    "updatedAt": "2026-04-14T19:25:02.721Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4767c592599744a344",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "HbA1c",
+    "normalized_value": "hba1c",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "DIABETES & GLUCOSE",
+      "categoryNormalized": "diabetes & glucose",
+      "reference": "<5.7% Normal | 5.7–6.4% Pre | ≥6.5% DM",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T18:41:11.177Z",
+    "updatedAt": "2026-04-14T19:25:02.793Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5467c592599744a41c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "HBsAg",
+    "normalized_value": "hbsag",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "INFECTIOUS DISEASE PANEL",
+      "categoryNormalized": "infectious disease panel",
+      "reference": "Negative (Non-Reactive)",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:24.761Z",
+    "updatedAt": "2026-04-14T19:25:02.896Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4867c592599744a356",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "HDL Cholesterol",
+    "normalized_value": "hdl cholesterol",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIPID PROFILE",
+      "categoryNormalized": "lipid profile",
+      "reference": "M: >40 | F: >50",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:12.016Z",
+    "updatedAt": "2026-04-14T19:25:03.100Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a31d",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Hematocrit (PCV)",
+    "normalized_value": "hematocrit (pcv)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "M: 40–54 | F: 36–48",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T18:41:10.143Z",
+    "updatedAt": "2026-04-14T19:25:03.305Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4267c592599744a2de",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "HEMATOLOGY",
+    "normalized_value": "hematology",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:06.716Z",
+    "updatedAt": "2026-04-14T19:25:17.028Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4567c592599744a311",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Hemoglobin",
+    "normalized_value": "hemoglobin",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "M: 13.0–17.0 | F: 12.0–15.0",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T18:41:09.842Z",
+    "updatedAt": "2026-04-14T19:25:03.510Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5567c592599744a422",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "HIV 1 & 2 ELISA",
+    "normalized_value": "hiv 1 & 2 elisa",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "INFECTIOUS DISEASE PANEL",
+      "categoryNormalized": "infectious disease panel",
+      "reference": "Non-Reactive",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:25.197Z",
+    "updatedAt": "2026-04-14T19:25:03.671Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5067c592599744a3ec",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Homocysteine",
+    "normalized_value": "homocysteine",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "5–15",
+      "unit": "µmol/L"
+    },
+    "createdAt": "2026-04-14T18:41:20.838Z",
+    "updatedAt": "2026-04-14T19:25:03.813Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4567c592599744a305",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "HORMONAL PROFILE",
+    "normalized_value": "hormonal profile",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:09.017Z",
+    "updatedAt": "2026-04-14T19:25:17.232Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5067c592599744a3e9",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "hs-CRP",
+    "normalized_value": "hs-crp",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<3.0",
+      "unit": "mg/L"
+    },
+    "createdAt": "2026-04-14T18:41:20.691Z",
+    "updatedAt": "2026-04-14T19:25:04.023Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5867c592599744a45e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "IgE (Total)",
+    "normalized_value": "ige (total)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "< 100 (adults)",
+      "unit": "IU/mL"
+    },
+    "createdAt": "2026-04-14T18:41:28.883Z",
+    "updatedAt": "2026-04-14T19:25:04.189Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4567c592599744a30b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "IMMUNOLOGY",
+    "normalized_value": "immunology",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:09.427Z",
+    "updatedAt": "2026-04-14T19:25:17.397Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4467c592599744a2ff",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "INFECTIOUS DISEASE PANEL",
+    "normalized_value": "infectious disease panel",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:08.608Z",
+    "updatedAt": "2026-04-14T19:25:17.601Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5267c592599744a40d",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "INR",
+    "normalized_value": "inr",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "COAGULATION STUDIES",
+      "categoryNormalized": "coagulation studies",
+      "reference": "0.8–1.2",
+      "unit": "Ratio"
+    },
+    "createdAt": "2026-04-14T18:41:22.536Z",
+    "updatedAt": "2026-04-14T19:25:04.635Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4767c592599744a34a",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Insulin (Fasting)",
+    "normalized_value": "insulin (fasting)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "DIABETES & GLUCOSE",
+      "categoryNormalized": "diabetes & glucose",
+      "reference": "2.6–24.9",
+      "unit": "µIU/mL"
+    },
+    "createdAt": "2026-04-14T18:41:11.578Z",
+    "updatedAt": "2026-04-14T19:25:04.841Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4367c592599744a2ea",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "KIDNEY FUNCTION TESTS (KFT)",
+    "normalized_value": "kidney function tests (kft)",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:07.491Z",
+    "updatedAt": "2026-04-14T19:25:17.845Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4767c592599744a353",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "LDL Cholesterol",
+    "normalized_value": "ldl cholesterol",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIPID PROFILE",
+      "categoryNormalized": "lipid profile",
+      "reference": "<100 (Optimal)",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:11.958Z",
+    "updatedAt": "2026-04-14T19:25:05.148Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4867c592599744a362",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "LDL/HDL Ratio",
+    "normalized_value": "ldl/hdl ratio",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIPID PROFILE",
+      "categoryNormalized": "lipid profile",
+      "reference": "<3.0",
+      "unit": "Ratio"
+    },
+    "createdAt": "2026-04-14T18:41:12.498Z",
+    "updatedAt": "2026-04-14T19:25:05.353Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5767c592599744a446",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "LH",
+    "normalized_value": "lh",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "M: 1.7–8.6 | F: varies by phase",
+      "unit": "mIU/mL"
+    },
+    "createdAt": "2026-04-14T18:41:27.244Z",
+    "updatedAt": "2026-04-14T19:25:05.558Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4367c592599744a2e4",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "LIPID PROFILE",
+    "normalized_value": "lipid profile",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:07.129Z",
+    "updatedAt": "2026-04-14T19:25:18.020Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5067c592599744a3ef",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Lipoprotein(a) [Lp(a)]",
+    "normalized_value": "lipoprotein(a) [lp(a)]",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<30",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:20.998Z",
+    "updatedAt": "2026-04-14T19:25:05.865Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4367c592599744a2e7",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "LIVER FUNCTION TESTS (LFT)",
+    "normalized_value": "liver function tests (lft)",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:07.276Z",
+    "updatedAt": "2026-04-14T19:25:18.257Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a32f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Lymphocytes (DLC)",
+    "normalized_value": "lymphocytes (dlc)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "20–40",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T18:41:10.554Z",
+    "updatedAt": "2026-04-14T19:25:06.173Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4d67c592599744a3b9",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Magnesium",
+    "normalized_value": "magnesium",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "1.7–2.2",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:17.211Z",
+    "updatedAt": "2026-04-14T19:25:06.377Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5567c592599744a42b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Malaria Parasite (MP)",
+    "normalized_value": "malaria parasite (mp)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "INFECTIOUS DISEASE PANEL",
+      "categoryNormalized": "infectious disease panel",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:25.677Z",
+    "updatedAt": "2026-04-14T19:25:06.581Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a323",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "MCH",
+    "normalized_value": "mch",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "27–33",
+      "unit": "pg"
+    },
+    "createdAt": "2026-04-14T18:41:10.277Z",
+    "updatedAt": "2026-04-14T19:25:06.684Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a326",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "MCHC",
+    "normalized_value": "mchc",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "32–36",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T18:41:10.333Z",
+    "updatedAt": "2026-04-14T19:25:06.889Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a320",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "MCV",
+    "normalized_value": "mcv",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "80–96",
+      "unit": "fL"
+    },
+    "createdAt": "2026-04-14T18:41:10.207Z",
+    "updatedAt": "2026-04-14T19:25:07.094Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4f67c592599744a3dd",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Microalbuminuria (Spot)",
+    "normalized_value": "microalbuminuria (spot)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "<30",
+      "unit": "mg/g creatinine"
+    },
+    "createdAt": "2026-04-14T18:41:19.871Z",
+    "updatedAt": "2026-04-14T19:25:07.299Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a335",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Monocytes (DLC)",
+    "normalized_value": "monocytes (dlc)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "2–8",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T18:41:10.701Z",
+    "updatedAt": "2026-04-14T19:25:07.428Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a32c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Neutrophils (DLC)",
+    "normalized_value": "neutrophils (dlc)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "50–70",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T18:41:10.449Z",
+    "updatedAt": "2026-04-14T19:25:07.578Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4867c592599744a35f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Non-HDL Cholesterol",
+    "normalized_value": "non-hdl cholesterol",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIPID PROFILE",
+      "categoryNormalized": "lipid profile",
+      "reference": "<130",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:12.425Z",
+    "updatedAt": "2026-04-14T19:25:07.735Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4d67c592599744a3bc",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Phosphate (Inorganic)",
+    "normalized_value": "phosphate (inorganic)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "2.5–4.5",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:17.618Z",
+    "updatedAt": "2026-04-14T19:25:07.914Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5867c592599744a455",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Phosphorus (Serum)",
+    "normalized_value": "phosphorus (serum)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "BONE HEALTH",
+      "categoryNormalized": "bone health",
+      "reference": "2.5–4.5",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:28.269Z",
+    "updatedAt": "2026-04-14T19:25:08.118Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a31a",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Platelet Count",
+    "normalized_value": "platelet count",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "1,50,000–4,50,000",
+      "unit": "/µL"
+    },
+    "createdAt": "2026-04-14T18:41:10.086Z",
+    "updatedAt": "2026-04-14T19:25:08.279Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4767c592599744a341",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Postprandial Blood Sugar (PPBS)",
+    "normalized_value": "postprandial blood sugar (ppbs)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "DIABETES & GLUCOSE",
+      "categoryNormalized": "diabetes & glucose",
+      "reference": "<140",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:11.065Z",
+    "updatedAt": "2026-04-14T19:25:08.425Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4c67c592599744a3b0",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Potassium (K+)",
+    "normalized_value": "potassium (k+)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "3.5–5.0",
+      "unit": "mEq/L"
+    },
+    "createdAt": "2026-04-14T18:41:16.711Z",
+    "updatedAt": "2026-04-14T19:25:08.555Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5767c592599744a449",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Prolactin",
+    "normalized_value": "prolactin",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "M: 2–18 | F: 2–29",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:27.449Z",
+    "updatedAt": "2026-04-14T19:25:08.630Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5267c592599744a40a",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Prothrombin Time (PT)",
+    "normalized_value": "prothrombin time (pt)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "COAGULATION STUDIES",
+      "categoryNormalized": "coagulation studies",
+      "reference": "11.0–13.5",
+      "unit": "sec"
+    },
+    "createdAt": "2026-04-14T18:41:22.329Z",
+    "updatedAt": "2026-04-14T19:25:08.794Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5567c592599744a431",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "PSA (Prostate Specific Antigen)",
+    "normalized_value": "psa (prostate specific antigen)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<4.0",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:25.930Z",
+    "updatedAt": "2026-04-14T19:25:08.950Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5867c592599744a458",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "PTH (Parathyroid Hormone)",
+    "normalized_value": "pth (parathyroid hormone)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "BONE HEALTH",
+      "categoryNormalized": "bone health",
+      "reference": "10–65",
+      "unit": "pg/mL"
+    },
+    "createdAt": "2026-04-14T18:41:28.473Z",
+    "updatedAt": "2026-04-14T19:25:09.040Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4767c592599744a347",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Random Blood Sugar (RBS)",
+    "normalized_value": "random blood sugar (rbs)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "DIABETES & GLUCOSE",
+      "categoryNormalized": "diabetes & glucose",
+      "reference": "<200",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:11.372Z",
+    "updatedAt": "2026-04-14T19:25:09.244Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4567c592599744a314",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "RBC Count",
+    "normalized_value": "rbc count",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "M: 4.7–6.1 | F: 4.2–5.4",
+      "unit": "million/µL"
+    },
+    "createdAt": "2026-04-14T18:41:09.960Z",
+    "updatedAt": "2026-04-14T19:25:09.326Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a33b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "RDW (Red Cell Distrib. Width)",
+    "normalized_value": "rdw (red cell distrib. width)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "11.5–14.5",
+      "unit": "%"
+    },
+    "createdAt": "2026-04-14T18:41:10.859Z",
+    "updatedAt": "2026-04-14T19:25:09.566Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5967c592599744a464",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Rheumatoid Factor (RF)",
+    "normalized_value": "rheumatoid factor (rf)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "<20",
+      "unit": "IU/mL"
+    },
+    "createdAt": "2026-04-14T18:41:29.293Z",
+    "updatedAt": "2026-04-14T19:25:09.756Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4a67c592599744a386",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Serum Creatinine",
+    "normalized_value": "serum creatinine",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "KIDNEY FUNCTION TESTS (KFT)",
+      "categoryNormalized": "kidney function tests (kft)",
+      "reference": "M: 0.6–1.2 | F: 0.5–1.1",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:14.546Z",
+    "updatedAt": "2026-04-14T19:25:09.961Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5167c592599744a3fb",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Serum Iron",
+    "normalized_value": "serum iron",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "M: 60–170 | F: 50–170",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:21.624Z",
+    "updatedAt": "2026-04-14T19:25:10.178Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4c67c592599744a3ad",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Sodium (Na+)",
+    "normalized_value": "sodium (na+)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "135–145",
+      "unit": "mEq/L"
+    },
+    "createdAt": "2026-04-14T18:41:16.540Z",
+    "updatedAt": "2026-04-14T19:25:10.268Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5667c592599744a440",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Testosterone (Total) – M",
+    "normalized_value": "testosterone (total) – m",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "270–1070",
+      "unit": "ng/dL"
+    },
+    "createdAt": "2026-04-14T18:41:26.936Z",
+    "updatedAt": "2026-04-14T19:25:10.371Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4367c592599744a2ed",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "THYROID PROFILE",
+    "normalized_value": "thyroid profile",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:07.584Z",
+    "updatedAt": "2026-04-14T19:25:18.358Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5167c592599744a401",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "TIBC (Total Iron Binding Capacity)",
+    "normalized_value": "tibc (total iron binding capacity)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "250–370",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:21.948Z",
+    "updatedAt": "2026-04-14T19:25:10.575Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4767c592599744a350",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Total Cholesterol",
+    "normalized_value": "total cholesterol",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIPID PROFILE",
+      "categoryNormalized": "lipid profile",
+      "reference": "<200",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:11.885Z",
+    "updatedAt": "2026-04-14T19:25:10.781Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4a67c592599744a37a",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Total Protein",
+    "normalized_value": "total protein",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIVER FUNCTION TESTS (LFT)",
+      "categoryNormalized": "liver function tests (lft)",
+      "reference": "6.0–8.3",
+      "unit": "g/dL"
+    },
+    "createdAt": "2026-04-14T18:41:14.036Z",
+    "updatedAt": "2026-04-14T19:25:10.985Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4c67c592599744a3a7",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Total T3",
+    "normalized_value": "total t3",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "THYROID PROFILE",
+      "categoryNormalized": "thyroid profile",
+      "reference": "80–200",
+      "unit": "ng/dL"
+    },
+    "createdAt": "2026-04-14T18:41:16.185Z",
+    "updatedAt": "2026-04-14T19:25:11.190Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4c67c592599744a3a4",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Total T4",
+    "normalized_value": "total t4",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "THYROID PROFILE",
+      "categoryNormalized": "thyroid profile",
+      "reference": "4.5–12.5",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:16.086Z",
+    "updatedAt": "2026-04-14T19:25:11.396Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4867c592599744a359",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Triglycerides",
+    "normalized_value": "triglycerides",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIPID PROFILE",
+      "categoryNormalized": "lipid profile",
+      "reference": "<150",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:12.074Z",
+    "updatedAt": "2026-04-14T19:25:11.599Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5067c592599744a3e0",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Troponin I (High Sensitivity)",
+    "normalized_value": "troponin i (high sensitivity)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<0.04",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:20.076Z",
+    "updatedAt": "2026-04-14T19:25:11.805Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4b67c592599744a39b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "TSH",
+    "normalized_value": "tsh",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "THYROID PROFILE",
+      "categoryNormalized": "thyroid profile",
+      "reference": "0.4–4.0",
+      "unit": "mIU/L"
+    },
+    "createdAt": "2026-04-14T18:41:15.643Z",
+    "updatedAt": "2026-04-14T19:25:12.009Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4467c592599744a302",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "TUMOR MARKERS",
+    "normalized_value": "tumor markers",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:08.821Z",
+    "updatedAt": "2026-04-14T19:25:18.563Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4a67c592599744a38c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urea",
+    "normalized_value": "urea",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "KIDNEY FUNCTION TESTS (KFT)",
+      "categoryNormalized": "kidney function tests (kft)",
+      "reference": "15–40",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:14.957Z",
+    "updatedAt": "2026-04-14T19:25:12.316Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4b67c592599744a38f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Uric Acid",
+    "normalized_value": "uric acid",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "KIDNEY FUNCTION TESTS (KFT)",
+      "categoryNormalized": "kidney function tests (kft)",
+      "reference": "M: 3.5–7.2 | F: 2.6–6.0",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:15.161Z",
+    "updatedAt": "2026-04-14T19:25:12.522Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4467c592599744a2f3",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "URINALYSIS",
+    "normalized_value": "urinalysis",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:08.008Z",
+    "updatedAt": "2026-04-14T19:25:18.768Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4f67c592599744a3da",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urine Bilirubin",
+    "normalized_value": "urine bilirubin",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:19.668Z",
+    "updatedAt": "2026-04-14T19:25:12.797Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4e67c592599744a3cb",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urine Glucose",
+    "normalized_value": "urine glucose",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:18.643Z",
+    "updatedAt": "2026-04-14T19:25:12.854Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4e67c592599744a3ce",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urine Ketones",
+    "normalized_value": "urine ketones",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:18.813Z",
+    "updatedAt": "2026-04-14T19:25:13.033Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4f67c592599744a3d7",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urine Nitrite",
+    "normalized_value": "urine nitrite",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:19.461Z",
+    "updatedAt": "2026-04-14T19:25:13.238Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4e67c592599744a3c2",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urine pH",
+    "normalized_value": "urine ph",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "4.5–8.0",
+      "unit": "pH"
+    },
+    "createdAt": "2026-04-14T18:41:18.029Z",
+    "updatedAt": "2026-04-14T19:25:13.443Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4e67c592599744a3c8",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urine Protein",
+    "normalized_value": "urine protein",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "Negative",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:18.407Z",
+    "updatedAt": "2026-04-14T19:25:13.648Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4f67c592599744a3d1",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urine RBC",
+    "normalized_value": "urine rbc",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "0–2",
+      "unit": "/HPF"
+    },
+    "createdAt": "2026-04-14T18:41:19.053Z",
+    "updatedAt": "2026-04-14T19:25:13.853Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4e67c592599744a3c5",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urine Specific Gravity",
+    "normalized_value": "urine specific gravity",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "1.005–1.030",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:18.240Z",
+    "updatedAt": "2026-04-14T19:25:14.021Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4f67c592599744a3d4",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Urine WBC",
+    "normalized_value": "urine wbc",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "URINALYSIS",
+      "categoryNormalized": "urinalysis",
+      "reference": "0–5",
+      "unit": "/HPF"
+    },
+    "createdAt": "2026-04-14T18:41:19.257Z",
+    "updatedAt": "2026-04-14T19:25:14.276Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5567c592599744a425",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "VDRL / RPR (Syphilis)",
+    "normalized_value": "vdrl / rpr (syphilis)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "INFECTIOUS DISEASE PANEL",
+      "categoryNormalized": "infectious disease panel",
+      "reference": "Non-Reactive",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:25.258Z",
+    "updatedAt": "2026-04-14T19:25:14.466Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5267c592599744a407",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Vitamin B1 (Thiamine)",
+    "normalized_value": "vitamin b1 (thiamine)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "2.5–7.5",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:22.124Z",
+    "updatedAt": "2026-04-14T19:25:14.679Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5167c592599744a3f5",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Vitamin B12",
+    "normalized_value": "vitamin b12",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "200–900",
+      "unit": "pg/mL"
+    },
+    "createdAt": "2026-04-14T18:41:21.305Z",
+    "updatedAt": "2026-04-14T19:25:14.876Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5167c592599744a3f2",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Vitamin D (25-OH)",
+    "normalized_value": "vitamin d (25-oh)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "20–50 (Sufficient)",
+      "unit": "ng/mL"
+    },
+    "createdAt": "2026-04-14T18:41:21.155Z",
+    "updatedAt": "2026-04-14T19:25:15.081Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4467c592599744a2f9",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "VITAMINS & MINERALS",
+    "normalized_value": "vitamins & minerals",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "",
+      "categoryNormalized": "",
+      "reference": "",
+      "unit": ""
+    },
+    "createdAt": "2026-04-14T18:41:08.274Z",
+    "updatedAt": "2026-04-14T19:25:18.961Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4867c592599744a35c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "VLDL Cholesterol",
+    "normalized_value": "vldl cholesterol",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "LIPID PROFILE",
+      "categoryNormalized": "lipid profile",
+      "reference": "5–40",
+      "unit": "mg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:12.294Z",
+    "updatedAt": "2026-04-14T19:25:15.389Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a4667c592599744a317",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "WBC Count (TLC)",
+    "normalized_value": "wbc count (tlc)",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "4,000–11,000",
+      "unit": "/µL"
+    },
+    "createdAt": "2026-04-14T18:41:10.029Z",
+    "updatedAt": "2026-04-14T19:25:15.536Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5567c592599744a42e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Widal Test",
+    "normalized_value": "widal test",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "INFECTIOUS DISEASE PANEL",
+      "categoryNormalized": "infectious disease panel",
+      "reference": "O <1:80 | H <1:80",
+      "unit": "Titer"
+    },
+    "createdAt": "2026-04-14T18:41:25.743Z",
+    "updatedAt": "2026-04-14T19:25:15.695Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5267c592599744a404",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Zinc",
+    "normalized_value": "zinc",
+    "status": "Active",
+    "meta": {
+      "kind": "category",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "70–120",
+      "unit": "µg/dL"
+    },
+    "createdAt": "2026-04-14T18:41:22.011Z",
+    "updatedAt": "2026-04-14T19:25:15.901Z",
+    "__v": 0
+  }
+]

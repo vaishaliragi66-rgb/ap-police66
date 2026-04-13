@@ -8,7 +8,7 @@ import { fetchMasterDataMap, getMasterMedicinesByTypeAndForm, getMasterOptions }
 
 const { useMemo } = React;
 
-const PharmacyPrescriptionForm = () => {
+const PharmacyPrescriptionForm = () => {                       
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [visitId, setVisitId] = useState(null);
@@ -68,7 +68,29 @@ const PharmacyPrescriptionForm = () => {
 
     if (!allowedNames.length) return inventoryByForm;
 
-    return inventoryByForm.filter((item) => allowedNames.includes(normalizeText(item?.Medicine_Name)));
+    // If there are no inventory items for this form, fall back to master entries
+    // so the UI still shows the correct medicine names from master data.
+    if (!inventoryByForm.length) {
+      return masterEntries.map((entry) => ({ Medicine_Name: entry.value_name, meta: entry }));
+    }
+
+    // Filter inventory to allowed names, then deduplicate by normalized medicine name
+    const filteredInventory = inventoryByForm.filter((item) => allowedNames.includes(normalizeText(item?.Medicine_Name)));
+    if (!filteredInventory.length) {
+      return masterEntries.map((entry) => ({ Medicine_Name: entry.value_name, meta: entry }));
+    }
+
+    const seen = new Set();
+    const deduped = [];
+    filteredInventory.forEach((item) => {
+      const nameKey = normalizeText(item?.Medicine_Name);
+      if (!seen.has(nameKey)) {
+        seen.add(nameKey);
+        deduped.push(item);
+      }
+    });
+
+    return deduped;
   };
 
   /* ================= FILTER DOCTOR PRESCRIPTIONS ================= */

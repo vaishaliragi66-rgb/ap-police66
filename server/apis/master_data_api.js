@@ -10,7 +10,8 @@ const {
   ensureTestMasterValues,
   listMasterTests,
   ensureDiseaseMasterValues,
-  listMasterDiseases
+  listMasterDiseases,
+  GLOBAL_MASTER_INSTITUTE_ID
 } = require("../utils/instituteMasterData");
 
 const router = express.Router();
@@ -39,8 +40,6 @@ const DEFAULT_CATEGORIES = [
   "Residential Areas",
   "Rank Categories"
 ];
-
-// Valid test categories from the diagnostic tests catalog
 const VALID_TEST_CATEGORIES = DEFAULT_TEST_CATEGORIES;
 
 const DEFAULT_VALUE_SEEDS = {
@@ -373,63 +372,55 @@ const ensureDefaultValues = async (instituteId) => {
 
   const docs = [];
   const categorySeedUpdates = [];
-
-  categories.forEach((category) => {
-    if (Number(category.seed_version || 0) >= 1) {
-      return;
-    }
-
-    const seedValues = DEFAULT_VALUE_SEEDS[category.category_name] || [];
-    const existingSet = existingByCategory.get(String(category._id)) || new Set();
-
-    if (existingSet.size === 0) {
-      seedValues.forEach((seedItem) => {
-        const value_name = String(
-          typeof seedItem === "string" ? seedItem : seedItem?.value_name || ""
-        ).trim();
-        if (!value_name) return;
-
-        const normalized_value = normalize(value_name);
-        if (existingSet.has(normalized_value)) {
-          return;
-        }
-
-        const meta =
-          seedItem && typeof seedItem === "object" && !Array.isArray(seedItem)
-            ? seedItem.meta || {}
-            : {};
-
+  // Build seed docs for any missing default values per category
+  for (const [categoryName, seedValues] of Object.entries(DEFAULT_VALUE_SEEDS)) {
+    try {
+      const category = categories.find((c) => normalize(c.category_name) === normalize(categoryName));
+      if (!category) continue;
+      const existingSet = existingByCategory.get(String(category._id)) || new Set();
+      for (const seed of (Array.isArray(seedValues) ? seedValues : [])) {
+        // Seed entries may be strings or objects with value_name/meta
+        const valueName = typeof seed === 'string' ? seed : String(seed?.value_name || '').trim();
+        if (!valueName) continue;
+        const normalizedValue = normalize(valueName);
+        if (existingSet.has(normalizedValue)) continue;
+        const meta = (typeof seed === 'object' && seed?.meta) ? seed.meta : {};
         docs.push({
           Institute_ID: instituteId,
           category_id: category._id,
-          value_name,
-          normalized_value,
-          status: "Active",
+          value_name: valueName,
+          normalized_value: normalizedValue,
+          status: 'Active',
           meta
         });
-      });
+        existingSet.add(normalizedValue);
+      }
+    } catch (e) {
+      console.warn('ensureDefaultValues seed error for', categoryName, e.message);
     }
-
-    categorySeedUpdates.push(String(category._id));
-  });
-
-  if (docs.length) {
-    await MasterValue.insertMany(docs, { ordered: false });
   }
 
-  if (categorySeedUpdates.length) {
-    await MasterCategory.updateMany(
-      { _id: { $in: categorySeedUpdates.map((id) => new mongoose.Types.ObjectId(id)) } },
-      { $set: { seed_version: 1 } }
-    );
+  if (docs.length) {
+    try {
+      await MasterValue.insertMany(docs, { ordered: false });
+    } catch (e) {
+      // ignore duplicate errors or continue
+    }
   }
 };
 
 const getCategoryByName = async (instituteId, categoryName) => {
-  return MasterCategory.findOne({
-    Institute_ID: instituteId,
-    normalized_name: normalize(categoryName)
-  });
+  const normalized = normalize(categoryName);
+  // Prefer per-institute category, fall back to global shared category
+  let category = null;
+  if (instituteId && mongoose.Types.ObjectId.isValid(String(instituteId))) {
+    category = await MasterCategory.findOne({ Institute_ID: instituteId, normalized_name: normalized });
+    if (category) return category;
+  }
+
+  // fallback to global reserved category id
+  category = await MasterCategory.findOne({ Institute_ID: GLOBAL_MASTER_INSTITUTE_ID, normalized_name: normalized });
+  return category;
 };
 
 router.get("/public-map", async (req, res) => {
@@ -442,7 +433,8 @@ router.get("/public-map", async (req, res) => {
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);
 
-    const categories = await MasterCategory.find({ Institute_ID: instituteId, status: "Active" });
+    // include global categories (reserved global institute id) so shared categories like Tests are visible
+    const categories = await MasterCategory.find({ Institute_ID: { $in: [instituteId, GLOBAL_MASTER_INSTITUTE_ID] }, status: "Active" });
     const values = await MasterValue.find({ Institute_ID: instituteId, status: "Active" });
 
     const categoryNameById = new Map(categories.map((c) => [String(c._id), c.category_name]));
@@ -482,7 +474,7 @@ router.get("/categories", verifyToken, async (req, res) => {
 
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);
-    const categories = await MasterCategory.find({ Institute_ID: instituteId }).sort({ category_name: 1 });
+    const categories = await MasterCategory.find({ Institute_ID: { $in: [instituteId, GLOBAL_MASTER_INSTITUTE_ID] } }).sort({ category_name: 1 });
     res.json(categories);
   } catch (err) {
     console.error("GET /master-data-api/categories error", err);
@@ -730,7 +722,7 @@ router.get("/active-map", verifyToken, async (req, res) => {
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);
 
-    const categories = await MasterCategory.find({ Institute_ID: instituteId, status: "Active" });
+    const categories = await MasterCategory.find({ Institute_ID: { $in: [instituteId, GLOBAL_MASTER_INSTITUTE_ID] }, status: "Active" });
     const values = await MasterValue.find({ Institute_ID: instituteId, status: "Active" });
 
     const categoryNameById = new Map(categories.map((c) => [String(c._id), c.category_name]));
@@ -778,6 +770,53 @@ router.get("/tests-structure", verifyToken, async (req, res) => {
       : [];
 
     const categoriesSet = new Set(VALID_TEST_CATEGORIES);
+
+    // Map of keywords (lowercased) to high-level test categories
+    const TEST_GROUPS = {
+      HEMATOLOGY: ['hemoglobin','rbc','wbc','platelet','hematocrit','mcv','mch','mchc','esr','neutrophil','lymphocyte','eosinophil','monocyte','basophil','rdw'],
+      'DIABETES & GLUCOSE': ['fasting blood sugar','postprandial','ppbs','hba1c','random blood sugar','rbs','insulin','c-peptide'],
+      'LIPID PROFILE': ['total cholesterol','ldl','hdl','triglyceride','vldl','non-hdl','ldl/hdl','ldl ratio'],
+      'LIVER FUNCTION TESTS (LFT)': ['bilirubin','alt','ast','alkaline phosphatase','ggt','total protein','albumin','globulin','a/g ratio'],
+      'KIDNEY FUNCTION TESTS (KFT)': ['creatinine','blood urea nitrogen','bun','urea','uric acid','egfr','cystatin'],
+      'THYROID PROFILE': ['tsh','free t4','free t3','total t4','total t3','anti-tpo'],
+      ELECTROLYTES: ['sodium','potassium','chloride','calcium','magnesium','phosphate','bicarbonate'],
+      URINALYSIS: ['urine pH','urine specific gravity','urine protein','urine glucose','urine ketones','urine rbc','urine wbc','urine nitrite','urine bilirubin','microalbuminuria'],
+      'CARDIAC MARKERS': ['troponin','ck-mb','bnp','hs-crp','homocysteine','lipoprotein'],
+      'VITAMINS & MINERALS': ['vitamin d','vitamin b12','folate','serum iron','ferritin','tibc','zinc','vitamin b1'],
+      'COAGULATION STUDIES': ['prothrombin time','inr','aptt','fibrinogen','d-dimer','bleeding time'],
+      'INFECTIOUS DISEASE PANEL': ['hbsag','anti-hcv','hiv','vdrl','dengue','malaria','widal'],
+      'TUMOR MARKERS': ['psa','cea','afp','ca-125','ca 19-9'],
+      'HORMONAL PROFILE': ['testosterone','fsh','lh','prolactin','cortisol','dhea-s'],
+      'BONE HEALTH': ['pth','alkaline phosphatase (bone)','calcium (serum)','phosphorus'],
+      IMMUNOLOGY: ['ige','ana','rheumatoid factor','crp']
+    };
+
+    const normalizedValidCategories = new Set(Array.from(categoriesSet).map((c) => normalize(c)));
+
+    const guessCategory = (test) => {
+      const name = normalize(test?.Test_Name || '');
+      const group = normalize(test?.Group || '');
+
+      // If group already matches a valid high-level category, keep it
+      if (group && normalizedValidCategories.has(group)) return String(test.Group).trim();
+
+      // If group looks like the same as the test name (mis-grouped), prefer mapping by test name
+      if (group && name && group === name) {
+        // fall through to keyword mapping
+      }
+
+      // Keyword mapping: prefer test name, then group text
+      for (const [category, terms] of Object.entries(TEST_GROUPS)) {
+        for (const term of terms) {
+          if (!term) continue;
+          const t = normalize(term);
+          if (name.includes(t) || group.includes(t)) return category;
+        }
+      }
+
+      // Fallback: if group is present return it, else mark Uncategorized
+      return test?.Group || 'Uncategorized';
+    };
     allRows
       .filter((row) => row?.meta?.kind === "category")
       .forEach((row) => {
@@ -797,36 +836,51 @@ router.get("/tests-structure", verifyToken, async (req, res) => {
     });
 
     masterTests.forEach((test) => {
-      const categoryName = String(test?.Group || "").trim();
-      const testName = String(test?.Test_Name || "").trim();
-      if (!categoryName || !testName) return;
-      if (!testsByCategory[categoryName]) {
-        testsByCategory[categoryName] = [];
-      }
-
+      const guessedCategory = String(guessCategory(test) || '').trim();
+      const testName = String(test?.Test_Name || '').trim();
+      const categoryName = guessedCategory || 'Uncategorized';
+      if (!testName) return;
+      if (!testsByCategory[categoryName]) testsByCategory[categoryName] = [];
       testsByCategory[categoryName].push({
         id: test._id,
         name: testName,
-        reference: test.Reference_Range || "",
-        unit: test.Units || "",
-        source: "master"
+        reference: test.Reference_Range || '',
+        unit: test.Units || '',
+        source: 'master'
       });
     });
 
     Object.keys(testsByCategory).forEach((categoryName) => {
       const seen = new Set();
-      testsByCategory[categoryName] = testsByCategory[categoryName]
-        .filter((row) => {
-          const key = normalize(row?.name);
-          if (!key || seen.has(key)) return false;
+      testsByCategory[categoryName] = (testsByCategory[categoryName] || [])
+        .filter((item) => {
+          const key = String(item?.name || item?.Test_Name || '').trim().toLowerCase();
+          if (!key) return false;
+          if (seen.has(key)) return false;
           seen.add(key);
           return true;
         })
-        .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
+        .sort((a, b) => String(a.name || a.Test_Name || '').localeCompare(String(b.name || b.Test_Name || '')));
     });
 
-    const categories = Object.keys(testsByCategory).sort((a, b) => a.localeCompare(b));
-    res.json({ categories, testsByCategory });
+    const categories = Object.keys(testsByCategory)
+      .filter((categoryName) => categoryName && (testsByCategory[categoryName]?.length || categoriesSet.has(categoryName)))
+      .sort((a, b) => {
+        const leftIndex = VALID_TEST_CATEGORIES.indexOf(a);
+        const rightIndex = VALID_TEST_CATEGORIES.indexOf(b);
+
+        if (leftIndex !== -1 && rightIndex !== -1) {
+          return leftIndex - rightIndex;
+        }
+        if (leftIndex !== -1) return -1;
+        if (rightIndex !== -1) return 1;
+        return String(a).localeCompare(String(b));
+      });
+
+    res.json({
+      categories,
+      testsByCategory
+    });
   } catch (err) {
     console.error("GET /master-data-api/tests-structure error", err);
     res.status(500).json({ message: "Failed to load tests structure", error: err.message });
@@ -836,29 +890,30 @@ router.get("/tests-structure", verifyToken, async (req, res) => {
 router.post("/tests/category", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
     const instituteId = req.user.instituteId;
-    const categoryName = String(req.body.name || "").trim();
+    const categoryName = String(req.body.categoryName || "").trim();
 
     if (!categoryName) {
-      return res.status(400).json({ message: "Category name is required" });
+      return res.status(400).json({ message: "categoryName is required" });
     }
 
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);
     await ensureTestMasterValues(instituteId);
+
     const testsCategory = await getCategoryByName(instituteId, "Tests");
     if (!testsCategory) {
       return res.status(404).json({ message: "Tests category not found" });
     }
 
-    const duplicate = await MasterValue.findOne({
+    const existing = await MasterValue.findOne({
       Institute_ID: instituteId,
       category_id: testsCategory._id,
       normalized_value: normalize(categoryName),
       "meta.kind": "category"
     });
 
-    if (duplicate) {
-      return res.status(409).json({ message: "Test category already exists" });
+    if (existing) {
+      return res.status(200).json(existing);
     }
 
     const created = await MasterValue.create({
@@ -984,8 +1039,10 @@ router.post("/tests", verifyToken, requireInstituteAdmin, async (req, res) => {
       "meta.categoryNormalized": normalize(category)
     });
 
+    let created = false;
+    let createdDoc = null;
     if (!duplicateMasterTest) {
-      await MasterValue.create({
+      createdDoc = await MasterValue.create({
         Institute_ID: instituteId,
         category_id: testsCategory._id,
         value_name: testName,
@@ -999,9 +1056,10 @@ router.post("/tests", verifyToken, requireInstituteAdmin, async (req, res) => {
           unit
         }
       });
+      created = true;
     }
 
-    res.status(201).json({ message: "Test added successfully" });
+    res.status(201).json({ message: "Test add processed", created, test: createdDoc ? { _id: createdDoc._id, Test_Name: createdDoc.value_name } : null });
   } catch (err) {
     console.error("POST /master-data-api/tests error", err);
     res.status(500).json({ message: "Failed to add test", error: err.message });
@@ -1158,6 +1216,17 @@ router.get("/medicines-structure", async (req, res) => {
       }
     });
 
+    // Map dosage form name -> meta (id, value_name)
+    const dosageFormMetaByName = new Map();
+    dosageFormValues.forEach((row) => {
+      const formName = String(row?.value_name || "").trim();
+      if (!formName) return;
+      const key = normalizeLoose(formName);
+      if (!dosageFormMetaByName.has(key) || (row?._id && !dosageFormMetaByName.get(key)?._id)) {
+        dosageFormMetaByName.set(key, { _id: row?._id || null, value_name: formName, status: row?.status || 'Active' });
+      }
+    });
+
     const hintsByMedicineName = new Map();
     const addHint = (name, medicineType, dosageForm, strength) => {
       const normalizedName = normalize(name);
@@ -1180,37 +1249,42 @@ router.get("/medicines-structure", async (req, res) => {
       }
     };
 
-    medicineValues.forEach((row) => {
+    // Build hints from existing master medicine entries
+    (medicineValues || []).forEach((row) => {
       const name = String(row?.value_name || "").trim();
       if (!name) return;
       if (row?.meta?.kind === "medicine") {
-        addHint(
-          name,
-          row?.meta?.medicineType || row?.meta?.medicine_type || row?.meta?.typeCategory,
-          row?.meta?.dosageForm || row?.meta?.dosage_form || row?.meta?.form,
-          row?.meta?.strength
-        );
+        addHint(name, getMedicineTypeFromMeta(row?.meta), getMedicineDosageFormFromMeta(row?.meta), getMedicineStrengthFromMeta(row?.meta));
       }
     });
 
-    [...subStoreRows, ...mainStoreRows].forEach((row) => {
+    // Build hints from inventory rows (main/sub store)
+    ([...subStoreRows, ...mainStoreRows] || []).forEach((row) => {
       const inventoryMedicineType = canonicalizeMedicineTypeLabel(row?.Type || row?.Category || "Others") || "Others";
       addHint(row?.Medicine_Name, inventoryMedicineType, "Other", row?.Strength);
     });
 
+    // Build flattened medicine rows using hints and master entries
     const medicineRows = [];
-    medicineValues.forEach((row) => {
+    (medicineValues || []).forEach((row) => {
       const name = String(row?.value_name || "").trim();
       if (!name) return;
 
       if (row?.meta?.kind === "medicine") {
+        const medType = getMedicineTypeFromMeta(row?.meta);
+        const medForm = getMedicineDosageFormFromMeta(row?.meta);
+        const typeMeta = typeMetaByName.get(getCanonicalMedicineTypeKey(medType));
+        const formMeta = dosageFormMetaByName.get(getCanonicalMedicineTypeKey(medForm));
         medicineRows.push({
           _id: row?._id || null,
           value_name: name,
-          medicineType: getMedicineTypeFromMeta(row?.meta),
-          dosageForm: getMedicineDosageFormFromMeta(row?.meta),
+          medicineType: medType,
+          medicine_type_id: typeMeta?._id || null,
+          dosageForm: medForm,
+          dosage_form_id: formMeta?._id || null,
           strength: getMedicineStrengthFromMeta(row?.meta),
-          status: row?.status || "Active"
+          status: row?.status || "Active",
+          meta: row?.meta || {}
         });
         return;
       }
@@ -1221,21 +1295,31 @@ router.get("/medicines-structure", async (req, res) => {
           _id: row?._id || null,
           value_name: name,
           medicineType: "Others",
+          medicine_type_id: null,
           dosageForm: "Other",
+          dosage_form_id: null,
           strength: "",
-          status: row?.status || "Active"
+          status: row?.status || "Active",
+          meta: row?.meta || {}
         });
         return;
       }
 
       hints.forEach((hint) => {
+        const medType = hint.medicineType || "Others";
+        const medForm = hint.dosageForm || "Other";
+        const typeMeta = typeMetaByName.get(getCanonicalMedicineTypeKey(medType));
+        const formMeta = dosageFormMetaByName.get(getCanonicalMedicineTypeKey(medForm));
         medicineRows.push({
           _id: row?._id || null,
           value_name: name,
-          medicineType: hint.medicineType || "Others",
-          dosageForm: hint.dosageForm || "Other",
+          medicineType: medType,
+          medicine_type_id: typeMeta?._id || null,
+          dosageForm: medForm,
+          dosage_form_id: formMeta?._id || null,
           strength: hint.strength || "",
-          status: row?.status || "Active"
+          status: row?.status || "Active",
+          meta: row?.meta || {}
         });
       });
     });
@@ -1250,6 +1334,38 @@ router.get("/medicines-structure", async (req, res) => {
         return true;
       })
       .sort((a, b) => String(a.value_name || "").localeCompare(String(b.value_name || "")));
+
+    // Final pass: ensure medicine_type_id and dosage_form_id are attached when possible
+    try {
+      const typeLookup = new Map();
+      (medicineTypeValues || []).forEach((r) => {
+        const key = getCanonicalMedicineTypeKey(canonicalizeMedicineTypeLabel(r?.value_name || ""));
+        if (key) typeLookup.set(key, r?._id || null);
+      });
+
+      const formLookup = new Map();
+      (dosageFormValues || []).forEach((r) => {
+        const key = normalizeLoose(r?.value_name || "");
+        if (key) formLookup.set(key, r?._id || null);
+      });
+
+      medicines.forEach((m) => {
+        try {
+          if ((!m.medicine_type_id || String(m.medicine_type_id) === 'null') && m.medicineType) {
+            const key = getCanonicalMedicineTypeKey(m.medicineType || "");
+            if (typeLookup.has(key)) m.medicine_type_id = typeLookup.get(key) || null;
+          }
+          if ((!m.dosage_form_id || String(m.dosage_form_id) === 'null') && m.dosageForm) {
+            const key = normalizeLoose(m.dosageForm || "");
+            if (formLookup.has(key)) m.dosage_form_id = formLookup.get(key) || null;
+          }
+        } catch (e) {
+          // ignore per-row mapping errors
+        }
+      });
+    } catch (e) {
+      console.warn('medicine id attach pass failed', e.message);
+    }
 
     const medicineTypes = sortUnique([
       ...defaultTypes,
@@ -1271,10 +1387,9 @@ router.get("/medicines-structure", async (req, res) => {
         status: meta?.status || "Active"
       };
     });
-
     const medicinesByType = {};
-    medicineTypes.forEach((type) => {
-      medicinesByType[type] = medicines
+    (medicineTypes || []).forEach((type) => {
+      medicinesByType[type] = (medicines || [])
         .filter((item) => getCanonicalMedicineTypeKey(item.medicineType) === getCanonicalMedicineTypeKey(type))
         .sort((a, b) => String(a.value_name || "").localeCompare(String(b.value_name || "")));
     });
@@ -1286,63 +1401,45 @@ router.get("/medicines-structure", async (req, res) => {
         dosageForms: Array.isArray(dosageForms) ? dosageForms : [],
         medicineTypeEntries: Array.isArray(medicineTypeEntries) ? medicineTypeEntries : [],
         medicines: Array.isArray(medicines) ? medicines : [],
-        medicinesByType: medicinesByType || {}
+        medicinesByType: medicinesByType || {},
+        // hierarchical grouping for exact UI mapping: type -> dosageForm -> medicines[]
+        hierarchy: (medicineTypes || []).map((type) => {
+          const formsMap = new Map();
+          (medicines || [])
+            .filter((m) => getCanonicalMedicineTypeKey(m.medicineType) === getCanonicalMedicineTypeKey(type))
+            .forEach((m) => {
+              const formKey = String(m.dosageForm || 'Other').trim();
+              if (!formsMap.has(formKey)) formsMap.set(formKey, []);
+              formsMap.get(formKey).push({
+                id: m._id,
+                name: m.value_name,
+                strength: m.strength || "",
+                dosageForm: m.dosageForm,
+                medicine_type_id: m.medicine_type_id || null,
+                dosage_form_id: m.dosage_form_id || null,
+                status: m.status || 'Active',
+                meta: m.meta || {}
+              });
+            });
+
+          const forms = Array.from(formsMap.entries()).map(([formName, meds]) => ({
+            dosageForm: formName,
+            medicines: meds.sort((a,b)=> (a.name||'').localeCompare(b.name||''))
+          }));
+
+          return {
+            type: {
+              name: canonicalizeMedicineTypeLabel(type),
+              id: (typeMetaByName.get(getCanonicalMedicineTypeKey(type)) || {})._id || null
+            },
+            forms: forms.sort((a,b)=> a.dosageForm.localeCompare(b.dosageForm))
+          };
+        })
       }
     });
   } catch (err) {
-    console.error("GET /master-data-api/medicines-structure error", err?.stack || err);
-    res.status(500).json({ success: false, message: "Failed to load medicines structure", error: err?.message || String(err) });
-  }
-});
-
-router.post("/diseases", verifyToken, requireInstituteAdmin, async (req, res) => {
-  try {
-    const instituteId = req.user.instituteId;
-    const group = String(req.body.group || "").trim();
-    const diseaseName = String(req.body.diseaseName || "").trim();
-
-    if (!["Communicable", "Non-Communicable"].includes(group)) {
-      return res.status(400).json({ message: "group must be Communicable or Non-Communicable" });
-    }
-    if (!diseaseName) {
-      return res.status(400).json({ message: "diseaseName is required" });
-    }
-
-    await ensureDefaultCategories(instituteId);
-    await ensureDefaultValues(instituteId);
-    const diseasesCategory = await getCategoryByName(instituteId, "Diseases");
-    if (!diseasesCategory) {
-      return res.status(404).json({ message: "Diseases category not found" });
-    }
-
-    const duplicate = await MasterValue.findOne({
-      Institute_ID: instituteId,
-      category_id: diseasesCategory._id,
-      normalized_value: normalize(diseaseName),
-      "meta.kind": "disease",
-      "meta.group": group
-    });
-
-    if (duplicate) {
-      return res.status(409).json({ message: "Disease already exists in this group" });
-    }
-
-    const created = await MasterValue.create({
-      Institute_ID: instituteId,
-      category_id: diseasesCategory._id,
-      value_name: diseaseName,
-      normalized_value: normalize(diseaseName),
-      status: "Active",
-      meta: {
-        kind: "disease",
-        group
-      }
-    });
-
-    res.status(201).json(created);
-  } catch (err) {
-    console.error("POST /master-data-api/diseases error", err);
-    res.status(500).json({ message: "Failed to add disease", error: err.message });
+    console.error("GET /master-data-api/medicines-structure error", err);
+    res.status(500).json({ message: "Failed to load medicines structure", error: err.message });
   }
 });
 
@@ -1590,25 +1687,34 @@ router.delete("/medicines/type/:id", verifyToken, requireInstituteAdmin, async (
     }
 
     if (medicinesCategory) {
+      // Reassign any linked medicines to 'Others' instead of blocking delete
       const relatedMedicines = await MasterValue.find({
         Institute_ID: instituteId,
         category_id: medicinesCategory._id,
         "meta.kind": "medicine"
-      }).select("value_name meta");
+      });
 
-      const linkedCount = relatedMedicines.filter(
-        (row) =>
-          getCanonicalMedicineTypeKey(getMedicineTypeFromMeta(row.meta)) ===
-          getCanonicalMedicineTypeKey(typeDoc.value_name)
-      ).length;
-
-      if (linkedCount > 0) {
-        return res.status(409).json({
-          message: `Cannot delete medicine type while ${linkedCount} medicine${linkedCount === 1 ? "" : "s"} still use it`
-        });
+      const targetKey = getCanonicalMedicineTypeKey(typeDoc.value_name);
+      for (const row of relatedMedicines) {
+        try {
+          const rowKey = getCanonicalMedicineTypeKey(getMedicineTypeFromMeta(row.meta));
+          if (rowKey === targetKey) {
+            row.meta = {
+              ...(row.meta || {}),
+              medicineType: "Others",
+              type: "Other",
+              typeNormalized: normalize("Others")
+            };
+            await row.save();
+          }
+        } catch (e) {
+          console.warn('Failed to reassign medicine', row._id, e.message);
+        }
       }
+
     }
 
+    // Delete the type document (allow deletion even if it was in use)
     await typeDoc.deleteOne();
     res.json({ message: "Medicine type deleted" });
   } catch (err) {
@@ -1617,10 +1723,87 @@ router.delete("/medicines/type/:id", verifyToken, requireInstituteAdmin, async (
   }
 });
 
+// DELETE by name: allow deleting built-in or frontend-only types by name.
+router.delete("/medicines/type", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const name = String(req.query.name || req.body.name || "").trim();
+    if (!name) return res.status(400).json({ message: "Missing name parameter" });
+
+    await ensureDefaultCategories(instituteId);
+    await ensureDefaultValues(instituteId);
+
+    const medicinesCategory = await getCategoryByName(instituteId, "Medicines");
+    const medicineTypesCategory = await getCategoryByName(instituteId, "Medicine Types");
+    if (!medicineTypesCategory) return res.status(404).json({ message: "Medicine Types category not found" });
+
+    // Find existing type doc (case-insensitive)
+    const typeDoc = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: medicineTypesCategory._id,
+      value_name: { $regex: `^${escapeRegExp(name)}$`, $options: 'i' }
+    });
+
+    if (!typeDoc) {
+      // Create an inactive override so frontend no longer shows the built-in type
+      const created = new MasterValue({
+        Institute_ID: instituteId,
+        category_id: medicineTypesCategory._id,
+        value_name: name,
+        normalized_value: normalize(name),
+        status: "Inactive",
+        meta: { kind: "medicineType" }
+      });
+      await created.save();
+      return res.json({ message: "Medicine type removed (override created)" });
+    }
+
+    // If a DB doc exists, reassign linked medicines and delete it
+    if (medicinesCategory) {
+      const relatedMedicines = await MasterValue.find({
+        Institute_ID: instituteId,
+        category_id: medicinesCategory._id,
+        "meta.kind": "medicine"
+      });
+
+      const targetKey = getCanonicalMedicineTypeKey(typeDoc.value_name);
+      for (const row of relatedMedicines) {
+        try {
+          const rowKey = getCanonicalMedicineTypeKey(getMedicineTypeFromMeta(row.meta));
+          if (rowKey === targetKey) {
+            row.meta = {
+              ...(row.meta || {}),
+              medicineType: "Others",
+              type: "Other",
+              typeNormalized: normalize("Others")
+            };
+            await row.save();
+          }
+        } catch (e) {
+          console.warn('Failed to reassign medicine', row._id, e.message);
+        }
+      }
+    }
+
+    await typeDoc.deleteOne();
+    res.json({ message: "Medicine type deleted" });
+  } catch (err) {
+    console.error("DELETE /master-data-api/medicines/type error", err);
+    res.status(500).json({ message: "Failed to delete medicine type", error: err.message });
+  }
+});
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 router.put("/medicines/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
     const instituteId = req.user.instituteId;
     const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid medicine id" });
+    }
     const nextName = String(req.body.medicineName || req.body.value_name || "").trim();
     const nextMedicineType = canonicalizeMedicineTypeLabel(req.body.medicineType || "");
     const nextDosageForm = String(req.body.dosageForm || "").trim();
@@ -1704,6 +1887,10 @@ router.delete("/medicines/:id", verifyToken, requireInstituteAdmin, async (req, 
   try {
     const instituteId = req.user.instituteId;
     const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid medicine id" });
+    }
 
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);

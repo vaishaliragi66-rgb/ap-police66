@@ -18,6 +18,8 @@ try {
   const resolved = import.meta.env.VITE_BACKEND_URL || 'http://localhost:6100';
   axios.defaults.baseURL = resolved;
   console.debug('axios.baseURL set to', axios.defaults.baseURL);
+  // Ensure cookies are sent to backend so session auth works across ports
+  axios.defaults.withCredentials = true;
 } catch (e) {}
 
 // Dev helper: auto-set a sample employeeId when running locally and none exists

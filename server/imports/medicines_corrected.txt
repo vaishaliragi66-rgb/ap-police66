@@ -1,0 +1,403 @@
+Dosage Form	MEDICINE
+ANTI BIOTICS	
+Capsule	Amoxicillin 250mg 
+Tablet	Amoxicillin 250mg 
+Syrup	Amoxicillin 250mg 
+Capsule	Amoxicillin 500mg
+Tablet	Amoxicillin 500mg
+Syrup	Amoxicillin 500mg
+Tablet	Amoxicillin + Clavulanate 250mg
+Syrup	Amoxicillin + Clavulanate 250mg
+Tablet	Amoxicillin + Clavulanate 500mg
+Syrup	Amoxicillin + Clavulanate 500mg
+Capsule	Ampicillin 250mg
+Syrup	Ampicillin 250mg
+Capsule	Ampicillin 500mg
+Syrup	Ampicillin 500mg
+Capsule	Cloxacillin 250mg
+Syrup	Cloxacillin 250mg
+Capsule	Cloxacillin 500mg
+Syrup	Cloxacillin 500mg
+Capsule	Cephalexin 250mg
+Syrup	Cephalexin 250mg
+Capsule	Cephalexin 500mg
+Syrup	Cephalexin 500mg
+Tablet	Cefuroxime 250mg
+Syrup	Cefuroxime 250mg
+Tablet	Cefuroxime 500mg
+Syrup	Cefuroxime 500mg
+Tablet	Cefixime 200mg
+Syrup	Cefixime 200mg
+Tablet	Cefixime 400mg
+Syrup	Cefixime 400mg
+Tablet	Cefpodoxime 200mg
+Syrup	Cefpodoxime 200mg
+Tablet	Cefpodoxime 400mg
+Syrup	Cefpodoxime 400mg
+Capsule	Doxycycline 100mg
+Tablet	Doxycycline 100mg
+Tablet	Ciprofloxacin 250mg
+Tablet	Ciprofloxacin 500mg
+Tablet	Ofloxacin 200mg
+Tablet	Ofloxacin 400mg
+Tablet	Levofloxacin 250mg
+Tablet	Levofloxacin 500mg
+Tablet	Azithromycin 250mg
+Syrup	Azithromycin 250mg
+Tablet	Azithromycin 500mg
+Syrup	Azithromycin 500mg
+Tablet	Clarithromycin 250mg
+Tablet	Clarithromycin 500mg
+Tablet	Erythromycin 250mg
+Syrup	Erythromycin 250mg
+Tablet	Erythromycin 500mg
+Syrup	Erythromycin 500mg
+Tablet	Metronidazole 200mg
+Syrup	Metronidazole 200mg
+Tablet	Metronidazole 400mg
+Syrup	Metronidazole 400mg
+Tablet	Tinidazole 300mg
+Tablet	Tinidazole 500mg
+Tablet	Cotrimoxazole 480mg
+Syrup	Cotrimoxazole 480mg
+Tablet	Cotrimoxazole 960mg
+Syrup	Cotrimoxazole 960mg
+Tablet	Nitrofurantoin 100mg
+Tablet	Linezolid 600mg
+Injection	Vancomycin 500mg
+Injection	Vancomycin 1000mg
+Injection	Gentamicin 40mg/ml
+Injection	Amikacin 250mg/ml
+Injection	Amikacin 500mg/ml
+Injection	Ceftriaxone 500mg
+Injection	Ceftriaxone 1000mg
+Injection	Cefotaxime 500mg
+Injection	Cefotaxime 1000mg
+Injection	Cefepime 500mg
+Injection	Cefepime 1000mg
+Injection	Meropenem 500mg
+Injection	Meropenem 1000mg
+Injection	Imipenem + Cilastatin 500mg
+Injection	Imipenem + Cilastatin 1000mg
+Injection	Piperacillin + Tazobactam 2.25g
+Injection	Piperacillin + Tazobactam 4.5g
+Injection	Aztreonam 500mg
+Injection	Aztreonam 1000mg
+Injection	Colistin 1MU
+Injection	Colistin 2MU
+Injection	Sulbactam 500mg
+Injection	Sulbactam 1000mg
+Injection	Tazobactam 500mg
+Injection	Tazobactam 1000mg
+Capsule	Clindamycin 150mg
+Injection	Clindamycin 150mg
+Capsule	Clindamycin 300mg
+Injection	Clindamycin 300mg
+Injection	Teicoplanin 200mg
+Injection	Teicoplanin 400mg
+Injection	Tigecycline 50mg
+Injection	Polymyxin B 5000U/ml
+Capsule	Rifampicin 150mg
+Capsule	Rifampicin 300mg
+Tablet	Isoniazid 100mg
+Tablet	Isoniazid 300mg
+Tablet	Pyrazinamide 500mg
+Tablet	Ethambutol 400mg
+Injection	Streptomycin 1g
+ANTI VIRALS	
+Tablet	Acyclovir 200mg
+Cream	Acyclovir 200mg
+Tablet	Acyclovir 400mg
+Cream	Acyclovir 400mg
+ANTI FUNGALS	
+Tablet	Fluconazole 50mg
+Syrup	Fluconazole 50mg
+Tablet	Fluconazole 150mg
+Syrup	Fluconazole 150mg
+Tablet	Fluconazole 200mg
+Syrup	Fluconazole 200mg
+Capsule	Itraconazole 100mg
+Capsule	Itraconazole 200mg
+Tablet	Ketoconazole 200mg
+Cream	Ketoconazole 200mg
+Cream	Clotrimazole 1%
+Cream	Miconazole 2%
+Tablet	Terbinafine 250mg
+Cream	Terbinafine 250mg
+Injection	Amphotericin B 50mg
+ANTI HELMENTHICS	
+Tablet	Albendazole 200mg
+Syrup	Albendazole 200mg
+Tablet	Albendazole 400mg
+Syrup	Albendazole 400mg
+ANTI MALARIALS	
+Tablet	Chloroquine 150mg
+Syrup	Chloroquine 150mg
+Tablet	Chloroquine 300mg
+Syrup	Chloroquine 300mg
+Tablet	Hydroxychloroquine 200mg
+Tablet	Hydroxychloroquine 400mg
+Tablet	Quinine 300mg
+Tablet	Artesunate 50mg
+Injection	Artesunate 50mg
+Tablet	Artesunate 100mg
+Injection	Artesunate 100mg
+Injection	Artemether 80mg/ml
+Tablet	Lumefantrine 120mg
+Tablet	Artemether + Lumefantrine 20mg + 120mg
+ANTI DIABETICS	
+Tablet	Metformin 500mg
+Tablet	Metformin 850mg
+Tablet	Metformin 1000mg
+Tablet	Glibenclamide 2.5mg
+Tablet	Glibenclamide 5mg
+Tablet	Gliclazide 40mg
+Tablet	Gliclazide 80mg
+Tablet	Glimepiride 1mg
+Tablet	Glimepiride 2mg
+Tablet	Glimepiride 4mg
+Tablet	Pioglitazone 15mg
+Tablet	Pioglitazone 30mg
+Tablet	Sitagliptin 50mg
+Tablet	Sitagliptin 100mg
+Tablet	Vildagliptin 50mg
+Injection	Insulin (Regular) 40IU/ml
+Injection	Insulin (Regular) 100IU/ml
+Injection	Insulin (NPH) 40IU/ml
+Injection	Insulin (NPH) 100IU/ml
+Injection	Insulin (Glargine) 100IU/ml
+ANTACIDS	
+Capsule	Omeprazole 20mg
+Tablet	Omeprazole 20mg
+Capsule	Omeprazole 40mg
+Tablet	Omeprazole 40mg
+Tablet	Pantoprazole 20mg
+Tablet	Pantoprazole 40mg
+Tablet	Rabeprazole 20mg
+Tablet	Esomeprazole 20mg
+Tablet	Esomeprazole 40mg
+Capsule	Lansoprazole 30mg
+Tablet	Ranitidine 150mg
+Tablet	Ranitidine 300mg
+Tablet	Famotidine 20mg
+Tablet	Famotidine 40mg
+Tablet	Sucralfate 1g
+Syrup	Sucralfate 1g
+LAXATIVES	
+Syrup	Lactulose
+Tablet	Bisacodyl
+Suppository	Bisacodyl
+Tablet	Senna
+Syrup	Senna
+Suspension	Magnesium Hydroxide
+Tablet	Sodium Picosulfate
+Syrup	Sodium Picosulfate
+LIPID LOWERING AGENTS	
+Tablet	Atorvastatin 10mg
+Tablet	Atorvastatin 20mg
+Tablet	Atorvastatin 40mg
+Tablet	Atorvastatin 80mg
+Tablet	Simvastatin 10mg
+Tablet	Simvastatin 20mg
+Tablet	Simvastatin 40mg
+Tablet	Simvastatin 80mg
+Tablet	Rosuvastatin 5mg
+Tablet	Rosuvastatin 10mg
+Tablet	Rosuvastatin 20mg
+Tablet	Rosuvastatin 40mg
+Tablet	Fenofibrate 160mg
+ANTI HYPERTENSIVES	
+Tablet	Amlodipine 2.5mg
+Tablet	Amlodipine 5mg
+Tablet	Amlodipine 10mg
+Tablet	Atenolol 25mg
+Tablet	Atenolol 50mg
+Tablet	Atenolol 100mg
+Tablet	Metoprolol 25mg
+Tablet	Metoprolol 50mg
+Tablet	Metoprolol 100mg
+Tablet	Propranolol 10mg
+Tablet	Propranolol 40mg
+Tablet	Propranolol 80mg
+Tablet	Enalapril 2.5mg
+Tablet	Ramipril 5mg
+Tablet	Ramipril 10mg
+Tablet	Losartan 25mg
+Tablet	Losartan 50mg
+Tablet	Losartan 100mg
+Tablet	Telmisartan 20mg
+Tablet	Telmisartan 40mg
+Tablet	Telmisartan 80mg
+Tablet	Valsartan 40mg
+Tablet	Valsartan 80mg
+Tablet	Valsartan 160mg
+Tablet	Valsartan 320mg
+Tablet	Hydralazine 25mg
+Tablet	Hydralazine 50mg
+Tablet	Clonidine 0.1mg
+Tablet	Clonidine 0.2mg
+Tablet	Clonidine 0.3mg
+DIURETICS	
+Tablet	Furosemide 20mg
+Tablet	Furosemide 40mg
+Tablet	Furosemide 80mg
+Injection	Furosemide 20mg
+Injection	Furosemide 40mg
+Tablet	Hydrochlorothiazide 12.5mg
+Tablet	Hydrochlorothiazide 25mg
+Tablet	Hydrochlorothiazide 50mg
+Tablet	Spironolactone 25mg
+Tablet	Spironolactone 50mg
+Tablet	Spironolactone 100mg
+Tablet	Acetazolamide 250mg
+Injection	Mannitol 20%
+Injection	Mannitol 25%
+ANTI PLATELETS	
+Tablet	Aspirin 75mg
+Tablet	Aspirin 150mg
+Tablet	Aspirin 300mg
+Tablet	Clopidogrel 75mg
+Tablet	Clopidogrel 150mg
+ANTI ANEMICS	
+Tablet	Levothyroxine 25mcg
+Tablet	Levothyroxine 50mcg
+Tablet	Levothyroxine 75mcg
+Tablet	Levothyroxine 100mcg
+Tablet	Levothyroxine 125mcg
+Tablet	Levothyroxine 150mcg
+Tablet	Prednisolone 5mg
+Tablet	Prednisolone 10mg
+Tablet	Prednisolone 20mg
+Tablet	Hydrocortisone 10mg
+Tablet	Hydrocortisone 20mg
+Injection	Hydrocortisone
+Tablet	Dexamethasone 0.5mg
+Tablet	Dexamethasone 4mg
+Injection	Dexamethasone
+Tablet	Estrogen (Conjugated) 0.625mg
+Tablet	Estrogen (Conjugated) 1.25mg
+Capsule	Progesterone 100mg
+Capsule	Progesterone 200mg
+Injection	Progesterone
+VITAMINS	
+Capsule	Vitamin A 5000IU
+Capsule	Vitamin A 10000IU
+Tablet	Vitamin D3 400IU
+Tablet	Vitamin D3 1000IU
+Capsule	Vitamin D3 60000IU
+Capsule	Vitamin E 200mg
+Capsule	Vitamin E 400mg
+Tablet	Vitamin C 250mg
+Tablet	Vitamin C 500mg
+Syrup	Vitamin C
+Tablet	Vitamin B Complex
+Syrup	Vitamin B Complex
+Tablet	Multivitamin
+Syrup	Multivitamin
+MINERALS	
+Tablet	Calcium Carbonate 500mg
+Tablet	Calcium Carbonate 1000mg
+Tablet	Calcium Citrate 500mg
+Tablet	Calcium Citrate 1000mg
+Tablet	Zinc Sulfate 20mg
+Syrup	Zinc Sulfate
+Tablet	Magnesium Oxide 250mg
+Tablet	Magnesium Oxide 500mg
+Tablet	Potassium Chloride 600mg
+Syrup	Potassium Chloride
+Injection	Potassium Chloride
+Tablet	Sodium Bicarbonate 500mg
+Injection	Sodium Bicarbonate
+Tablet	Selenium 50mcg
+Tablet	Selenium 100mcg
+ANALGESICS & ANTI PYRETICS	
+Tablet	Paracetamol 250mg
+Tablet	Paracetamol 500mg
+Tablet	Paracetamol 650mg
+Syrup	Paracetamol
+Injection	Paracetamol
+Tablet	Ibuprofen 200mg
+Tablet	Ibuprofen 400mg
+Tablet	Diclofenac 50mg
+Tablet	Diclofenac 100mg
+Injection	Diclofenac
+Tablet	Naproxen 250mg
+Tablet	Naproxen 500mg
+Tablet	Tramadol 50mg
+Tablet	Tramadol 100mg
+Injection	Tramadol
+ANTIPSYCHOTICS	
+Tablet	Haloperidol 1mg
+Tablet	Haloperidol 5mg
+Tablet	Haloperidol 10mg
+Injection	Haloperidol
+Tablet	Chlorpromazine 25mg
+Tablet	Chlorpromazine 100mg
+Injection	Chlorpromazine
+Tablet	Risperidone 1mg
+Tablet	Risperidone 2mg
+Tablet	Risperidone 4mg
+Tablet	Risperidone 6mg
+Tablet	Olanzapine 5mg
+Tablet	Olanzapine 10mg
+ANTI EPILEPTICS	
+Tablet	Phenytoin 100mg
+Tablet	Phenytoin 300mg
+Injection	Phenytoin
+Tablet	Carbamazepine 200mg
+Tablet	Carbamazepine 400mg
+Tablet	Phenobarbital 30mg
+Tablet	Phenobarbital 100mg
+Injection	Phenobarbital
+Tablet	Topiramate 25mg
+Tablet	Topiramate 50mg
+Tablet	Topiramate 100mg
+Capsule	Gabapentin 100mg
+Capsule	Gabapentin 300mg
+Capsule	Gabapentin 400mg
+RESPIRATORY	
+Tablet	Salbutamol 2mg
+Tablet	Salbutamol 4mg
+Syrup	Salbutamol
+Inhaler	Salbutamol
+Tablet	Terbutaline 2.5mg
+Syrup	Terbutaline
+Inhaler	Terbutaline
+Tablet	Theophylline 100mg
+Tablett	Theophylline 200mg
+Tablett	Theophylline 400mg
+Injection	Aminophylline
+Inhaler	Beclomethasone
+Inhaler	Budesonide
+Inhaler	Fluticasone
+Tablet	Montelukast 4mg
+Tablet	Montelukast 5mg
+Tablet	Montelukast 10mg
+Inhaler	Ipratropium
+Inhaler	Tiotropium
+GASTRO INTESTINAL	
+Capsule	Omeprazole 20mg
+Capsule	Omeprazole 40mg
+Injection	Omeprazole
+Tablet	Pantoprazole 20mg
+Tablet	Pantoprazole 40mg
+Injection	Pantoprazole
+Tablet	Ranitidine 150mg
+Tablet	Ranitidine 300mg
+Injection	Ranitidine
+Tablet	Famotidine 20mg
+Tablet	Famotidine 40mg
+Injection	Famotidine
+Tablett	Domperidone 10mg
+Tablett	Domperidone 20mg
+Syrup	Domperidone
+Tablett	Metoclopramide 10mg
+Injection	Metoclopramide
+Tablett	Ondansetron 4mg
+Tablett	Ondansetron 8mg
+Injection	Ondansetron
+Tablett	Loperamide 2mg
+Syrup	Loperamide
+Powder	Oral Rehydration Salt (ORS)
+Suspension	Sucralfate
+Tablett	Sucralfate 1g

@@ -1,0 +1,249 @@
+[
+  {
+    "_id": "69de9514a31f38ff1ecbdf01",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "ALT (SGPT)",
+    "normalized_value": "alt (sgpt)",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9514a31f38ff1ecbdf02",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "AST (SGOT)",
+    "normalized_value": "ast (sgot)",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf11",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "BONE HEALTH",
+    "normalized_value": "bone health",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Uncategorized",
+      "categoryNormalized": "uncategorized",
+      "reference": "",
+      "unit": ""
+    }
+  },
+  {
+    "_id": "69de9514a31f38ff1ecbdf03",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CA 19-9",
+    "normalized_value": "ca 19-9",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9514a31f38ff1ecbdf04",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CA-125",
+    "normalized_value": "ca-125",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf12",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CARDIAC MARKERS",
+    "normalized_value": "cardiac markers",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Uncategorized",
+      "categoryNormalized": "uncategorized",
+      "reference": "",
+      "unit": ""
+    }
+  },
+  {
+    "_id": "69de9514a31f38ff1ecbdf05",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "CK-MB",
+    "normalized_value": "ck-mb",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf13",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "COAGULATION STUDIES",
+    "normalized_value": "coagulation studies",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Uncategorized",
+      "categoryNormalized": "uncategorized",
+      "reference": "",
+      "unit": ""
+    }
+  },
+  {
+    "_id": "69de9514a31f38ff1ecbdf06",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "DHEA-S",
+    "normalized_value": "dhea-s",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9516a31f38ff1ecbdf14",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "DIABETES & GLUCOSE",
+    "normalized_value": "diabetes & glucose",
+    "status": "Active",
+    "meta": {
+      "kind": "test",
+      "category": "Uncategorized",
+      "categoryNormalized": "uncategorized",
+      "reference": "",
+      "unit": ""
+    }
+  },
+  {
+    "_id": "69de9514a31f38ff1ecbdf07",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "ELECTROLYTES",
+    "normalized_value": "electrolytes",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9514a31f38ff1ecbdf08",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "ESR",
+    "normalized_value": "esr",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf09",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "FSH",
+    "normalized_value": "fsh",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf0a",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "HIV 1 & 2 ELISA",
+    "normalized_value": "hiv 1 & 2 elisa",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf0b",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "INR",
+    "normalized_value": "inr",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf0c",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "LH",
+    "normalized_value": "lh",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf0d",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "MCH",
+    "normalized_value": "mch",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf0e",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "MCHC",
+    "normalized_value": "mchc",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf0f",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "MCV",
+    "normalized_value": "mcv",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9515a31f38ff1ecbdf10",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "TSH",
+    "normalized_value": "tsh",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  },
+  {
+    "_id": "69de9514a31f38ff1ecbdf00",
+    "Institute_ID": "6998244c96c53768742a9d65",
+    "category_id": "69de8a4267c592599744a2db",
+    "value_name": "Uncategorized",
+    "normalized_value": "uncategorized",
+    "status": "Active",
+    "meta": {
+      "kind": "category"
+    }
+  }
+]

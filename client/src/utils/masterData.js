@@ -1,13 +1,13 @@
 import axios from "axios";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+// Resolve backend URL with fallbacks to axios default or localhost so dev builds are robust
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || axios.defaults.baseURL || 'http://localhost:6100';
 const MEDICINE_TYPE_LABELS = {
   analgesics: "Analgesics",
   antacids: "Antacids",
   antibiotics: "Antibiotics",
   antidiabetics: "Antidiabetics",
   antifungals: "Antifungals",
-  antihelmenthics: "Antihelminthics",
   antihelminthics: "Antihelminthics",
   antihelmintics: "Antihelminthics",
   antihistamines: "Antihistamines",
@@ -291,6 +291,19 @@ export const DEFAULT_MASTER_OPTIONS = {
   ]
 };
 
+// Categories that must be sourced from DB/public-map only (no hard-coded fallbacks)
+export const DYNAMIC_MASTER_CATEGORIES = new Set([
+  "Medicines",
+  "Medicine Types",
+  "Dosage Forms",
+  "Tests",
+  "Xray Types",
+  "Xray Body Parts",
+  "Xray Views",
+  "Diseases",
+  "Disease Categories"
+]);
+
 let cache = null;
 let cacheTime = 0;
 const TTL_MS = 5 * 60 * 1000;
@@ -557,10 +570,28 @@ export const fetchMasterDataMap = async ({ force = false } = {}) => {
 
 export const getMasterOptions = (masterMap, categoryName) => {
   const hasCategory = Boolean(masterMap) && Object.prototype.hasOwnProperty.call(masterMap, categoryName);
-  const fallback = hasCategory ? [] : (DEFAULT_MASTER_OPTIONS[categoryName] || []);
   const dbValues = ((hasCategory ? masterMap?.[categoryName] : []) || [])
     .filter((item) => String(item?.status || "Active").toLowerCase() === "active")
     .map((item) => item.value_name);
+
+  // For dynamic categories, only return DB values (no hard-coded fallbacks)
+  if (DYNAMIC_MASTER_CATEGORIES.has(categoryName)) {
+    if (categoryName === "Medicine Types") {
+      // canonicalize medicine type labels but only from DB
+      const merged = new Map();
+      (dbValues || [])
+        .map((item) => canonicalizeMedicineTypeLabel(item))
+        .filter(Boolean)
+        .forEach((item) => {
+          const key = getCanonicalMedicineTypeKey(item);
+          if (!merged.has(key)) merged.set(key, item);
+        });
+      return [...merged.values()];
+    }
+    return [...new Set((dbValues || []).filter(Boolean))];
+  }
+
+  const fallback = hasCategory ? [] : (DEFAULT_MASTER_OPTIONS[categoryName] || []);
   if (categoryName === "Medicine Types") {
     const merged = new Map();
     [...fallback, ...dbValues]
@@ -576,15 +607,8 @@ export const getMasterOptions = (masterMap, categoryName) => {
 };
 
 export const getMasterMedicineEntries = (masterMap) => {
-  const fallback = [
-    { value_name: "Paracetamol", meta: { kind: "medicine", medicineType: "Antipyretics", dosageForm: "Tablet", strength: "500mg" } },
-    { value_name: "Amoxicillin", meta: { kind: "medicine", medicineType: "Antibiotics", dosageForm: "Capsule", strength: "500mg" } },
-    { value_name: "Ibuprofen", meta: { kind: "medicine", medicineType: "Analgesics", dosageForm: "Tablet", strength: "400mg" } },
-    { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
-  ];
-
   const hasMedicines = Boolean(masterMap) && Object.prototype.hasOwnProperty.call(masterMap, "Medicines");
-  const combined = hasMedicines ? [...(masterMap?.Medicines || [])] : [...fallback];
+  const combined = hasMedicines ? [...(masterMap?.Medicines || [])] : [];
   const seen = new Set();
 
   return combined
@@ -631,13 +655,19 @@ export const getMasterMedicinesByTypeAndForm = (masterMap, medicineType, dosageF
 
 export const getMergedMasterValueObjects = (masterMap, categoryName) => {
   const hasCategory = Boolean(masterMap) && Object.prototype.hasOwnProperty.call(masterMap, categoryName);
+  const dbValues = (hasCategory ? masterMap?.[categoryName] : []) || [];
+
+  // For dynamic categories, do not include hard-coded defaults — return DB values only
+  if (DYNAMIC_MASTER_CATEGORIES.has(categoryName)) {
+    return dbValues;
+  }
+
   const fallback = (!hasCategory ? (DEFAULT_MASTER_OPTIONS[categoryName] || []) : []).map((value_name, index) => ({
     _id: `default-${categoryName}-${index}`,
     value_name,
     status: "Active",
     isDefault: true
   }));
-  const dbValues = (hasCategory ? masterMap?.[categoryName] : []) || [];
   const merged = new Map();
 
   [...fallback, ...dbValues].forEach((item) => {

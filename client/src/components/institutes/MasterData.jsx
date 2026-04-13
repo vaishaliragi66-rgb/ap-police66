@@ -9,6 +9,8 @@ import {
   canonicalizeMedicineTypeLabel,
   getCanonicalMedicineTypeKey
 } from "../../utils/masterData";
+import diagnosticTestsByCategory from "../../data/diagnosticTests";
+import { mergeXrayTypes } from "../../data/xrayTypes";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -34,8 +36,76 @@ const normalizeText = (value) => String(value || "").trim().toLowerCase();
 const makePairKey = (left, right) => `${normalizeText(left)}::${normalizeText(right)}`;
 const makeMedicineKey = (medicineType, dosageForm, valueName, strength) =>
   `${normalizeText(medicineType)}::${normalizeText(dosageForm)}::${normalizeText(valueName)}::${normalizeText(strength)}`;
+const isPersistedId = (value) => /^[a-f\d]{24}$/i.test(String(value || "").trim());
 const getMedicineTypeLabel = (value) => canonicalizeMedicineTypeLabel(value || "Others") || "Others";
 const getMedicineTypeKey = (value) => getCanonicalMedicineTypeKey(value || "Others");
+
+const getStaticTestsStructure = () => {
+  const testsByCategory = {};
+  Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
+    testsByCategory[category] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
+      id: `static-${category}-${idx}`,
+      name: test.name,
+      reference: test.reference || "",
+      unit: test.unit || "",
+      source: "static"
+    }));
+  });
+
+  return {
+    categories: Object.keys(testsByCategory).sort((a, b) => a.localeCompare(b)),
+    testsByCategory
+  };
+};
+
+const mergeTestsStructure = (base, incoming) => {
+  const grouped = {};
+  const addCategory = (category) => {
+    const key = String(category || "").trim();
+    if (!key) return;
+    if (!grouped[key]) grouped[key] = [];
+  };
+  const addTest = (category, item) => {
+    const key = String(category || "").trim();
+    const name = String(item?.name || "").trim();
+    if (!key || !name) return;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push({
+      id: item?.id,
+      name,
+      reference: item?.reference || "",
+      unit: item?.unit || "",
+      source: item?.source || "merged"
+    });
+  };
+
+  (base?.categories || []).forEach(addCategory);
+  Object.keys(base?.testsByCategory || {}).forEach((category) => {
+    (base.testsByCategory[category] || []).forEach((item) => addTest(category, item));
+  });
+
+  (incoming?.categories || []).forEach(addCategory);
+  Object.keys(incoming?.testsByCategory || {}).forEach((category) => {
+    (incoming.testsByCategory[category] || []).forEach((item) => addTest(category, item));
+  });
+
+  Object.keys(grouped).forEach((category) => {
+    const seen = new Set();
+    grouped[category] = grouped[category]
+      .filter((item) => {
+        const dedupeKey = String(item.name || "").trim().toLowerCase();
+        if (!dedupeKey || seen.has(dedupeKey)) return false;
+        seen.add(dedupeKey);
+        return true;
+      })
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+  });
+
+  return {
+    categories: Object.keys(grouped).sort((a, b) => a.localeCompare(b)),
+    testsByCategory: grouped
+  };
+};
 
 const MasterData = () => {
   const [categories, setCategories] = useState([]);
@@ -69,7 +139,9 @@ const MasterData = () => {
   const [newMedicineType, setNewMedicineType] = useState("");
   const [newMedicineDosageForm, setNewMedicineDosageForm] = useState("");
   const [newMedicineStrength, setNewMedicineStrength] = useState("");
-  
+  const [showImportArea, setShowImportArea] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -143,36 +215,162 @@ const MasterData = () => {
   };
 
   const loadTestsStructure = async () => {
-    const [res, valuesRes] = await Promise.all([
-      axios.get(`${BACKEND_URL}/master-data-api/tests-structure`),
-      selectedCategoryId
-        ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
-        : Promise.resolve({ data: [] })
-    ]);
+    const staticStructure = getStaticTestsStructure();
+    try {
+      const [res, valuesRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/master-data-api/tests-structure`),
+        selectedCategoryId
+          ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+          : Promise.resolve({ data: [] })
+      ]);
 
-    const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
-    const testMap = {};
-    const testCategoryMap = {};
-    masterValues
-      .filter((item) => item?.meta?.kind === "category")
-      .forEach((item) => {
-        const key = normalizeText(item?.value_name);
-        if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
+      const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
+      const testMap = {};
+      const testCategoryMap = {};
+      masterValues
+        .filter((item) => item?.meta?.kind === "category")
+        .forEach((item) => {
+          const key = normalizeText(item?.value_name);
+          if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
+        });
+      masterValues
+        .filter((item) => item?.meta?.kind === "test")
+        .forEach((item) => {
+          const key = makePairKey(item?.meta?.category, item?.value_name);
+          if (key !== "::") testMap[key] = item;
       });
-    masterValues
-      .filter((item) => item?.meta?.kind === "test")
-      .forEach((item) => {
-        const key = makePairKey(item?.meta?.category, item?.value_name);
-        if (key !== "::") testMap[key] = item;
-      });
-    setCustomTestCategoryMap(testCategoryMap);
-    setCustomTestMap(testMap);
+      setCustomTestCategoryMap(testCategoryMap);
+      setCustomTestMap(testMap);
 
-    const data = res.data || { categories: [], testsByCategory: {} };
-    const withMeta = {
-      ...data,
-      testsByCategory: Object.fromEntries(
-        Object.entries(data.testsByCategory || {}).map(([category, rows]) => [
+      const apiData = res.data && typeof res.data === "object" ? res.data : { categories: [], testsByCategory: {} };
+      const hasApiTests =
+        Array.isArray(apiData.categories) && apiData.categories.length > 0 ||
+        Object.values(apiData.testsByCategory || {}).some((rows) => Array.isArray(rows) && rows.length > 0);
+      const data = hasApiTests ? apiData : staticStructure;
+      const withMeta = {
+        ...data,
+        testsByCategory: Object.fromEntries(
+          Object.entries(data.testsByCategory || {}).map(([category, rows]) => [
+            category,
+            (rows || []).map((row) => {
+              const masterValue = testMap[makePairKey(category, row?.name)] || null;
+              return {
+                ...row,
+                masterValue,
+                status: masterValue?.status || "Active"
+              };
+            })
+          ])
+        )
+      };
+      setTestsStructure(withMeta);
+      const preferredCategory = withMeta.categories.includes("HEMATOLOGY")
+        ? "HEMATOLOGY"
+        : withMeta.categories[0] || "";
+      const shouldKeepSelected = selectedTestCategory && withMeta.categories.includes(selectedTestCategory);
+      if (shouldKeepSelected) {
+        setSelectedTestCategory(selectedTestCategory);
+      } else if (preferredCategory) {
+        setSelectedTestCategory(preferredCategory);
+      } else {
+        setSelectedTestCategory(withMeta.categories[0] || "");
+      }
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status && status !== 404) {
+        throw err;
+      }
+
+      const [testsRes, valuesRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/diagnosis-api/tests`).catch(() => ({ data: [] })),
+        selectedCategoryId
+          ? axios
+              .get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+              .catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] })
+      ]);
+
+      const diagnosisTests = Array.isArray(testsRes.data) ? testsRes.data : [];
+      const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
+      const testMap = {};
+      const testCategoryMap = {};
+      masterValues
+        .filter((item) => item?.meta?.kind === "category")
+        .forEach((item) => {
+          const key = normalizeText(item?.value_name);
+          if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
+        });
+      masterValues
+        .filter((item) => item?.meta?.kind === "test")
+        .forEach((item) => {
+          const key = makePairKey(item?.meta?.category, item?.value_name);
+          if (key !== "::") testMap[key] = item;
+        });
+      setCustomTestCategoryMap(testCategoryMap);
+      setCustomTestMap(testMap);
+
+      const grouped = { ...staticStructure.testsByCategory };
+      const knownCategories = new Set(Object.keys(grouped));
+
+      diagnosisTests.forEach((test) => {
+        const category = String(test?.Group || "").trim();
+        const name = String(test?.Test_Name || "").trim();
+        if (!category || !name) return;
+        if (!grouped[category]) grouped[category] = [];
+        knownCategories.add(category);
+        grouped[category].push({
+          id: test._id,
+          name,
+          reference: test.Reference_Range || "",
+          unit: test.Units || "",
+          source: "diagnosis-test"
+        });
+      });
+
+      masterValues
+        .filter((item) => item?.meta?.kind === "category")
+        .forEach((item) => {
+          const category = String(item?.value_name || "").trim();
+          if (!category) return;
+          if (!grouped[category]) grouped[category] = [];
+          knownCategories.add(category);
+        });
+
+      masterValues
+        .filter((item) => item?.meta?.kind === "test")
+        .forEach((item) => {
+          const category = String(item?.meta?.category || "").trim();
+          const name = String(item?.value_name || "").trim();
+          if (!category || !name) return;
+          if (!grouped[category]) grouped[category] = [];
+          knownCategories.add(category);
+          grouped[category].push({
+            id: item._id,
+            name,
+            reference: item?.meta?.reference || "",
+            unit: item?.meta?.unit || "",
+            source: "master"
+          });
+        });
+
+      Object.keys(grouped).forEach((category) => {
+        const seen = new Set();
+        grouped[category] = grouped[category]
+          .filter((item) => {
+            const key = String(item?.name || "").trim().toLowerCase();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+      });
+
+      const merged = mergeTestsStructure(staticStructure, {
+        categories: [...knownCategories],
+        testsByCategory: grouped
+      });
+      merged.testsByCategory = Object.fromEntries(
+        Object.entries(merged.testsByCategory || {}).map(([category, rows]) => [
           category,
           (rows || []).map((row) => {
             const masterValue = testMap[makePairKey(category, row?.name)] || null;
@@ -183,53 +381,138 @@ const MasterData = () => {
             };
           })
         ])
-      )
-    };
-    setTestsStructure(withMeta);
-
-    if (withMeta.categories.includes(selectedTestCategory)) {
-      setSelectedTestCategory(selectedTestCategory);
-    } else if (withMeta.categories.includes("HEMATOLOGY")) {
-      setSelectedTestCategory("HEMATOLOGY");
-    } else {
-      setSelectedTestCategory(withMeta.categories[0] || "");
+      );
+      const categories = merged.categories;
+      setTestsStructure(merged);
+      const shouldKeepSelected = selectedTestCategory && staticCategories.includes(selectedTestCategory);
+      if (shouldKeepSelected) {
+        setSelectedTestCategory(selectedTestCategory);
+      } else if (preferredStatic && categories.includes(preferredStatic)) {
+        setSelectedTestCategory(preferredStatic);
+      } else {
+        setSelectedTestCategory(categories[0] || "");
+      }
     }
   };
 
   const loadDiseasesStructure = async () => {
-    const [res, valuesRes] = await Promise.all([
-      axios.get(`${BACKEND_URL}/master-data-api/diseases-structure`),
-      selectedCategoryId
-        ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
-        : Promise.resolve({ data: [] })
-    ]);
+    try {
+      const instituteId = localStorage.getItem("instituteId") || "";
+      const [res, valuesRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/master-data-api/diseases-structure`),
+        selectedCategoryId
+          ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+          : Promise.resolve({ data: [] })
+      ]);
 
-    const data = res.data || {};
-    const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
-    const diseaseMap = {};
-    masterValues
-      .filter((item) => item?.meta?.kind === "disease")
-      .forEach((item) => {
-        const key = makePairKey(item?.meta?.group, item?.value_name);
-        if (key !== "::") diseaseMap[key] = item;
+      const data = res.data || {};
+      const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
+      const diseaseMap = {};
+      masterValues
+        .filter((item) => item?.meta?.kind === "disease")
+        .forEach((item) => {
+          const key = makePairKey(item?.meta?.group, item?.value_name);
+          if (key !== "::") diseaseMap[key] = item;
+        });
+      setCustomDiseaseMap(diseaseMap);
+
+      const buildGroupRows = (group, names) =>
+        sortUnique(names).map((name) => {
+          const masterValue = diseaseMap[makePairKey(group, name)] || null;
+          return {
+            name,
+            group,
+            masterValue,
+            status: masterValue?.status || "Active"
+          };
+        });
+
+      setDiseasesStructure({
+        communicable: buildGroupRows("Communicable", Array.isArray(data.communicable) ? data.communicable : []),
+        nonCommunicable: buildGroupRows("Non-Communicable", Array.isArray(data.nonCommunicable) ? data.nonCommunicable : [])
       });
-    setCustomDiseaseMap(diseaseMap);
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status && status !== 404) {
+        throw err;
+      }
 
-    const buildGroupRows = (group, names) =>
-      sortUnique(names).map((name) => {
-        const masterValue = diseaseMap[makePairKey(group, name)] || null;
-        return {
-          name,
-          group,
-          masterValue,
-          status: masterValue?.status || "Active"
-        };
+      const instituteId = localStorage.getItem("instituteId") || "";
+      const [listRes, cdRes, ncdRes, valuesRes] = await Promise.all([
+        axios
+          .get(`${BACKEND_URL}/disease-list/static`, {
+            params: instituteId ? { instituteId } : {}
+          })
+          .catch(() => ({ data: {} })),
+        axios
+          .get(`${BACKEND_URL}/disease-master-api/cd`, {
+            params: instituteId ? { instituteId } : {}
+          })
+          .catch(() => ({ data: [] })),
+        axios
+          .get(`${BACKEND_URL}/disease-master-api/ncd`, {
+            params: instituteId ? { instituteId } : {}
+          })
+          .catch(() => ({ data: [] })),
+        selectedCategoryId
+          ? axios
+              .get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+              .catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] })
+      ]);
+
+      const body = listRes.data || {};
+      const cdMaster = Array.isArray(cdRes.data)
+        ? cdRes.data.map((item) => (typeof item === "string" ? item : item?.name)).filter(Boolean)
+        : [];
+      const ncdMaster = Array.isArray(ncdRes.data)
+        ? ncdRes.data.map((item) => (typeof item === "string" ? item : item?.name)).filter(Boolean)
+        : [];
+      const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
+      const communicable = [
+        ...(Array.isArray(body.communicable) ? body.communicable : []),
+        ...cdMaster
+      ];
+      const nonCommunicable = [
+        ...(Array.isArray(body.nonCommunicable) ? body.nonCommunicable : []),
+        ...ncdMaster
+      ];
+
+      masterValues
+        .filter((item) => item?.meta?.kind === "disease")
+        .forEach((item) => {
+          const group = String(item?.meta?.group || "").trim();
+          const name = String(item?.value_name || "").trim();
+          if (!name) return;
+          if (group === "Communicable") communicable.push(name);
+          if (group === "Non-Communicable") nonCommunicable.push(name);
+        });
+
+      const diseaseMap = {};
+      masterValues
+        .filter((item) => item?.meta?.kind === "disease")
+        .forEach((item) => {
+          const key = makePairKey(item?.meta?.group, item?.value_name);
+          if (key !== "::") diseaseMap[key] = item;
+        });
+      setCustomDiseaseMap(diseaseMap);
+
+      const buildGroupRows = (group, names) =>
+        sortUnique(names).map((name) => {
+          const masterValue = diseaseMap[makePairKey(group, name)] || null;
+          return {
+            name,
+            group,
+            masterValue,
+            status: masterValue?.status || "Active"
+          };
+        });
+
+      setDiseasesStructure({
+        communicable: buildGroupRows("Communicable", communicable),
+        nonCommunicable: buildGroupRows("Non-Communicable", nonCommunicable)
       });
-
-    setDiseasesStructure({
-      communicable: buildGroupRows("Communicable", Array.isArray(data.communicable) ? data.communicable : []),
-      nonCommunicable: buildGroupRows("Non-Communicable", Array.isArray(data.nonCommunicable) ? data.nonCommunicable : [])
-    });
+    }
   };
 
   const loadMedicinesStructure = async () => {
@@ -246,9 +529,8 @@ const MasterData = () => {
 
       // Also fetch masterMap (local DB map) to include any pasted/built-in medicines
       let masterMedicines = [];
-      let masterMap = {};
       try {
-        masterMap = await fetchMasterDataMap();
+        const masterMap = await fetchMasterDataMap();
         masterMedicines = getMasterMedicineEntries(masterMap || {});
       } catch {
         masterMedicines = [];
@@ -290,49 +572,25 @@ const MasterData = () => {
 
       // Build combined medicine types and dosage forms from API + master map so pasted values are visible
       const apiTypes = Array.isArray(data.medicineTypes) ? data.medicineTypes.map((item) => getMedicineTypeLabel(item)) : [];
-      // include types that come from masterMap (including frontend-only overrides)
-      const masterMapTypeEntries = (masterMap && Array.isArray(masterMap["Medicine Types"]) ? masterMap["Medicine Types"] : []).map((it) => ({ _id: it?._id || null, value_name: getMedicineTypeLabel(it?.value_name || it || ""), status: it?.status || "Active" }));
-      const masterTypesFromMap = masterMapTypeEntries.map((t) => t.value_name).filter(Boolean);
-
-      const masterTypesFromMedicines = masterMedicines
-        .filter((m) => String(m?.status || "Active").toLowerCase() === "active")
-        .map((m) => m.medicineType)
-        .filter(Boolean);
-
-      const combinedTypes = sortUnique([...apiTypes, ...masterTypesFromMedicines.map((item) => getMedicineTypeLabel(item)), ...masterTypesFromMap]);
+      const masterTypes = masterMedicines.map((m) => m.medicineType).filter(Boolean);
+      const combinedTypes = sortUnique([...apiTypes, ...masterTypes.map((item) => getMedicineTypeLabel(item))]);
 
       const apiDosageForms = Array.isArray(data.dosageForms) ? data.dosageForms : [];
-      const masterForms = masterMedicines
-        .filter((m) => String(m?.status || "Active").toLowerCase() === "active")
-        .map((m) => m.dosageForm)
-        .filter(Boolean);
+      const masterForms = masterMedicines.map((m) => m.dosageForm).filter(Boolean);
       const combinedForms = sortUnique([...apiDosageForms, ...masterForms]);
 
       // Merge medicineTypeEntries with any master types missing in API entries
-      const masterTypeEntries = masterTypesFromMedicines
+      const masterTypeEntries = masterTypes
         .filter((t) => t)
         .map((t) => ({ _id: null, value_name: getMedicineTypeLabel(t), status: "Active" }));
       const combinedTypeEntriesMap = new Map();
-      // Start with API-provided type entries
-      (medicineTypeEntries || []).forEach((it) => {
+      [...medicineTypeEntries, ...masterTypeEntries].forEach((it) => {
         const label = getMedicineTypeLabel(it?.value_name);
         const key = getMedicineTypeKey(label);
         if (!key) return;
-        combinedTypeEntriesMap.set(key, { ...it, value_name: label });
-      });
-      // Then add any types inferred from masterMedicines (if missing)
-      (masterTypeEntries || []).forEach((it) => {
-        const label = getMedicineTypeLabel(it?.value_name);
-        const key = getMedicineTypeKey(label);
-        if (!key) return;
-        if (!combinedTypeEntriesMap.has(key)) combinedTypeEntriesMap.set(key, { ...it, value_name: label });
-      });
-      // Finally, overwrite with explicit masterMap type entries so frontend overrides take precedence
-      (masterMapTypeEntries || []).forEach((it) => {
-        const label = getMedicineTypeLabel(it?.value_name);
-        const key = getMedicineTypeKey(label);
-        if (!key) return;
-        combinedTypeEntriesMap.set(key, { ...it, value_name: label });
+        if (!combinedTypeEntriesMap.has(key) || (it?._id && !combinedTypeEntriesMap.get(key)?._id)) {
+          combinedTypeEntriesMap.set(key, { ...it, value_name: label });
+        }
       });
       const combinedTypeEntries = Array.from(combinedTypeEntriesMap.values());
 
@@ -349,9 +607,9 @@ const MasterData = () => {
       const medicineMap = {};
       medicines.forEach((item) => {
         const key = makeMedicineKey(item?.medicineType, item?.dosageForm, item?.value_name, item?.strength);
-        if (item?.value_name) {
+        if (item?.value_name && isPersistedId(item?._id)) {
           medicineMap[key] = {
-            _id: item._id || null,
+            _id: item._id,
             value_name: item.value_name,
             status: item.status || "Active",
             meta: {
@@ -431,31 +689,36 @@ const MasterData = () => {
   };
 
   const loadXrayTypes = async () => {
-    const instituteId = localStorage.getItem("instituteId") || "";
-    const [xrayRes, bodyPartRes] = await Promise.all([
-      axios.get(`${BACKEND_URL}/xray-api/types`, {
-        params: { includeInactive: true, ...(instituteId ? { instituteId } : {}) }
-      }),
-      axios.get(`${BACKEND_URL}/xray-api/body-parts`, {
-        params: { includeInactive: true, ...(instituteId ? { instituteId } : {}) }
-      }).catch(() => ({ data: [] }))
-    ]);
+    try {
+      const [xrayRes, bodyPartRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/xray-api/types`),
+        axios.get(`${BACKEND_URL}/xray-api/body-parts`).catch(() => ({ data: [] }))
+      ]);
+      
+      const rows = Array.isArray(xrayRes.data) ? xrayRes.data : [];
+      const merged = mergeXrayTypes(rows).filter((item) => String(item?.status || "Active") === "Active");
+      setXrayTypes(merged);
 
-    const rows = Array.isArray(xrayRes.data) ? xrayRes.data : [];
-    setXrayTypes(rows);
+      // Build map of custom body parts
+      const bodyPartMap = {};
+      const bodyPartsData = Array.isArray(bodyPartRes.data) ? bodyPartRes.data : [];
+      bodyPartsData.forEach((bp) => {
+        if (bp?._id && bp?.Body_Part) {
+          bodyPartMap[String(bp.Body_Part).trim().toLowerCase()] = bp;
+        }
+      });
+      setCustomBodyPartMap(bodyPartMap);
 
-    const bodyPartMap = {};
-    const bodyPartsData = Array.isArray(bodyPartRes.data) ? bodyPartRes.data : [];
-    bodyPartsData.forEach((bp) => {
-      if (bp?._id && bp?.Body_Part) {
-        bodyPartMap[String(bp.Body_Part).trim().toLowerCase()] = bp;
+      if (!selectedXrayBodyPart && merged.length > 0) {
+        setSelectedXrayBodyPart(String(merged[0]?.Body_Part || ""));
       }
-    });
-    setCustomBodyPartMap(bodyPartMap);
-
-    const nextBodyPart = rows[0]?.Body_Part || bodyPartsData[0]?.Body_Part || "";
-    if (!selectedXrayBodyPart && nextBodyPart) {
-      setSelectedXrayBodyPart(String(nextBodyPart));
+    } catch (err) {
+      console.error(err);
+      const fallback = mergeXrayTypes([]);
+      setXrayTypes(fallback);
+      setCustomBodyPartMap({});
+      setSelectedXrayBodyPart(fallback[0]?.Body_Part || "");
+      throw err;
     }
   };
 
@@ -499,21 +762,6 @@ const MasterData = () => {
     });
   }, [selectedCategoryId, categories]);
 
-  // Auto-select a sensible dosage form when a medicine type is chosen
-  useEffect(() => {
-    try {
-      if (!selectedMedicineType) return;
-      if (newMedicineDosageForm && String(newMedicineDosageForm).trim()) return;
-
-      const rowsForType = medicinesStructure.medicinesByType?.[selectedMedicineType] || [];
-      const forms = Array.from(new Set((rowsForType || []).map((r) => String(r.dosageForm || "").trim()).filter(Boolean)));
-      const pick = forms[0] || (medicinesStructure.dosageForms || [])[0] || "";
-      if (pick) setNewMedicineDosageForm(pick);
-    } catch (e) {
-      // ignore
-    }
-  }, [selectedMedicineType, medicinesStructure, newMedicineDosageForm]);
-
   const selectedCategory = categories.find((c) => c._id === selectedCategoryId) || null;
 
   const filteredValues = values.filter((item) =>
@@ -549,15 +797,10 @@ const MasterData = () => {
 
   const xrayBodyParts = useMemo(
     () =>
-      [...new Set([
-        ...xrayTypes,
-        ...Object.values(customBodyPartMap || {}),
-        newXrayBodyPart,
-        selectedXrayBodyPart
-      ].map((item) => String(item?.Body_Part || item || "").trim()).filter(Boolean))].sort((a, b) =>
+      [...new Set([...xrayTypes, newXrayBodyPart, selectedXrayBodyPart].map((item) => String(item?.Body_Part || item || "").trim()).filter(Boolean))].sort((a, b) =>
         a.localeCompare(b)
       ),
-    [xrayTypes, customBodyPartMap, newXrayBodyPart, selectedXrayBodyPart]
+    [xrayTypes, newXrayBodyPart, selectedXrayBodyPart]
   );
 
   const filteredXrays = xrayTypes.filter((item) => {
@@ -805,12 +1048,48 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.post(`${BACKEND_URL}/master-data-api/tests`, {
-        category: selectedTestCategory,
-        testName: newTestName.trim(),
-        referenceRange: newTestReference.trim(),
-        unit: newTestUnit.trim()
-      });
+      try {
+        await axios.post(`${BACKEND_URL}/master-data-api/tests`, {
+          category: selectedTestCategory,
+          testName: newTestName.trim(),
+          referenceRange: newTestReference.trim(),
+          unit: newTestUnit.trim()
+        });
+      } catch (err) {
+        if (err?.response?.status !== 404) throw err;
+
+        await axios.post(`${BACKEND_URL}/diagnosis-api/tests/add`, {
+          Test_Name: newTestName.trim(),
+          Group: selectedTestCategory,
+          Reference_Range: newTestReference.trim(),
+          Units: newTestUnit.trim()
+        });
+
+        await axios
+          .post(`${BACKEND_URL}/master-data-api/values`, {
+            category_id: selectedCategoryId,
+            value_name: selectedTestCategory,
+            meta: { kind: "category" }
+          })
+          .catch((postErr) => {
+            if (postErr?.response?.status !== 409) throw postErr;
+          });
+
+        await axios
+          .post(`${BACKEND_URL}/master-data-api/values`, {
+            category_id: selectedCategoryId,
+            value_name: newTestName.trim(),
+            meta: {
+              kind: "test",
+              category: selectedTestCategory,
+              reference: newTestReference.trim(),
+              unit: newTestUnit.trim()
+            }
+          })
+          .catch((postErr) => {
+            if (postErr?.response?.status !== 409) throw postErr;
+          });
+      }
       setNewTestName("");
       setNewTestReference("");
       setNewTestUnit("");
@@ -865,12 +1144,28 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.post(`${BACKEND_URL}/master-data-api/medicines`, {
-        medicineName: newMedicineName.trim(),
-        medicineType: selectedMedicineType.trim(),
-        dosageForm: newMedicineDosageForm.trim(),
-        strength: newMedicineStrength.trim()
-      });
+      try {
+        await axios.post(`${BACKEND_URL}/master-data-api/medicines`, {
+          medicineName: newMedicineName.trim(),
+          medicineType: selectedMedicineType.trim(),
+          dosageForm: newMedicineDosageForm.trim(),
+          strength: newMedicineStrength.trim()
+        });
+      } catch (err) {
+        if (err?.response?.status !== 404) throw err;
+        await axios.post(`${BACKEND_URL}/master-data-api/values`, {
+          category_id: selectedCategoryId,
+          value_name: newMedicineName.trim(),
+          meta: {
+            kind: "medicine",
+            medicineType: selectedMedicineType.trim(),
+            dosageForm: newMedicineDosageForm.trim(),
+            type: newMedicineDosageForm.trim(),
+            strength: newMedicineStrength.trim(),
+            typeNormalized: selectedMedicineType.trim().toLowerCase()
+          }
+        });
+      }
       setNewMedicineName("");
       setNewMedicineDosageForm("");
       setNewMedicineStrength("");
@@ -879,7 +1174,7 @@ const MasterData = () => {
       invalidateMasterDataCache();
     } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to add medicine");
+      setError(err.response?.data?.message || "Failed to add medicine");
     } finally {
       setSaving(false);
     }
@@ -909,6 +1204,12 @@ const MasterData = () => {
   const handleDeleteMedicineType = async (medicineType) => {
     const medicineTypeKey = getMedicineTypeKey(medicineType);
     const medicineTypeRecord = customMedicineTypeMap[medicineTypeKey];
+
+    if (!medicineTypeRecord || !medicineTypeRecord._id) {
+      setError("This is a built-in medicine type and cannot be deleted");
+      return;
+    }
+
     const ok = window.confirm(`Delete medicine type '${medicineType}'?`);
     if (!ok) return;
 
@@ -916,25 +1217,29 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      if (!medicineTypeRecord?._id) {
-        setMessage("This medicine type cannot be deleted");
-        return;
-      }
       await axios.delete(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`);
       setMessage("Medicine type deleted successfully");
-      if (selectedMedicineType === medicineType) setSelectedMedicineType("");
+      if (selectedMedicineType === medicineType) {
+        setSelectedMedicineType("");
+      }
       await loadMedicinesStructure();
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Delete medicine type error:", err);
-      setError(err.response?.data?.message || err.message || "Failed to delete medicine type");
+      const errorMsg = err.response?.data?.message || err.message || "Failed to delete medicine type";
+      setError(errorMsg);
     } finally {
       setSaving(false);
     }
   };
 
   const handleEditMedicineType = async (medicineType) => {
-    const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)];
+    const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)] || null;
+    if (!medicineTypeRecord?._id) {
+      setMessage("Built-in medicine types cannot be edited");
+      return;
+    }
+
     const updated = window.prompt("Edit medicine type", medicineType);
     if (updated === null) return;
     const nextName = updated.trim();
@@ -944,10 +1249,6 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      if (!medicineTypeRecord?._id) {
-        setMessage("This medicine type cannot be edited");
-        return;
-      }
       await axios.put(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`, {
         name: nextName
       });
@@ -959,22 +1260,23 @@ const MasterData = () => {
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Edit medicine type error:", err);
-      setError(err.response?.data?.message || err.message || "Failed to update medicine type");
+      setError(err.response?.data?.message || "Failed to update medicine type");
     } finally {
       setSaving(false);
     }
   };
 
   const handleToggleMedicineType = async (medicineType, status) => {
+    const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)] || null;
+    if (!medicineTypeRecord?._id) {
+      setMessage("Built-in medicine types cannot be deactivated");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     setError("");
     try {
-      const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)];
-      if (!medicineTypeRecord?._id) {
-        setMessage("This medicine type cannot be updated");
-        return;
-      }
       await axios.put(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`, {
         status: status === "Active" ? "Inactive" : "Active"
       });
@@ -983,14 +1285,19 @@ const MasterData = () => {
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Toggle medicine type error:", err);
-      setError(err.response?.data?.message || err.message || "Failed to toggle medicine type");
+      setError(err.response?.data?.message || "Failed to toggle medicine type");
     } finally {
       setSaving(false);
     }
   };
 
   const handleEditMedicine = async (item) => {
-    const medicineId = item?.masterValue?._id || null;
+    const medicineId = item?.masterValue?._id;
+    if (!isPersistedId(medicineId)) {
+      setMessage("Built-in medicines cannot be edited");
+      return;
+    }
+
     const nextName = window.prompt("Edit medicine name", item.value_name || "");
     if (nextName === null) return;
     const nextMedicineType = window.prompt("Edit medicine type", item.medicineType || "");
@@ -1004,10 +1311,6 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      if (!medicineId) {
-        setMessage("This medicine cannot be edited");
-        return;
-      }
       await axios.put(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`, {
         medicineName: nextName.trim(),
         medicineType: nextMedicineType.trim(),
@@ -1019,22 +1322,23 @@ const MasterData = () => {
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Edit medicine error:", err);
-      setError(err.response?.data?.message || err.message || "Failed to update medicine");
+      setError(err.response?.data?.message || "Failed to update medicine");
     } finally {
       setSaving(false);
     }
   };
 
   const handleToggleMedicine = async (item) => {
-    const medicineId = item?.masterValue?._id || null;
+    const medicineId = item?.masterValue?._id;
+    if (!isPersistedId(medicineId)) {
+      setMessage("Built-in medicines cannot be deactivated");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     setError("");
     try {
-      if (!medicineId) {
-        setMessage("This medicine cannot be updated");
-        return;
-      }
       await axios.put(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`, {
         status: item.status === "Active" ? "Inactive" : "Active"
       });
@@ -1043,13 +1347,19 @@ const MasterData = () => {
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Toggle medicine error:", err);
-      setError(err.response?.data?.message || err.message || "Failed to toggle medicine status");
+      setError(err.response?.data?.message || "Failed to toggle medicine status");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteMedicine = async (item) => {
+    const medicineId = item?.masterValue?._id;
+    if (!isPersistedId(medicineId)) {
+      setMessage("Built-in medicines cannot be deleted");
+      return;
+    }
+
     const ok = window.confirm(`Delete '${item.value_name}'?`);
     if (!ok) return;
 
@@ -1057,18 +1367,13 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      const medicineId = item?.masterValue?._id || null;
-      if (!medicineId) {
-        setMessage("This medicine cannot be deleted");
-        return;
-      }
       await axios.delete(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`);
       setMessage("Medicine deleted successfully");
       await loadMedicinesStructure();
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Delete medicine error:", err);
-      setError(err.response?.data?.message || err.message || "Failed to delete medicine");
+      setError(err.response?.data?.message || "Failed to delete medicine");
     } finally {
       setSaving(false);
     }
@@ -1720,309 +2025,77 @@ const MasterData = () => {
                   </div>
 
                   <div className="row g-2 mb-3">
-                    <div className="col-md-8">
+                    <div className="col-md-6">
                       <input
                         className="form-control"
-                        placeholder="Add new medicine type"
-                        value={newMedicineType}
-                        onChange={(e) => setNewMedicineType(e.target.value)}
+                        placeholder="Medicine name"
+                        value={newMedicineName}
+                        onChange={(e) => setNewMedicineName(e.target.value)}
                         disabled={!isInstituteAdmin || saving}
                       />
                     </div>
-                    <div className="col-md-4">
-                      <button
-                        className="btn btn-success w-100"
-                        onClick={handleAddMedicineType}
-                        disabled={!isInstituteAdmin || saving || !newMedicineType.trim()}
-                      >
-                        Add Type
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="row g-2 mb-3">
-                    <div className="col-md-4">
-                      <select
-                        className="form-select"
-                        value={selectedMedicineType}
-                        onChange={(e) => setSelectedMedicineType(e.target.value)}
-                      >
-                        <option value="">Select medicine type</option>
-                        {medicinesStructure.medicineTypes.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="col-md-4">
-                      <select
-                        className="form-select"
-                        value={selectedMedicineDosageForm}
-                        onChange={(e) => setSelectedMedicineDosageForm(e.target.value)}
-                      >
-                        <option value="">All dosage forms</option>
-                        {(medicinesStructure.dosageForms || []).map((form) => (
-                          <option key={form} value={form}>{form}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="col-md-4">
+                    <div className="col-md-3">
                       <input
                         className="form-control"
-                        placeholder="Add medicine name"
-                        value={newMedicineName}
-                        onChange={(e) => setNewMedicineName(e.target.value)}
-                        disabled={!isInstituteAdmin || saving || !selectedMedicineType}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="row g-2 mb-3">
-                    <div className="col-md-6">
-                      <select
-                        className="form-select"
+                        placeholder="Dosage form"
                         value={newMedicineDosageForm}
                         onChange={(e) => setNewMedicineDosageForm(e.target.value)}
-                        disabled={!isInstituteAdmin || saving || !selectedMedicineType}
-                      >
-                        <option value="">Select dosage form for new medicine</option>
-                        {(medicinesStructure.dosageForms || []).map((form) => (
-                          <option key={form} value={form}>{form}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <input
-                        className="form-control"
-                        placeholder="Strength (e.g., 500mg)"
-                        value={newMedicineStrength}
-                        onChange={(e) => setNewMedicineStrength(e.target.value)}
-                        disabled={!isInstituteAdmin || saving || !selectedMedicineType}
+                        disabled={!isInstituteAdmin || saving}
                       />
                     </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <button
-                      className="btn btn-primary"
-                      onClick={handleAddMedicine}
-                      disabled={!isInstituteAdmin || saving || !selectedMedicineType || !newMedicineDosageForm || !newMedicineName.trim() || !newMedicineStrength.trim()}
-                    >
-                      Add Medicine
-                    </button>
-                  </div>
-
-                  <div className="table-responsive">
-                    <table className="table table-bordered table-striped align-middle">
-                      <thead className="table-light">
-                        <tr>
-                          <th style={{ width: 80 }}>ID</th>
-                          <th>Medicine Name</th>
-                          <th style={{ width: 160 }}>Medicine Type</th>
-                          <th style={{ width: 160 }}>Dosage Form</th>
-                          <th style={{ width: 200 }}>Strength</th>
-                          <th style={{ width: 120 }}>Status</th>
-                          <th style={{ width: 240 }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {!loading && filteredMedicines.length === 0 && (
-                          <tr>
-                            <td colSpan={7} className="text-center py-4 text-muted">No medicines found</td>
-                          </tr>
-                        )}
-                        {filteredMedicines.map((item, idx) => (
-                          <tr key={`${item.value_name}-${idx}`}>
-                            <td>{idx + 1}</td>
-                            <td>{item.value_name}</td>
-                            <td>{item.medicineType || "-"}</td>
-                            <td>{item.dosageForm || "-"}</td>
-                            <td>{item.strength || "-"}</td>
-                            <td>
-                              <span className={`badge ${item.status === "Active" ? "bg-success" : "bg-secondary"}`}>
-                                {item.status || "Active"}
-                              </span>
-                            </td>
-                            <td className="d-flex flex-wrap gap-2">
-                              <button
-                                className="btn btn-sm btn-outline-primary"
-                                onClick={() => handleEditMedicine(item)}
-                                disabled={!isInstituteAdmin || saving}
-                                title={item.masterValue?._id ? "Edit this medicine" : "Cannot edit built-in medicines"}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className="btn btn-sm btn-outline-warning"
-                                onClick={() => handleToggleMedicine(item)}
-                                disabled={!isInstituteAdmin || saving}
-                                title={item.masterValue?._id ? "Toggle status" : "Cannot deactivate built-in medicines"}
-                              >
-                                {item.status === "Active" ? "Deactivate" : "Activate"}
-                              </button>
-                              <button
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleDeleteMedicine(item)}
-                                disabled={!isInstituteAdmin || saving}
-                                title={item.masterValue?._id ? "Delete this medicine" : "Cannot delete built-in medicines"}
-                              >
-                                Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div className="col-md-2">
+                      <input
+                        className="form-control"
+                        placeholder="Strength"
+                        value={newMedicineStrength}
+                        onChange={(e) => setNewMedicineStrength(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
+                      />
+                    </div>
+                    <div className="col-md-1">
+                      <button
+                        className="btn btn-primary w-100"
+                        onClick={handleAddMedicine}
+                        disabled={!isInstituteAdmin || saving || !newMedicineName.trim()}
+                      >
+                        Add
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
 
               {selectedCategory?.category_name === "Xray Types" && (
                 <>
-                  <div className="alert alert-light border py-2 px-3 small mb-3">
-                    Manage the X-ray master list here. Add a new body part by typing a new body part name, then add X-ray tests under it.
-                  </div>
-
-                  <div className="table-responsive mb-4">
-                    <table className="table table-bordered table-striped align-middle">
-                      <thead className="table-light">
-                        <tr>
-                          <th style={{ width: 80 }}>ID</th>
-                          <th>Body Part</th>
-                          <th style={{ width: 120 }}>Status</th>
-                          <th style={{ width: 300 }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {xrayBodyParts.map((part, idx) => {
-                          const partKey = String(part || "").trim().toLowerCase();
-                          const bodyPartRecord = customBodyPartMap[partKey];
-                          const isCustom = Boolean(bodyPartRecord?._id);
-                          const status = bodyPartRecord?.status || "Active";
-                          return (
-                            <tr key={part}>
-                              <td>{idx + 1}</td>
-                              <td>{part}</td>
-                              <td>
-                                <span className={`badge ${status === "Active" ? "bg-success" : "bg-secondary"}`}>
-                                  {status}
-                                </span>
-                              </td>
-                              <td className="d-flex flex-wrap gap-2">
-                                <button
-                                  className="btn btn-sm btn-outline-primary"
-                                  onClick={() => handleEditXrayBodyPart(bodyPartRecord, part)}
-                                  disabled={!isInstituteAdmin || saving}
-                                  title={isCustom ? "Edit this body part" : "Cannot edit built-in body parts"}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-outline-warning"
-                                  onClick={() => handleToggleXrayBodyPartStatus(bodyPartRecord, part)}
-                                  disabled={!isInstituteAdmin || saving}
-                                  title={isCustom ? "Toggle status" : "Cannot deactivate built-in body parts"}
-                                >
-                                  {status === "Active" ? "Deactivate" : "Activate"}
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-outline-danger"
-                                  onClick={() => handleDeleteXrayBodyPart(part)}
-                                  disabled={!isInstituteAdmin || saving}
-                                  title={isCustom ? "Delete this body part" : "Cannot delete built-in body parts"}
-                                >
-                                  Delete
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
                   <div className="row g-2 mb-3">
-                    <div className="col-md-8">
-                      <input
-                        className="form-control"
-                        placeholder="Add new body part"
-                        value={newXrayBodyPart}
-                        onChange={(e) => setNewXrayBodyPart(e.target.value)}
-                        disabled={!isInstituteAdmin || saving}
-                      />
-                    </div>
                     <div className="col-md-4">
-                      <button
-                        className="btn btn-success w-100"
-                        onClick={handleAddXrayBodyPart}
-                        disabled={!isInstituteAdmin || saving || !newXrayBodyPart.trim()}
-                      >
-                        Add Body Part
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="row g-2 mb-3">
-                    <div className="col-md-3">
                       <select
                         className="form-select"
                         value={selectedXrayBodyPart}
                         onChange={(e) => setSelectedXrayBodyPart(e.target.value)}
                       >
                         <option value="">Select body part</option>
-                        {xrayBodyParts.map((part) => (
-                          <option key={part} value={part}>{part}</option>
+                        {xrayBodyParts.map((bp) => (
+                          <option key={bp} value={bp}>{bp}</option>
                         ))}
                       </select>
                     </div>
                     <div className="col-md-4">
                       <input
                         className="form-control"
-                        placeholder="Add X-ray type name"
+                        placeholder="New body part"
+                        value={newXrayBodyPart}
+                        onChange={(e) => setNewXrayBodyPart(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <input
+                        className="form-control"
+                        placeholder="X-ray name"
                         value={newXrayName}
                         onChange={(e) => setNewXrayName(e.target.value)}
-                        disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart}
-                      />
-                    </div>
-                    <div className="col-md-2">
-                      <select
-                        className="form-select"
-                        value={newXraySide}
-                        onChange={(e) => setNewXraySide(e.target.value)}
-                        disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart}
-                      >
-                        <option value="NA">NA</option>
-                        <option value="Left">Left</option>
-                        <option value="Right">Right</option>
-                        <option value="Both">Both</option>
-                      </select>
-                    </div>
-                    <div className="col-md-3">
-                      <input
-                        className="form-control"
-                        placeholder="Film size (optional)"
-                        value={newXrayFilmSize}
-                        onChange={(e) => setNewXrayFilmSize(e.target.value.toUpperCase().replace(/\s+/g, ""))}
-                        disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart}
-                      />
-                    </div>
-                    <div className="col-md-2">
-                      <button
-                        className="btn btn-success w-100"
-                        onClick={handleAddXray}
-                        disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart || !newXrayName.trim()}
-                      >
-                        Add X-ray
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="row g-2 mb-3">
-                    <div className="col-md-5">
-                      <input
-                        className="form-control"
-                        placeholder="Search X-ray type"
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
                       />
                     </div>
                   </div>
@@ -2033,146 +2106,29 @@ const MasterData = () => {
                         <tr>
                           <th style={{ width: 80 }}>ID</th>
                           <th>Body Part</th>
-                          <th>X-ray Test</th>
-                          <th style={{ width: 130 }}>Side</th>
-                          <th style={{ width: 130 }}>Film Size</th>
+                          <th>X-ray Type</th>
                           <th style={{ width: 120 }}>Status</th>
-                          <th style={{ width: 300 }}>Actions</th>
+                          <th style={{ width: 240 }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {!loading && filteredXrays.length === 0 && (
                           <tr>
-                            <td colSpan={7} className="text-center py-4 text-muted">No x-ray types found</td>
+                            <td colSpan={5} className="text-center py-4 text-muted">No x-rays found</td>
                           </tr>
                         )}
                         {filteredXrays.map((item, idx) => (
-                            <tr key={item._id || `${item.Body_Part}-${item.Xray_Type}-${idx}`}>
-                              <td>{idx + 1}</td>
-                              <td>{item.Body_Part || "-"}</td>
-                              <td>{item.Xray_Type || "-"}</td>
-                              <td>{item.Side || "NA"}</td>
-                              <td>{item.Film_Size || "-"}</td>
-                              <td>
-                                <span className={`badge ${item.status === "Active" ? "bg-success" : "bg-secondary"}`}>
-                                  {item.status || "Active"}
-                                </span>
-                              </td>
-                              <td className="d-flex flex-wrap gap-2">
-                                <button
-                                  className="btn btn-sm btn-outline-primary"
-                                  onClick={() => handleEditXray(item)}
-                                  disabled={!isInstituteAdmin || saving}
-                                  title="Edit this X-ray type"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-outline-warning"
-                                  onClick={() => handleToggleXrayStatus(item)}
-                                  disabled={!isInstituteAdmin || saving}
-                                  title="Toggle status"
-                                >
-                                  {item.status === "Active" ? "Deactivate" : "Activate"}
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-outline-danger"
-                                  onClick={() => handleDeleteXray(item)}
-                                  disabled={!isInstituteAdmin || saving}
-                                  title="Delete this X-ray type"
-                                >
-                                  Delete
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-
-              {selectedCategory && !["Tests", "Diseases", "Medicines", "Xray Types"].includes(selectedCategory.category_name) && (
-                <>
-                  <div className="row g-2 mb-3">
-                    <div className="col-md-7">
-                      <div className="input-group">
-                        <input
-                          className="form-control"
-                          placeholder="Add new value"
-                          value={newValueName}
-                          onChange={(e) => setNewValueName(e.target.value)}
-                          disabled={!isInstituteAdmin || saving || !selectedCategoryId}
-                        />
-                        <button
-                          className="btn btn-success"
-                          onClick={handleAddValue}
-                          disabled={!isInstituteAdmin || saving || !newValueName.trim() || !selectedCategoryId}
-                        >
-                          Add New
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {DEFAULT_MASTER_OPTIONS[selectedCategory?.category_name] && (
-                    <div className="alert alert-light border py-2 px-3 small mb-3">
-                      This dropdown includes built-in values plus any values you add in Master Data.
-                    </div>
-                  )}
-
-                  <div className="table-responsive">
-                    <table className="table table-bordered table-striped align-middle">
-                      <thead className="table-light">
-                        <tr>
-                          <th style={{ width: 80 }}>ID</th>
-                          <th>Value Name</th>
-                          <th style={{ width: 130 }}>Status</th>
-                          <th style={{ width: 250 }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {loading && (
-                          <tr>
-                            <td colSpan={4} className="text-center py-4">Loading...</td>
-                          </tr>
-                        )}
-                        {!loading && filteredValues.length === 0 && (
-                          <tr>
-                            <td colSpan={4} className="text-center py-4 text-muted">No values found</td>
-                          </tr>
-                        )}
-                        {filteredValues.map((item, idx) => (
-                          <tr key={item._id}>
+                          <tr key={`${item._id || item.Xray_Type}-${idx}`}>
                             <td>{idx + 1}</td>
-                            <td>{item.value_name}</td>
+                            <td>{item.Body_Part}</td>
+                            <td>{item.Xray_Type}</td>
                             <td>
-                              <span className={`badge ${item.status === "Active" ? "bg-success" : "bg-secondary"}`}>
-                                {item.status}
-                              </span>
+                              <span className={`badge ${item.status === "Active" ? "bg-success" : "bg-secondary"}`}>{item.status || "Active"}</span>
                             </td>
-                            <td className="d-flex flex-wrap gap-2">
-                              <button
-                                className="btn btn-sm btn-outline-primary"
-                                onClick={() => handleEditValue(item)}
-                                disabled={!isInstituteAdmin || saving}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className="btn btn-sm btn-outline-warning"
-                                onClick={() => handleToggleValue(item)}
-                                disabled={!isInstituteAdmin || saving}
-                              >
-                                {item.status === "Active" ? "Deactivate" : "Activate"}
-                              </button>
-                              <button
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleDeleteValue(item)}
-                                disabled={!isInstituteAdmin || saving}
-                              >
-                                Delete
-                              </button>
+                            <td className="d-flex gap-2">
+                              <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditXray(item)} disabled={!isInstituteAdmin || saving}>Edit</button>
+                              <button className="btn btn-sm btn-outline-warning" onClick={() => handleToggleXrayStatus(item)} disabled={!isInstituteAdmin || saving}>Toggle</button>
+                              <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteXray(item)} disabled={!isInstituteAdmin || saving}>Delete</button>
                             </td>
                           </tr>
                         ))}
@@ -2180,6 +2136,10 @@ const MasterData = () => {
                     </table>
                   </div>
                 </>
+              )}
+
+              {!selectedCategory && (
+                <div className="text-muted">Select a category to view or manage values.</div>
               )}
             </div>
           </div>
