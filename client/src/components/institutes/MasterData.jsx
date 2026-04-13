@@ -1518,10 +1518,13 @@ const loadTestsStructure = async () => {
   };
 
   const handleAddMedicine = async () => {
-    if (!newMedicineName.trim() || !selectedMedicineType.trim() || !newMedicineDosageForm.trim() || !newMedicineStrength.trim()) {
-      setError("Please fill in all medicine fields (name, type, dosage form, strength)");
+    if (!newMedicineName.trim() || !selectedMedicineType.trim()) {
+      setError("Please fill in medicine name and type");
       return;
     }
+    // Provide sensible defaults for dosage form / strength when user did not select them
+    const dosageFormToUse = (newMedicineDosageForm && newMedicineDosageForm.trim()) || (medicinesStructure.dosageForms && medicinesStructure.dosageForms[0]) || "Other";
+    const strengthToUse = (newMedicineStrength && newMedicineStrength.trim()) || "";
     setSaving(true);
     setMessage("");
     setError("");
@@ -1529,15 +1532,15 @@ const loadTestsStructure = async () => {
 <<<<<<< HEAD
 =======
       // compute keys to un-blacklist if addition succeeds
-      const newMedicineKey = makeMedicineKey(selectedMedicineType.trim(), newMedicineDosageForm.trim(), newMedicineName.trim(), newMedicineStrength.trim());
+      const newMedicineKey = makeMedicineKey(selectedMedicineType.trim(), dosageFormToUse, newMedicineName.trim(), strengthToUse);
       const newTypeKey = getMedicineTypeKey(selectedMedicineType.trim());
 >>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       try {
         await axios.post(`${BACKEND_URL}/master-data-api/medicines`, {
           medicineName: newMedicineName.trim(),
           medicineType: selectedMedicineType.trim(),
-          dosageForm: newMedicineDosageForm.trim(),
-          strength: newMedicineStrength.trim()
+          dosageForm: dosageFormToUse,
+          strength: strengthToUse
         });
       } catch (err) {
         if (err?.response?.status !== 404) throw err;
@@ -1547,9 +1550,9 @@ const loadTestsStructure = async () => {
           meta: {
             kind: "medicine",
             medicineType: selectedMedicineType.trim(),
-            dosageForm: newMedicineDosageForm.trim(),
-            type: newMedicineDosageForm.trim(),
-            strength: newMedicineStrength.trim(),
+            dosageForm: dosageFormToUse,
+            type: dosageFormToUse,
+            strength: strengthToUse,
             typeNormalized: selectedMedicineType.trim().toLowerCase()
           }
         });
@@ -1562,6 +1565,7 @@ const loadTestsStructure = async () => {
 
 >>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       setNewMedicineName("");
+      // only clear dosage/strength if they were explicitly provided by user; otherwise keep empty so UX stays predictable
       setNewMedicineDosageForm("");
       setNewMedicineStrength("");
       setMessage("Medicine added successfully");
@@ -2953,10 +2957,11 @@ const loadTestsStructure = async () => {
                     <button
                       className="btn btn-primary"
                       onClick={handleAddMedicine}
-                      disabled={!isInstituteAdmin || saving || !selectedMedicineType || !newMedicineDosageForm || !newMedicineName.trim() || !newMedicineStrength.trim()}
+                      disabled={!isInstituteAdmin || saving || !selectedMedicineType || !newMedicineName.trim()}
                     >
                       Add Medicine
                     </button>
+<<<<<<< HEAD
 <<<<<<< HEAD
                     <button
                       className="btn btn-secondary ms-2"
@@ -3123,6 +3128,8 @@ const loadTestsStructure = async () => {
                   )}
 =======
                     
+=======
+>>>>>>> d5e1551 (MasterData: enable Add Medicine when name+type provided; default dosage/strength)
                   </div>
 
                   
