@@ -51,6 +51,13 @@ const FamilyMemberProfile = () => {
   };
 
   const handleSave = () => {
+    // Validate ABHA (optional) - must be 14 digits when provided
+    const abhaVal = (editData.ABHA || "").toString().trim();
+    if (abhaVal && !/^\d{14}$/.test(abhaVal)) {
+      alert("ABHA must be a 14 digit numeric string");
+      return;
+    }
+
     axios.put(`${BACKEND_URL}/family-api/update/${id}`, editData)
       .then((res) => {
         setMember(res.data.member);
@@ -198,6 +205,21 @@ const FamilyMemberProfile = () => {
                 member.Blood_Group
               )}
             </p>
+              <p>
+                <strong>ABHA Number:</strong>{" "}
+                {isEditing ? (
+                  <input
+                    type="text"
+                    maxLength={14}
+                    className="form-control d-inline-block"
+                    style={{ width: "auto", fontSize: "14px" }}
+                    value={editData.ABHA || ""}
+                    onChange={(e) => setEditData({ ...editData, ABHA: e.target.value.replace(/[^0-9]/g, "") })}
+                  />
+                ) : (
+                  member.ABHA || "-"
+                )}
+              </p>
           </div>
 
           <div className="col-md-6">

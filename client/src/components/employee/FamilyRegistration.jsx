@@ -17,6 +17,7 @@ const FamilyMemberRegistration = () => {
     Height: "",
     Weight: "",
     Phone_No: "",
+    ABHA: "",
     Address: {
       Street: "",
       District: "",
@@ -28,6 +29,8 @@ const FamilyMemberRegistration = () => {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [employeeProfile, setEmployeeProfile] = useState(null);
+  const [employeeLoading, setEmployeeLoading] = useState(false);
   const [masterMap, setMasterMap] = useState({});
   const fileInputRef = useRef(null);
 
@@ -57,7 +60,15 @@ const FamilyMemberRegistration = () => {
   const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
+
+    // Keep ABHA numeric-only
+    if (name === "ABHA") {
+      value = String(value || "").replace(/[^0-9]/g, "");
+      if (value.length > 14) value = value.slice(0, 14);
+    }
+
     if (name.startsWith("Address.")) {
       const key = name.split(".")[1];
       setFormData({ ...formData, Address: { ...formData.Address, [key]: value } });
@@ -90,11 +101,64 @@ const FamilyMemberRegistration = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const loadEmployeeProfile = async () => {
+    if (!employeeId) return null;
+    if (employeeProfile) return employeeProfile;
+    setEmployeeLoading(true);
+    try {
+      const res = await axios.get(`${BACKEND_URL}/employee-api/profile/${employeeId}`);
+      setEmployeeProfile(res.data || {});
+      return res.data || {};
+    } catch (err) {
+      console.error("Failed to load employee profile", err);
+      alert("Unable to fetch employee details");
+      return null;
+    } finally {
+      setEmployeeLoading(false);
+    }
+  };
+
+  const fillPhoneFromEmployee = async () => {
+    if (!employeeId) {
+      alert("Employee not logged in. Please login again.");
+      return;
+    }
+    const profile = await loadEmployeeProfile();
+    if (!profile) return;
+    setFormData((prev) => ({ ...prev, Phone_No: profile.Phone_No || profile.Phone || "" }));
+  };
+
+  const fillAddressFromEmployee = async () => {
+    if (!employeeId) {
+      alert("Employee not logged in. Please login again.");
+      return;
+    }
+    const profile = await loadEmployeeProfile();
+    if (!profile) return;
+    const addr = profile.Address || {};
+    setFormData((prev) => ({
+      ...prev,
+      Address: {
+        Street: addr.Street || "",
+        District: addr.District || "",
+        State: addr.State || "",
+        Pincode: addr.Pincode || "",
+      },
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!employeeId) {
       alert("Employee not logged in. Please login again.");
+      return;
+    }
+
+    // Validate ABHA (optional) - must be 14 digits when provided
+    const abhaVal = (formData.ABHA || "").toString().trim();
+    if (abhaVal && !/^\d{14}$/.test(abhaVal)) {
+      alert("ABHA must be a 14 digit numeric string");
       return;
     }
 
@@ -110,6 +174,7 @@ const FamilyMemberRegistration = () => {
       data.append("Height", formData.Height);
       data.append("Weight", formData.Weight);
       data.append("Phone_No", formData.Phone_No);
+      data.append("ABHA", formData.ABHA || "");
       data.append("Address", JSON.stringify(formData.Address));
       if (photoFile) data.append("Photo", photoFile);
 
@@ -130,6 +195,7 @@ const FamilyMemberRegistration = () => {
         Height: "",
         Weight: "",
         Phone_No: "",
+        ABHA: "",
         Address: { Street: "", District: "", State: "", Pincode: "" },
       });
       handleRemovePhoto();
@@ -382,22 +448,68 @@ const FamilyMemberRegistration = () => {
           {/* Phone */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Phone Number</label>
+            <div className="d-flex">
+              <input
+                type="text"
+                className="form-control"
+                name="Phone_No"
+                value={formData.Phone_No}
+                onChange={handleChange}
+              />
+              <button
+                type="button"
+                className="btn btn-sm ms-2"
+                onClick={fillPhoneFromEmployee}
+                disabled={employeeLoading}
+                style={{
+                  backgroundColor: "#EAF2FF",
+                  color: "#4A70A9",
+                  border: "1px solid #4A70A9",
+                  borderRadius: "999px",
+                  fontSize: "12px",
+                  padding: "6px 12px",
+                }}
+              >
+                {employeeLoading ? "Loading..." : "Same as Employee"}
+              </button>
+            </div>
+          </div>
+
+          {/* ABHA (optional) */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">ABHA Number (optional)</label>
             <input
               type="text"
               className="form-control"
-              name="Phone_No"
-              value={formData.Phone_No}
+              name="ABHA"
+              maxLength={14}
+              value={formData.ABHA}
               onChange={handleChange}
+              placeholder="14 digit ABHA number"
             />
+            <small className="text-muted">Optional — 14 digit numeric ABHA identifier</small>
           </div>
   
           {/* Address */}
-          <h6
-            className="fw-semibold mt-4 mb-2"
-            style={{ color: "#4A70A9" }}
-          >
-            Address Details
-          </h6>
+          <div className="d-flex align-items-center justify-content-between mt-4 mb-2">
+            <h6 className="fw-semibold" style={{ color: "#4A70A9", margin: 0 }}>Address Details</h6>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={fillAddressFromEmployee}
+              disabled={employeeLoading}
+              style={{
+                backgroundColor: "#EAF2FF",
+                color: "#4A70A9",
+                border: "1px solid #4A70A9",
+                borderRadius: "999px",
+                fontSize: "12px",
+                padding: "6px 12px",
+              }}
+            >
+              {employeeLoading ? "Loading..." : "Same as Employee"}
+            </button>
+          </div>
   
           <input
             className="form-control mb-2"

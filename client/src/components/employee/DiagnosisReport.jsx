@@ -190,92 +190,385 @@ useEffect(() => {
   };
 
 
-  /* ================= LAB REPORT PDF ================= */
+  /* ================= LAB REPORT PDF (SARCPL A4 Layout) ================= */
   const downloadLabReport = (report) => {
     const doc = new jsPDF("p", "mm", "a4");
 
-    // Margins
-    const left = 15;
-    const right = 195;
+    const left = 14;
+    const right = 196;
+    let y = 12;
 
     const instituteName = getReportInstitutionName(report.Institute?.Institute_Name);
 
-    const reportDate = formatDate(report);
+    // Auto-generated metadata
+    const createdAt = report.createdAt || report.Tests?.[0]?.Timestamp || new Date();
+    const createdDate = new Date(createdAt);
+    const reportDateStr = createdDate.toISOString().slice(0, 10);
+    const reportTimeStr = createdDate.toTimeString().slice(0, 5);
+    const reportId = report._id
+      ? `SARCPL-DIAG-${reportDateStr.replace(/-/g, "")}-${String(report._id).slice(-6)}`
+      : `SARCPL-DIAG-${reportDateStr.replace(/-/g, "")}-${Date.now()}`;
+
     const downloadedAt = formatReportTimestamp();
 
-    const patientName = report.Employee?.Name || "Employee";
-    const employeeIdText = report.Employee?.ABS_NO
-      ? `(${report.Employee.ABS_NO})`
-      : "";
+    // Header: Logo, Title, QR, Emergency flag
+    // Logo placeholder
+    doc.setLineWidth(0.3);
+    doc.rect(left, 8, 24, 24);
+    doc.setFontSize(8);
+    doc.text("LOGO", left + 12, 20, { align: "center" });
 
-    const issuedTo = report.IsFamilyMember
-      ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})`
-      : "Self";
-
-    /* ---------- HEADER ---------- */
+    // Title centered
     addCenteredReportHeader(doc, {
       centerX: 105,
       left,
       right,
-      institutionName: instituteName,
-      title: "DIAGNOSTIC LABORATORY REPORT",
-      lineY: 32
+      institutionName: "SARCPL Police Hospital",
+      title: "DIAGNOSTIC REPORT",
+      subtitle: instituteName,
+      institutionY: 18,
+      titleY: 26,
+      lineY: 36
     });
+
+    // QR placeholder (top-right)
+    doc.rect(right - 30, 8, 30, 30);
+    doc.setFontSize(8);
+    doc.text("QR", right - 15, 23, { align: "center" });
+
+    // Emergency flag (optional)
+    const isEmergency = Boolean(report.IsCritical || report.IsEmergency || report.priority === "critical" || report.Emergency);
+    if (isEmergency) {
+      doc.setDrawColor(180, 0, 0);
+      doc.setTextColor(180, 0, 0);
+      doc.setFontSize(9);
+      doc.text("EMERGENCY", right - 60, 18, { align: "center" });
+      doc.setTextColor(0, 0, 0);
+    }
+
+    // Download / generation timestamp
     addDownloadTimestamp(doc, { x: right, y: 12, align: "right", timestamp: downloadedAt });
 
-    /* ---------- PATIENT DETAILS ---------- */
-    doc.setFontSize(10);
-    doc.text(`Employee Name: ${patientName} ${employeeIdText}`, left, 42);
-    doc.text(`Report For: ${issuedTo}`, left, 48);
-    doc.text(`Test Date: ${reportDate}`, left, 54);
+    y = 42;
 
-    /* ---------- TEST TABLE ---------- */
-    const tableData = report.Tests.map((t) => {
-      // determine category: prefer saved Category, else use Test_ID.group, else try to infer from test name
-      const category = t.Category || t.Test_ID?.Group || (() => {
-        try {
-          const allCats = Object.keys(diagnosticTestsByCategory || {});
-          for (const c of allCats) {
-            const found = (diagnosticTestsByCategory[c] || []).find(x => x.name === t.Test_Name);
-            if (found) return c;
-          }
-        } catch (e) {}
-        return "";
-      })();
-
-      return [
-        category,
-        t.Test_Name,
-        `${t.Result_Value} ${t.Units || ""}`,
-        t.Test_ID?.Reference_Range || t.Reference_Range || "-",
-        getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range, report.Employee?.Gender)
-      ];
-    });
-
-    autoTable(doc, {
-      startY: 62,
-      head: [["Category", "Test Name", "Result", "Reference Range", "Status"]],
-      body: tableData,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [40, 40, 40] },
-      didParseCell: (data) => {
-        if (data.section === "body" && data.row.raw?.[4] === "Risk" && data.column.index === 2) {
-          data.cell.styles.fontStyle = "bold";
-        }
-      },
-      margin: { left, right: 15 }
-    });
-
-    /* ---------- FOOTER ---------- */
+    // Report Metadata box
     doc.setFontSize(9);
-    doc.text(
-      "This is a system-generated diagnostic laboratory report.",
-      105,
-      doc.lastAutoTable.finalY + 15,
-      { align: "center" }
-    );
+    doc.setDrawColor(200);
+    doc.rect(left, y - 6, right - left, 22);
 
-    doc.save(`Lab_Report_${report._id.slice(-6)}.pdf`);
+    doc.setFont("helvetica", "bold");
+    doc.text("Report ID:", left + 3, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(reportId, left + 30, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Date:", left + 110, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(reportDateStr, left + 125, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Time:", left + 150, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(reportTimeStr, left + 165, y);
+
+    y += 14;
+
+    // Patient Identification
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Patient Identification", left, y);
+    doc.setLineWidth(0.3);
+    doc.line(left, y + 2, right, y + 2);
+
+    y += 8;
+    const patientName = report.Employee?.Name || "-";
+    const age = (() => {
+      try {
+        const dob = report.Employee?.DOB;
+        if (!dob) return "-";
+        const d = new Date(dob);
+        const diff = new Date().getFullYear() - d.getFullYear();
+        return diff;
+      } catch { return "-"; }
+    })();
+    const gender = report.Employee?.Gender || (report.IsFamilyMember ? (report.FamilyMember?.Gender || "-") : "-");
+    const absNo = report.Employee?.ABS_NO || report.Employee?._id || "-";
+    const employeeObjectId = report.Employee?._id || "-";
+    const phone = report.Employee?.Phone_No || report.Employee?.Phone || report.Employee?.Contact || "-";
+    const email = report.Employee?.Email || "-";
+    const address = (report.Employee?.Address && (report.Employee.Address.Street || report.Employee.Address.District))
+      ? `${report.Employee.Address.Street || ""} ${report.Employee.Address.District || ""} ${report.Employee.Address.State || ""} ${report.Employee.Address.Pincode || ""}`
+      : "-";
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Name:", left, y + 8);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(patientName), left + 24, y + 8);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Age:", left + 110, y + 8);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(age), left + 125, y + 8);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Gender:", left + 140, y + 8);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(gender), left + 160, y + 8);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Police ID (ABS_NO):", left, y + 16);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(absNo), left + 40, y + 16);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Contact:", left + 110, y + 16);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${phone} ${email !== '-' ? ' | ' + email : ''}`, left + 125, y + 16);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Address:", left, y + 24);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(address), left + 24, y + 24);
+
+    y += 34;
+
+    // Clinical Information
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Clinical Information", left, y);
+    doc.line(left, y + 2, right, y + 2);
+    y += 8;
+
+    const department = report.Institute?.Institute_Name || "-";
+    const consultingDoctor = report.Consulting_Doctor || report.Doctor || report.DoctorName || "-";
+    const presentingComplaints = report.Presenting_Complaints || report.symptoms || report.Tests?.[0]?.Remarks || "-";
+    const medicalHistory = report.Diagnosis_Notes || "-";
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Department / Unit:", left, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(department), left + 36, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Consulting Doctor:", left + 110, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(consultingDoctor), left + 150, y);
+
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Chief Complaint(s):", left, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(presentingComplaints), left + 36, y);
+
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Medical History / Notes:", left, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(medicalHistory), left + 48, y);
+
+    y += 12;
+
+    // Vital Signs
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Vital Signs", left, y);
+    doc.line(left, y + 2, right, y + 2);
+    y += 8;
+
+    const vit = report.Visit?.Vitals || report.Vitals || report.visit?.Vitals || {};
+    const bp = vit.Blood_Pressure || vit.BP || vit.BloodPressure || "-";
+    const pulse = vit.Pulse || vit.HeartRate || "-";
+    const temp = vit.Temperature || vit.Temp || "-";
+    const spo2 = vit.Oxygen || vit.SpO2 || "-";
+    const grbs = vit.GRBS || vit.Sugar || vit.Random_Blood_Sugar || "-";
+
+    doc.setFont("helvetica", "bold");
+    doc.text("BP:", left, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(bp), left + 12, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Pulse:", left + 40, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(pulse), left + 56, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Temp (°C):", left + 80, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(temp), left + 100, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("SpO2 (%):", left + 122, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(spo2), left + 142, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("GRBS:", left + 160, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(grbs), left + 173, y);
+
+    y += 12;
+
+    // Examination Findings
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Examination Findings", left, y);
+    doc.line(left, y + 2, right, y + 2);
+    y += 8;
+
+    const findings = report.Examination_Findings || report.Exam_Findings || report.Clinical_Findings || report.Diagnosis_Notes || "-";
+    doc.setFont("helvetica", "normal");
+    doc.text(String(findings), left, y);
+    y += 12;
+
+    // Diagnosis
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Diagnosis", left, y);
+    doc.line(left, y + 2, right, y + 2);
+    y += 8;
+
+    const diagNotes = report.Diagnosis_Notes || "";
+    const diagLines = String(diagNotes).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const primaryDiag = diagLines[0] || "-";
+    const secondaryDiag = diagLines[1] || "-";
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Primary Diagnosis:", left, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(primaryDiag, left + 36, y);
+    y += 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Secondary Diagnosis:", left, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(secondaryDiag, left + 44, y);
+    y += 12;
+
+    // Investigations Recommended
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Investigations Recommended", left, y);
+    doc.line(left, y + 2, right, y + 2);
+    y += 8;
+
+    // Render test requests (if any) or leave blank for doctor
+    const requested = report.Requested_Tests || report.Investigations || [];
+    if (Array.isArray(requested) && requested.length > 0) {
+      requested.forEach((r, i) => {
+        doc.setFont("helvetica", "normal");
+        doc.text(`- ${r}`, left + 2, y);
+        y += 6;
+      });
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.text("(No additional investigations recorded)", left + 2, y);
+      y += 8;
+    }
+
+    // Treatment Plan / Recommendations
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Treatment Plan / Recommendations", left, y);
+    doc.line(left, y + 2, right, y + 2);
+    y += 8;
+
+    const treatment = report.Treatment || report.Treatment_Plan || "(Not recorded)";
+    doc.setFont("helvetica", "normal");
+    doc.text(String(treatment), left, y);
+    y += 12;
+
+    // Follow-up
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Follow-Up Instructions", left, y);
+    doc.line(left, y + 2, right, y + 2);
+    y += 8;
+
+    const followUp = report.FollowUp || report.Follow_Up || "(Not specified)";
+    doc.setFont("helvetica", "normal");
+    doc.text(String(followUp), left, y);
+    y += 18;
+
+    // Tests table (results)
+    if (Array.isArray(report.Tests) && report.Tests.length > 0) {
+      const tableStart = y;
+      const tableData = report.Tests.map((t) => {
+        const category = t.Category || t.Test_ID?.Group || "";
+        const status = getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range, report.Employee?.Gender) || "-";
+        return [category, t.Test_Name, `${t.Result_Value || '-'} ${t.Units || ''}`.trim(), t.Reference_Range || '-', status];
+      });
+
+      autoTable(doc, {
+        startY: tableStart,
+        head: [["Category", "Test Name", "Result", "Reference", "Status"]],
+        body: tableData,
+        styles: { fontSize: 9 },
+        margin: { left, right: 15 }
+      });
+
+      y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : y + 40;
+    }
+
+    // Attachments & Evidence
+    if (report.Tests && report.Tests.some(t => Array.isArray(t.Reports) && t.Reports.length > 0)) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Attachments:", left, y);
+      y += 6;
+      report.Tests.forEach((t) => {
+        (t.Reports || []).forEach((r) => {
+          doc.setFont("helvetica", "normal");
+          doc.text(`- ${r.originalname || r.filename}  (${r.uploadedAt ? new Date(r.uploadedAt).toLocaleString() : 'uploaded'})`, left + 4, y);
+          y += 6;
+        });
+      });
+      y += 4;
+    }
+
+    // Doctor Authentication block
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Doctor Authentication", left, y);
+    doc.line(left, y + 2, right, y + 2);
+    y += 8;
+
+    const doctorName = consultingDoctor || "";
+    const regNo = report.Doctor_Reg_No || report.Registration_No || report.Doctor_Reg || "";
+    const signedOn = report.Signed_On || report.signedAt || "";
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Doctor:", left, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(doctorName || "(Not recorded)", left + 18, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Reg. No:", left + 110, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(regNo || "-", left + 135, y);
+    y += 10;
+
+    // Signature placeholders
+    doc.setFont("helvetica", "normal");
+    doc.text("Signature:", left, y);
+    doc.line(left + 18, y + 1, left + 70, y + 1);
+
+    doc.text("Seal:", left + 110, y);
+    doc.line(left + 125, y + 1, left + 180, y + 1);
+
+    y += 12;
+
+    // Digital signature / audit
+    doc.setFontSize(8);
+    doc.text(`Digital Sig (hash): ${report.DigitalSignature || report.signatureHash || '-'}`, left, y);
+    y += 5;
+    doc.text(`Audit ID: ${report.Audit_ID || report.auditId || '-'}`, left, y);
+
+    // Footer: confidentiality
+    doc.setFontSize(8);
+    doc.text("Confidential — For patient and treating clinician use only.", 105, 287, { align: "center" });
+
+    const fileName = `Diagnosis_Report_${String(report._id || '').slice(-6) || reportId}.pdf`;
+    doc.save(fileName);
   };
 
   const splitReportsByDate = (records) => {
