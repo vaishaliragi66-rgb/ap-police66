@@ -4,10 +4,7 @@ const router = express.Router();
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const DoctorPrescription = require("../models/doctor_prescription");
 const MedicalAction = require("../models/medical_action");
-<<<<<<< HEAD
-=======
 const ToBePrescribedMedicine = require("../models/to_be_prescribed_medicine");
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
 // =======================================================
 // ADD DOCTOR PRESCRIPTION (NO INVENTORY, NO LEDGER)
@@ -37,14 +34,10 @@ router.post("/add", async (req, res) => {
       Strength: (med?.Strength || "").trim() || undefined
     }));
 
-<<<<<<< HEAD
-=======
-    // Separate medicines into regular and to-be-prescribed
-    const regularMedicines = normalizedMedicines.filter(med => !med.ToBePrescribed);
-    const toBePrescribedMedicines = normalizedMedicines.filter(med => med.ToBePrescribed);
+    // Split medicines into regular vs to-be-prescribed based on flags
+    const regularMedicines = normalizedMedicines.filter(m => !(m.ToBePrescribed || m.toBePrescribed || m.IsToBePrescribed));
+    const toBePrescribedMedicines = normalizedMedicines.filter(m => (m.ToBePrescribed || m.toBePrescribed || m.IsToBePrescribed));
 
-    // Create the main prescription record with all medicines
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     const prescription = await DoctorPrescription.create({
       Institute: Institute_ID,
       Employee: Employee_ID,
@@ -54,19 +47,6 @@ router.post("/add", async (req, res) => {
       Notes
     });
 
-<<<<<<< HEAD
-    await MedicalAction.create({
-      employee_id: Employee_ID,
-      visit_id: visit_id || null,
-      action_type: "DOCTOR_PRESCRIPTION",
-      source: "DOCTOR",
-      data: {
-        doctor_prescription_id: prescription._id,
-        medicines: normalizedMedicines
-      },
-      remarks: Notes || ""
-    });
-=======
     // Store regular medicines in MedicalAction
     if (regularMedicines.length > 0) {
       await MedicalAction.create({
@@ -76,9 +56,7 @@ router.post("/add", async (req, res) => {
         source: "DOCTOR",
         data: {
           doctor_prescription_id: prescription._id,
-          medicines: regularMedicines,
-          isFamilyMember: IsFamilyMember,
-          familyMemberId: FamilyMember_ID
+          medicines: regularMedicines
         },
         remarks: Notes || ""
       });
@@ -109,7 +87,6 @@ router.post("/add", async (req, res) => {
 
       await ToBePrescribedMedicine.insertMany(toBePrescribedRecords);
     }
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
     res.status(201).json({
       message: "Doctor prescription saved",
@@ -122,9 +99,6 @@ router.post("/add", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-
-=======
 // =======================================================
 // GET ALL TO-BE-PRESCRIBED MEDICINES FOR INSTITUTE
 // =======================================================
@@ -145,6 +119,5 @@ router.get("/to-be-prescribed/all", verifyToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
 module.exports = router;

@@ -166,25 +166,33 @@ router.post(
       instituteId: institute._id,
       role: { $regex: `^${normalizedRole}$`, $options: "i" }
     });
+
     console.log("Login role:", role);
     console.log("Institute ID:", institute._id);
-    console.log("Credential found:", credential)
-    const test = await bcrypt.compare("p@123", credential.password);
-  console.log("Manual test:", test);
-  console.log("Stored password:", credential.password);
+    console.log("Credential found:", !!credential);
+
     if (!credential) {
       return res.status(404).json({
         message: "Role not configured"
       });
     }
-    console.log("Entered password:", password);
-    console.log("Password length:", password.length);
-    const isMatch = await bcrypt.compare(password, credential.password);
+
+    // Support legacy plaintext passwords for role credentials and upgrade to bcrypt
+    const { isMatch, shouldUpgradeHash } = await verifyPasswordWithLegacySupport(
+      password,
+      credential.password
+    );
 
     if (!isMatch) {
       return res.status(401).json({
         message: "Invalid credentials"
       });
+    }
+
+    if (shouldUpgradeHash) {
+      credential.password = await bcrypt.hash(password, 10);
+      await credential.save();
+      console.log(`Upgraded password for role ${role} to bcrypt`);
     }
     const token = jwt.sign(
       {

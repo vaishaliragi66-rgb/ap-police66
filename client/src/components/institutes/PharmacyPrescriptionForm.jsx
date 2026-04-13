@@ -231,9 +231,15 @@ useEffect(() => {
   setFormData((f) => ({ ...f, Institute_ID: instituteId }));
   fetchInstitute(instituteId);
   fetchInventory(instituteId);
-  fetchMasterDataMap()
-    .then((data) => setMasterMap(data || {}))
-    .catch(() => setMasterMap({}));
+  const loadMaster = () => {
+    fetchMasterDataMap()
+      .then((data) => setMasterMap(data || {}))
+      .catch(() => setMasterMap({}));
+  };
+
+  loadMaster();
+  window.addEventListener("master-data-updated", loadMaster);
+  return () => window.removeEventListener("master-data-updated", loadMaster);
 }, []);
 
 

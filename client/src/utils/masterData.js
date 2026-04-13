@@ -295,59 +295,162 @@ let cache = null;
 let cacheTime = 0;
 const TTL_MS = 5 * 60 * 1000;
 
-<<<<<<< HEAD
-=======
-const REMOVED_MASTER_KEYS_STORAGE = "removed_master_keys";
-export const getRemovedMasterKeys = () => {
-  try {
-    const raw = (typeof window !== "undefined" && localStorage.getItem(REMOVED_MASTER_KEYS_STORAGE)) || "[]";
-    return JSON.parse(raw) || [];
-  } catch {
-    return [];
-  }
+// Client-side local overrides for master medicines (in-memory only)
+let localMedicineOverrides = [];
+
+// local overrides for medicine types (frontend-only)
+let localMedicineTypeOverrides = [];
+
+export const addLocalMedicineType = (name) => {
+  const entry = {
+    _clientId: makeClientId(),
+    _id: null,
+    value_name: String(name || "").trim(),
+    status: "Active"
+  };
+  localMedicineTypeOverrides = [entry, ...localMedicineTypeOverrides];
+  invalidateMasterDataCache();
+  return entry;
 };
-export const addRemovedMasterKey = (key) => {
-  try {
-    if (typeof window === "undefined") return;
-    const keys = getRemovedMasterKeys();
-    if (!keys.includes(key)) {
-      keys.push(key);
-      localStorage.setItem(REMOVED_MASTER_KEYS_STORAGE, JSON.stringify(keys));
+
+export const updateLocalMedicineType = (identifier, nextName) => {
+  let found = false;
+  localMedicineTypeOverrides = localMedicineTypeOverrides.map((t) => {
+    if ((identifier && t._id && t._id === identifier) || (identifier && t._clientId === identifier) || String(t.value_name).trim().toLowerCase() === String(identifier || "").trim().toLowerCase()) {
+      found = true;
+      return { ...t, value_name: String(nextName || t.value_name).trim() };
     }
-  } catch (e) {
-    // ignore
+    return t;
+  });
+  if (!found) {
+    const entry = { _clientId: makeClientId(), _id: null, value_name: String(nextName || identifier || "").trim(), status: "Active" };
+    localMedicineTypeOverrides = [entry, ...localMedicineTypeOverrides];
   }
+  invalidateMasterDataCache();
 };
 
-export const removeRemovedMasterKey = (key) => {
-  try {
-    if (typeof window === "undefined") return;
-    const keys = getRemovedMasterKeys().filter((k) => k !== key);
-    localStorage.setItem(REMOVED_MASTER_KEYS_STORAGE, JSON.stringify(keys));
-  } catch (e) {
-    // ignore
-  }
+export const deleteLocalMedicineType = (identifier) => {
+  // mark as inactive via override
+  const name = typeof identifier === "string" ? identifier : identifier?.value_name;
+  if (!name) return;
+  const entry = { _clientId: makeClientId(), _id: null, value_name: String(name).trim(), status: "Inactive" };
+  localMedicineTypeOverrides = [entry, ...localMedicineTypeOverrides];
+  invalidateMasterDataCache();
 };
-const normalizeText = (value) => String(value || "").trim().toLowerCase();
-const makeMedicineKey = (medicineType, dosageForm, valueName, strength) =>
-  `${normalizeText(medicineType)}::${normalizeText(dosageForm)}::${normalizeText(valueName)}::${normalizeText(strength)}`;
 
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
+export const toggleLocalMedicineTypeStatus = (identifier) => {
+  let found = false;
+  localMedicineTypeOverrides = localMedicineTypeOverrides.map((t) => {
+    if ((identifier && t._id && t._id === identifier) || (identifier && t._clientId === identifier) || String(t.value_name).trim().toLowerCase() === String(identifier || "").trim().toLowerCase()) {
+      found = true;
+      return { ...t, status: t.status === "Active" ? "Inactive" : "Active" };
+    }
+    return t;
+  });
+  if (!found && identifier) {
+    const entry = { _clientId: makeClientId(), _id: null, value_name: String(identifier).trim(), status: "Inactive" };
+    localMedicineTypeOverrides = [entry, ...localMedicineTypeOverrides];
+  }
+  invalidateMasterDataCache();
+};
+
+export const getLocalMedicineOverrides = () => localMedicineOverrides;
+export const getLocalMedicineTypeOverrides = () => localMedicineTypeOverrides;
+
+const makeClientId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+
+export const addLocalMedicine = (item) => {
+  const entry = {
+    _clientId: makeClientId(),
+    _id: item._id || null,
+    value_name: String(item.value_name || item.medicineName || "").trim(),
+    meta: item.meta || item.meta || {
+      kind: "medicine",
+      medicineType: item.medicineType || "",
+      dosageForm: item.dosageForm || "",
+      strength: item.strength || ""
+    },
+    status: item.status || "Active"
+  };
+  localMedicineOverrides = [entry, ...localMedicineOverrides];
+  invalidateMasterDataCache();
+  return entry;
+};
+
+export const updateLocalMedicine = (identifier, patch) => {
+  let found = false;
+  localMedicineOverrides = localMedicineOverrides.map((m) => {
+    if ((identifier && m._id && m._id === identifier) || (identifier && m._clientId === identifier)) {
+      found = true;
+      return {
+        ...m,
+        value_name: patch.value_name || m.value_name,
+        meta: { ...m.meta, ...(patch.meta || patch) },
+        status: patch.status || m.status
+      };
+    }
+    return m;
+  });
+
+  if (!found) {
+    // create a new local override entry (preserve identifier if it's an _id)
+    const entry = {
+      _clientId: makeClientId(),
+      _id: typeof identifier === "string" ? identifier : null,
+      value_name: patch.value_name || (patch.medicineName || "") ,
+      meta: patch.meta || {
+        kind: "medicine",
+        medicineType: patch.medicineType || patch.medicine_type || "",
+        dosageForm: patch.dosageForm || patch.dosage_form || patch.form || "",
+        strength: patch.strength || ""
+      },
+      status: patch.status || "Active"
+    };
+    localMedicineOverrides = [entry, ...localMedicineOverrides];
+  }
+
+  invalidateMasterDataCache();
+};
+
+export const deleteLocalMedicine = (identifier) => {
+  // If identifier is an object with key fields, add an inactive override to hide built-in
+  if (identifier && typeof identifier === "object") {
+    const entry = {
+      _clientId: makeClientId(),
+      _id: identifier._id || null,
+      value_name: String(identifier.value_name || identifier.medicineName || "").trim(),
+      meta: identifier.meta || {
+        kind: "medicine",
+        medicineType: identifier.medicineType || "",
+        dosageForm: identifier.dosageForm || "",
+        strength: identifier.strength || ""
+      },
+      status: "Inactive"
+    };
+    localMedicineOverrides = [entry, ...localMedicineOverrides];
+    invalidateMasterDataCache();
+    return;
+  }
+
+  localMedicineOverrides = localMedicineOverrides.filter((m) => !((m._id && m._id === identifier) || m._clientId === identifier));
+  invalidateMasterDataCache();
+};
+
+export const toggleLocalMedicineStatus = (identifier) => {
+  localMedicineOverrides = localMedicineOverrides.map((m) => {
+    if ((m._id && m._id === identifier) || m._clientId === identifier) {
+      return { ...m, status: m.status === "Active" ? "Inactive" : "Active" };
+    }
+    return m;
+  });
+  invalidateMasterDataCache();
+};
+
 export const invalidateMasterDataCache = () => {
   cache = null;
   cacheTime = 0;
   if (typeof window !== "undefined") {
-<<<<<<< HEAD
     window.dispatchEvent(new Event("master-data-updated"));
-=======
-    const ev = new Event("master-data-updated");
-    try {
-      console.debug("invalidateMasterDataCache: dispatching master-data-updated", { time: Date.now() });
-    } catch (e) {
-      // ignore console issues in non-browser env
-    }
-    window.dispatchEvent(ev);
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   }
 };
 
@@ -389,29 +492,74 @@ export const fetchMasterDataMap = async ({ force = false } = {}) => {
   }
 
   cache = res.data || {};
-  cacheTime = now;
-<<<<<<< HEAD
-=======
+  // Merge client-side local medicine overrides into cache.Medicines for instant UI updates
   try {
-    const categories = Object.keys(cache || {}).length;
-    const medCount = Array.isArray(cache?.Medicines) ? cache.Medicines.length : 0;
-    console.debug("fetchMasterDataMap: cached master map", { categories, medCount, time: now });
+    const dbMedicines = Array.isArray(cache.Medicines) ? cache.Medicines : [];
+    const merged = [];
+
+    // Map by normalized key (type::form::name::strength) to prefer db entries
+    const seen = new Set();
+    const keyOf = (it) =>
+      `${normalizeLoose(it?.meta?.medicineType || it?.medicineType || it?.meta?.medicine_type || "")}` +
+      `::${normalizeLoose(it?.meta?.dosageForm || it?.dosageForm || it?.meta?.dosage_form || it?.meta?.form || "")}` +
+      `::${normalizeLoose(it?.value_name || it?.Medicine_Name || "")}` +
+      `::${normalizeLoose(it?.strength || it?.meta?.strength || "")}`;
+
+    dbMedicines.forEach((it) => {
+      const k = keyOf(it);
+      if (!seen.has(k)) {
+        seen.add(k);
+        merged.push(it);
+      }
+    });
+
+    // Apply local overrides: if local has same key and has _id => replace db; if local unique => prepend
+    (localMedicineOverrides || []).forEach((lm) => {
+      const k = keyOf(lm);
+      // find index
+      const idx = merged.findIndex((m) => keyOf(m) === k);
+      if (idx !== -1) {
+        // prefer persisted db record if lm has no _id, else replace
+        if (lm._id) merged[idx] = { ...merged[idx], ...lm };
+        else merged.splice(idx + 1, 0, lm);
+      } else {
+        merged.unshift(lm);
+      }
+    });
+
+    cache.Medicines = merged;
+  } catch (e) {
+    // ignore merge errors
+  }
+  // Merge local medicine type overrides into cache['Medicine Types'] so frontend edits take precedence
+  try {
+    const dbTypes = Array.isArray(cache["Medicine Types"]) ? cache["Medicine Types"] : [];
+    const mergedTypesMap = new Map();
+    // first add DB types
+    dbTypes.forEach((t) => {
+      const key = String(t.value_name || t || "").trim().toLowerCase();
+      if (key) mergedTypesMap.set(key, t);
+    });
+    // then apply local overrides (overwrite)
+    (localMedicineTypeOverrides || []).forEach((lt) => {
+      const key = String(lt.value_name || "").trim().toLowerCase();
+      if (!key) return;
+      mergedTypesMap.set(key, lt);
+    });
+
+    cache["Medicine Types"] = Array.from(mergedTypesMap.values());
   } catch (e) {
     // ignore
   }
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
+  cacheTime = now;
   return cache;
 };
 
 export const getMasterOptions = (masterMap, categoryName) => {
   const fallback = DEFAULT_MASTER_OPTIONS[categoryName] || [];
-<<<<<<< HEAD
-  const dbValues = (masterMap?.[categoryName] || []).map((item) => item.value_name);
-=======
   const dbValues = (masterMap?.[categoryName] || [])
-    .filter((item) => (item?.status || "Active") !== "Inactive")
+    .filter((item) => String(item?.status || "Active").toLowerCase() === "active")
     .map((item) => item.value_name);
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   if (categoryName === "Medicine Types") {
     const merged = new Map();
     [...fallback, ...dbValues]
@@ -421,15 +569,7 @@ export const getMasterOptions = (masterMap, categoryName) => {
         const key = getCanonicalMedicineTypeKey(item);
         if (!merged.has(key)) merged.set(key, item);
       });
-<<<<<<< HEAD
     return [...merged.values()];
-=======
-    // filter out locally-removed types
-    const removed = new Set(getRemovedMasterKeys().filter((k) => String(k || "").startsWith("T::")).map((k) => k.replace(/^T::/, "")));
-    return [...merged.entries()]
-      .filter(([key]) => !removed.has(key))
-      .map(([, val]) => val);
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   }
   return [...new Set([...fallback, ...dbValues].filter(Boolean))];
 };
@@ -442,46 +582,10 @@ export const getMasterMedicineEntries = (masterMap) => {
     { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
   ];
 
-<<<<<<< HEAD
-  const combined = [...fallback, ...(masterMap?.Medicines || [])];
+  // Prefer masterMap medicines (including local overrides) before fallback so overrides replace built-ins
+  const combined = [...(masterMap?.Medicines || []), ...fallback];
   const seen = new Set();
 
-=======
-  const combined = [...fallback, ...((masterMap?.Medicines || []).filter((m) => (m?.status || "Active") !== "Inactive"))];
-  const seen = new Set();
-
-  // filter out locally-removed medicines and medicines whose type was removed
-  const removed = new Set(getRemovedMasterKeys());
-
-  // compute some lightweight diagnostics for debugging
-  try {
-    const totalCombined = combined.length;
-    const totalRemovedMed = combined.filter((item) => {
-      const medKey = `M::${makeMedicineKey(
-        String(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory || ""),
-        String(item?.meta?.dosageForm || item?.meta?.dosage_form || item?.meta?.form || "").trim(),
-        String(item?.value_name || "").trim(),
-        String(item?.meta?.strength || "").trim()
-      )}`;
-      return removed.has(medKey);
-    }).length;
-    const totalRemovedType = combined.filter((item) => {
-      const typeKey = `T::${getCanonicalMedicineTypeKey(
-        canonicalizeMedicineTypeLabel(item?.meta?.medicineType || item?.meta?.medicine_type || item?.meta?.typeCategory || "")
-      )}`;
-      return removed.has(typeKey);
-    }).length;
-
-    console.debug("getMasterMedicineEntries: diagnostics", {
-      totalCombined,
-      totalRemovedMed,
-      totalRemovedType
-    });
-  } catch (e) {
-    // ignore diagnostics failures
-  }
-
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   return combined
     .map((item) => ({
       value_name: String(item?.value_name || "").trim(),
@@ -494,17 +598,8 @@ export const getMasterMedicineEntries = (masterMap) => {
     }))
     .filter((item) => item.value_name)
     .filter((item) => {
-<<<<<<< HEAD
-=======
-      const medKey = `M::${makeMedicineKey(item.medicineType, item.dosageForm, item.value_name, item.strength)}`;
-      if (removed.has(medKey)) return false;
-      // also filter if the medicine's type is blacklisted
-      const typeKey = `T::${getCanonicalMedicineTypeKey(item.medicineType)}`;
-      if (removed.has(typeKey)) return false;
-      return true;
-    })
-    .filter((item) => {
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
+      // only include active medicines in dropdown helpers
+      if (String(item.status || "Active").toLowerCase() !== "active") return false;
       const key = `${item.value_name.toLowerCase()}::${item.medicineType.toLowerCase()}::${item.dosageForm.toLowerCase()}::${item.strength.toLowerCase()}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -553,19 +648,5 @@ export const getMergedMasterValueObjects = (masterMap, categoryName) => {
     }
   });
 
-<<<<<<< HEAD
-=======
-  // If category is Medicine Types, filter out locally-removed types
-  if (categoryName === "Medicine Types") {
-    const removed = new Set(getRemovedMasterKeys().filter((k) => String(k || "").startsWith("T::")).map((k) => k.replace(/^T::/, "")));
-    try {
-      console.debug("getMergedMasterValueObjects: Medicine Types merged count", { mergedCount: merged.size, removedCount: removed.size });
-    } catch (e) {
-      // ignore
-    }
-    return [...merged.entries()].filter(([key]) => !removed.has(key)).map(([, val]) => val);
-  }
-
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   return [...merged.values()];
 };

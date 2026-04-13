@@ -91,15 +91,9 @@ const EmployeeRegister = () => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
-<<<<<<< HEAD
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        setError("Please select a valid image file (JPEG, PNG, WebP)");
-=======
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
       if (!validTypes.includes(file.type)) {
         setError("Please select a valid image file (JPEG, PNG, GIF)");
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
         return;
       }
 
@@ -120,15 +114,6 @@ const EmployeeRegister = () => {
     }
   };
 
-<<<<<<< HEAD
-  const handleRemoveProfilePic = () => {
-    setProfilePic(null);
-    setProfilePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-=======
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
@@ -382,10 +367,6 @@ if (validationErrors.length > 0) {
       height: "120px",
       border: "2px dashed #D6E0F0",
       backgroundColor: profilePreview ? "#FFFFFF" : "#F8FAFC",
-<<<<<<< HEAD
-      position: "relative",
-=======
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       cursor: "pointer",
       overflow: "hidden",
       transition: "border-color 0.2s ease",
@@ -401,27 +382,6 @@ if (validationErrors.length > 0) {
     ) : (
       <FaUser size={38} style={{ color: "#9AA4B2" }} />
     )}
-<<<<<<< HEAD
-    {/* Camera badge */}
-    <div
-      style={{
-        position: "absolute",
-        bottom: "6px",
-        right: "6px",
-        width: "26px",
-        height: "26px",
-        borderRadius: "50%",
-        backgroundColor: "#4A70A9",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-      }}
-    >
-      <FaCamera size={12} color="#fff" />
-    </div>
-=======
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
   </div>
 
   {/* Hint text */}
@@ -440,55 +400,12 @@ if (validationErrors.length > 0) {
     type="file"
     ref={fileInputRef}
     onChange={handleProfilePicChange}
-<<<<<<< HEAD
-    accept="image/jpeg,image/jpg,image/png,image/webp"
-    className="d-none"
-  />
-
-  {/* Action buttons */}
-  <div className="mt-2 d-flex gap-2 align-items-center justify-content-center">
-    <button
-      type="button"
-      onClick={triggerFileInput}
-      className="btn btn-sm"
-      style={{
-        backgroundColor: "#EAF2FF",
-        color: "#4A70A9",
-        border: "1px solid #4A70A9",
-        borderRadius: "999px",
-        fontSize: "12px",
-        padding: "6px 12px",
-      }}
-    >
-      {profilePreview ? "Change Photo" : "Upload Photo"}
-    </button>
-
-    {profilePreview && (
-      <button
-        type="button"
-        onClick={handleRemoveProfilePic}
-        className="btn btn-sm"
-        style={{
-          backgroundColor: "#FEE2E2",
-          color: "#DC2626",
-          border: "1px solid #FCA5A5",
-          borderRadius: "999px",
-          fontSize: "12px",
-          padding: "6px 12px",
-        }}
-      >
-        Remove
-      </button>
-    )}
-  </div>
-=======
     accept="image/*"
     className="d-none"
   />
 
   {/* Action button */}
  
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
   {profilePic && (
     <p className="text-muted small mt-1">

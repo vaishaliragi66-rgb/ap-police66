@@ -17,12 +17,6 @@ const EmployeeProfile = () => {
   const [absCardUploading, setAbsCardUploading] = useState(false);
   const [absCardDeleting, setAbsCardDeleting] = useState(false);
   const [masterMap, setMasterMap] = useState({});
-<<<<<<< HEAD
-  const [abhaEditMode, setAbhaEditMode] = useState(false);
-  const [abhaValue, setAbhaValue] = useState("");
-  const [abhaSaving, setAbhaSaving] = useState(false);
-=======
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
 
   const designationOptions = getMasterOptions(masterMap, "Designations");
   const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
@@ -43,45 +37,6 @@ const EmployeeProfile = () => {
   }, [employeeId, BACKEND_URL]);
 
   useEffect(() => {
-<<<<<<< HEAD
-    if (employee) setAbhaValue(employee.ABHA || "");
-  }, [employee]);
-
-  const updateAbha = async () => {
-    const abha = (abhaValue || "").toString().trim();
-    if (abha && !/^\d{14}$/.test(abha)) {
-      alert("ABHA must be a 14 digit numeric string");
-      return;
-    }
-    setAbhaSaving(true);
-    try {
-      const res = await axios.put(`${BACKEND_URL}/employee-api/update-profile/${employeeId}`, { ABHA: abha || null });
-      if (res.data?.employee) {
-        setEmployee(res.data.employee);
-        setEditData(res.data.employee);
-      } else {
-        setEmployee((prev) => ({ ...prev, ABHA: abha }));
-        setEditData((prev) => ({ ...prev, ABHA: abha }));
-      }
-      setAbhaEditMode(false);
-      alert("ABHA updated successfully");
-    } catch (err) {
-      console.error(err);
-      const m = err?.response?.data?.message || "Failed to update ABHA";
-      alert(m);
-    } finally {
-      setAbhaSaving(false);
-    }
-  };
-
-  const cancelAbhaEdit = () => {
-    setAbhaValue(employee?.ABHA || "");
-    setAbhaEditMode(false);
-  };
-
-  useEffect(() => {
-=======
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     let mounted = true;
     const loadMaster = async () => {
       try {
@@ -106,16 +61,6 @@ const EmployeeProfile = () => {
   };
 
   const handleSave = () => {
-<<<<<<< HEAD
-    // Validate ABHA (if entered)
-    const abha = (editData.ABHA || "").toString().trim();
-    if (abha && !/^\d{14}$/.test(abha)) {
-      alert("ABHA must be a 14 digit numeric string");
-      return;
-    }
-
-=======
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     axios.put(`${BACKEND_URL}/employee-api/update-profile/${employeeId}`, editData)
       .then((res) => {
         setEmployee(res.data.employee);
@@ -123,12 +68,7 @@ const EmployeeProfile = () => {
         alert("Profile updated successfully");
       })
       .catch((err) => {
-<<<<<<< HEAD
-        const m = err?.response?.data?.message || "Failed to update profile";
-        alert(m);
-=======
         alert("Failed to update profile");
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
         console.error(err);
       });
   };
@@ -459,60 +399,6 @@ const EmployeeProfile = () => {
         )}
       </p>
 
-<<<<<<< HEAD
-      <p className="mb-2" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <strong>ABHA Number:</strong>{" "}
-        {isEditing ? (
-          <input
-            type="text"
-            maxLength={14}
-            className="form-control d-inline-block"
-            style={{ width: "auto", fontSize: "14px" }}
-            value={editData.ABHA || ""}
-            onChange={(e) => setEditData({ ...editData, ABHA: e.target.value.replace(/[^0-9]/g, "") })}
-          />
-        ) : abhaEditMode ? (
-          <span className="d-inline-flex align-items-center" style={{ gap: 8 }}>
-            <input
-              type="text"
-              maxLength={14}
-              className="form-control d-inline-block"
-              style={{ width: "auto", fontSize: "14px" }}
-              value={abhaValue}
-              onChange={(e) => setAbhaValue(e.target.value.replace(/[^0-9]/g, ""))}
-            />
-            <button
-              className="btn btn-success btn-sm"
-              onClick={updateAbha}
-              disabled={abhaSaving}
-              style={{ borderRadius: "8px", padding: "6px 10px" }}
-            >
-              {abhaSaving ? "Saving..." : "Save"}
-            </button>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={cancelAbhaEdit}
-              style={{ borderRadius: "8px", padding: "6px 10px" }}
-            >
-              Cancel
-            </button>
-          </span>
-        ) : (
-          <>
-            <span style={{ color: "#6B7280" }}>{employee.ABHA || "-"}</span>
-            <button
-              className="btn btn-outline-primary btn-sm ms-2"
-              onClick={() => setAbhaEditMode(true)}
-              style={{ borderRadius: "8px", padding: "6px 10px" }}
-            >
-              {employee.ABHA ? "Edit ABHA" : "Add ABHA"}
-            </button>
-          </>
-        )}
-      </p>
-
-=======
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
       <div className="mt-3">
         <strong>ABS Card:</strong>{" "}
         {absCardUrl ? (

@@ -18,7 +18,7 @@ const InstituteLogin = () => {
   const navigate = useNavigate();
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
+  const resolvedBackend = BACKEND_URL || (axios.defaults && axios.defaults.baseURL) || 'http://localhost:6100';
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -54,7 +54,7 @@ const InstituteLogin = () => {
       }
 
       const res = await axios.post(
-        `${BACKEND_URL}${endpoint}`,
+        `${resolvedBackend}${endpoint}`,
         {
           ...formData,
           Email_ID: normalizedEmail,

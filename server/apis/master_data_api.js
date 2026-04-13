@@ -1499,19 +1499,31 @@ router.post("/medicines", verifyToken, requireInstituteAdmin, async (req, res) =
       return res.status(404).json({ message: "Medicines category not found" });
     }
 
-    // Check for duplicate (same name + type + strength combination)
-    const duplicate = await MasterValue.findOne({
+    // Check if a value with same normalized name already exists for this category
+    const existingName = await MasterValue.findOne({
       Institute_ID: instituteId,
       category_id: medicinesCategory._id,
-      normalized_value: normalize(medicineName),
-      "meta.kind": "medicine",
-      "meta.medicineType": medicineType,
-      "meta.dosageForm": dosageForm,
-      "meta.strength": strength
+      normalized_value: normalize(medicineName)
     });
 
-    if (duplicate) {
-      return res.status(409).json({ message: "Medicine with this type and strength already exists" });
+    if (existingName) {
+      // If an exact medicine (including type/strength) already exists, report conflict
+      const exactMatch = await MasterValue.findOne({
+        Institute_ID: instituteId,
+        category_id: medicinesCategory._id,
+        normalized_value: normalize(medicineName),
+        "meta.kind": "medicine",
+        "meta.medicineType": medicineType,
+        "meta.dosageForm": dosageForm,
+        "meta.strength": strength
+      });
+
+      if (exactMatch) {
+        return res.status(409).json({ message: "Medicine with this type and strength already exists" });
+      }
+
+      // Name exists but different meta; return informative conflict to avoid duplicate key error
+      return res.status(409).json({ message: "Medicine name already exists with different attributes" });
     }
 
     const created = await MasterValue.create({
@@ -1533,6 +1545,10 @@ router.post("/medicines", verifyToken, requireInstituteAdmin, async (req, res) =
     res.status(201).json(created);
   } catch (err) {
     console.error("POST /master-data-api/medicines error", err);
+    // Handle duplicate key errors more gracefully
+    if (err?.code === 11000 || (err?.message || "").includes('duplicate key')) {
+      return res.status(409).json({ message: "Medicine name already exists" });
+    }
     res.status(500).json({ message: "Failed to add medicine", error: err.message });
   }
 });

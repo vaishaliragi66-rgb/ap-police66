@@ -26,10 +26,6 @@ const OthersLayout = () => {
   const menu = [
     { label: "Medicines Issued Register", path: "/institutes/medicines-issued-register", icon: <FaPills /> },
     { label: "Employee Reports", path: "/institutions/reports", icon: <FaFileMedical /> },
-<<<<<<< HEAD
-=======
-    { label: "To Be Prescribed", path: "/institutes/to-be-prescribed-medicines", icon: <FaPills /> },
->>>>>>> 808f4de89d9dec3056674d7f8be3c42218d2c5ba
     { label: "Ledger", path: "/institutes/ledger", icon: <FaClipboardList /> },
     { label: "Indent", path: "/institutes/indent", icon: <FaClipboardList /> },
     { label: "Main Store", path: "/institutions/main-store", icon: <FaWarehouse /> },
