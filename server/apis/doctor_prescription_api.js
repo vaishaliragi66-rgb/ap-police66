@@ -120,4 +120,124 @@ router.get("/to-be-prescribed/all", verifyToken, async (req, res) => {
   }
 });
 
+// =======================================================
+// DOWNLOAD TO-BE-PRESCRIBED REPORT
+// =======================================================
+// =======================================================
+// DOWNLOAD TO-BE-PRESCRIBED REPORT
+// =======================================================
+router.get("/to-be-prescribed/download", verifyToken, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { format = 'csv', doctorId, fromDate, toDate } = req.query;
+
+    let query = { Institute: instituteId };
+
+    if (doctorId) query['prescription_id.created_by'] = doctorId;
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (toDate) query.createdAt.$lte = new Date(toDate);
+    }
+
+    const records = await ToBePrescribedMedicine.find(query)
+      .populate('Institute', 'Institute_Name')
+      .populate('Employee', 'Name ABS_NO')
+      .populate('FamilyMember', 'Name Relationship')
+      .populate('prescription_id', 'created_by')
+      .sort({ createdAt: -1 });
+
+    if (format === 'csv') {
+      const csvData = [
+        ['Doctor Name', 'Patient Name', 'Medicine Name', 'Type', 'Dosage Form', 'Strength', 'Morning', 'Afternoon', 'Night', 'Duration', 'Quantity', 'Date'],
+        ...records.map(record => [
+          record.prescription_id?.created_by || 'Unknown',
+          record.IsFamilyMember && record.FamilyMember
+            ? `${record.FamilyMember.Name} (${record.FamilyMember.Relationship})`
+            : record.Employee?.Name || 'Unknown',
+          record.Medicine_Name,
+          record.Type || '',
+          record.Dosage_Form || '',
+          record.Strength || '',
+          record.Morning ? 'Yes' : 'No',
+          record.Afternoon ? 'Yes' : 'No',
+          record.Night ? 'Yes' : 'No',
+          record.Duration || '',
+          record.Quantity || 0,
+          new Date(record.createdAt).toLocaleDateString('en-GB')
+        ])
+      ];
+
+      const csvContent = csvData.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="to-be-prescribed-medicines.csv"');
+      res.send(csvContent);
+    } else if (format === 'pdf') {
+      // For PDF, we'll use a simple HTML to PDF conversion
+      const htmlContent = `
+        <html>
+          <head>
+            <style>
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              h1 { color: #333; }
+            </style>
+          </head>
+          <body>
+            <h1>To Be Prescribed Medicines Report</h1>
+            <p>Institute: ${records[0]?.Institute?.Institute_Name || 'N/A'}</p>
+            <p>Generated on: ${new Date().toLocaleDateString()}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Doctor Name</th>
+                  <th>Patient Name</th>
+                  <th>Medicine Name</th>
+                  <th>Type</th>
+                  <th>Dosage</th>
+                  <th>Duration</th>
+                  <th>Quantity</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${records.map(record => `
+                  <tr>
+                    <td>${record.prescription_id?.created_by || 'Unknown'}</td>
+                    <td>${record.IsFamilyMember && record.FamilyMember
+                      ? `${record.FamilyMember.Name} (${record.FamilyMember.Relationship})`
+                      : record.Employee?.Name || 'Unknown'}</td>
+                    <td>${record.Medicine_Name}</td>
+                    <td>${record.Type || ''}</td>
+                    <td>${[
+                      record.Morning && 'Morning',
+                      record.Afternoon && 'Afternoon',
+                      record.Night && 'Night'
+                    ].filter(Boolean).join(', ') || '-'}</td>
+                    <td>${record.Duration || ''}</td>
+                    <td>${record.Quantity || 0}</td>
+                    <td>${new Date(record.createdAt).toLocaleDateString('en-GB')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Disposition', 'attachment; filename="to-be-prescribed-medicines.html"');
+      res.send(htmlContent);
+    } else {
+      res.status(400).json({ message: 'Invalid format. Use csv or pdf.' });
+    }
+
+  } catch (err) {
+    console.error("Error generating report:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

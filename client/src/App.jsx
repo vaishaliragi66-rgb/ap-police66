@@ -49,6 +49,7 @@ import ForgotPassword from "./components/auth/ForgotPassword";
 import DiseaseAnalyticsHome from "./components/institutes/DiseaseAnalyticsHome";
 import DiseaseAnalyticsTable from "./components/institutes/DiseaseAnalyticsTable";
 import DiseaseAnalyticsDetails from "./components/institutes/DiseaseAnalyticsDetails";
+import ToBePrescribedReport from "./components/institutes/ToBePrescribedReport";
 import RiskHotspots from "./components/institutes/RiskHotspots";
 import Predict from "./components/institutes/Predict";
 import ForecastDashboard from "./components/institutes/ForecastTable";
@@ -230,6 +231,10 @@ function App() {
             {
               path: "/institutes/master-data",
               element: <MasterData />
+            },
+            {
+              path: "/institutes/to-be-prescribed-report",
+              element: <ToBePrescribedReport />
             }
           ]
         },

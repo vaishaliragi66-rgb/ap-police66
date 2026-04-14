@@ -108,7 +108,7 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
-    Medicines: [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+    Medicines: [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false, toBePrescribed: false, IsToBePrescribed: false }],
     Notes: "",
     Disease_Name: ""
   });
@@ -983,7 +983,7 @@ const relevantDiseases = diseases.filter((d) => {
       ...prev,
       Medicines: [
         ...prev.Medicines,
-        { Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, _uid: `${Date.now()}-${Math.random().toString(36).slice(2,8)}` }
+        { Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false, toBePrescribed: false, IsToBePrescribed: false, _uid: `${Date.now()}-${Math.random().toString(36).slice(2,8)}` }
       ]
     }));
 
@@ -1022,7 +1022,8 @@ const relevantDiseases = diseases.filter((d) => {
         Night: med.Night,
         Duration: med.Duration,
         Remarks: med.Remarks,
-        Quantity: med.Quantity
+        Quantity: med.Quantity,
+        ToBePrescribed: med.ToBePrescribed || med.toBePrescribed || med.IsToBePrescribed || false
       }));
 
     // Removed validation - allow custom medicine names
@@ -1035,32 +1036,19 @@ const relevantDiseases = diseases.filter((d) => {
 
     // Medicines are now optional - removed validation
     
-    await axios.post(`${BACKEND_URL}/api/medical-actions`, {
+    const token = localStorage.getItem("instituteToken") || localStorage.getItem("token");
+    await axios.post(`${BACKEND_URL}/doctor-prescription-api/add`, {
       Institute_ID: formData.Institute_ID,
-      employee_id: formData.Employee_ID,
+      Employee_ID: formData.Employee_ID,
+      IsFamilyMember: formData.IsFamilyMember,
+      FamilyMember_ID: formData.IsFamilyMember
+        ? formData.FamilyMember_ID
+        : null,
       visit_id: formData.visit_id || null,
-      action_type: "DOCTOR_PRESCRIPTION",
-      source: "DOCTOR",
-      data: {
-        IsFamilyMember: formData.IsFamilyMember,
-        FamilyMember_ID: formData.IsFamilyMember
-          ? formData.FamilyMember_ID
-          : null,
-          medicines: selectedMedicines.map(m => ({
-            Medicine_Name: m.Medicine_Name,
-            Type: m.Type,
-            Dosage_Form: m.Dosage_Form || "",
-            FoodTiming: m.FoodTiming,
-            Strength: m.Strength,
-            Morning: m.Morning,
-            Afternoon: m.Afternoon,
-            Night: m.Night,
-            Duration: m.Duration,
-            Remarks: m.Remarks,
-            Quantity: m.Quantity
-          })),
-        notes: formData.Notes
-      }
+      Medicines: selectedMedicines,
+      Notes: formData.Notes
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     await fetchTopTwoPrescriptions(
@@ -1104,7 +1092,7 @@ const relevantDiseases = diseases.filter((d) => {
       Employee_ID: "",
       IsFamilyMember: false,
       FamilyMember_ID: "",
-      Medicines: [{ Medicine_Name: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+      Medicines: [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false, toBePrescribed: false, IsToBePrescribed: false }],
       Notes: "",
       Disease_Name: ""
     });
@@ -1921,9 +1909,12 @@ if (validXrays.length === 0) {
                                 Night: med.Night || false,
                                 Duration: med.Duration || "",
                                 Remarks: med.Remarks || "",
-                                Quantity: med.Quantity || 0
+                                Quantity: med.Quantity || 0,
+                                ToBePrescribed: med.ToBePrescribed || med.toBePrescribed || med.IsToBePrescribed || false,
+                                toBePrescribed: med.ToBePrescribed || med.toBePrescribed || med.IsToBePrescribed || false,
+                                IsToBePrescribed: med.ToBePrescribed || med.toBePrescribed || med.IsToBePrescribed || false
                               }))
-                            : [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0 }],
+                            : [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false, toBePrescribed: false, IsToBePrescribed: false }],
                           Notes: prescriptionData.notes || prev.Notes
                         }));
                       }
@@ -2109,6 +2100,7 @@ if (validXrays.length === 0) {
             <select
               className="form-select"
               value={med.Medicine_Type}
+              disabled={med.ToBePrescribed}
               onChange={(e) => {
                 const copy = [...formData.Medicines];
                 copy[i].Medicine_Type = e.target.value;
@@ -2122,7 +2114,9 @@ if (validXrays.length === 0) {
                 setFormData(prev => ({ ...prev, Medicines: copy }));
               }}
             >
-              <option value="">Select Type</option>
+              <option value="">
+                {med.ToBePrescribed ? "Disabled (Manual Entry)" : "Select Type"}
+              </option>
               {medicineTypeOptions.map((item) => (
                 <option key={item} value={item}>{item}</option>
               ))}
@@ -2134,7 +2128,7 @@ if (validXrays.length === 0) {
             <select
               className="form-select"
               value={med.Dosage_Form}
-              disabled={!med.Medicine_Type}
+              disabled={!med.Medicine_Type || med.ToBePrescribed}
               onChange={(e) => {
                 const copy = [...formData.Medicines];
                 copy[i].Dosage_Form = e.target.value;
@@ -2146,7 +2140,14 @@ if (validXrays.length === 0) {
                 setFormData(prev => ({ ...prev, Medicines: copy }));
               }}
             >
-              <option value="">{med.Medicine_Type ? "Select Dosage Form" : "Select Medicine Type First"}</option>
+              <option value="">
+                {med.ToBePrescribed
+                  ? "Disabled (Manual Entry)"
+                  : med.Medicine_Type
+                    ? "Select Dosage Form"
+                    : "Select Medicine Type First"
+                }
+              </option>
               {dosageFormOptions.map((item) => (
                 <option key={item} value={item}>{item}</option>
               ))}
@@ -2155,24 +2156,38 @@ if (validXrays.length === 0) {
 
           <div className="col-md-2">
             <label className="form-label fw-semibold">Medicine</label>
-            <select
-              className="form-select"
-              value={med.Medicine_Name}
-              disabled={!med.Medicine_Type}
-              onChange={(e) => {
-                const copy = [...formData.Medicines];
-                copy[i].Medicine_Name = e.target.value;
-                if (!getStrengthOptions(e.target.value, copy[i].Medicine_Type, copy[i].Dosage_Form).includes(copy[i].Strength)) {
-                  copy[i].Strength = "";
-                }
-                setFormData(prev => ({ ...prev, Medicines: copy }));
-              }}
-            >
-              <option value="">{med.Medicine_Type ? "Select Medicine" : "Select Medicine Type First"}</option>
-              {getMedicineOptionsByType(med.Medicine_Type, med.Dosage_Form).map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
+            {med.ToBePrescribed ? (
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Type medicine name"
+                value={med.Medicine_Name}
+                onChange={(e) => {
+                  const copy = [...formData.Medicines];
+                  copy[i].Medicine_Name = e.target.value;
+                  setFormData(prev => ({ ...prev, Medicines: copy }));
+                }}
+              />
+            ) : (
+              <select
+                className="form-select"
+                value={med.Medicine_Name}
+                disabled={!med.Medicine_Type}
+                onChange={(e) => {
+                  const copy = [...formData.Medicines];
+                  copy[i].Medicine_Name = e.target.value;
+                  if (!getStrengthOptions(e.target.value, copy[i].Medicine_Type, copy[i].Dosage_Form).includes(copy[i].Strength)) {
+                    copy[i].Strength = "";
+                  }
+                  setFormData(prev => ({ ...prev, Medicines: copy }));
+                }}
+              >
+                <option value="">{med.Medicine_Type ? "Select Medicine" : "Select Medicine Type First"}</option>
+                {getMedicineOptionsByType(med.Medicine_Type, med.Dosage_Form).map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="col-md-2">
@@ -2195,37 +2210,63 @@ if (validXrays.length === 0) {
 
           <div className="col-md-2">
             <label className="form-label fw-semibold">Strength</label>
-            <select
-              className="form-select"
-              value={med.Strength || ""}
-              disabled={!med.Medicine_Name}
-              onChange={(e) => {
-                const copy = [...formData.Medicines];
-                copy[i].Strength = e.target.value;
-                setFormData(prev => ({ ...prev, Medicines: copy }));
-              }}
-            >
-              <option value="">
-                {getStrengthOptions(med.Medicine_Name, med.Medicine_Type, med.Dosage_Form).length > 0
-                  ? "Select Strength"
-                  : "Not specified"}
-              </option>
-              {getStrengthOptions(med.Medicine_Name, med.Medicine_Type, med.Dosage_Form).map((strength, idx) => (
-                <option key={`${med._uid || i}-str-${idx}`} value={strength}>
-                  {strength}
+            {med.ToBePrescribed ? (
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g., 500mg, 5ml"
+                value={med.Strength || ""}
+                onChange={(e) => {
+                  const copy = [...formData.Medicines];
+                  copy[i].Strength = e.target.value;
+                  setFormData(prev => ({ ...prev, Medicines: copy }));
+                }}
+              />
+            ) : (
+              <select
+                className="form-select"
+                value={med.Strength || ""}
+                disabled={!med.Medicine_Name}
+                onChange={(e) => {
+                  const copy = [...formData.Medicines];
+                  copy[i].Strength = e.target.value;
+                  setFormData(prev => ({ ...prev, Medicines: copy }));
+                }}
+              >
+                <option value="">
+                  {getStrengthOptions(med.Medicine_Name, med.Medicine_Type, med.Dosage_Form).length > 0
+                    ? "Select Strength"
+                    : "Not specified"}
                 </option>
-              ))}
-            </select>
+                {getStrengthOptions(med.Medicine_Name, med.Medicine_Type, med.Dosage_Form).map((strength, idx) => (
+                  <option key={`${med._uid || i}-str-${idx}`} value={strength}>
+                    {strength}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
-          <div className="col-md-4">
-            <button
-              type="button"
-              className="btn btn-outline-danger w-100"
-              onClick={() => removeMedicine(i)}
-            >
-              ✕ Remove Medicine
-            </button>
+          <div className="col-md-2">
+            <label className="form-label fw-semibold">To Be Prescribed</label>
+            <div className="form-check d-flex align-items-center h-100">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                id={`toBePrescribed-${i}`}
+                checked={med.ToBePrescribed || med.toBePrescribed || med.IsToBePrescribed || false}
+                onChange={(e) => {
+                  const copy = [...formData.Medicines];
+                  copy[i].ToBePrescribed = e.target.checked;
+                  copy[i].toBePrescribed = e.target.checked;
+                  copy[i].IsToBePrescribed = e.target.checked;
+                  setFormData(prev => ({ ...prev, Medicines: copy }));
+                }}
+              />
+              <label className="form-check-label ms-2" htmlFor={`toBePrescribed-${i}`}>
+                Yes
+              </label>
+            </div>
           </div>
         </div>
 
