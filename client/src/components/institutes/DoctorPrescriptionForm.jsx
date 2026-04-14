@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData";
+import SARCPLPrescriptionReport from "./SARCPLPrescriptionReport";
 
 const DoctorPrescriptionForm = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
@@ -34,6 +35,7 @@ const DoctorPrescriptionForm = () => {
   const [inventoryMedicines, setInventoryMedicines] = useState([]);
   const [medicineStrengths, setMedicineStrengths] = useState({});
   const notesTextareaRef = React.useRef(null);
+  const [showSarcplPreview, setShowSarcplPreview] = useState(false);
 const [xrayMaster, setXrayMaster] = useState([]);
 const [xrayData, setXrayData] = useState({
   Xrays: [{ Xray_ID: "", Xray_Type: "" }]
@@ -1579,229 +1581,302 @@ if (validXrays.length === 0) {
             <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", zIndex: 2050 }}>
               <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060 }}>
                 <div className="modal-content">
-                  <div className="modal-header bg-dark text-white">
-                    <h5 className="modal-title">Prescription Report</h5>
+                  <div className="modal-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                      <h5 className="modal-title mb-0">Prescription Report</h5>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light"
+                        onClick={() => setShowSarcplPreview((s) => !s)}
+                      >
+                        {showSarcplPreview ? "Back to Details" : "Preview SARCPL"}
+                      </button>
+                    </div>
+
                     <button
                       type="button"
                       className="btn-close btn-close-white"
-                      onClick={() => setSelectedPrescriptionReport(null)}
+                      onClick={() => { setSelectedPrescriptionReport(null); setShowSarcplPreview(false); }}
                     />
                   </div>
 
                   <div className="modal-body">
-                    {(() => {
-                      const medicines = getPrescriptionMedicines(selectedPrescriptionReport);
-                      const tests = selectedPrescriptionReport?.relatedTests || [];
-                      const xrays = selectedPrescriptionReport?.relatedXrays || [];
-                      const pharmacyNotes = selectedPrescriptionReport?.pharmacyNotes || [];
+                    {showSarcplPreview ? (
+                      (() => {
+                        // Build reportData from selectedPrescriptionReport and current context
+                        const buildReportData = (prescription) => {
+                          const hospital = {
+                            name: prescription?.instituteDisplayName || instituteName || (localStorage.getItem("instituteName") || "SARCPL"),
+                            address: "",
+                            contact: "",
+                            email: "",
+                            logo: ""
+                          };
 
-                      return (
-                        <>
-                          <div className="row g-3 mb-3">
-                            <div className="col-md-6">
-                              <strong>Patient:</strong> {getPrescriptionReportForLabel(selectedPrescriptionReport)}
-                            </div>
-                            <div className="col-md-6 text-md-end">
-                              <strong>Date:</strong> {formatDateTime(getPrescriptionTimestamp(selectedPrescriptionReport))}
-                            </div>
-                            <div className="col-md-6">
-                              <strong>Institute:</strong> {selectedPrescriptionReport?.instituteDisplayName || instituteName || "-"}
-                            </div>
-                            <div className="col-md-6 text-md-end">
-                              <strong>ABS No:</strong> {selectedEmployee?.ABS_NO || employeeProfile?.ABS_NO || "-"}
-                            </div>
+                          const patient = {
+                            name: getPrescriptionReportForLabel(prescription),
+                            age: selectedEmployee?.age || employeeProfile?.Age || "",
+                            gender: selectedEmployee?.Gender || employeeProfile?.Gender || "",
+                            absNo: selectedEmployee?.ABS_NO || employeeProfile?.ABS_NO || "",
+                            mrn: selectedEmployee?._id || employeeProfile?._id || "",
+                            bloodGroup: employeeProfile?.Blood_Group || ""
+                          };
+
+                          const encounter = {
+                            doctor: (prescription?.doctor || prescription?.created_by || ""),
+                            department: prescription?.department || "",
+                            date: getPrescriptionTimestamp(prescription),
+                            visitType: prescription?.visit_type || prescription?.visitType || "",
+                            prescriptionId: prescription?.visit_id || prescription?._id || prescription?.created_at || ""
+                          };
+
+                          const vitals = (selectedVisit?.Vitals || formData?.Vitals || {});
+
+                          const investigations = {
+                            tests: (prescription?.relatedTests || []).map(t => t?.Test_Name || t?.Test_ID?.Test_Name || ""),
+                            xrays: (prescription?.relatedXrays || []).map(x => x?.Xray_Type || x?.Xray_ID || ""),
+                            notes: ""
+                          };
+
+                          const diagnosis = {
+                            primary: prescription?.doctorNotes || prescription?.data?.notes || "",
+                            icd: prescription?.icd || "",
+                            notes: prescription?.doctorNotes || prescription?.data?.notes || ""
+                          };
+
+                          const prescriptionsArr = (getPrescriptionMedicines(prescription) || []).map(m => ({
+                            name: m?.Medicine_Name || "",
+                            dosage: m?.Strength || m?.dosage || "",
+                            frequency: [m?.Morning ? "Morning" : null, m?.Afternoon ? "Afternoon" : null, m?.Night ? "Night" : null].filter(Boolean).join("/") || (m?.Frequency || m?.Type || ""),
+                            duration: m?.Duration || "",
+                            instructions: m?.Remarks || m?.FoodTiming || ""
+                          }));
+
+                          return { hospital, patient, encounter, vitals, investigations, diagnosis, prescriptions: prescriptionsArr };
+                        };
+
+                        const reportData = buildReportData(selectedPrescriptionReport);
+                        return (
+                          <div style={{ minHeight: '60vh' }}>
+                            <SARCPLPrescriptionReport reportData={reportData} />
                           </div>
+                        );
+                      })()
+                    ) : (
+                      (() => {
+                        const medicines = getPrescriptionMedicines(selectedPrescriptionReport);
+                        const tests = selectedPrescriptionReport?.relatedTests || [];
+                        const xrays = selectedPrescriptionReport?.relatedXrays || [];
+                        const pharmacyNotes = selectedPrescriptionReport?.pharmacyNotes || [];
 
-                          <div className="table-responsive">
-                            <table className="table table-bordered align-middle">
-                              <thead className="table-light">
-                                <tr>
-                                  <th>#</th>
-                                  <th>Medicine</th>
-                                  <th>Source</th>
-                                  <th>Type</th>
-                                  <th>Food Timing</th>
-                                  <th>Strength</th>
-                                  <th>Morning</th>
-                                  <th>Afternoon</th>
-                                  <th>Night</th>
-                                  <th>Duration</th>
-                                  <th>Quantity</th>
-                                  <th>Remarks</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {medicines.length > 0 ? (
-                                  medicines.map((medicine, index) => (
-                                    <tr key={`${medicine?.Medicine_Name || "medicine"}-${index}`}>
-                                      <td>{index + 1}</td>
-                                      <td>{medicine?.Medicine_Name || "-"}</td>
-                                      <td>
-                                        <span className={`badge ${medicine?._source === "Pharmacy" ? "bg-info text-dark" : "bg-secondary"}`}>
-                                          {medicine?._source || "Doctor"}
-                                        </span>
-                                      </td>
-                                      <td>{medicine?.Type || "-"}</td>
-                                      <td>{medicine?.FoodTiming || "-"}</td>
-                                      <td>{medicine?.Strength || "-"}</td>
-                                      <td>{formatDoseCell(medicine?.Morning)}</td>
-                                      <td>{formatDoseCell(medicine?.Afternoon)}</td>
-                                      <td>{formatDoseCell(medicine?.Night)}</td>
-                                      <td>{medicine?.Duration || "-"}</td>
-                                      <td>{medicine?.Quantity || "-"}</td>
-                                      <td>{medicine?.Remarks || "-"}</td>
-                                    </tr>
-                                  ))
-                                ) : (
+                        return (
+                          <>
+                            <div className="row g-3 mb-3">
+                              <div className="col-md-6">
+                                <strong>Patient:</strong> {getPrescriptionReportForLabel(selectedPrescriptionReport)}
+                              </div>
+                              <div className="col-md-6 text-md-end">
+                                <strong>Date:</strong> {formatDateTime(getPrescriptionTimestamp(selectedPrescriptionReport))}
+                              </div>
+                              <div className="col-md-6">
+                                <strong>Institute:</strong> {selectedPrescriptionReport?.instituteDisplayName || instituteName || "-"}
+                              </div>
+                              <div className="col-md-6 text-md-end">
+                                <strong>ABS No:</strong> {selectedEmployee?.ABS_NO || employeeProfile?.ABS_NO || "-"}
+                              </div>
+                            </div>
+
+                            <div className="table-responsive">
+                              <table className="table table-bordered align-middle">
+                                <thead className="table-light">
                                   <tr>
-                                    <td colSpan="12" className="text-center text-muted">
-                                      No medicine details available
-                                    </td>
+                                    <th>#</th>
+                                    <th>Medicine</th>
+                                    <th>Source</th>
+                                    <th>Type</th>
+                                    <th>Food Timing</th>
+                                    <th>Strength</th>
+                                    <th>Morning</th>
+                                    <th>Afternoon</th>
+                                    <th>Night</th>
+                                    <th>Duration</th>
+                                    <th>Quantity</th>
+                                    <th>Remarks</th>
                                   </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
+                                </thead>
+                                <tbody>
+                                  {medicines.length > 0 ? (
+                                    medicines.map((medicine, index) => (
+                                      <tr key={`${medicine?.Medicine_Name || "medicine"}-${index}`}>
+                                        <td>{index + 1}</td>
+                                        <td>{medicine?.Medicine_Name || "-"}</td>
+                                        <td>
+                                          <span className={`badge ${medicine?._source === "Pharmacy" ? "bg-info text-dark" : "bg-secondary"}`}>
+                                            {medicine?._source || "Doctor"}
+                                          </span>
+                                        </td>
+                                        <td>{medicine?.Type || "-"}</td>
+                                        <td>{medicine?.FoodTiming || "-"}</td>
+                                        <td>{medicine?.Strength || "-"}</td>
+                                        <td>{formatDoseCell(medicine?.Morning)}</td>
+                                        <td>{formatDoseCell(medicine?.Afternoon)}</td>
+                                        <td>{formatDoseCell(medicine?.Night)}</td>
+                                        <td>{medicine?.Duration || "-"}</td>
+                                        <td>{medicine?.Quantity || "-"}</td>
+                                        <td>{medicine?.Remarks || "-"}</td>
+                                      </tr>
+                                    ))
+                                  ) : (
+                                    <tr>
+                                      <td colSpan="12" className="text-center text-muted">
+                                        No medicine details available
+                                      </td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
 
-                          <div className="row g-3 mt-1">
-                            <div className="col-md-6">
-                              <div className="border rounded h-100 p-3 bg-light">
-                                <div className="fw-semibold mb-2">Tests Prescribed</div>
-                                {tests.length > 0 ? (
-                                  <div className="table-responsive">
-                                    <table className="table table-sm align-middle mb-0">
-                                      <thead>
-                                        <tr>
-                                          <th>Test</th>
-                                          <th>Status</th>
-                                          <th className="text-end">Report</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {tests.map((test, index) => {
-                                          const result = test?.matchedResult;
-                                          const canView =
-                                            isTestResultOut(result) &&
-                                            Array.isArray(result?.Reports) &&
-                                            result.Reports.length > 0;
+                            <div className="row g-3 mt-1">
+                              <div className="col-md-6">
+                                <div className="border rounded h-100 p-3 bg-light">
+                                  <div className="fw-semibold mb-2">Tests Prescribed</div>
+                                  {tests.length > 0 ? (
+                                    <div className="table-responsive">
+                                      <table className="table table-sm align-middle mb-0">
+                                        <thead>
+                                          <tr>
+                                            <th>Test</th>
+                                            <th>Status</th>
+                                            <th className="text-end">Report</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {tests.map((test, index) => {
+                                            const result = test?.matchedResult;
+                                            const canView =
+                                              isTestResultOut(result) &&
+                                              Array.isArray(result?.Reports) &&
+                                              result.Reports.length > 0;
 
-                                          return (
-                                            <tr key={`${test?.Test_ID || test?.Test_Name || "test"}-${index}`}>
-                                              <td>{test?.Test_Name || test?.Test_ID?.Test_Name || "Test"}</td>
-                                              <td>
-                                                <span className={`badge ${isTestResultOut(result) ? "bg-success" : "bg-warning text-dark"}`}>
-                                                  {isTestResultOut(result) ? "result out" : "pending"}
-                                                </span>
-                                              </td>
-                                              <td className="text-end">
-                                                {canView ? (
-                                                  <button
-                                                    type="button"
-                                                    className="btn btn-sm btn-outline-primary"
-                                                    onClick={() => {
-                                                      const url = resolveUrl(result?.Reports?.[0]?.url);
-                                                      if (url) {
-                                                        window.open(url, "_blank");
-                                                      }
-                                                    }}
-                                                  >
-                                                    View
-                                                  </button>
-                                                ) : (
-                                                  <span className="text-muted small">Not available</span>
-                                                )}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                ) : (
-                                  <div className="text-muted small">No tests prescribed</div>
-                                )}
+                                            return (
+                                              <tr key={`${test?.Test_ID || test?.Test_Name || "test"}-${index}`}>
+                                                <td>{test?.Test_Name || test?.Test_ID?.Test_Name || "Test"}</td>
+                                                <td>
+                                                  <span className={`badge ${isTestResultOut(result) ? "bg-success" : "bg-warning text-dark"}`}>
+                                                    {isTestResultOut(result) ? "result out" : "pending"}
+                                                  </span>
+                                                </td>
+                                                <td className="text-end">
+                                                  {canView ? (
+                                                    <button
+                                                      type="button"
+                                                      className="btn btn-sm btn-outline-primary"
+                                                      onClick={() => {
+                                                        const url = resolveUrl(result?.Reports?.[0]?.url);
+                                                        if (url) {
+                                                          window.open(url, "_blank");
+                                                        }
+                                                      }}
+                                                    >
+                                                      View
+                                                    </button>
+                                                  ) : (
+                                                    <span className="text-muted small">Not available</span>
+                                                  )}
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  ) : (
+                                    <div className="text-muted small">No tests prescribed</div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="col-md-6">
+                                <div className="border rounded h-100 p-3 bg-light">
+                                  <div className="fw-semibold mb-2">X-rays Prescribed</div>
+                                  {xrays.length > 0 ? (
+                                    <div className="table-responsive">
+                                      <table className="table table-sm align-middle mb-0">
+                                        <thead>
+                                          <tr>
+                                            <th>X-ray</th>
+                                            <th>Status</th>
+                                            <th className="text-end">Report</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {xrays.map((xray, index) => {
+                                            const result = xray?.matchedResult;
+                                            const canView =
+                                              isXrayResultOut(result) &&
+                                              Array.isArray(result?.Reports) &&
+                                              result.Reports.length > 0;
+
+                                            return (
+                                              <tr key={`${xray?.Xray_ID || xray?.Xray_Type || "xray"}-${index}`}>
+                                                <td>
+                                                  {xray?.Xray_Type || "X-ray"}
+                                                  {xray?.Body_Part ? ` (${xray.Body_Part})` : ""}
+                                                </td>
+                                                <td>
+                                                  <span className={`badge ${isXrayResultOut(result) ? "bg-success" : "bg-warning text-dark"}`}>
+                                                    {isXrayResultOut(result) ? "result out" : "pending"}
+                                                  </span>
+                                                </td>
+                                                <td className="text-end">
+                                                  {canView ? (
+                                                    <button
+                                                      type="button"
+                                                      className="btn btn-sm btn-outline-primary"
+                                                      onClick={() => {
+                                                        const url = resolveUrl(result?.Reports?.[0]?.url);
+                                                        if (url) {
+                                                          window.open(url, "_blank");
+                                                        }
+                                                      }}
+                                                    >
+                                                      View
+                                                    </button>
+                                                  ) : (
+                                                    <span className="text-muted small">Not available</span>
+                                                  )}
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  ) : (
+                                    <div className="text-muted small">No X-rays prescribed</div>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
-                            <div className="col-md-6">
-                              <div className="border rounded h-100 p-3 bg-light">
-                                <div className="fw-semibold mb-2">X-rays Prescribed</div>
-                                {xrays.length > 0 ? (
-                                  <div className="table-responsive">
-                                    <table className="table table-sm align-middle mb-0">
-                                      <thead>
-                                        <tr>
-                                          <th>X-ray</th>
-                                          <th>Status</th>
-                                          <th className="text-end">Report</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {xrays.map((xray, index) => {
-                                          const result = xray?.matchedResult;
-                                          const canView =
-                                            isXrayResultOut(result) &&
-                                            Array.isArray(result?.Reports) &&
-                                            result.Reports.length > 0;
-
-                                          return (
-                                            <tr key={`${xray?.Xray_ID || xray?.Xray_Type || "xray"}-${index}`}>
-                                              <td>
-                                                {xray?.Xray_Type || "X-ray"}
-                                                {xray?.Body_Part ? ` (${xray.Body_Part})` : ""}
-                                              </td>
-                                              <td>
-                                                <span className={`badge ${isXrayResultOut(result) ? "bg-success" : "bg-warning text-dark"}`}>
-                                                  {isXrayResultOut(result) ? "result out" : "pending"}
-                                                </span>
-                                              </td>
-                                              <td className="text-end">
-                                                {canView ? (
-                                                  <button
-                                                    type="button"
-                                                    className="btn btn-sm btn-outline-primary"
-                                                    onClick={() => {
-                                                      const url = resolveUrl(result?.Reports?.[0]?.url);
-                                                      if (url) {
-                                                        window.open(url, "_blank");
-                                                      }
-                                                    }}
-                                                  >
-                                                    View
-                                                  </button>
-                                                ) : (
-                                                  <span className="text-muted small">Not available</span>
-                                                )}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                ) : (
-                                  <div className="text-muted small">No X-rays prescribed</div>
-                                )}
+                            <div className="mt-3">
+                              <strong>Doctor Notes</strong>
+                              <div className="border rounded p-3 bg-light mt-2" style={{ whiteSpace: "pre-wrap" }}>
+                                {selectedPrescriptionReport?.doctorNotes || selectedPrescriptionReport?.data?.notes || "No notes added"}
                               </div>
                             </div>
-                          </div>
 
-                          <div className="mt-3">
-                            <strong>Doctor Notes</strong>
-                            <div className="border rounded p-3 bg-light mt-2" style={{ whiteSpace: "pre-wrap" }}>
-                              {selectedPrescriptionReport?.doctorNotes || selectedPrescriptionReport?.data?.notes || "No notes added"}
+                            <div className="mt-3">
+                              <strong>Pharmacy Notes</strong>
+                              <div className="border rounded p-3 bg-light mt-2" style={{ whiteSpace: "pre-wrap" }}>
+                                {pharmacyNotes.length > 0 ? pharmacyNotes.join("\n\n") : "No pharmacy notes added"}
+                              </div>
                             </div>
-                          </div>
-
-                          <div className="mt-3">
-                            <strong>Pharmacy Notes</strong>
-                            <div className="border rounded p-3 bg-light mt-2" style={{ whiteSpace: "pre-wrap" }}>
-                              {pharmacyNotes.length > 0 ? pharmacyNotes.join("\n\n") : "No pharmacy notes added"}
-                            </div>
-                          </div>
-                        </>
-                      );
-                    })()}
+                          </>
+                        );
+                      })()
+                    )}
                   </div>
 
                   <div className="modal-footer">
