@@ -108,6 +108,7 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     Employee_ID: "",
     IsFamilyMember: false,
     FamilyMember_ID: "",
+    Vitals: {},
     Medicines: [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false, toBePrescribed: false, IsToBePrescribed: false }],
     Notes: "",
     Disease_Name: ""
@@ -1856,24 +1857,14 @@ if (validXrays.length === 0) {
                       FamilyMember_ID: familyId
                     }));
 
-                    // 🔥 AUTO NOTES
+                    // Set visit vitals (read-only) and keep doctor's notes editable
                     if (visit) {
                       const vitals = visit.Vitals || {};
-
-                      const autoNotes = `
-                Symptoms: ${visit.symptoms || "-"}
-
-                Vitals:
-                Temperature: ${vitals.Temperature || "-"}°F
-                BP: ${vitals.Blood_Pressure || "-"}
-                Pulse: ${vitals.Pulse || "-"}
-                Oxygen: ${vitals.Oxygen || "-"}
-                GRBS: ${vitals.GRBS || "-"}
-                      `;
-
                       setFormData(prev => ({
                         ...prev,
-                        Notes: autoNotes
+                        Vitals: vitals,
+                        // prefill Notes with symptoms only if there wasn't any existing note
+                        Notes: prev.Notes || (visit.symptoms ? `Symptoms: ${visit.symptoms}` : "")
                       }));
                     }
 
@@ -2075,18 +2066,33 @@ if (validXrays.length === 0) {
   </div>
 )}
 
-                <div className="mt-3">
-                  <label className="form-label fw-semibold">Notes</label>
-                  <textarea
-                    ref={notesTextareaRef}
-                    className="form-control"
-                    rows="6"
-                    value={formData.Notes}
-                    style={{ minHeight: "160px", resize: "none", overflow: "hidden" }}
-                    onChange={(e) =>
-                      setFormData((f) => ({ ...f, Notes: e.target.value }))
-                    }
-                  />
+                <div className="row g-3 mt-3">
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">Vitals</label>
+                    <div className="border rounded p-3 bg-light" style={{ minHeight: "160px", whiteSpace: "pre-wrap" }}>
+                      <div><strong>Symptoms:</strong> {selectedVisit?.symptoms || "—"}</div>
+                      <div><strong>Temperature:</strong> {(formData.Vitals?.Temperature ?? "") !== "" ? `${formData.Vitals.Temperature}°F` : "—"}</div>
+                      <div><strong>BP:</strong> {formData.Vitals?.Blood_Pressure || "—"}</div>
+                      <div><strong>Pulse:</strong> {formData.Vitals?.Pulse || "—"}</div>
+                      <div><strong>Oxygen:</strong> {formData.Vitals?.Oxygen || "—"}</div>
+                      <div><strong>Sugar:</strong> {formData.Vitals?.Sugar || "—"}</div>
+                      <div><strong>GRBS:</strong> {formData.Vitals?.GRBS || "—"}</div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">Notes</label>
+                    <textarea
+                      ref={notesTextareaRef}
+                      className="form-control"
+                      rows="6"
+                      value={formData.Notes}
+                      style={{ minHeight: "160px", resize: "none", overflow: "hidden" }}
+                      onChange={(e) =>
+                        setFormData((f) => ({ ...f, Notes: e.target.value }))
+                      }
+                    />
+                  </div>
                 </div>
 
                 <h6 className="fw-bold mt-4">Medicines</h6>
