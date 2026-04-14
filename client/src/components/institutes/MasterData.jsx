@@ -7,20 +7,8 @@ import {
   fetchMasterDataMap,
   getMasterMedicineEntries,
   canonicalizeMedicineTypeLabel,
-  getCanonicalMedicineTypeKey,
-  addLocalMedicine,
-  updateLocalMedicine,
-  deleteLocalMedicine,
-  toggleLocalMedicineStatus
+  getCanonicalMedicineTypeKey
 } from "../../utils/masterData";
-import {
-  addLocalMedicineType,
-  updateLocalMedicineType,
-  deleteLocalMedicineType,
-  toggleLocalMedicineTypeStatus
-} from "../../utils/masterData";
-import diagnosticTestsByCategory from "../../data/diagnosticTests";
-import { mergeXrayTypes } from "../../data/xrayTypes";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -46,76 +34,8 @@ const normalizeText = (value) => String(value || "").trim().toLowerCase();
 const makePairKey = (left, right) => `${normalizeText(left)}::${normalizeText(right)}`;
 const makeMedicineKey = (medicineType, dosageForm, valueName, strength) =>
   `${normalizeText(medicineType)}::${normalizeText(dosageForm)}::${normalizeText(valueName)}::${normalizeText(strength)}`;
-const isPersistedId = (value) => /^[a-f\d]{24}$/i.test(String(value || "").trim());
 const getMedicineTypeLabel = (value) => canonicalizeMedicineTypeLabel(value || "Others") || "Others";
 const getMedicineTypeKey = (value) => getCanonicalMedicineTypeKey(value || "Others");
-
-const getStaticTestsStructure = () => {
-  const testsByCategory = {};
-  Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
-    testsByCategory[category] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
-      id: `static-${category}-${idx}`,
-      name: test.name,
-      reference: test.reference || "",
-      unit: test.unit || "",
-      source: "static"
-    }));
-  });
-
-  return {
-    categories: Object.keys(testsByCategory).sort((a, b) => a.localeCompare(b)),
-    testsByCategory
-  };
-};
-
-const mergeTestsStructure = (base, incoming) => {
-  const grouped = {};
-  const addCategory = (category) => {
-    const key = String(category || "").trim();
-    if (!key) return;
-    if (!grouped[key]) grouped[key] = [];
-  };
-  const addTest = (category, item) => {
-    const key = String(category || "").trim();
-    const name = String(item?.name || "").trim();
-    if (!key || !name) return;
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push({
-      id: item?.id,
-      name,
-      reference: item?.reference || "",
-      unit: item?.unit || "",
-      source: item?.source || "merged"
-    });
-  };
-
-  (base?.categories || []).forEach(addCategory);
-  Object.keys(base?.testsByCategory || {}).forEach((category) => {
-    (base.testsByCategory[category] || []).forEach((item) => addTest(category, item));
-  });
-
-  (incoming?.categories || []).forEach(addCategory);
-  Object.keys(incoming?.testsByCategory || {}).forEach((category) => {
-    (incoming.testsByCategory[category] || []).forEach((item) => addTest(category, item));
-  });
-
-  Object.keys(grouped).forEach((category) => {
-    const seen = new Set();
-    grouped[category] = grouped[category]
-      .filter((item) => {
-        const dedupeKey = String(item.name || "").trim().toLowerCase();
-        if (!dedupeKey || seen.has(dedupeKey)) return false;
-        seen.add(dedupeKey);
-        return true;
-      })
-      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-  });
-
-  return {
-    categories: Object.keys(grouped).sort((a, b) => a.localeCompare(b)),
-    testsByCategory: grouped
-  };
-};
 
 const MasterData = () => {
   const [categories, setCategories] = useState([]);
@@ -223,159 +143,36 @@ const MasterData = () => {
   };
 
   const loadTestsStructure = async () => {
-    const staticStructure = getStaticTestsStructure();
-    const staticCategories = staticStructure.categories || [];
-    const preferredStatic = staticCategories.includes("HEMATOLOGY")
-      ? "HEMATOLOGY"
-      : staticCategories[0] || "";
-    try {
-      const [res, valuesRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/master-data-api/tests-structure`),
-        selectedCategoryId
-          ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
-          : Promise.resolve({ data: [] })
-      ]);
+    const [res, valuesRes] = await Promise.all([
+      axios.get(`${BACKEND_URL}/master-data-api/tests-structure`),
+      selectedCategoryId
+        ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+        : Promise.resolve({ data: [] })
+    ]);
 
-      const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
-      const testMap = {};
-      const testCategoryMap = {};
-      masterValues
-        .filter((item) => item?.meta?.kind === "category")
-        .forEach((item) => {
-          const key = normalizeText(item?.value_name);
-          if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
-        });
-      masterValues
-        .filter((item) => item?.meta?.kind === "test")
-        .forEach((item) => {
-          const key = makePairKey(item?.meta?.category, item?.value_name);
-          if (key !== "::") testMap[key] = item;
-        });
-      setCustomTestCategoryMap(testCategoryMap);
-      setCustomTestMap(testMap);
-
-      const data = mergeTestsStructure(staticStructure, res.data || { categories: [], testsByCategory: {} });
-      const withMeta = {
-        ...data,
-        testsByCategory: Object.fromEntries(
-          Object.entries(data.testsByCategory || {}).map(([category, rows]) => [
-            category,
-            (rows || []).map((row) => {
-              const masterValue = testMap[makePairKey(category, row?.name)] || null;
-              return {
-                ...row,
-                masterValue,
-                status: masterValue?.status || "Active"
-              };
-            })
-          ])
-        )
-      };
-      setTestsStructure(withMeta);
-      const shouldKeepSelected = selectedTestCategory && staticCategories.includes(selectedTestCategory);
-      if (shouldKeepSelected) {
-        setSelectedTestCategory(selectedTestCategory);
-      } else if (preferredStatic && withMeta.categories.includes(preferredStatic)) {
-        setSelectedTestCategory(preferredStatic);
-      } else {
-        setSelectedTestCategory(withMeta.categories[0] || "");
-      }
-    } catch (err) {
-      const status = err?.response?.status;
-      if (status && status !== 404) {
-        throw err;
-      }
-
-      const [testsRes, valuesRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/diagnosis-api/tests`).catch(() => ({ data: [] })),
-        selectedCategoryId
-          ? axios
-              .get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
-              .catch(() => ({ data: [] }))
-          : Promise.resolve({ data: [] })
-      ]);
-
-      const diagnosisTests = Array.isArray(testsRes.data) ? testsRes.data : [];
-      const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
-      const testMap = {};
-      const testCategoryMap = {};
-      masterValues
-        .filter((item) => item?.meta?.kind === "category")
-        .forEach((item) => {
-          const key = normalizeText(item?.value_name);
-          if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
-        });
-      masterValues
-        .filter((item) => item?.meta?.kind === "test")
-        .forEach((item) => {
-          const key = makePairKey(item?.meta?.category, item?.value_name);
-          if (key !== "::") testMap[key] = item;
-        });
-      setCustomTestCategoryMap(testCategoryMap);
-      setCustomTestMap(testMap);
-
-      const grouped = { ...staticStructure.testsByCategory };
-      const knownCategories = new Set(Object.keys(grouped));
-
-      diagnosisTests.forEach((test) => {
-        const category = String(test?.Group || "").trim();
-        const name = String(test?.Test_Name || "").trim();
-        if (!category || !name) return;
-        if (!grouped[category]) grouped[category] = [];
-        knownCategories.add(category);
-        grouped[category].push({
-          id: test._id,
-          name,
-          reference: test.Reference_Range || "",
-          unit: test.Units || "",
-          source: "diagnosis-test"
-        });
+    const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
+    const testMap = {};
+    const testCategoryMap = {};
+    masterValues
+      .filter((item) => item?.meta?.kind === "category")
+      .forEach((item) => {
+        const key = normalizeText(item?.value_name);
+        if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
       });
-
-      masterValues
-        .filter((item) => item?.meta?.kind === "category")
-        .forEach((item) => {
-          const category = String(item?.value_name || "").trim();
-          if (!category) return;
-          if (!grouped[category]) grouped[category] = [];
-          knownCategories.add(category);
-        });
-
-      masterValues
-        .filter((item) => item?.meta?.kind === "test")
-        .forEach((item) => {
-          const category = String(item?.meta?.category || "").trim();
-          const name = String(item?.value_name || "").trim();
-          if (!category || !name) return;
-          if (!grouped[category]) grouped[category] = [];
-          knownCategories.add(category);
-          grouped[category].push({
-            id: item._id,
-            name,
-            reference: item?.meta?.reference || "",
-            unit: item?.meta?.unit || "",
-            source: "master"
-          });
-        });
-
-      Object.keys(grouped).forEach((category) => {
-        const seen = new Set();
-        grouped[category] = grouped[category]
-          .filter((item) => {
-            const key = String(item?.name || "").trim().toLowerCase();
-            if (!key || seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          })
-          .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+    masterValues
+      .filter((item) => item?.meta?.kind === "test")
+      .forEach((item) => {
+        const key = makePairKey(item?.meta?.category, item?.value_name);
+        if (key !== "::") testMap[key] = item;
       });
+    setCustomTestCategoryMap(testCategoryMap);
+    setCustomTestMap(testMap);
 
-      const merged = mergeTestsStructure(staticStructure, {
-        categories: [...knownCategories],
-        testsByCategory: grouped
-      });
-      merged.testsByCategory = Object.fromEntries(
-        Object.entries(merged.testsByCategory || {}).map(([category, rows]) => [
+    const data = res.data || { categories: [], testsByCategory: {} };
+    const withMeta = {
+      ...data,
+      testsByCategory: Object.fromEntries(
+        Object.entries(data.testsByCategory || {}).map(([category, rows]) => [
           category,
           (rows || []).map((row) => {
             const masterValue = testMap[makePairKey(category, row?.name)] || null;
@@ -386,137 +183,53 @@ const MasterData = () => {
             };
           })
         ])
-      );
-      const categories = merged.categories;
-      setTestsStructure(merged);
-      const shouldKeepSelected = selectedTestCategory && staticCategories.includes(selectedTestCategory);
-      if (shouldKeepSelected) {
-        setSelectedTestCategory(selectedTestCategory);
-      } else if (preferredStatic && categories.includes(preferredStatic)) {
-        setSelectedTestCategory(preferredStatic);
-      } else {
-        setSelectedTestCategory(categories[0] || "");
-      }
+      )
+    };
+    setTestsStructure(withMeta);
+
+    if (withMeta.categories.includes(selectedTestCategory)) {
+      setSelectedTestCategory(selectedTestCategory);
+    } else if (withMeta.categories.includes("HEMATOLOGY")) {
+      setSelectedTestCategory("HEMATOLOGY");
+    } else {
+      setSelectedTestCategory(withMeta.categories[0] || "");
     }
   };
 
   const loadDiseasesStructure = async () => {
-    try {
-      const [res, valuesRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/master-data-api/diseases-structure`),
-        selectedCategoryId
-          ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
-          : Promise.resolve({ data: [] })
-      ]);
+    const [res, valuesRes] = await Promise.all([
+      axios.get(`${BACKEND_URL}/master-data-api/diseases-structure`),
+      selectedCategoryId
+        ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+        : Promise.resolve({ data: [] })
+    ]);
 
-      const data = res.data || {};
-      const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
-      const diseaseMap = {};
-      masterValues
-        .filter((item) => item?.meta?.kind === "disease")
-        .forEach((item) => {
-          const key = makePairKey(item?.meta?.group, item?.value_name);
-          if (key !== "::") diseaseMap[key] = item;
-        });
-      setCustomDiseaseMap(diseaseMap);
-
-      const buildGroupRows = (group, names) =>
-        sortUnique(names).map((name) => {
-          const masterValue = diseaseMap[makePairKey(group, name)] || null;
-          return {
-            name,
-            group,
-            masterValue,
-            status: masterValue?.status || "Active"
-          };
-        });
-
-      setDiseasesStructure({
-        communicable: buildGroupRows("Communicable", Array.isArray(data.communicable) ? data.communicable : []),
-        nonCommunicable: buildGroupRows("Non-Communicable", Array.isArray(data.nonCommunicable) ? data.nonCommunicable : [])
+    const data = res.data || {};
+    const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
+    const diseaseMap = {};
+    masterValues
+      .filter((item) => item?.meta?.kind === "disease")
+      .forEach((item) => {
+        const key = makePairKey(item?.meta?.group, item?.value_name);
+        if (key !== "::") diseaseMap[key] = item;
       });
-    } catch (err) {
-      const status = err?.response?.status;
-      if (status && status !== 404) {
-        throw err;
-      }
+    setCustomDiseaseMap(diseaseMap);
 
-      const instituteId = localStorage.getItem("instituteId") || "";
-      const [listRes, cdRes, ncdRes, valuesRes] = await Promise.all([
-        axios
-          .get(`${BACKEND_URL}/disease-list/static`, {
-            params: instituteId ? { instituteId } : {}
-          })
-          .catch(() => ({ data: {} })),
-        axios
-          .get(`${BACKEND_URL}/disease-master-api/cd`, {
-            params: instituteId ? { instituteId } : {}
-          })
-          .catch(() => ({ data: [] })),
-        axios
-          .get(`${BACKEND_URL}/disease-master-api/ncd`, {
-            params: instituteId ? { instituteId } : {}
-          })
-          .catch(() => ({ data: [] })),
-        selectedCategoryId
-          ? axios
-              .get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
-              .catch(() => ({ data: [] }))
-          : Promise.resolve({ data: [] })
-      ]);
-
-      const body = listRes.data || {};
-      const cdMaster = Array.isArray(cdRes.data)
-        ? cdRes.data.map((item) => (typeof item === "string" ? item : item?.name)).filter(Boolean)
-        : [];
-      const ncdMaster = Array.isArray(ncdRes.data)
-        ? ncdRes.data.map((item) => (typeof item === "string" ? item : item?.name)).filter(Boolean)
-        : [];
-      const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
-      const communicable = [
-        ...(Array.isArray(body.communicable) ? body.communicable : []),
-        ...cdMaster
-      ];
-      const nonCommunicable = [
-        ...(Array.isArray(body.nonCommunicable) ? body.nonCommunicable : []),
-        ...ncdMaster
-      ];
-
-      masterValues
-        .filter((item) => item?.meta?.kind === "disease")
-        .forEach((item) => {
-          const group = String(item?.meta?.group || "").trim();
-          const name = String(item?.value_name || "").trim();
-          if (!name) return;
-          if (group === "Communicable") communicable.push(name);
-          if (group === "Non-Communicable") nonCommunicable.push(name);
-        });
-
-      const diseaseMap = {};
-      masterValues
-        .filter((item) => item?.meta?.kind === "disease")
-        .forEach((item) => {
-          const key = makePairKey(item?.meta?.group, item?.value_name);
-          if (key !== "::") diseaseMap[key] = item;
-        });
-      setCustomDiseaseMap(diseaseMap);
-
-      const buildGroupRows = (group, names) =>
-        sortUnique(names).map((name) => {
-          const masterValue = diseaseMap[makePairKey(group, name)] || null;
-          return {
-            name,
-            group,
-            masterValue,
-            status: masterValue?.status || "Active"
-          };
-        });
-
-      setDiseasesStructure({
-        communicable: buildGroupRows("Communicable", communicable),
-        nonCommunicable: buildGroupRows("Non-Communicable", nonCommunicable)
+    const buildGroupRows = (group, names) =>
+      sortUnique(names).map((name) => {
+        const masterValue = diseaseMap[makePairKey(group, name)] || null;
+        return {
+          name,
+          group,
+          masterValue,
+          status: masterValue?.status || "Active"
+        };
       });
-    }
+
+    setDiseasesStructure({
+      communicable: buildGroupRows("Communicable", Array.isArray(data.communicable) ? data.communicable : []),
+      nonCommunicable: buildGroupRows("Non-Communicable", Array.isArray(data.nonCommunicable) ? data.nonCommunicable : [])
+    });
   };
 
   const loadMedicinesStructure = async () => {
@@ -718,36 +431,31 @@ const MasterData = () => {
   };
 
   const loadXrayTypes = async () => {
-    try {
-      const [xrayRes, bodyPartRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/xray-api/types`),
-        axios.get(`${BACKEND_URL}/xray-api/body-parts`).catch(() => ({ data: [] }))
-      ]);
-      
-      const rows = Array.isArray(xrayRes.data) ? xrayRes.data : [];
-      const merged = mergeXrayTypes(rows).filter((item) => String(item?.status || "Active") === "Active");
-      setXrayTypes(merged);
+    const instituteId = localStorage.getItem("instituteId") || "";
+    const [xrayRes, bodyPartRes] = await Promise.all([
+      axios.get(`${BACKEND_URL}/xray-api/types`, {
+        params: { includeInactive: true, ...(instituteId ? { instituteId } : {}) }
+      }),
+      axios.get(`${BACKEND_URL}/xray-api/body-parts`, {
+        params: { includeInactive: true, ...(instituteId ? { instituteId } : {}) }
+      }).catch(() => ({ data: [] }))
+    ]);
 
-      // Build map of custom body parts
-      const bodyPartMap = {};
-      const bodyPartsData = Array.isArray(bodyPartRes.data) ? bodyPartRes.data : [];
-      bodyPartsData.forEach((bp) => {
-        if (bp?._id && bp?.Body_Part) {
-          bodyPartMap[String(bp.Body_Part).trim().toLowerCase()] = bp;
-        }
-      });
-      setCustomBodyPartMap(bodyPartMap);
+    const rows = Array.isArray(xrayRes.data) ? xrayRes.data : [];
+    setXrayTypes(rows);
 
-      if (!selectedXrayBodyPart && merged.length > 0) {
-        setSelectedXrayBodyPart(String(merged[0]?.Body_Part || ""));
+    const bodyPartMap = {};
+    const bodyPartsData = Array.isArray(bodyPartRes.data) ? bodyPartRes.data : [];
+    bodyPartsData.forEach((bp) => {
+      if (bp?._id && bp?.Body_Part) {
+        bodyPartMap[String(bp.Body_Part).trim().toLowerCase()] = bp;
       }
-    } catch (err) {
-      console.error(err);
-      const fallback = mergeXrayTypes([]);
-      setXrayTypes(fallback);
-      setCustomBodyPartMap({});
-      setSelectedXrayBodyPart(fallback[0]?.Body_Part || "");
-      throw err;
+    });
+    setCustomBodyPartMap(bodyPartMap);
+
+    const nextBodyPart = rows[0]?.Body_Part || bodyPartsData[0]?.Body_Part || "";
+    if (!selectedXrayBodyPart && nextBodyPart) {
+      setSelectedXrayBodyPart(String(nextBodyPart));
     }
   };
 
@@ -841,10 +549,15 @@ const MasterData = () => {
 
   const xrayBodyParts = useMemo(
     () =>
-      [...new Set([...xrayTypes, newXrayBodyPart, selectedXrayBodyPart].map((item) => String(item?.Body_Part || item || "").trim()).filter(Boolean))].sort((a, b) =>
+      [...new Set([
+        ...xrayTypes,
+        ...Object.values(customBodyPartMap || {}),
+        newXrayBodyPart,
+        selectedXrayBodyPart
+      ].map((item) => String(item?.Body_Part || item || "").trim()).filter(Boolean))].sort((a, b) =>
         a.localeCompare(b)
       ),
-    [xrayTypes, newXrayBodyPart, selectedXrayBodyPart]
+    [xrayTypes, customBodyPartMap, newXrayBodyPart, selectedXrayBodyPart]
   );
 
   const filteredXrays = xrayTypes.filter((item) => {
@@ -1092,48 +805,12 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      try {
-        await axios.post(`${BACKEND_URL}/master-data-api/tests`, {
-          category: selectedTestCategory,
-          testName: newTestName.trim(),
-          referenceRange: newTestReference.trim(),
-          unit: newTestUnit.trim()
-        });
-      } catch (err) {
-        if (err?.response?.status !== 404) throw err;
-
-        await axios.post(`${BACKEND_URL}/diagnosis-api/tests/add`, {
-          Test_Name: newTestName.trim(),
-          Group: selectedTestCategory,
-          Reference_Range: newTestReference.trim(),
-          Units: newTestUnit.trim()
-        });
-
-        await axios
-          .post(`${BACKEND_URL}/master-data-api/values`, {
-            category_id: selectedCategoryId,
-            value_name: selectedTestCategory,
-            meta: { kind: "category" }
-          })
-          .catch((postErr) => {
-            if (postErr?.response?.status !== 409) throw postErr;
-          });
-
-        await axios
-          .post(`${BACKEND_URL}/master-data-api/values`, {
-            category_id: selectedCategoryId,
-            value_name: newTestName.trim(),
-            meta: {
-              kind: "test",
-              category: selectedTestCategory,
-              reference: newTestReference.trim(),
-              unit: newTestUnit.trim()
-            }
-          })
-          .catch((postErr) => {
-            if (postErr?.response?.status !== 409) throw postErr;
-          });
-      }
+      await axios.post(`${BACKEND_URL}/master-data-api/tests`, {
+        category: selectedTestCategory,
+        testName: newTestName.trim(),
+        referenceRange: newTestReference.trim(),
+        unit: newTestUnit.trim()
+      });
       setNewTestName("");
       setNewTestReference("");
       setNewTestUnit("");
@@ -1188,13 +865,11 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      // Create frontend-only local medicine override so UI updates instantly and DB is not modified
-      const created = addLocalMedicine({
+      await axios.post(`${BACKEND_URL}/master-data-api/medicines`, {
         medicineName: newMedicineName.trim(),
         medicineType: selectedMedicineType.trim(),
         dosageForm: newMedicineDosageForm.trim(),
-        strength: newMedicineStrength.trim(),
-        status: "Active"
+        strength: newMedicineStrength.trim()
       });
       setNewMedicineName("");
       setNewMedicineDosageForm("");
@@ -1216,7 +891,9 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      addLocalMedicineType(newMedicineType.trim());
+      await axios.post(`${BACKEND_URL}/master-data-api/medicines/type`, {
+        name: newMedicineType.trim()
+      });
       setNewMedicineType("");
       setMessage("Medicine type added successfully");
       await loadMedicinesStructure();
@@ -1239,21 +916,25 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      // Frontend-only: mark as deleted/inactive via local override
-      deleteLocalMedicineType(medicineType);
+      if (!medicineTypeRecord?._id) {
+        setMessage("This medicine type cannot be deleted");
+        return;
+      }
+      await axios.delete(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`);
       setMessage("Medicine type deleted successfully");
       if (selectedMedicineType === medicineType) setSelectedMedicineType("");
       await loadMedicinesStructure();
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Delete medicine type error:", err);
-      setError(err.message || "Failed to delete medicine type");
+      setError(err.response?.data?.message || err.message || "Failed to delete medicine type");
     } finally {
       setSaving(false);
     }
   };
 
   const handleEditMedicineType = async (medicineType) => {
+    const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)];
     const updated = window.prompt("Edit medicine type", medicineType);
     if (updated === null) return;
     const nextName = updated.trim();
@@ -1263,8 +944,13 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      // Frontend-only edit via local overrides
-      updateLocalMedicineType(medicineType, nextName);
+      if (!medicineTypeRecord?._id) {
+        setMessage("This medicine type cannot be edited");
+        return;
+      }
+      await axios.put(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`, {
+        name: nextName
+      });
       setMessage("Medicine type updated successfully");
       if (getMedicineTypeKey(selectedMedicineType) === getMedicineTypeKey(medicineType)) {
         setSelectedMedicineType(getMedicineTypeLabel(nextName));
@@ -1273,7 +959,7 @@ const MasterData = () => {
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Edit medicine type error:", err);
-      setError(err.message || "Failed to update medicine type");
+      setError(err.response?.data?.message || err.message || "Failed to update medicine type");
     } finally {
       setSaving(false);
     }
@@ -1284,14 +970,20 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      // Frontend-only toggle via local override
-      toggleLocalMedicineTypeStatus(medicineType);
+      const medicineTypeRecord = customMedicineTypeMap[getMedicineTypeKey(medicineType)];
+      if (!medicineTypeRecord?._id) {
+        setMessage("This medicine type cannot be updated");
+        return;
+      }
+      await axios.put(`${BACKEND_URL}/master-data-api/medicines/type/${medicineTypeRecord._id}`, {
+        status: status === "Active" ? "Inactive" : "Active"
+      });
       setMessage("Medicine type status updated");
       await loadMedicinesStructure();
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Toggle medicine type error:", err);
-      setError(err.message || "Failed to toggle medicine type");
+      setError(err.response?.data?.message || err.message || "Failed to toggle medicine type");
     } finally {
       setSaving(false);
     }
@@ -1312,29 +1004,22 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      // Always apply frontend-only override (no DB changes)
-      try {
-        updateLocalMedicine(medicineId, {
-          value_name: nextName.trim(),
-          meta: { medicineType: nextMedicineType.trim(), dosageForm: nextDosageForm.trim(), strength: nextStrength.trim() }
-        });
-      } catch (e) {
-        // fallback: add as local entry
-        addLocalMedicine({
-          medicineName: nextName.trim(),
-          medicineType: nextMedicineType.trim(),
-          dosageForm: nextDosageForm.trim(),
-          strength: nextStrength.trim(),
-          status: "Active"
-        });
+      if (!medicineId) {
+        setMessage("This medicine cannot be edited");
+        return;
       }
-
+      await axios.put(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`, {
+        medicineName: nextName.trim(),
+        medicineType: nextMedicineType.trim(),
+        dosageForm: nextDosageForm.trim(),
+        strength: nextStrength.trim()
+      });
       setMessage("Medicine updated successfully");
       await loadMedicinesStructure();
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Edit medicine error:", err);
-      setError(err.message || "Failed to update medicine");
+      setError(err.response?.data?.message || err.message || "Failed to update medicine");
     } finally {
       setSaving(false);
     }
@@ -1346,19 +1031,19 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      // For persisted or built-in, mark inactive/active via local override (no DB changes)
-      if (medicineId) {
-        toggleLocalMedicineStatus(medicineId);
-      } else {
-        // mark built-in as inactive by adding an override
-        deleteLocalMedicine(item);
+      if (!medicineId) {
+        setMessage("This medicine cannot be updated");
+        return;
       }
+      await axios.put(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`, {
+        status: item.status === "Active" ? "Inactive" : "Active"
+      });
       setMessage("Medicine status updated");
       await loadMedicinesStructure();
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Toggle medicine error:", err);
-      setError(err.message || "Failed to toggle medicine status");
+      setError(err.response?.data?.message || err.message || "Failed to toggle medicine status");
     } finally {
       setSaving(false);
     }
@@ -1372,14 +1057,18 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      // Frontend-only deletion: mark as inactive via local override so it disappears from dropdowns
-      deleteLocalMedicine(item);
+      const medicineId = item?.masterValue?._id || null;
+      if (!medicineId) {
+        setMessage("This medicine cannot be deleted");
+        return;
+      }
+      await axios.delete(`${BACKEND_URL}/master-data-api/medicines/${medicineId}`);
       setMessage("Medicine deleted successfully");
       await loadMedicinesStructure();
       invalidateMasterDataCache();
     } catch (err) {
       console.error("Delete medicine error:", err);
-      setError(err.message || "Failed to delete medicine");
+      setError(err.response?.data?.message || err.message || "Failed to delete medicine");
     } finally {
       setSaving(false);
     }

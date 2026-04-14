@@ -3,7 +3,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
@@ -177,15 +176,9 @@ useEffect(() => {
   // determine category for a test object
   const getCategoryForTest = (t) => {
     if (!t) return "";
+    if (t.Group) return t.Group;
     if (t.Category) return t.Category;
     if (t.Test_ID && t.Test_ID.Group) return t.Test_ID.Group;
-    try {
-      const allCats = Object.keys(diagnosticTestsByCategory || {});
-      for (const c of allCats) {
-        const found = (diagnosticTestsByCategory[c] || []).find(x => x.name === t.Test_Name);
-        if (found) return c;
-      }
-    } catch (e) {}
     return "";
   };
 
@@ -231,17 +224,7 @@ useEffect(() => {
 
     /* ---------- TEST TABLE ---------- */
     const tableData = report.Tests.map((t) => {
-      // determine category: prefer saved Category, else use Test_ID.group, else try to infer from test name
-      const category = t.Category || t.Test_ID?.Group || (() => {
-        try {
-          const allCats = Object.keys(diagnosticTestsByCategory || {});
-          for (const c of allCats) {
-            const found = (diagnosticTestsByCategory[c] || []).find(x => x.name === t.Test_Name);
-            if (found) return c;
-          }
-        } catch (e) {}
-        return "";
-      })();
+      const category = getCategoryForTest(t);
 
       return [
         category,

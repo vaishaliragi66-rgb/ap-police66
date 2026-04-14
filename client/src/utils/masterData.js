@@ -556,8 +556,9 @@ export const fetchMasterDataMap = async ({ force = false } = {}) => {
 };
 
 export const getMasterOptions = (masterMap, categoryName) => {
-  const fallback = DEFAULT_MASTER_OPTIONS[categoryName] || [];
-  const dbValues = (masterMap?.[categoryName] || [])
+  const hasCategory = Boolean(masterMap) && Object.prototype.hasOwnProperty.call(masterMap, categoryName);
+  const fallback = hasCategory ? [] : (DEFAULT_MASTER_OPTIONS[categoryName] || []);
+  const dbValues = ((hasCategory ? masterMap?.[categoryName] : []) || [])
     .filter((item) => String(item?.status || "Active").toLowerCase() === "active")
     .map((item) => item.value_name);
   if (categoryName === "Medicine Types") {
@@ -582,8 +583,8 @@ export const getMasterMedicineEntries = (masterMap) => {
     { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
   ];
 
-  // Prefer masterMap medicines (including local overrides) before fallback so overrides replace built-ins
-  const combined = [...(masterMap?.Medicines || []), ...fallback];
+  const hasMedicines = Boolean(masterMap) && Object.prototype.hasOwnProperty.call(masterMap, "Medicines");
+  const combined = hasMedicines ? [...(masterMap?.Medicines || [])] : [...fallback];
   const seen = new Set();
 
   return combined
@@ -629,13 +630,14 @@ export const getMasterMedicinesByTypeAndForm = (masterMap, medicineType, dosageF
 };
 
 export const getMergedMasterValueObjects = (masterMap, categoryName) => {
-  const fallback = (DEFAULT_MASTER_OPTIONS[categoryName] || []).map((value_name, index) => ({
+  const hasCategory = Boolean(masterMap) && Object.prototype.hasOwnProperty.call(masterMap, categoryName);
+  const fallback = (!hasCategory ? (DEFAULT_MASTER_OPTIONS[categoryName] || []) : []).map((value_name, index) => ({
     _id: `default-${categoryName}-${index}`,
     value_name,
     status: "Active",
     isDefault: true
   }));
-  const dbValues = masterMap?.[categoryName] || [];
+  const dbValues = (hasCategory ? masterMap?.[categoryName] : []) || [];
   const merged = new Map();
 
   [...fallback, ...dbValues].forEach((item) => {

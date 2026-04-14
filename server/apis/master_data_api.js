@@ -1,16 +1,19 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const fs = require("fs");
-const path = require("path");
 const { verifyToken } = require("./instituteAuth");
 const MasterCategory = require("../models/master_category");
 const MasterValue = require("../models/master_value");
-const DiagnosisTest = require("../models/diagnostics_test");
 const Medicine = require("../models/master_medicine");
 const MainStoreMedicine = require("../models/main_store");
+const {
+  DEFAULT_TEST_CATEGORIES,
+  ensureTestMasterValues,
+  listMasterTests,
+  ensureDiseaseMasterValues,
+  listMasterDiseases
+} = require("../utils/instituteMasterData");
 
 const router = express.Router();
-const DISEASES_FILE = path.join(__dirname, "..", "data", "diseases.json");
 
 const DEFAULT_CATEGORIES = [
   "Medicines",
@@ -38,24 +41,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 // Valid test categories from the diagnostic tests catalog
-const VALID_TEST_CATEGORIES = [
-  "HEMATOLOGY",
-  "DIABETES & GLUCOSE",
-  "LIPID PROFILE",
-  "LIVER FUNCTION TESTS (LFT)",
-  "KIDNEY FUNCTION TESTS (KFT)",
-  "THYROID PROFILE",
-  "ELECTROLYTES",
-  "URINALYSIS",
-  "CARDIAC MARKERS",
-  "VITAMINS & MINERALS",
-  "COAGULATION STUDIES",
-  "INFECTIOUS DISEASE PANEL",
-  "TUMOR MARKERS",
-  "HORMONAL PROFILE",
-  "BONE HEALTH",
-  "IMMUNOLOGY"
-];
+const VALID_TEST_CATEGORIES = DEFAULT_TEST_CATEGORIES;
 
 const DEFAULT_VALUE_SEEDS = {
   "Blood Groups": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
@@ -359,7 +345,8 @@ const ensureDefaultCategories = async (instituteId) => {
       Institute_ID: instituteId,
       category_name,
       normalized_name: normalize(category_name),
-      status: "Active"
+      status: "Active",
+      seed_version: 0
     }));
 
   if (docs.length) {
@@ -368,7 +355,7 @@ const ensureDefaultCategories = async (instituteId) => {
 };
 
 const ensureDefaultValues = async (instituteId) => {
-  const categories = await MasterCategory.find({ Institute_ID: instituteId }).select("_id category_name normalized_name");
+  const categories = await MasterCategory.find({ Institute_ID: instituteId }).select("_id category_name normalized_name seed_version");
   if (!categories.length) {
     return;
   }
@@ -385,40 +372,56 @@ const ensureDefaultValues = async (instituteId) => {
   });
 
   const docs = [];
+  const categorySeedUpdates = [];
 
   categories.forEach((category) => {
+    if (Number(category.seed_version || 0) >= 1) {
+      return;
+    }
+
     const seedValues = DEFAULT_VALUE_SEEDS[category.category_name] || [];
     const existingSet = existingByCategory.get(String(category._id)) || new Set();
 
-    seedValues.forEach((seedItem) => {
-      const value_name = String(
-        typeof seedItem === "string" ? seedItem : seedItem?.value_name || ""
-      ).trim();
-      if (!value_name) return;
+    if (existingSet.size === 0) {
+      seedValues.forEach((seedItem) => {
+        const value_name = String(
+          typeof seedItem === "string" ? seedItem : seedItem?.value_name || ""
+        ).trim();
+        if (!value_name) return;
 
-      const normalized_value = normalize(value_name);
-      if (existingSet.has(normalized_value)) {
-        return;
-      }
+        const normalized_value = normalize(value_name);
+        if (existingSet.has(normalized_value)) {
+          return;
+        }
 
-      const meta =
-        seedItem && typeof seedItem === "object" && !Array.isArray(seedItem)
-          ? seedItem.meta || {}
-          : {};
+        const meta =
+          seedItem && typeof seedItem === "object" && !Array.isArray(seedItem)
+            ? seedItem.meta || {}
+            : {};
 
-      docs.push({
-        Institute_ID: instituteId,
-        category_id: category._id,
-        value_name,
-        normalized_value,
-        status: "Active",
-        meta
+        docs.push({
+          Institute_ID: instituteId,
+          category_id: category._id,
+          value_name,
+          normalized_value,
+          status: "Active",
+          meta
+        });
       });
-    });
+    }
+
+    categorySeedUpdates.push(String(category._id));
   });
 
   if (docs.length) {
     await MasterValue.insertMany(docs, { ordered: false });
+  }
+
+  if (categorySeedUpdates.length) {
+    await MasterCategory.updateMany(
+      { _id: { $in: categorySeedUpdates.map((id) => new mongoose.Types.ObjectId(id)) } },
+      { $set: { seed_version: 1 } }
+    );
   }
 };
 
@@ -763,9 +766,10 @@ router.get("/tests-structure", verifyToken, async (req, res) => {
     const instituteId = req.user.instituteId;
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);
+    await ensureTestMasterValues(instituteId);
 
     const testsCategory = await getCategoryByName(instituteId, "Tests");
-    const customValues = testsCategory
+    const allRows = testsCategory
       ? await MasterValue.find({
           Institute_ID: instituteId,
           category_id: testsCategory._id,
@@ -773,116 +777,55 @@ router.get("/tests-structure", verifyToken, async (req, res) => {
         }).lean()
       : [];
 
-    const dbTests = await DiagnosisTest.find().sort({ Group: 1, Test_Name: 1 }).lean();
-
-    // Build set of valid categories
-    const validCategoriesSet = new Set(VALID_TEST_CATEGORIES);
-    
-    // Get custom test category names
-    const customCategoryNames = new Set();
-    customValues
-      .filter((value) => value?.meta?.kind === "category")
-      .forEach((value) => {
-        if (value.value_name) {
-          customCategoryNames.add(String(value.value_name).trim());
-        }
+    const categoriesSet = new Set(VALID_TEST_CATEGORIES);
+    allRows
+      .filter((row) => row?.meta?.kind === "category")
+      .forEach((row) => {
+        const categoryName = String(row?.value_name || "").trim();
+        if (categoryName) categoriesSet.add(categoryName);
       });
 
-    // Build set of categories: static + custom only
-    const categoriesSet = new Set();
-    
-    // Add all valid static categories
-    validCategoriesSet.forEach(cat => categoriesSet.add(cat));
-    
-    // Add custom categories
-    customCategoryNames.forEach(cat => categoriesSet.add(cat));
-    
-    // Also check DiagnosisTest for categories that match our valid list or are custom
-    dbTests.forEach((test) => {
-      const group = String(test.Group || "").trim();
-      if (group && (validCategoriesSet.has(group) || customCategoryNames.has(group))) {
-        categoriesSet.add(group);
-      }
+    const masterTests = await listMasterTests(instituteId);
+    masterTests.forEach((test) => {
+      const categoryName = String(test?.Group || "").trim();
+      if (categoryName) categoriesSet.add(categoryName);
     });
 
     const testsByCategory = {};
-    const seenByCategory = new Map();
-
-    [...categoriesSet].forEach((category) => {
-      testsByCategory[category] = [];
-      seenByCategory.set(category, new Set());
+    [...categoriesSet].forEach((categoryName) => {
+      testsByCategory[categoryName] = [];
     });
 
-    // Add tests from DiagnosisTest - only for valid categories
-    dbTests.forEach((test) => {
-      const category = String(test.Group || "").trim();
-      const testName = String(test.Test_Name || "").trim();
-      
-      // Only add if category is valid (static or custom)
-      if (!category || !testsByCategory.hasOwnProperty(category)) {
-        if (test.Group && test.Group.length > 0) {
-          console.warn(`Skipping test "${testName}" - invalid category "${category}"`);
-        }
-        return;
+    masterTests.forEach((test) => {
+      const categoryName = String(test?.Group || "").trim();
+      const testName = String(test?.Test_Name || "").trim();
+      if (!categoryName || !testName) return;
+      if (!testsByCategory[categoryName]) {
+        testsByCategory[categoryName] = [];
       }
-      
-      if (!testName) return;
 
-      const key = normalize(testName);
-      if (seenByCategory.get(category).has(key)) return;
-      seenByCategory.get(category).add(key);
-      
-      testsByCategory[category].push({
+      testsByCategory[categoryName].push({
         id: test._id,
         name: testName,
         reference: test.Reference_Range || "",
         unit: test.Units || "",
-        source: "diagnosis-test"
+        source: "master"
       });
     });
 
-    // Add custom test entries from MasterValue
-    customValues
-      .filter((value) => value?.meta?.kind === "test")
-      .forEach((value) => {
-        const category = String(value?.meta?.category || "").trim();
-        const testName = String(value.value_name || "").trim();
-        
-        if (!category || !testName) return;
-        
-        // Only add if category exists in our valid set
-        if (!testsByCategory[category]) {
-          console.warn(`Skipping custom test "${testName}" - invalid category "${category}"`);
-          return;
-        }
-        
-        const key = normalize(testName);
-        if (seenByCategory.get(category).has(key)) return;
-        seenByCategory.get(category).add(key);
-        
-        testsByCategory[category].push({
-          id: value._id,
-          name: testName,
-          reference: value?.meta?.reference || "",
-          unit: value?.meta?.unit || "",
-          source: "master"
-        });
-      });
-
-    // Sort tests within each category
-    Object.keys(testsByCategory).forEach((category) => {
-      testsByCategory[category].sort((a, b) => 
-        String(a.name || "").localeCompare(String(b.name || ""))
-      );
+    Object.keys(testsByCategory).forEach((categoryName) => {
+      const seen = new Set();
+      testsByCategory[categoryName] = testsByCategory[categoryName]
+        .filter((row) => {
+          const key = normalize(row?.name);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
     });
 
-    const categories = Object.keys(testsByCategory).sort((a, b) => 
-      a.localeCompare(b)
-    );
-    
-    const totalTests = Object.values(testsByCategory).reduce((sum, arr) => sum + arr.length, 0);
-    console.log(`Tests structure loaded: ${categories.length} categories, ${totalTests} total tests`);
-    
+    const categories = Object.keys(testsByCategory).sort((a, b) => a.localeCompare(b));
     res.json({ categories, testsByCategory });
   } catch (err) {
     console.error("GET /master-data-api/tests-structure error", err);
@@ -901,6 +844,7 @@ router.post("/tests/category", verifyToken, requireInstituteAdmin, async (req, r
 
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);
+    await ensureTestMasterValues(instituteId);
     const testsCategory = await getCategoryByName(instituteId, "Tests");
     if (!testsCategory) {
       return res.status(404).json({ message: "Tests category not found" });
@@ -981,21 +925,10 @@ router.delete("/tests/category/:id", verifyToken, requireInstituteAdmin, async (
 
     console.log(`Deleted ${deleteResult.deletedCount} tests from category ${categoryName}`);
 
-    // Also delete from DiagnosisTest if it exists
-    const diagnosisDeleteResult = await DiagnosisTest.deleteMany({
-      Group: { $regex: `^${escapeRegex(categoryName)}$`, $options: "i" }
-    }).catch(err => {
-      console.warn("DiagnosisTest deletion failed (may not exist):", err.message);
-      return { deletedCount: 0 };
-    });
-
-    console.log(`Deleted ${diagnosisDeleteResult.deletedCount} diagnosis tests from group ${categoryName}`);
-
     res.json({ 
       message: "Test category deleted successfully",
       categoryName,
-      testsDeleted: deleteResult.deletedCount,
-      diagnosisTestsDeleted: diagnosisDeleteResult.deletedCount
+      testsDeleted: deleteResult.deletedCount
     });
   } catch (err) {
     console.error("DELETE /master-data-api/tests/category/:id error", err);
@@ -1043,24 +976,6 @@ router.post("/tests", verifyToken, requireInstituteAdmin, async (req, res) => {
       });
     }
 
-    const existingTest = await DiagnosisTest.findOne({
-      Test_Name: { $regex: `^${escapeRegex(testName)}$`, $options: "i" }
-    });
-
-    if (existingTest) {
-      existingTest.Group = category;
-      if (referenceRange) existingTest.Reference_Range = referenceRange;
-      if (unit) existingTest.Units = unit;
-      await existingTest.save();
-    } else {
-      await DiagnosisTest.create({
-        Test_Name: testName,
-        Group: category,
-        Reference_Range: referenceRange,
-        Units: unit
-      });
-    }
-
     const duplicateMasterTest = await MasterValue.findOne({
       Institute_ID: instituteId,
       category_id: testsCategory._id,
@@ -1098,35 +1013,9 @@ router.get("/diseases-structure", verifyToken, async (req, res) => {
     const instituteId = req.user.instituteId;
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);
+    await ensureDiseaseMasterValues(instituteId);
 
-    let communicable = [];
-    let nonCommunicable = [];
-
-    if (fs.existsSync(DISEASES_FILE)) {
-      const raw = fs.readFileSync(DISEASES_FILE, "utf8");
-      const data = JSON.parse(raw || "{}");
-      communicable = sortUnique(data.communicable || []);
-      nonCommunicable = sortUnique(data.nonCommunicable || []);
-    }
-
-    const diseasesCategory = await getCategoryByName(instituteId, "Diseases");
-    const customValues = diseasesCategory
-      ? await MasterValue.find({
-          Institute_ID: instituteId,
-          category_id: diseasesCategory._id,
-          status: "Active",
-          "meta.kind": "disease"
-        }).lean()
-      : [];
-
-    customValues.forEach((value) => {
-      const group = String(value?.meta?.group || "").trim();
-      if (group === "Communicable") communicable.push(value.value_name);
-      if (group === "Non-Communicable") nonCommunicable.push(value.value_name);
-    });
-
-    communicable = sortUnique(communicable);
-    nonCommunicable = sortUnique(nonCommunicable);
+    const { communicable, nonCommunicable } = await listMasterDiseases(instituteId);
     const all = sortUnique([...communicable, ...nonCommunicable]);
 
     res.json({
@@ -1240,7 +1129,7 @@ router.get("/medicines-structure", async (req, res) => {
         .catch(() => [])
     ]);
 
-    const defaultTypes = Array.isArray(DEFAULT_VALUE_SEEDS["Medicine Types"])
+    const defaultTypes = medicineTypeValues.length === 0 && Array.isArray(DEFAULT_VALUE_SEEDS["Medicine Types"])
       ? DEFAULT_VALUE_SEEDS["Medicine Types"]
       : [];
     const defaultDosageForms = Array.isArray(DEFAULT_VALUE_SEEDS["Dosage Forms"])
@@ -1351,19 +1240,6 @@ router.get("/medicines-structure", async (req, res) => {
       });
     });
 
-    [...subStoreRows, ...mainStoreRows].forEach((row) => {
-      const name = String(row?.Medicine_Name || "").trim();
-      if (!name) return;
-      medicineRows.push({
-        _id: null,
-        value_name: name,
-        medicineType: canonicalizeMedicineTypeLabel(row?.Type || row?.Category || "Others") || "Others",
-        dosageForm: "Other",
-        strength: String(row?.Strength || "").trim(),
-        status: "Active"
-      });
-    });
-
     const seenMedicine = new Set();
     const medicines = (medicineRows || [])
       .filter((item) => String(item?.value_name || "").trim())
@@ -1382,7 +1258,7 @@ router.get("/medicines-structure", async (req, res) => {
     ]);
 
     const dosageForms = sortUnique([
-      ...defaultDosageForms,
+      ...(dosageFormValues.length === 0 ? defaultDosageForms : []),
       ...dosageFormValues.map((row) => row?.value_name),
       ...medicines.map((item) => item?.dosageForm)
     ]);

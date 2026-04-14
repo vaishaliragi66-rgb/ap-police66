@@ -5,13 +5,22 @@ const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const DiagnosisTest = require("../models/diagnostics_test");
 const DiagnosisRecord = require("../models/diagnostics_record");
 const Institute = require("../models/master_institute");
 const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
 const MedicalAction = require("../models/medical_action");
 const DailyVisit = require("../models/daily_visit");
+const {
+  trimString,
+  resolveInstituteIdFromRequest,
+  ensureCategoryDoc,
+  ensureValueRecord,
+  ensureTestMasterValues,
+  listMasterTests,
+  findMasterTests,
+  findMasterTestByLooseName
+} = require("../utils/instituteMasterData");
 
 const parseDateInput = (value, endOfDay = false) => {
   if (!value) return null;
@@ -165,7 +174,12 @@ const reportUpload = multer({
 
 diagnosisApp.get("/tests", async (req, res) => {
   try {
-    const tests = await DiagnosisTest.find().sort({ Group: 1, Test_Name: 1 });
+    const instituteId = resolveInstituteIdFromRequest(req);
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Valid instituteId is required" });
+    }
+
+    const tests = await listMasterTests(instituteId);
     res.status(200).json(tests);
   } catch (err) {
     console.error("Error fetching tests:", err);
@@ -246,28 +260,60 @@ diagnosisApp.get("/queue/:instituteId", async (req, res) => {
   }
 });
 
-diagnosisApp.post("/tests/add", async (req, res) => {
+diagnosisApp.post("/tests/add", verifyToken, async (req, res) => {
   try {
     const { Test_Name, Group, Reference_Range, Units } = req.body;
+    const instituteId = resolveInstituteIdFromRequest(req);
 
-    if (!Test_Name) {
-      return res.status(400).json({ message: "Test_Name required" });
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Valid instituteId is required" });
+    }
+    if (!Test_Name || !Group) {
+      return res.status(400).json({ message: "Test_Name and Group required" });
     }
 
-    const exists = await DiagnosisTest.findOne({ Test_Name });
-    if (exists) {
-      return res.status(400).json({ message: "Test already exists" });
-    }
-
-    const newTest = new DiagnosisTest({
-      Test_Name,
-      Group,
-      Reference_Range,
-      Units
+    const testsCategory = await ensureCategoryDoc(instituteId, "Tests");
+    await ensureValueRecord({
+      instituteId,
+      categoryId: testsCategory._id,
+      valueName: Group,
+      meta: { kind: "category" }
     });
-    await newTest.save();
 
-    res.status(201).json({ message: "Test created", test: newTest });
+    const existing = await findMasterTests(instituteId, { names: [Test_Name] });
+    const duplicate = (existing || []).find(
+      (row) =>
+        String(row?.normalized_value || "") === String(trimString(Test_Name).toLowerCase()) &&
+        String(row?.meta?.kind || "") === "test" &&
+        String(row?.meta?.category || "").trim().toLowerCase() === String(trimString(Group).toLowerCase())
+    );
+    if (duplicate) {
+      return res.status(409).json({ message: "Test already exists" });
+    }
+
+    const created = await ensureValueRecord({
+      instituteId,
+      categoryId: testsCategory._id,
+      valueName: Test_Name,
+      meta: {
+        kind: "test",
+        category: trimString(Group),
+        categoryNormalized: trimString(Group).toLowerCase(),
+        reference: trimString(Reference_Range),
+        unit: trimString(Units)
+      }
+    });
+
+    res.status(201).json({
+      message: "Test created",
+      test: {
+        _id: created?._id,
+        Test_Name: trimString(created?.value_name),
+        Group: trimString(created?.meta?.category),
+        Reference_Range: trimString(created?.meta?.reference),
+        Units: trimString(created?.meta?.unit)
+      }
+    });
   } catch (err) {
     console.error("Error adding test:", err);
     res.status(500).json({ error: "Failed to add test" });
@@ -311,6 +357,8 @@ diagnosisApp.post(
          Fetch reference data from DB
       ------------------------- */
 
+      await ensureTestMasterValues(Institute_ID);
+
       const testIds = [
         ...new Set(
           Tests.map((t) => t.Test_ID).filter((id) =>
@@ -327,12 +375,10 @@ diagnosisApp.post(
 
       const masterTests = [
         ...(testIds.length
-          ? await DiagnosisTest.find({ _id: { $in: testIds } }).lean()
+          ? await findMasterTests(Institute_ID, { ids: testIds })
           : []),
         ...(testNames.length
-          ? await DiagnosisTest.find({ Test_Name: { $in: testNames } })
-              .collation({ locale: "en", strength: 2 })
-              .lean()
+          ? await findMasterTests(Institute_ID, { names: testNames })
           : [])
       ];
 
@@ -340,7 +386,7 @@ diagnosisApp.post(
         masterTests.map((t) => [t._id.toString(), t])
       );
       const masterByName = new Map(
-        masterTests.map((t) => [(t.Test_Name || "").toLowerCase(), t])
+        masterTests.map((t) => [(t.value_name || "").toLowerCase(), t])
       );
 
       Tests = Tests.map((test) => {
@@ -352,10 +398,11 @@ diagnosisApp.post(
 
         return {
           ...test,
-          Test_Name: master?.Test_Name || test.Test_Name,
-          Group: master?.Group || test.Group || "",
-          Reference_Range: master?.Reference_Range || test.Reference_Range || "",
-          Units: master?.Units || test.Units || ""
+          Test_ID: master?._id || test.Test_ID || null,
+          Test_Name: trimString(master?.value_name) || test.Test_Name,
+          Group: trimString(master?.meta?.category) || test.Group || "",
+          Reference_Range: trimString(master?.meta?.reference) || test.Reference_Range || "",
+          Units: trimString(master?.meta?.unit) || test.Units || ""
         };
       });
 
@@ -371,24 +418,16 @@ diagnosisApp.post(
 
           if (hasExact) continue;
 
-          const safeName = (test.Test_Name || "").replace(
-            /[.*+?^${}()|[\]\\]/g,
-            "\\$&"
-          );
-          const matches = await DiagnosisTest.find({
-            Test_Name: { $regex: safeName, $options: "i" }
-          })
-            .limit(2)
-            .lean();
+          const match = await findMasterTestByLooseName(Institute_ID, test.Test_Name);
 
-          if (matches.length === 1) {
-            const m = matches[0];
+          if (match) {
             Tests[i] = {
               ...test,
-              Test_Name: m.Test_Name,
-              Group: m.Group || test.Group || "",
-              Reference_Range: m.Reference_Range || test.Reference_Range || "",
-              Units: m.Units || test.Units || ""
+              Test_ID: match._id,
+              Test_Name: trimString(match.value_name),
+              Group: trimString(match?.meta?.category) || test.Group || "",
+              Reference_Range: trimString(match?.meta?.reference) || test.Reference_Range || "",
+              Units: trimString(match?.meta?.unit) || test.Units || ""
             };
           }
         }
@@ -651,7 +690,6 @@ diagnosisApp.get("/records/:employeeId", async (req, res) => {
       .populate("Institute", "Institute_Name")
       .populate("Employee", "Name ABS_NO")
       .populate("FamilyMember", "Name Relationship")
-      .populate("Tests.Test_ID", "Test_Name Reference_Range Units")
       .sort({ createdAt: -1 });
 
     const filteredRecords = filterDiagnosisRecordsByDate(
@@ -697,7 +735,6 @@ diagnosisApp.get('/record/:id', async (req, res) => {
     .populate('Institute', 'Institute_Name')
     .populate('Employee', 'Name ABS_NO')
     .populate('FamilyMember', 'Name Relationship')
-    .populate('Tests.Test_ID')
     .exec();
     
     if (!record) return res.status(404).json({ message: 'Record not found' });

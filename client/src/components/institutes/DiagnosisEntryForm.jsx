@@ -3,7 +3,6 @@ import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import diagnosticTestsByCategory from "../../data/diagnosticTests";
 
 const DiagnosisEntryForm = () => {
   const [testsMaster, setTestsMaster] = useState([]);
@@ -35,15 +34,6 @@ const DiagnosisEntryForm = () => {
 
   const testsByCategory = useMemo(() => {
     const grouped = {};
-    Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
-      grouped[category] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
-        _id: `static-${category}-${idx}`,
-        name: String(test?.name || "").trim(),
-        reference: test?.reference || "",
-        unit: test?.unit || ""
-      })).filter((item) => item.name);
-    });
-
     (testsMaster || []).forEach((test) => {
       const group = String(test?.Group || "").trim();
       const testName = String(test?.Test_Name || "").trim();
@@ -124,8 +114,12 @@ const fetchDoctorDiagnosis = async (visitId) => {
 
 const fetchTests = async () => {
   try {
+    const instituteId = localStorage.getItem("instituteId") || "";
     const res = await axios.get(
-      `${BACKEND_URL}/diagnosis-api/tests`
+      `${BACKEND_URL}/diagnosis-api/tests`,
+      {
+        params: instituteId ? { instituteId } : {}
+      }
     );
 
     const normalizedTests = (res.data || [])
@@ -181,11 +175,11 @@ const findMasterTest = (test = {}) =>
 const getCategoryForTestName = (testName) => {
   if (!testName) return "";
 
-  const entry = Object.entries(diagnosticTestsByCategory).find(([, tests]) =>
-    tests.some((test) => normalizeText(test.name) === normalizeText(testName))
+  const match = (testsMaster || []).find((item) =>
+    normalizeText(item?.Test_Name || item?.Display_Name) === normalizeText(testName)
   );
 
-  return entry?.[0] || "";
+  return match?.Group || "";
 };
 
 const createFormTestFromDoctorTest = (test) => {

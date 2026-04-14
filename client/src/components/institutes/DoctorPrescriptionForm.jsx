@@ -3,9 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
-import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData";
-import { mergeXrayTypes } from "../../data/xrayTypes";
 
 const DoctorPrescriptionForm = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
@@ -68,15 +66,6 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
 
   const testsByCategory = useMemo(() => {
     const grouped = {};
-    Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
-      grouped[category] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
-        _id: `static-${category}-${idx}`,
-        name: String(test?.name || "").trim(),
-        reference: test?.reference || "",
-        unit: test?.unit || ""
-      })).filter((item) => item.name);
-    });
-
     (testsMaster || []).forEach((test) => {
       const group = String(test?.Group || "").trim();
       const testName = String(test?.Test_Name || "").trim();
@@ -681,16 +670,26 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
 };
   useEffect(() => {
     axios
-      .get(`${BACKEND_URL}/diagnosis-api/tests`)
+      .get(`${BACKEND_URL}/diagnosis-api/tests`, {
+        params: (() => {
+          const instituteId = localStorage.getItem("instituteId") || "";
+          return instituteId ? { instituteId } : {};
+        })()
+      })
       .then(res => setTestsMaster(res.data || []))
       .catch(() => setTestsMaster([]));
   }, []);
 
 useEffect(() => {
   axios
-    .get(`${BACKEND_URL}/xray-api/types`)
-    .then(res => setXrayMaster(mergeXrayTypes(res.data || [])))
-    .catch(() => setXrayMaster(mergeXrayTypes([])));
+    .get(`${BACKEND_URL}/xray-api/types`, {
+      params: (() => {
+        const instituteId = localStorage.getItem("instituteId") || "";
+        return instituteId ? { instituteId } : {};
+      })()
+    })
+    .then(res => setXrayMaster(res.data || []))
+    .catch(() => setXrayMaster([]));
 }, []);
 
 

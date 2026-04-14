@@ -3,7 +3,6 @@ import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
-import DEFAULT_XRAY_TYPES, { mergeXrayTypes } from "../../data/xrayTypes";
 
 const normalizeFilmSize = (value) => {
   const cleaned = String(value || "")
@@ -34,32 +33,7 @@ const XrayEntryForm = () => {
   const [showDoctorNotes, setShowDoctorNotes] = useState({});
   const navigate = useNavigate();
 
-  const xraySource = useMemo(
-    () => (xrayMaster.length ? xrayMaster : mergeXrayTypes([])),
-    [xrayMaster]
-  );
-
-  const groupedXrayOptions = useMemo(() => {
-    const groups = {};
-
-    xraySource.forEach((xm) => {
-      const category = xm.category || "";
-      if (!category || category === "Other") return;
-      groups[category] = groups[category] || [];
-      groups[category].push(xm);
-    });
-
-    Object.keys(groups).forEach((category) => {
-      groups[category].sort((a, b) => {
-        if ((a.subcategory || "") !== (b.subcategory || "")) {
-          return (a.subcategory || "").localeCompare(b.subcategory || "");
-        }
-        return (a.Xray_Type || "").localeCompare(b.Xray_Type || "");
-      });
-    });
-
-    return groups;
-  }, [xraySource]);
+  const xraySource = useMemo(() => xrayMaster, [xrayMaster]);
 
   const bodyPartOptions = useMemo(() => {
     const parts = new Set();
@@ -150,12 +124,15 @@ const XrayEntryForm = () => {
   };
 const fetchXrayTypes = async () => {
   try {
-    const res = await axios.get(`${BACKEND_URL}/xray-api/types`);
-    setXrayMaster(mergeXrayTypes(res.data || []));
+    const instituteId = localStorage.getItem("instituteId") || "";
+    const res = await axios.get(`${BACKEND_URL}/xray-api/types`, {
+      params: instituteId ? { instituteId } : {}
+    });
+    setXrayMaster(Array.isArray(res.data) ? res.data : []);
     console.log("X-ray types fetched:", res.data?.length);
   } catch (err) {
     console.error("Error fetching X-ray types:", err);
-    setXrayMaster(mergeXrayTypes([]));
+    setXrayMaster([]);
   }
 };
 

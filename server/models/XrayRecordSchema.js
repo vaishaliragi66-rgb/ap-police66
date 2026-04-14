@@ -30,7 +30,7 @@ const XrayRecordSchema = new Schema(
     {
       Xray_ID: {
         type: Schema.Types.ObjectId,
-        ref: "XrayMaster"
+        ref: "MasterValue"
       },
 
       Xray_Type: {

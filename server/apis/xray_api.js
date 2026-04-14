@@ -2,7 +2,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const xrayApp = express.Router();
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
-const Xray = require("../models/XraySchema"); // master xray list
 const XrayRecord = require("../models/XrayRecordSchema");
 
 const Institute = require("../models/master_institute");
@@ -13,6 +12,19 @@ const DailyVisit = require("../models/daily_visit");
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const MasterValue = require("../models/master_value");
+const {
+  trimString,
+  normalize,
+  resolveInstituteIdFromRequest,
+  ensureCategoryDoc,
+  ensureValueRecord,
+  ensureXrayMasterValues,
+  listMasterXrays,
+  listMasterXrayBodyParts,
+  findMasterXrays,
+  listMasterTests
+} = require("../utils/instituteMasterData");
 
 const parseDateInput = (value, endOfDay = false) => {
   if (!value) return null;
@@ -175,7 +187,12 @@ xrayApp.post('/migrate-report', async (req, res) => {
 // ✅ GET master test list
 xrayApp.get("/tests", async (req, res) => {
   try {
-    const tests = await DiagnosisTest.find().sort({ Group: 1, Test_Name: 1 });
+    const instituteId = resolveInstituteIdFromRequest(req);
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Valid instituteId is required" });
+    }
+
+    const tests = await listMasterTests(instituteId);
     res.status(200).json(tests);
   } catch (err) {
     console.error("Error fetching tests:", err);
@@ -231,7 +248,13 @@ xrayApp.post('/upload-debug', xrayUpload.single('report'), async (req, res) => {
 // GET all X-ray types
 xrayApp.get("/types", async (req, res) => {
   try {
-    const xrays = await Xray.find().sort({ Body_Part: 1, Xray_Type: 1 });
+    const instituteId = resolveInstituteIdFromRequest(req);
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Valid instituteId is required" });
+    }
+
+    const includeInactive = String(req.query?.includeInactive || "").toLowerCase() === "true";
+    const xrays = await listMasterXrays(instituteId, { includeInactive });
     res.json(xrays);
   } catch (err) {
     console.error("Error fetching X-ray types:", err);
@@ -304,6 +327,7 @@ xrayApp.get("/queue/:instituteId", async (req, res) => {
 
 xrayApp.post("/xrays/add", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
+    const instituteId = resolveInstituteIdFromRequest(req);
     const {
       Xray_Type,
       Body_Part,
@@ -317,32 +341,55 @@ xrayApp.post("/xrays/add", verifyToken, requireInstituteAdmin, async (req, res) 
         message: "Xray_Type and Body_Part are required"
       });
     }
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Valid instituteId is required" });
+    }
 
-    // check duplicate
-    const exists = await Xray.findOne({
-      Xray_Type,
-      Body_Part
+    const category = await ensureCategoryDoc(instituteId, "Xray Types");
+    await ensureXrayMasterValues(instituteId);
+    await ensureValueRecord({
+      instituteId,
+      categoryId: category._id,
+      valueName: Body_Part,
+      meta: { kind: "xray_body_part", bodyPart: trimString(Body_Part) }
     });
 
+    const exists = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: category._id,
+      normalized_value: normalize(Xray_Type),
+      "meta.kind": "xray"
+    });
     if (exists) {
       return res.status(400).json({
         message: "X-ray type already exists"
       });
     }
 
-    const newXray = new Xray({
-      Xray_Type,
-      Body_Part,
-      Side: Side || "NA",
-      View: View || "",
-      Film_Size: Film_Size || ""
+    const newXray = await ensureValueRecord({
+      instituteId,
+      categoryId: category._id,
+      valueName: Xray_Type,
+      meta: {
+        kind: "xray",
+        bodyPart: trimString(Body_Part),
+        side: trimString(Side) || "NA",
+        view: trimString(View),
+        filmSize: trimString(Film_Size)
+      }
     });
-
-    await newXray.save();
 
     res.status(201).json({
       message: "X-ray created",
-      xray: newXray
+      xray: {
+        _id: newXray._id,
+        Xray_Type: trimString(newXray.value_name),
+        Body_Part: trimString(newXray?.meta?.bodyPart),
+        Side: trimString(newXray?.meta?.side) || "NA",
+        View: trimString(newXray?.meta?.view),
+        Film_Size: trimString(newXray?.meta?.filmSize),
+        status: newXray.status || "Active"
+      }
     });
 
   } catch (err) {
@@ -355,8 +402,15 @@ xrayApp.post("/xrays/add", verifyToken, requireInstituteAdmin, async (req, res) 
 
 xrayApp.put("/xrays/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
+    const instituteId = resolveInstituteIdFromRequest(req);
     const { id } = req.params;
-    const xray = await Xray.findById(id);
+    const category = await ensureCategoryDoc(instituteId, "Xray Types");
+    const xray = await MasterValue.findOne({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: category?._id,
+      "meta.kind": "xray"
+    });
     if (!xray) {
       return res.status(404).json({ message: "X-ray not found" });
     }
@@ -366,15 +420,44 @@ xrayApp.put("/xrays/:id", verifyToken, requireInstituteAdmin, async (req, res) =
     const Side = String(req.body.Side || "NA").trim() || "NA";
     const View = String(req.body.View || "").trim();
     const Film_Size = String(req.body.Film_Size || "").trim();
+    const status = String(req.body.status || "").trim();
 
-    if (Xray_Type) xray.Xray_Type = Xray_Type;
-    if (Body_Part) xray.Body_Part = Body_Part;
-    xray.Side = Side;
-    xray.View = View;
-    xray.Film_Size = Film_Size;
+    if (Body_Part) {
+      await ensureValueRecord({
+        instituteId,
+        categoryId: category._id,
+        valueName: Body_Part,
+        meta: { kind: "xray_body_part", bodyPart: Body_Part }
+      });
+    }
+
+    if (Xray_Type) xray.value_name = Xray_Type;
+    xray.normalized_value = normalize(xray.value_name);
+    xray.meta = {
+      ...(xray.meta || {}),
+      kind: "xray",
+      bodyPart: Body_Part || trimString(xray?.meta?.bodyPart),
+      side: Side,
+      view: View,
+      filmSize: Film_Size
+    };
+    if (status === "Active" || status === "Inactive") {
+      xray.status = status;
+    }
 
     await xray.save();
-    res.json({ message: "X-ray updated", xray });
+    res.json({
+      message: "X-ray updated",
+      xray: {
+        _id: xray._id,
+        Xray_Type: trimString(xray.value_name),
+        Body_Part: trimString(xray?.meta?.bodyPart),
+        Side: trimString(xray?.meta?.side) || "NA",
+        View: trimString(xray?.meta?.view),
+        Film_Size: trimString(xray?.meta?.filmSize),
+        status: xray.status || "Active"
+      }
+    });
   } catch (err) {
     console.error("Error updating xray:", err);
     res.status(500).json({ message: "Failed to update xray", error: err.message });
@@ -383,8 +466,15 @@ xrayApp.put("/xrays/:id", verifyToken, requireInstituteAdmin, async (req, res) =
 
 xrayApp.delete("/xrays/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
+    const instituteId = resolveInstituteIdFromRequest(req);
     const { id } = req.params;
-    const deleted = await Xray.findByIdAndDelete(id);
+    const category = await ensureCategoryDoc(instituteId, "Xray Types");
+    const deleted = await MasterValue.findOneAndDelete({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: category?._id,
+      "meta.kind": "xray"
+    });
     if (!deleted) {
       return res.status(404).json({ message: "X-ray not found" });
     }
@@ -439,6 +529,48 @@ xrays = [];
 
 xrays.forEach(x=>{
 delete x.ReportFile;
+});
+
+await ensureXrayMasterValues(Institute_ID);
+
+const xrayIds = [
+  ...new Set(
+    xrays
+      .map((item) => item?.Xray_ID)
+      .filter((id) => mongoose.Types.ObjectId.isValid(id))
+  )
+];
+const xrayNames = [
+  ...new Set(
+    xrays
+      .map((item) => trimString(item?.Xray_Type))
+      .filter(Boolean)
+  )
+];
+
+const masterXrays = [
+  ...(xrayIds.length ? await findMasterXrays(Institute_ID, { ids: xrayIds }) : []),
+  ...(xrayNames.length ? await findMasterXrays(Institute_ID, { names: xrayNames }) : [])
+];
+
+const masterById = new Map(masterXrays.map((row) => [String(row._id), row]));
+const masterByName = new Map(masterXrays.map((row) => [trimString(row?.value_name).toLowerCase(), row]));
+
+xrays = xrays.map((item) => {
+  const master =
+    (item?.Xray_ID ? masterById.get(String(item.Xray_ID)) : null) ||
+    masterByName.get(trimString(item?.Xray_Type).toLowerCase()) ||
+    null;
+
+  return {
+    ...item,
+    Xray_ID: master?._id || item?.Xray_ID || null,
+    Xray_Type: trimString(master?.value_name) || trimString(item?.Xray_Type),
+    Body_Part: trimString(master?.meta?.bodyPart) || trimString(item?.Body_Part),
+    Side: trimString(master?.meta?.side) || trimString(item?.Side) || "NA",
+    View: trimString(master?.meta?.view) || trimString(item?.View),
+    Film_Size: trimString(item?.Film_Size || master?.meta?.filmSize)
+  };
 });
 
 
@@ -530,15 +662,13 @@ error:err.message
 // ✅ Get all body parts
 xrayApp.get("/body-parts", verifyToken, async (req, res) => {
   try {
-    const bodyParts = await Xray.distinct("Body_Part");
-    const customBodyParts = await Xray.find({ "_id": { $exists: true } }).select("_id Body_Part status").sort({ Body_Part: 1 });
-    
-    const result = customBodyParts.map(bp => ({
-      _id: bp._id,
-      Body_Part: bp.Body_Part,
-      status: bp.status || "Active"
-    }));
-    
+    const instituteId = resolveInstituteIdFromRequest(req);
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Valid instituteId is required" });
+    }
+
+    const includeInactive = String(req.query?.includeInactive || "").toLowerCase() === "true";
+    const result = await listMasterXrayBodyParts(instituteId, { includeInactive });
     res.json(result);
   } catch (err) {
     console.error("Error fetching body parts:", err);
@@ -549,36 +679,41 @@ xrayApp.get("/body-parts", verifyToken, async (req, res) => {
 // ✅ Add a new body part
 xrayApp.post("/body-parts", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
+    const instituteId = resolveInstituteIdFromRequest(req);
     const { Body_Part } = req.body;
     
     if (!Body_Part || !String(Body_Part).trim()) {
       return res.status(400).json({ message: "Body_Part is required" });
     }
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Valid instituteId is required" });
+    }
 
     const bp = String(Body_Part).trim();
-    
-    // Check if already exists
-    const existing = await Xray.findOne({ Body_Part: bp });
+
+    const category = await ensureCategoryDoc(instituteId, "Xray Types");
+    const existing = await MasterValue.findOne({
+      Institute_ID: instituteId,
+      category_id: category?._id,
+      normalized_value: normalize(bp),
+      "meta.kind": "xray_body_part"
+    });
     if (existing) {
       return res.status(409).json({ message: "This body part already exists" });
     }
 
-    // Create a placeholder X-ray entry for this body part
-    const newXray = new Xray({
-      Body_Part: bp,
-      Xray_Type: `${bp} (placeholder)`,
-      Side: "NA",
-      View: "",
-      Film_Size: "",
-      status: "Active"
+    const saved = await ensureValueRecord({
+      instituteId,
+      categoryId: category._id,
+      valueName: bp,
+      meta: { kind: "xray_body_part", bodyPart: bp }
     });
-
-    const saved = await newXray.save();
     console.log(`Body part added: ${bp}`);
     
     res.status(201).json({
       _id: saved._id,
-      Body_Part: bp,
+      Body_Part: saved.value_name,
+      status: saved.status || "Active",
       message: "Body part added successfully"
     });
   } catch (err) {
@@ -590,48 +725,77 @@ xrayApp.post("/body-parts", verifyToken, requireInstituteAdmin, async (req, res)
 // ✅ Update a body part (name and/or status)
 xrayApp.put("/body-parts/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
+    const instituteId = resolveInstituteIdFromRequest(req);
     const { id } = req.params;
     const { Body_Part, status } = req.body;
+    const category = await ensureCategoryDoc(instituteId, "Xray Types");
 
-    // Find the body part record
-    const bodyPartRecord = await Xray.findById(id);
+    const bodyPartRecord = await MasterValue.findOne({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: category?._id,
+      "meta.kind": "xray_body_part"
+    });
     if (!bodyPartRecord) {
       return res.status(404).json({ message: "Body part not found" });
     }
 
-    const oldBodyPart = bodyPartRecord.Body_Part;
+    const oldBodyPart = bodyPartRecord.value_name;
 
-    // Update the body part record
     if (Body_Part && String(Body_Part).trim()) {
       const newBodyPart = String(Body_Part).trim();
       
-      // Check if new name already exists
       if (newBodyPart !== oldBodyPart) {
-        const existing = await Xray.findOne({ Body_Part: newBodyPart });
+        const existing = await MasterValue.findOne({
+          _id: { $ne: id },
+          Institute_ID: instituteId,
+          category_id: category?._id,
+          normalized_value: normalize(newBodyPart),
+          "meta.kind": "xray_body_part"
+        });
         if (existing) {
           return res.status(409).json({ message: "This body part name already exists" });
         }
-        
-        // Update all X-rays with this body part to the new name
-        await Xray.updateMany(
-          { Body_Part: oldBodyPart },
-          { $set: { Body_Part: newBodyPart } }
+
+        await MasterValue.updateMany(
+          {
+            Institute_ID: instituteId,
+            category_id: category?._id,
+            "meta.kind": "xray",
+            "meta.bodyPart": oldBodyPart
+          },
+          { $set: { "meta.bodyPart": newBodyPart } }
         );
       }
-      bodyPartRecord.Body_Part = newBodyPart;
+      bodyPartRecord.value_name = newBodyPart;
+      bodyPartRecord.normalized_value = normalize(newBodyPart);
+      bodyPartRecord.meta = {
+        ...(bodyPartRecord.meta || {}),
+        kind: "xray_body_part",
+        bodyPart: newBodyPart
+      };
     }
 
-    if (status) {
+    if (status === "Active" || status === "Inactive") {
       bodyPartRecord.status = status;
+      await MasterValue.updateMany(
+        {
+          Institute_ID: instituteId,
+          category_id: category?._id,
+          "meta.kind": "xray",
+          "meta.bodyPart": Body_Part && String(Body_Part).trim() ? String(Body_Part).trim() : oldBodyPart
+        },
+        { $set: { status } }
+      );
     }
 
     const updated = await bodyPartRecord.save();
     
-    console.log(`Body part updated: ${oldBodyPart} -> ${updated.Body_Part || oldBodyPart}`);
+    console.log(`Body part updated: ${oldBodyPart} -> ${updated.value_name || oldBodyPart}`);
 
     res.json({
       _id: updated._id,
-      Body_Part: updated.Body_Part,
+      Body_Part: updated.value_name,
       status: updated.status,
       message: "Body part updated successfully"
     });
@@ -644,18 +808,29 @@ xrayApp.put("/body-parts/:id", verifyToken, requireInstituteAdmin, async (req, r
 // ✅ Delete a body part and all its X-rays
 xrayApp.delete("/body-parts/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
+    const instituteId = resolveInstituteIdFromRequest(req);
     const { id } = req.params;
+    const category = await ensureCategoryDoc(instituteId, "Xray Types");
 
-    // Find the body part record to get the body part name
-    const bodyPartRecord = await Xray.findById(id);
+    const bodyPartRecord = await MasterValue.findOne({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: category?._id,
+      "meta.kind": "xray_body_part"
+    });
     if (!bodyPartRecord) {
       return res.status(404).json({ message: "Body part not found" });
     }
 
-    const bodyPartName = bodyPartRecord.Body_Part;
+    const bodyPartName = bodyPartRecord.value_name;
 
-    // Delete all X-rays with this body part
-    const deleteResult = await Xray.deleteMany({ Body_Part: bodyPartName });
+    const deleteResult = await MasterValue.deleteMany({
+      Institute_ID: instituteId,
+      category_id: category?._id,
+      "meta.kind": "xray",
+      "meta.bodyPart": bodyPartName
+    });
+    await bodyPartRecord.deleteOne();
 
     console.log(`Deleted body part '${bodyPartName}' and ${deleteResult.deletedCount} X-rays`);
 

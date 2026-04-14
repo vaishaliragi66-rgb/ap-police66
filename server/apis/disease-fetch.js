@@ -2,9 +2,7 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 
-const DiseaseTypes = require("../models/diseasetypes");
-const MasterCategory = require("../models/master_category");
-const MasterValue = require("../models/master_value");
+const { listMasterDiseases } = require("../utils/instituteMasterData");
 
 const sortUniqueByName = (arr) => {
   const seen = new Set();
@@ -24,90 +22,19 @@ const sortUniqueByName = (arr) => {
   return out.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 };
 
-const getCustomDiseases = async (instituteId, mode) => {
-  if (!mongoose.Types.ObjectId.isValid(instituteId)) return [];
-
-  const diseasesCategory = await MasterCategory.findOne({
-    Institute_ID: instituteId,
-    normalized_name: "diseases"
-  }).select("_id");
-
-  if (!diseasesCategory) return [];
-
-  const values = await MasterValue.find({
-    Institute_ID: instituteId,
-    category_id: diseasesCategory._id,
-    status: "Active",
-    "meta.kind": "disease"
-  }).lean();
-
-  return values
-    .filter((item) => {
-      const group = String(item?.meta?.group || "").trim();
-      if (mode === "cd") return group === "Communicable";
-      if (mode === "ncd") return group === "Non-Communicable";
-      return group === "Communicable" || group === "Non-Communicable";
-    })
-    .map((item) => ({
-      name: item.value_name,
-      category: item?.meta?.group === "Communicable" ? "Communicable Diseases" : "Non-Communicable Diseases",
-      type: "Custom"
-    }));
-};
-
-const extractDiseases = (data, mode) => {
-  let diseases = [];
-
-  data.forEach(category => {
-
-    const isCD = category.category === "Communicable Diseases";
-    const isNCD = category.category === "Non-Communicable Diseases";
-
-    category.types?.forEach(type => {
-
-      // ✅ COMMUNICABLE (STRICT CHECK)
-      if ((mode === "cd" || mode === "all") && isCD) {
-        type.diseases?.forEach(d => {
-          if (!d.name) return;
-
-          diseases.push({
-            name: d.name,
-            category: category.category,
-            type: type.name
-          });
-        });
-      }
-
-      // ✅ NON-COMMUNICABLE
-      if ((mode === "ncd" || mode === "all") && isNCD) {
-        type.subgroups?.forEach(sub => {
-          sub.diseases?.forEach(d => {
-            if (!d.name) return;
-
-            diseases.push({
-              name: d.name,
-              category: category.category,
-              type: type.name,
-              subgroup: sub.name
-            });
-          });
-        });
-      }
-
-    });
-  });
-
-  return diseases;
-};
 router.get("/cd", async (req, res) => {
   try {
-    const data = await DiseaseTypes.find().lean(); // important
-
     const instituteId = String(req.query.instituteId || "").trim();
-    const diseases = extractDiseases(data, "cd");
-    const custom = await getCustomDiseases(instituteId, "cd");
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ error: "Valid instituteId is required" });
+    }
 
-    res.json(sortUniqueByName([...diseases, ...custom])); // ✅ THIS LINE MATTERS
+    const { communicable } = await listMasterDiseases(instituteId);
+    res.json(sortUniqueByName((communicable || []).map((name) => ({
+      name,
+      category: "Communicable Diseases",
+      type: "Master Data"
+    }))));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -115,13 +42,17 @@ router.get("/cd", async (req, res) => {
 
 router.get("/ncd", async (req, res) => {
   try {
-    const data = await DiseaseTypes.find();
-
     const instituteId = String(req.query.instituteId || "").trim();
-    const diseases = extractDiseases(data, "ncd");
-    const custom = await getCustomDiseases(instituteId, "ncd");
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ error: "Valid instituteId is required" });
+    }
 
-    res.json(sortUniqueByName([...diseases, ...custom]));
+    const { nonCommunicable } = await listMasterDiseases(instituteId);
+    res.json(sortUniqueByName((nonCommunicable || []).map((name) => ({
+      name,
+      category: "Non-Communicable Diseases",
+      type: "Master Data"
+    }))));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -129,80 +60,48 @@ router.get("/ncd", async (req, res) => {
 
 // 🔹 DEBUG ROUTE
 router.get("/all", async (req, res) => {
-  const data = await DiseaseTypes.find();
-  console.log("DATA LENGTH:", data.length);
-  res.json(data);
+  try {
+    const instituteId = String(req.query.instituteId || "").trim();
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ error: "Valid instituteId is required" });
+    }
+
+    const { communicable, nonCommunicable } = await listMasterDiseases(instituteId);
+    res.json({
+      communicable: sortUniqueByName(communicable || []),
+      nonCommunicable: sortUniqueByName(nonCommunicable || [])
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // 🔹 SEARCH ROUTE (fixed for both CD + NCD)
 router.get("/search", async (req, res) => {
   try {
     const { q, category } = req.query;
+    const instituteId = String(req.query.instituteId || "").trim();
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ error: "Valid instituteId is required" });
+    }
 
-    const data = await DiseaseTypes.find();
+    const { communicable, nonCommunicable } = await listMasterDiseases(instituteId);
+    const comm = (communicable || []).map((name) => ({
+      Disease_Name: name,
+      Category: "Communicable Diseases"
+    }));
+    const nonComm = (nonCommunicable || []).map((name) => ({
+      Disease_Name: name,
+      Category: "Non-Communicable Diseases"
+    }));
 
-    let results = [];
-
-    data.forEach(main => {
-      if (category && main.category !== category) return;
-
-      main.types.forEach(type => {
-
-        // ✅ COMMUNICABLE SEARCH
-        if (type.diseases) {
-          type.diseases.forEach(disease => {
-            if (
-              q &&
-              disease.name.toLowerCase().includes(q.toLowerCase())
-            ) {
-              results.push({
-                Disease_Name: disease.name,
-                Category: main.category
-              });
-            }
-          });
-        }
-
-        // ✅ NON-COMMUNICABLE SEARCH
-        if (type.subgroups) {
-          type.subgroups.forEach(sub => {
-
-            // subgroup match
-            if (
-              q &&
-              sub.name.toLowerCase().includes(q.toLowerCase())
-            ) {
-              results.push({
-                Disease_Name: sub.name,
-                Category: main.category
-              });
-            }
-
-            // diseases inside subgroup
-            sub.diseases?.forEach(disease => {
-              if (
-                q &&
-                disease.name.toLowerCase().includes(q.toLowerCase())
-              ) {
-                results.push({
-                  Disease_Name: disease.name,
-                  Category: main.category
-                });
-              }
-            });
-
-          });
-        }
-
-      });
+    const results = [...comm, ...nonComm].filter((item) => {
+      if (category && item.Category !== category) return false;
+      if (!q) return true;
+      return String(item.Disease_Name || "").toLowerCase().includes(String(q).toLowerCase());
     });
 
-    // 🔥 REMOVE DUPLICATES
-    const unique = [
-      ...new Map(results.map(d => [d.Disease_Name, d])).values()
-    ];
-
-    res.json(unique.slice(0, 10));
+    res.json(results.slice(0, 10));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

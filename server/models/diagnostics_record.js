@@ -13,7 +13,7 @@ const DiagnosisRecordSchema = new Schema(
 
   Tests: [
     {
-      Test_ID: { type: Schema.Types.ObjectId, ref: "DiagnosisTest" },
+      Test_ID: { type: Schema.Types.ObjectId, ref: "MasterValue" },
 
       Test_Name: { type: String, required: true },
 

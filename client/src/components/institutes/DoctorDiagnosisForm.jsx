@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
-import diagnosticTestsByCategory from "../../data/diagnosticTests";
 
 const DoctorDiagnosisForm = () => {
   const [testsMaster, setTestsMaster] = useState([]);
@@ -21,15 +20,6 @@ const DoctorDiagnosisForm = () => {
 
   const testsByCategory = useMemo(() => {
     const grouped = {};
-    Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
-      grouped[category] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
-        _id: `static-${category}-${idx}`,
-        name: String(test?.name || "").trim(),
-        reference: test?.reference || "",
-        unit: test?.unit || ""
-      })).filter((item) => item.name);
-    });
-
     (testsMaster || []).forEach((test) => {
       const group = String(test?.Group || "").trim();
       const testName = String(test?.Test_Name || "").trim();
@@ -76,7 +66,10 @@ const DoctorDiagnosisForm = () => {
 
   const fetchTests = async () => {
     try {
-      const res = await axios.get(`${BACKEND_URL}/diagnosis-api/tests`);
+      const instituteId = localStorage.getItem("instituteId") || "";
+      const res = await axios.get(`${BACKEND_URL}/diagnosis-api/tests`, {
+        params: instituteId ? { instituteId } : {}
+      });
       setTestsMaster(res.data || []);
     } catch (err) {
       console.error(err);

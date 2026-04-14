@@ -1,13 +1,8 @@
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
 const mongoose = require('mongoose');
-const MasterCategory = require('../models/master_category');
-const MasterValue = require('../models/master_value');
+const { listMasterDiseases } = require('../utils/instituteMasterData');
 
 const router = express.Router();
-
-const DATA_FILE = path.join(__dirname, '..', 'data', 'diseases.json');
 
 function sortUnique(arr) {
   if (!Array.isArray(arr)) return [];
@@ -17,42 +12,15 @@ function sortUnique(arr) {
 
 router.get('/static', async (req, res) => {
   try {
-    if (!fs.existsSync(DATA_FILE)) {
-      return res.status(404).json({ message: 'Disease data not found' });
-    }
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    const data = JSON.parse(raw || '{}');
-
-    let comm = sortUnique(data.communicable || []);
-    let non = sortUnique(data.nonCommunicable || []);
-
     const instituteId = String(req.query.instituteId || '').trim();
-    if (mongoose.Types.ObjectId.isValid(instituteId)) {
-      const diseasesCategory = await MasterCategory.findOne({
-        Institute_ID: instituteId,
-        normalized_name: 'diseases'
-      }).select('_id');
-
-      if (diseasesCategory) {
-        const customDiseases = await MasterValue.find({
-          Institute_ID: instituteId,
-          category_id: diseasesCategory._id,
-          status: 'Active',
-          'meta.kind': 'disease'
-        }).select('value_name meta');
-
-        customDiseases.forEach((item) => {
-          const group = String(item?.meta?.group || '').trim();
-          if (group === 'Communicable') comm.push(item.value_name);
-          if (group === 'Non-Communicable') non.push(item.value_name);
-        });
-
-        comm = sortUnique(comm);
-        non = sortUnique(non);
-      }
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: 'Valid instituteId is required' });
     }
 
-    const all = sortUnique(data.all || [].concat(comm, non));
+    const { communicable, nonCommunicable } = await listMasterDiseases(instituteId);
+    const comm = sortUnique(communicable);
+    const non = sortUnique(nonCommunicable);
+    const all = sortUnique([].concat(comm, non));
 
     return res.json({ communicable: comm, nonCommunicable: non, all });
   } catch (err) {

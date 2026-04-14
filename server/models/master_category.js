@@ -23,6 +23,10 @@ const MasterCategorySchema = new mongoose.Schema(
       type: String,
       enum: ["Active", "Inactive"],
       default: "Active"
+    },
+    seed_version: {
+      type: Number,
+      default: 0
     }
   },
   { timestamps: true }
