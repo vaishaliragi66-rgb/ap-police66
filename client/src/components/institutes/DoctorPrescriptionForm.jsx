@@ -2096,6 +2096,28 @@ if (validXrays.length === 0) {
         {/* First Row: Medicine Selection */}
         <div className="row g-2 align-items-end mb-3">
           <div className="col-md-2">
+            <label className="form-label fw-semibold">To Be Prescribed</label>
+            <div className="form-check d-flex align-items-center h-100">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                id={`toBePrescribed-${i}`}
+                checked={med.ToBePrescribed || med.toBePrescribed || med.IsToBePrescribed || false}
+                onChange={(e) => {
+                  const copy = [...formData.Medicines];
+                  copy[i].ToBePrescribed = e.target.checked;
+                  copy[i].toBePrescribed = e.target.checked;
+                  copy[i].IsToBePrescribed = e.target.checked;
+                  setFormData(prev => ({ ...prev, Medicines: copy }));
+                }}
+              />
+              <label className="form-check-label ms-2" htmlFor={`toBePrescribed-${i}`}>
+                Yes
+              </label>
+            </div>
+          </div>
+
+          <div className="col-md-2">
             <label className="form-label fw-semibold">Medicine Type</label>
             <select
               className="form-select"
@@ -2245,28 +2267,6 @@ if (validXrays.length === 0) {
                 ))}
               </select>
             )}
-          </div>
-
-          <div className="col-md-2">
-            <label className="form-label fw-semibold">To Be Prescribed</label>
-            <div className="form-check d-flex align-items-center h-100">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                id={`toBePrescribed-${i}`}
-                checked={med.ToBePrescribed || med.toBePrescribed || med.IsToBePrescribed || false}
-                onChange={(e) => {
-                  const copy = [...formData.Medicines];
-                  copy[i].ToBePrescribed = e.target.checked;
-                  copy[i].toBePrescribed = e.target.checked;
-                  copy[i].IsToBePrescribed = e.target.checked;
-                  setFormData(prev => ({ ...prev, Medicines: copy }));
-                }}
-              />
-              <label className="form-check-label ms-2" htmlFor={`toBePrescribed-${i}`}>
-                Yes
-              </label>
-            </div>
           </div>
         </div>
 
