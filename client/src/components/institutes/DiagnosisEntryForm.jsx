@@ -6,6 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const DiagnosisEntryForm = () => {
   const [testsMaster, setTestsMaster] = useState([]);
+  const [testCategories, setTestCategories] = useState([]);
   const [doctorDiagnosis, setDoctorDiagnosis] = useState([]);
   // const [searchTerm, setSearchTerm] = useState("");
   const [instituteName, setInstituteName] = useState("");
@@ -115,12 +116,10 @@ const fetchDoctorDiagnosis = async (visitId) => {
 const fetchTests = async () => {
   try {
     const instituteId = localStorage.getItem("instituteId") || "";
-    const res = await axios.get(
-      `${BACKEND_URL}/diagnosis-api/tests`,
-      {
-        params: instituteId ? { instituteId } : {}
-      }
-    );
+    const [res, structRes] = await Promise.all([
+      axios.get(`${BACKEND_URL}/diagnosis-api/tests`, { params: instituteId ? { instituteId } : {} }).catch(() => ({ data: [] })),
+      axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: instituteId ? { instituteId } : {} }).catch(() => ({ data: { categories: [] } }))
+    ]);
 
     const normalizedTests = (res.data || [])
       .filter((test) => test?.Group || test?.Test_Name)
@@ -134,6 +133,10 @@ const fetchTests = async () => {
 
     setTestsMaster(normalizedTests);
     console.log("Tests fetched:", normalizedTests.length);
+    const structCategories = Array.isArray(structRes.data?.categories) ? structRes.data.categories : [];
+    const groupsFromTests = Array.from(new Set((normalizedTests || []).map((t) => String(t?.Group || t?.Display_Name || "").trim()).filter(Boolean)));
+    const combined = Array.from(new Set([...(structCategories || []), ...groupsFromTests])).sort((a, b) => a.localeCompare(b));
+    setTestCategories(combined);
   } catch (err) {
     console.error("Error fetching tests:", err);
   }

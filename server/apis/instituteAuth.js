@@ -92,8 +92,18 @@ router.post(
     }
 
     const institute = await Institute.findOne({
-  Email_ID: { $regex: `^${Email_ID.trim()}$`, $options: "i" }
-});
+      Email_ID: { $regex: `^${Email_ID.trim()}$`, $options: "i" }
+    });
+
+    // Debug: log incoming login attempts and whether an institute doc was found
+    try {
+      console.log(`[INSTITUTE LOGIN] Email_ID=${Email_ID} -> foundInstitute=${!!institute}`);
+      if (institute) {
+        console.log(`[INSTITUTE LOGIN] storedPasswordPreview=${String(institute.password).slice(0,20)}`);
+      }
+    } catch (e) {
+      console.warn('Error logging institute login debug info', e && e.message);
+    }
 
 if (!institute) {
   return res.status(401).json({

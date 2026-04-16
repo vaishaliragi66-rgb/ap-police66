@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { FaUserPlus, FaCamera, FaUser } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 import "./EmployeeRegister.css"
 const EmployeeRegister = () => {
   const navigate = useNavigate();

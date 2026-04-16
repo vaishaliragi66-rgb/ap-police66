@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
-import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 import {
   Bar,
   BarChart,

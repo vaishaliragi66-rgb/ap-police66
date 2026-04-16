@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 
 const Diseases = () => {
   const [employees, setEmployees] = useState([]);

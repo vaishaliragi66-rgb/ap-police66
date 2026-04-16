@@ -8,7 +8,7 @@ import {
   getMasterMedicineEntries,
   canonicalizeMedicineTypeLabel,
   getCanonicalMedicineTypeKey
-} from "../../utils/masterData";
+} from "../../utils/masterData_clean";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { mergeXrayTypes } from "../../data/xrayTypes";
 
@@ -1028,7 +1028,7 @@ const MasterData = () => {
     try {
       // Use the primary endpoint which handles Tests category internally
       await axios.post(`${BACKEND_URL}/master-data-api/tests/category`, {
-        name: newTestCategoryName.trim()
+        categoryName: newTestCategoryName.trim()
       });
       setNewTestCategoryName("");
       setMessage("Test category added successfully");
@@ -2129,6 +2129,88 @@ const MasterData = () => {
                               <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditXray(item)} disabled={!isInstituteAdmin || saving}>Edit</button>
                               <button className="btn btn-sm btn-outline-warning" onClick={() => handleToggleXrayStatus(item)} disabled={!isInstituteAdmin || saving}>Toggle</button>
                               <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteXray(item)} disabled={!isInstituteAdmin || saving}>Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              {selectedCategory && !["Tests", "Diseases", "Medicines", "Xray Types"].includes(selectedCategory.category_name) && (
+                <>
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-8">
+                      <input
+                        className="form-control"
+                        placeholder={`Add new ${selectedCategory?.category_name} value`}
+                        value={newValueName}
+                        onChange={(e) => setNewValueName(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <button
+                        className="btn btn-success w-100"
+                        onClick={handleAddValue}
+                        disabled={!isInstituteAdmin || saving || !newValueName.trim()}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="table table-bordered table-striped align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: 80 }}>ID</th>
+                          <th>Value</th>
+                          <th style={{ width: 120 }}>Status</th>
+                          <th style={{ width: 240 }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {!loading && filteredValues.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="text-center py-4 text-muted">No values found</td>
+                          </tr>
+                        )}
+                        {filteredValues.map((item, idx) => (
+                          <tr key={`${String(item.value_name || item.name)}-${idx}`}>
+                            <td>{idx + 1}</td>
+                            <td>{item.value_name || item.name}</td>
+                            <td>
+                              <span className={`badge ${item.status === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                {item.status || "Active"}
+                              </span>
+                            </td>
+                            <td className="d-flex flex-wrap gap-2">
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => handleEditValue(item)}
+                                disabled={!isInstituteAdmin || saving || item?.isDefault}
+                                title={item?.isDefault ? "Cannot edit built-in value" : "Edit value"}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-warning"
+                                onClick={() => handleToggleValue(item)}
+                                disabled={!isInstituteAdmin || saving || item?.isDefault}
+                                title={item?.isDefault ? "Cannot toggle built-in value" : "Toggle status"}
+                              >
+                                {item.status === "Active" ? "Deactivate" : "Activate"}
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => handleDeleteValue(item)}
+                                disabled={!isInstituteAdmin || saving || item?.isDefault}
+                                title={item?.isDefault ? "Cannot delete built-in value" : "Delete value"}
+                              >
+                                Delete
+                              </button>
                             </td>
                           </tr>
                         ))}

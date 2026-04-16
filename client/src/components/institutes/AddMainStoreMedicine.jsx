@@ -2,7 +2,7 @@
 import axios from "axios";
 import { FaPills, FaCalendarAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { fetchMasterDataMap, getMasterOptions, getMasterMedicinesByType, getMasterMedicinesByTypeAndForm } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterOptions, getMasterMedicinesByType, getMasterMedicinesByTypeAndForm } from "../../utils/masterData_clean";
 
 const normalizeText = (v) => String(v || "").trim().toLowerCase();
 const AddMainStoreMedicine = () => {
@@ -49,7 +49,7 @@ const AddMainStoreMedicine = () => {
 
     return merged;
   };
-  };
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;

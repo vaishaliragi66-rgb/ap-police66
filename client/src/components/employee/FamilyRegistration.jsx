@@ -2,7 +2,7 @@
 import axios from "axios";
 import { FaCamera, FaUser } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 
 const FamilyMemberRegistration = () => {
   const employeeId = localStorage.getItem("employeeId");

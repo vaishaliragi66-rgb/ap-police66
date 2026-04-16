@@ -4,6 +4,7 @@ import PatientSelector from "../institutes/PatientSelector";
 
 const DoctorDiagnosisForm = () => {
   const [testsMaster, setTestsMaster] = useState([]);
+  const [testCategories, setTestCategories] = useState([]);
   const [instituteName, setInstituteName] = useState("");
   const [formData, setFormData] = useState({
     Institute_ID: "",
@@ -67,10 +68,18 @@ const DoctorDiagnosisForm = () => {
   const fetchTests = async () => {
     try {
       const instituteId = localStorage.getItem("instituteId") || "";
-      const res = await axios.get(`${BACKEND_URL}/diagnosis-api/tests`, {
-        params: instituteId ? { instituteId } : {}
-      });
-      setTestsMaster(res.data || []);
+      const [res, structRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/diagnosis-api/tests`, { params: instituteId ? { instituteId } : {} }).catch(() => ({ data: [] })),
+        axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: instituteId ? { instituteId } : {} }).catch(() => ({ data: { categories: [] } }))
+      ]);
+
+      const tests = res.data || [];
+      setTestsMaster(tests);
+
+      const structCategories = Array.isArray(structRes.data?.categories) ? structRes.data.categories : [];
+      const groupsFromTests = Array.from(new Set((tests || []).map((t) => String(t?.Group || t?.Test_Name || "").trim()).filter(Boolean)));
+      const combined = Array.from(new Set([...(structCategories || []), ...groupsFromTests])).sort((a, b) => a.localeCompare(b));
+      setTestCategories(combined);
     } catch (err) {
       console.error(err);
     }
@@ -175,7 +184,7 @@ const DoctorDiagnosisForm = () => {
                   <label style={{ fontSize:12, fontWeight:600 }}>Category</label>
                   <select className="form-select" value={t.Category||""} onChange={e=>handleTestChange(i,'Category', e.target.value)}>
                     <option value="">Select Category</option>
-                    {Object.keys(testsByCategory).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+                    {(testCategories.length ? testCategories : Object.keys(testsByCategory)).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
                   </select>
                 </div>
 

@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 

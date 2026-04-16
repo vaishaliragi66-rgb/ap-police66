@@ -3,7 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
-import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData_clean";
 import SARCPLPrescriptionReport from "./SARCPLPrescriptionReport";
 
 const DoctorPrescriptionForm = () => {
@@ -24,6 +24,7 @@ const DoctorPrescriptionForm = () => {
   const [diseases, setDiseases] = useState([]);
   const [visitId, setVisitId] = useState(null);
   const [testsMaster, setTestsMaster] = useState([]);
+  const [testCategories, setTestCategories] = useState([]);
   const [diagnosisData, setDiagnosisData] = useState({
     Tests: [{ Category: "", Test_ID: "", Test_Name: "" }]
   });
@@ -216,58 +217,32 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
   }, []);
 
   useEffect(() => {
-    const instituteId = localStorage.getItem("instituteId") || "";
-    let mounted = true;
-
-    const normalizeRows = (rows) =>
-      (Array.isArray(rows) ? rows : [])
-        .map((item) => (typeof item === "string" ? { name: item } : item))
-        .filter((item) => item?.name)
-        .map((item) => ({ ...item, name: String(item.name).trim() }));
-
-      medicineEntries.map((item) => ({
-        Medicine_Name: item.value_name,
-        Medicine_Type: item.medicineType,
-        Dosage_Form: item.dosageForm,
-        Strength: item.strength
-      }))
-    );
-
-    const strengthMap = {};
-    medicineEntries.forEach((med) => {
-      const name = String(med?.value_name || "").trim();
-      const medicineType = String(med?.medicineType || "").trim();
-      const dosageForm = String(med?.dosageForm || "").trim();
-      const strength = String(med?.strength || "").trim();
-      if (!name || !strength) return;
-
-      const strictKey = makeMedicineLookupKey(medicineType, dosageForm, name);
-      const typeFallbackKey = makeMedicineLookupKey(medicineType, "", name);
-      const fallbackKey = makeMedicineLookupKey("", "", name);
-      strengthMap[strictKey] = strengthMap[strictKey] || [];
-      if (!strengthMap[strictKey].includes(strength)) {
-        strengthMap[strictKey].push(strength);
-      }
-      strengthMap[typeFallbackKey] = strengthMap[typeFallbackKey] || [];
-      if (!strengthMap[typeFallbackKey].includes(strength)) {
-        strengthMap[typeFallbackKey].push(strength);
-      }
-      strengthMap[fallbackKey] = strengthMap[fallbackKey] || [];
-      if (!strengthMap[fallbackKey].includes(strength)) {
-        strengthMap[fallbackKey].push(strength);
-      }
-    });
-
-    setMedicineStrengths(strengthMap);
-  };
-
-  useEffect(() => {
-    refreshMedicines();
+    // Duplicate/merged block removed — medicines are refreshed by `refreshMedicines()` on mount
   }, []);
   // medicines are refreshed on mount; updates are handled by a single
   // `master-data-updated` listener registered in the disease/masters effect
   // below to avoid duplicate listeners and merge conflict fragments.
 
+
+  const fetchTests = async () => {
+    try {
+      const instituteId = localStorage.getItem("instituteId") || "";
+      const [res, structRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/diagnosis-api/tests`, { params: instituteId ? { instituteId } : {} }).catch(() => ({ data: [] })),
+        axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: instituteId ? { instituteId } : {} }).catch(() => ({ data: { categories: [] } }))
+      ]);
+
+      const tests = res.data || [];
+      setTestsMaster(tests);
+
+      const structCategories = Array.isArray(structRes.data?.categories) ? structRes.data.categories : [];
+      const groupsFromTests = Array.from(new Set((tests || []).map((t) => String(t?.Group || t?.Test_Name || "").trim()).filter(Boolean)));
+      const combined = Array.from(new Set([...(structCategories || []), ...groupsFromTests])).sort((a, b) => a.localeCompare(b));
+      setTestCategories(combined);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const instituteId = localStorage.getItem("instituteId");
@@ -275,6 +250,7 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
 
     setFormData((f) => ({ ...f, Institute_ID: instituteId }));
     fetchInstitute(instituteId);
+    fetchTests();
     // fetchEmployees();
     // fetchInventory(instituteId);
   }, []);
@@ -316,7 +292,7 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
   const fetchDiseases = async (employeeId) => {
     try {
       const res = await axios.get(`${BACKEND_URL}/disease-api/employee/${employeeId}`);
-      setDiseases(reportRes.data.employeeDiseases);
+      setDiseases(res.data?.employeeDiseases || []);
     } catch {
       setDiseases([]);
     }
@@ -392,11 +368,21 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
         // ignore
       }
     };
+    const onMasterUpdatedAll = () => {
+      // refresh tests/categories too
+      try {
+        fetchTests();
+      } catch (e) {
+        // ignore
+      }
+    };
     window.addEventListener("master-data-updated", onMasterUpdated);
+    window.addEventListener("master-data-updated", onMasterUpdatedAll);
 
     return () => {
       mounted = false;
       window.removeEventListener("master-data-updated", onMasterUpdated);
+      window.removeEventListener("master-data-updated", onMasterUpdatedAll);
     };
   }, []);
 
@@ -2001,7 +1987,7 @@ if (validXrays.length === 0) {
             }}
           >
             <option value="">Select Category</option>
-            {Object.keys(testsByCategory).map(category => (
+            {(testCategories.length ? testCategories : Object.keys(testsByCategory)).map(category => (
               <option key={category} value={category}>
                 {category}
               </option>
@@ -2013,21 +1999,17 @@ if (validXrays.length === 0) {
             value={t.Test_Name || ""}
             disabled={!t.Category}
             onChange={(e) => {
-              const selected = testsMaster.find(
-                test => test.Test_Name === e.target.value
-              );
+              const list = t.Category && testsByCategory[t.Category] ? testsByCategory[t.Category] : [];
+              const found = list.find(x => x.name === e.target.value);
 
               const copy = [...diagnosisData.Tests];
-              copy[i] = {
-                ...copy[i],
-                Test_ID: selected?._id || "",
-                Test_Name: e.target.value || ""
-              };
+              if (found) {
+                copy[i] = { ...copy[i], Test_ID: found._id || "", Test_Name: found.name || "" };
+              } else {
+                copy[i] = { ...copy[i], Test_ID: "", Test_Name: e.target.value || "" };
+              }
 
-              setDiagnosisData(prev => ({
-                ...prev,
-                Tests: copy
-              }));
+              setDiagnosisData(prev => ({ ...prev, Tests: copy }));
             }}
           >
             <option value="">Select Test</option>

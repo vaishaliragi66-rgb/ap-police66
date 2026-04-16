@@ -368,7 +368,7 @@ const ensureDefaultCategories = async (instituteId) => {
 };
 
 const ensureDefaultValues = async (instituteId) => {
-  const categories = await MasterCategory.find({ Institute_ID: instituteId }).select("_id category_name normalized_name seed_version");
+  const categories = await MasterCategory.find({ Institute_ID: instituteId }).select("_id category_name normalized_name");
   if (!categories.length) {
     return;
   }
@@ -385,80 +385,26 @@ const ensureDefaultValues = async (instituteId) => {
   });
 
   const docs = [];
-<<<<<<< HEAD
-  const categorySeedUpdates = [];
-  // Build seed docs for any missing default values per category
-  for (const [categoryName, seedValues] of Object.entries(DEFAULT_VALUE_SEEDS)) {
-    try {
-      const category = categories.find((c) => normalize(c.category_name) === normalize(categoryName));
-      if (!category) continue;
-      const existingSet = existingByCategory.get(String(category._id)) || new Set();
-      for (const seed of (Array.isArray(seedValues) ? seedValues : [])) {
-        // Seed entries may be strings or objects with value_name/meta
-        const valueName = typeof seed === 'string' ? seed : String(seed?.value_name || '').trim();
-        if (!valueName) continue;
-        const normalizedValue = normalize(valueName);
-        if (existingSet.has(normalizedValue)) continue;
-        const meta = (typeof seed === 'object' && seed?.meta) ? seed.meta : {};
-        docs.push({
-          Institute_ID: instituteId,
-          category_id: category._id,
-          value_name: valueName,
-          normalized_value: normalizedValue,
-          status: 'Active',
-          meta
-        });
-        existingSet.add(normalizedValue);
-      }
-    } catch (e) {
-      console.warn('ensureDefaultValues seed error for', categoryName, e.message);
-    }
-  }
-=======
 
   categories.forEach((category) => {
     const seedValues = DEFAULT_VALUE_SEEDS[category.category_name] || [];
     const existingSet = existingByCategory.get(String(category._id)) || new Set();
 
-    // dedupe seedValues by normalized value to avoid duplicate insert attempts
-    const seenSeedNormalized = new Set();
     seedValues.forEach((seedItem) => {
       const value_name = String(
         typeof seedItem === "string" ? seedItem : seedItem?.value_name || ""
       ).trim();
       if (!value_name) return;
 
-      let meta =
-        seedItem && typeof seedItem === "object" && !Array.isArray(seedItem)
-          ? seedItem.meta || seedItem.meta || {}
-          : {};
-
-      // If the seed item itself contains medicine meta fields (from parsed JSON), prefer them
-      if (!meta || Object.keys(meta).length === 0) {
-        meta = {
-          medicineType: seedItem?.meta?.medicineType || seedItem?.medicineType || seedItem?.meta?.medicine_type || seedItem?.medicine_type || "",
-          dosageForm: seedItem?.meta?.dosageForm || seedItem?.dosageForm || seedItem?.meta?.dosage_form || seedItem?.dosage_form || "",
-          strength: seedItem?.meta?.strength || seedItem?.strength || ""
-        };
-      }
-
-      // For medicines, include medicineType/dosageForm/strength in the normalized key
-      let normalized_value;
-      if (String(category.category_name || "").trim() === "Medicines") {
-        normalized_value = makeMedicineKey({
-          value_name,
-          medicineType: meta.medicineType || meta.medicine_type || "",
-          dosageForm: meta.dosageForm || meta.dosage_form || meta.form || "",
-          strength: meta.strength || ""
-        });
-      } else {
-        normalized_value = normalize(value_name);
-      }
-
-      if (!normalized_value || existingSet.has(normalized_value) || seenSeedNormalized.has(normalized_value)) {
+      const normalized_value = normalize(value_name);
+      if (existingSet.has(normalized_value)) {
         return;
       }
-      seenSeedNormalized.add(normalized_value);
+
+      const meta =
+        seedItem && typeof seedItem === "object" && !Array.isArray(seedItem)
+          ? seedItem.meta || {}
+          : {};
 
       docs.push({
         Institute_ID: instituteId,
@@ -470,26 +416,9 @@ const ensureDefaultValues = async (instituteId) => {
       });
     });
   });
->>>>>>> f14dbc1 (wip: restore stash after pull)
 
   if (docs.length) {
-    try {
-      await MasterValue.insertMany(docs, { ordered: false });
-<<<<<<< HEAD
-    } catch (e) {
-      // ignore duplicate errors or continue
-=======
-    } catch (err) {
-      // Ignore duplicate key errors that can occur when parallel inserts or
-      // existing values conflict with seeds. Log other errors.
-      if (err && (err.code === 11000 || (err.message && err.message.toLowerCase().includes('duplicate key')))) {
-        console.warn('Ignored duplicate key error while seeding master values');
-      } else {
-        console.error('Failed to insert default master values', err);
-        throw err;
-      }
->>>>>>> f14dbc1 (wip: restore stash after pull)
-    }
+    await MasterValue.insertMany(docs, { ordered: false });
   }
 };
 

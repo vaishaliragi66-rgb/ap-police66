@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import "./PharmacyPrescriptionForm.css";
 import { useNavigate } from "react-router-dom";
-import { fetchMasterDataMap, getMasterMedicinesByTypeAndForm, getMasterOptions, getMasterMedicineEntries } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterMedicinesByTypeAndForm, getMasterOptions, getMasterMedicineEntries } from "../../utils/masterData_clean";
 
 const { useMemo } = React;
 
@@ -26,6 +26,9 @@ const PharmacyPrescriptionForm = () => {
   const [masterMap, setMasterMap] = useState({});
   const [showDoctorNotes, setShowDoctorNotes] = useState({});
 
+  const medicineTypeOptions = getMasterOptions(masterMap, "Medicine Types");
+  const dosageFormOptions = getMasterOptions(masterMap, "Dosage Forms");
+
   const normalizeText = (value) => String(value || "").trim().toLowerCase();
 
   const navigate = useNavigate();
@@ -36,55 +39,26 @@ const PharmacyPrescriptionForm = () => {
     IsFamilyMember: false,
     FamilyMember_ID: "",
     Medicines: [{ medicineId: "", medicineName: "", medicineType: "", dosageForm: "", type: "", strength: "", expiryDate: "", quantity: 0 }],
+  });
+
+  // Build options for medicine select combining inventory and master data
+  const getPharmacyOptionsByTypeAndForm = (medicineTypeValue, dosageFormValue) => {
+    const typeKey = normalizeText(medicineTypeValue);
+    if (!typeKey) return [];
+
+    const formKey = normalizeText(dosageFormValue);
+
+    const masterEntries = getMasterMedicinesByTypeAndForm(masterMap, medicineTypeValue, dosageFormValue);
+    const masterNames = masterEntries.map((e) => ({ name: e.value_name, strength: e.strength || "" }));
+
+    const inventoryByForm = (inventory || []).filter((item) => {
+      if (!typeKey) return false;
+      if (normalizeText(item?.Medicine_Type) !== typeKey) return false;
+      if (!formKey) return true;
+      return normalizeText(item?.Dosage_Form) === formKey || normalizeText(item?.Type) === formKey;
+    });
+
     const options = [];
-
-    // Add inventory options first (if any)
-    inventoryByForm.forEach((item) => {
-      options.push({
-        value: `code::${item.Medicine_Code}`,
-        label: `${item.Medicine_Name}${item.Strength ? ` (${item.Strength})` : ""}${item.Expiry_Date ? ` - Exp ${formatExpiryMY(item.Expiry_Date)}` : ""} - Stock ${item.Quantity || 0}`,
-        kind: "inventory",
-        inventory: item
-      });
-    });
-
-    // If there are no inventory entries, expose master entries as selectable options
-    if (!inventoryByForm.length) {
-      masterNames.forEach((m) => {
-        options.push({
-          value: `name::${m.name}`,
-          label: `${m.name}${m.strength ? ` (${m.strength})` : ""} - Not in stock`,
-          kind: "master",
-          master: m
-        });
-      });
-      return options;
-    }
-
-    // Add master-only names that are not already present in inventory
-    masterNames.forEach((m) => {
-      const exists = inventoryByForm.some((inv) => normalizeText(inv.Medicine_Name) === normalizeText(m.name) && (m.strength ? normalizeText(inv.Strength) === normalizeText(m.strength) : true));
-      if (!exists) {
-        options.push({
-          value: `name::${m.name}`,
-          label: `${m.name}${m.strength ? ` (${m.strength})` : ""} - Not in stock`,
-          kind: "master",
-          master: m
-        });
-      }
-    });
-
-    return options;
-    filteredInventory.forEach((item) => {
-      const nameKey = normalizeText(item?.Medicine_Name);
-      if (!seen.has(nameKey)) {
-        seen.add(nameKey);
-        deduped.push(item);
-      }
-    });
-
-    return deduped;
-=======
     // Add inventory options first
     inventoryByForm.forEach((item) => {
       options.push({
@@ -95,22 +69,25 @@ const PharmacyPrescriptionForm = () => {
       });
     });
 
+    // If no inventory entries, expose master entries as options
+    if (!inventoryByForm.length) {
+      masterNames.forEach((m) => {
+        options.push({ value: `name::${m.name}`, label: `${m.name}${m.strength ? ` (${m.strength})` : ""} - Not in stock`, kind: "master", master: m });
+      });
+      return options;
+    }
+
     // Add master-only names that are not already present in inventory
     masterNames.forEach((m) => {
       const exists = inventoryByForm.some((inv) => normalizeText(inv.Medicine_Name) === normalizeText(m.name) && (m.strength ? normalizeText(inv.Strength) === normalizeText(m.strength) : true));
       if (!exists) {
-        options.push({
-          value: `name::${m.name}`,
-          label: `${m.name}${m.strength ? ` (${m.strength})` : ""} - Not in stock`,
-          kind: "master",
-          master: m
-        });
+        options.push({ value: `name::${m.name}`, label: `${m.name}${m.strength ? ` (${m.strength})` : ""} - Not in stock`, kind: "master", master: m });
       }
     });
 
     return options;
->>>>>>> f14dbc1 (wip: restore stash after pull)
   };
+  
 
   /* ================= FILTER DOCTOR PRESCRIPTIONS ================= */
   useEffect(() => {
@@ -269,21 +246,6 @@ const loadEmployeeReports = async () => {
     const instituteId = localStorage.getItem("instituteId");
     if (!instituteId) return;
 
-<<<<<<< HEAD
-  setFormData((f) => ({ ...f, Institute_ID: instituteId }));
-  fetchInstitute(instituteId);
-  fetchInventory(instituteId);
-  const loadMaster = () => {
-    fetchMasterDataMap()
-      .then((data) => setMasterMap(data || {}))
-      .catch(() => setMasterMap({}));
-  };
-
-  loadMaster();
-  window.addEventListener("master-data-updated", loadMaster);
-  return () => window.removeEventListener("master-data-updated", loadMaster);
-}, []);
-=======
     setFormData((f) => ({ ...f, Institute_ID: instituteId }));
     fetchInstitute(instituteId);
     fetchInventory(instituteId);
@@ -308,7 +270,6 @@ const loadEmployeeReports = async () => {
       window.removeEventListener("master-data-updated", onMasterUpdated);
     };
   }, []);
->>>>>>> f14dbc1 (wip: restore stash after pull)
 
 
   /* ================= API CALLS ================= */
