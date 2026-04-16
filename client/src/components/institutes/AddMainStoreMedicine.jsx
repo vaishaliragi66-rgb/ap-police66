@@ -2,7 +2,9 @@
 import axios from "axios";
 import { FaPills, FaCalendarAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { fetchMasterDataMap, getMasterOptions, getMasterMedicinesByType } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterOptions, getMasterMedicinesByType, getMasterMedicinesByTypeAndForm } from "../../utils/masterData";
+
+const normalizeText = (v) => String(v || "").trim().toLowerCase();
 const AddMainStoreMedicine = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -27,13 +29,26 @@ const AddMainStoreMedicine = () => {
 
   const medicineTypeOptions = getMasterOptions(masterMap, "Medicine Types");
   const issuedFromOptions = getMasterOptions(masterMap, "Issued From Sources");
-  
-  // Get medicine names filtered by selected type
+  // Get medicine names filtered by selected type and optional dosage form
   const getFilteredMedicineNames = () => {
-    if (!formData.Type) {
-      return [];
-    }
-    return getMasterMedicinesByType(masterMap, formData.Type).map((name) => ({ Medicine_Name: name }));
+    if (!formData.Type) return [];
+
+    const masterNames = formData.Dosage_Form
+      ? getMasterMedicinesByTypeAndForm(masterMap, formData.Type, formData.Dosage_Form).map((item) => ({ Medicine_Name: item.value_name, Strength: item.strength || "" }))
+      : getMasterMedicinesByType(masterMap, formData.Type).map((name) => ({ Medicine_Name: name, Strength: "" }));
+
+    // Merge with existingMeds for strength/code hints
+    const merged = masterNames.map((m) => {
+      const found = existingMeds.find(em => normalizeText(em.Medicine_Name) === normalizeText(m.Medicine_Name) && (!m.Strength || normalizeText(em.Strength) === normalizeText(m.Strength)));
+      return {
+        Medicine_Name: m.Medicine_Name,
+        Strength: m.Strength || (found ? found.Strength : ""),
+        Medicine_Code: found ? found.Medicine_Code : ""
+      };
+    });
+
+    return merged;
+  };
   };
 
   const handleChange = (e) => {
@@ -60,9 +75,10 @@ const AddMainStoreMedicine = () => {
 
     // When medicine name is selected from dropdown, auto-fill code and type
     if (name === "Medicine_Name") {
+      // Try to find an existing main-store entry first
       const matches = existingMeds.filter(
         (m) =>
-          m.Medicine_Name === value &&
+          normalizeText(m.Medicine_Name) === normalizeText(value) &&
           String(m.Type || "").trim().toLowerCase() === String(formData.Type || "").trim().toLowerCase()
       );
       const selected = matches.length === 1 ? matches[0] : null;
@@ -74,6 +90,22 @@ const AddMainStoreMedicine = () => {
           Medicine_Code: selected.Medicine_Code || "",
           Strength: selected.Strength || "",
           Type: selected.Type || ""
+        }));
+        if (error) setError("");
+        return;
+      }
+
+      // Fallback to master data
+      const masterMatch = (getMasterMedicinesByTypeAndForm(masterMap, formData.Type, formData.Dosage_Form) || []).find(e => normalizeText(e.value_name) === normalizeText(value))
+        || (getMasterMedicinesByType(masterMap, formData.Type) || []).map(n => ({ value_name: n })).find(e => normalizeText(e.value_name) === normalizeText(value));
+
+      if (masterMatch) {
+        setFormData(prev => ({
+          ...prev,
+          Medicine_Name: value,
+          Medicine_Code: "",
+          Strength: masterMatch.strength || "",
+          Type: formData.Type || prev.Type
         }));
       } else {
         setFormData(prev => ({

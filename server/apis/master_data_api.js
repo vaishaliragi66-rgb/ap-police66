@@ -228,12 +228,26 @@ const DEFAULT_VALUE_SEEDS = {
   ],
   "Ledger Directions": ["IN", "OUT"],
   "Rows Per Page": ["5", "10", "25", "50", "100"],
-  "Medicines": [
-    { value_name: "Paracetamol", meta: { kind: "medicine", medicineType: "Antipyretics", dosageForm: "Tablet", strength: "500mg" } },
-    { value_name: "Amoxicillin", meta: { kind: "medicine", medicineType: "Antibiotics", dosageForm: "Capsule", strength: "500mg" } },
-    { value_name: "Ibuprofen", meta: { kind: "medicine", medicineType: "Analgesics", dosageForm: "Tablet", strength: "400mg" } },
-    { value_name: "Vitamin D", meta: { kind: "medicine", medicineType: "Vitamins", dosageForm: "Tablet", strength: "60000 IU" } }
-  ],
+  "Medicines": (function () {
+    try {
+      const parsed = require(path.join(__dirname, '..', 'imports', 'parsed_medicines_20260413003118.json'));
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((r) => r && r.name && String(r.name).trim().toLowerCase() !== 'medicine')
+        .map((r) => ({
+          value_name: String(r.name || '').trim(),
+          meta: {
+            kind: 'medicine',
+            medicineType: String(r.medicineType || r.medicine_type || '').trim(),
+            dosageForm: String(r.dosageForm || r.dosage_form || r.form || '').trim(),
+            strength: String(r.strength || '').trim()
+          }
+        }));
+    } catch (err) {
+      console.warn('Could not load parsed medicines JSON for default seeds:', err && err.message);
+      return [];
+    }
+  })(),
   "Residential Areas": [
     "Hyderabad",
     "Secunderabad",
@@ -371,6 +385,7 @@ const ensureDefaultValues = async (instituteId) => {
   });
 
   const docs = [];
+<<<<<<< HEAD
   const categorySeedUpdates = [];
   // Build seed docs for any missing default values per category
   for (const [categoryName, seedValues] of Object.entries(DEFAULT_VALUE_SEEDS)) {
@@ -399,12 +414,81 @@ const ensureDefaultValues = async (instituteId) => {
       console.warn('ensureDefaultValues seed error for', categoryName, e.message);
     }
   }
+=======
+
+  categories.forEach((category) => {
+    const seedValues = DEFAULT_VALUE_SEEDS[category.category_name] || [];
+    const existingSet = existingByCategory.get(String(category._id)) || new Set();
+
+    // dedupe seedValues by normalized value to avoid duplicate insert attempts
+    const seenSeedNormalized = new Set();
+    seedValues.forEach((seedItem) => {
+      const value_name = String(
+        typeof seedItem === "string" ? seedItem : seedItem?.value_name || ""
+      ).trim();
+      if (!value_name) return;
+
+      let meta =
+        seedItem && typeof seedItem === "object" && !Array.isArray(seedItem)
+          ? seedItem.meta || seedItem.meta || {}
+          : {};
+
+      // If the seed item itself contains medicine meta fields (from parsed JSON), prefer them
+      if (!meta || Object.keys(meta).length === 0) {
+        meta = {
+          medicineType: seedItem?.meta?.medicineType || seedItem?.medicineType || seedItem?.meta?.medicine_type || seedItem?.medicine_type || "",
+          dosageForm: seedItem?.meta?.dosageForm || seedItem?.dosageForm || seedItem?.meta?.dosage_form || seedItem?.dosage_form || "",
+          strength: seedItem?.meta?.strength || seedItem?.strength || ""
+        };
+      }
+
+      // For medicines, include medicineType/dosageForm/strength in the normalized key
+      let normalized_value;
+      if (String(category.category_name || "").trim() === "Medicines") {
+        normalized_value = makeMedicineKey({
+          value_name,
+          medicineType: meta.medicineType || meta.medicine_type || "",
+          dosageForm: meta.dosageForm || meta.dosage_form || meta.form || "",
+          strength: meta.strength || ""
+        });
+      } else {
+        normalized_value = normalize(value_name);
+      }
+
+      if (!normalized_value || existingSet.has(normalized_value) || seenSeedNormalized.has(normalized_value)) {
+        return;
+      }
+      seenSeedNormalized.add(normalized_value);
+
+      docs.push({
+        Institute_ID: instituteId,
+        category_id: category._id,
+        value_name,
+        normalized_value,
+        status: "Active",
+        meta
+      });
+    });
+  });
+>>>>>>> f14dbc1 (wip: restore stash after pull)
 
   if (docs.length) {
     try {
       await MasterValue.insertMany(docs, { ordered: false });
+<<<<<<< HEAD
     } catch (e) {
       // ignore duplicate errors or continue
+=======
+    } catch (err) {
+      // Ignore duplicate key errors that can occur when parallel inserts or
+      // existing values conflict with seeds. Log other errors.
+      if (err && (err.code === 11000 || (err.message && err.message.toLowerCase().includes('duplicate key')))) {
+        console.warn('Ignored duplicate key error while seeding master values');
+      } else {
+        console.error('Failed to insert default master values', err);
+        throw err;
+      }
+>>>>>>> f14dbc1 (wip: restore stash after pull)
     }
   }
 };

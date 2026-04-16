@@ -145,666 +145,128 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
   };
 
   const calculateQuantity = (morning, afternoon, night, duration) => {
-    if (!duration) return 0;
-
-    // Sum the dosages for morning, afternoon, and night (1 if checked, 0 if not)
-    const perDay = (morning ? 1 : 0) + (afternoon ? 1 : 0) + (night ? 1 : 0);
-
-    // Example duration: "3 days" or just "3"
-    const daysMatch = duration.match(/\d+/);
-    const days = daysMatch ? Number(daysMatch[0]) : 0;
-
-    return perDay * days;
-  };
-  const formatDateDMY = (value) => {
-    if (!value) return "—";
-
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return "—";
-
-    const dd = String(date.getDate()).padStart(2, "0");
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const yyyy = date.getFullYear();
-
-    return `${dd}-${mm}-${yyyy}`;
+    const daysMatch = String(duration || "").match(/(\d+)/);
+    const days = daysMatch ? Number(daysMatch[1]) : 1;
+    const dosesPerDay = (morning ? 1 : 0) + (afternoon ? 1 : 0) + (night ? 1 : 0);
+    if (!dosesPerDay || !days) return 0;
+    return dosesPerDay * days;
   };
 
-  const formatDateTime = (value) => {
-    if (!value) return "—";
+  const refreshMedicines = async () => {
+    let medicineEntries = [];
 
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return "—";
-
-    return date.toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  };
-
-  const isMedicineExpired = (value) => {
-    if (!value) return false;
-
-    const parsed = new Date(value);
-    if (isNaN(parsed.getTime())) return false;
-
-    const expiryEndOfDay = new Date(
-      parsed.getFullYear(),
-      parsed.getMonth(),
-      parsed.getDate(),
-      23,
-      59,
-      59,
-      999
-    );
-
-    return expiryEndOfDay < new Date();
-  };
-
-  const getReportStatus = (value) => {
-    if (!value) return "pending";
-
-    return String(value).trim().toUpperCase() === "PENDING"
-      ? "pending"
-      : "result out";
-  };
-
-  const isTestResultOut = (test) => {
-    return getReportStatus(test?.Result_Value) === "result out";
-  };
-
-  const isXrayResultOut = (xray) => {
-    return !!(xray?.Findings || xray?.Impression || xray?.Remarks);
-  };
-
-  const getDiagnosisReportDate = (record) => {
-    const latestTest = [...(record?.Tests || [])].sort(
-      (a, b) => new Date(b.Timestamp || 0) - new Date(a.Timestamp || 0)
-    )[0];
-
-    return latestTest?.Timestamp || record?.updatedAt || record?.createdAt || null;
-  };
-
-  const getXrayReportDate = (record) => {
-    const latestXray = [...(record?.Xrays || [])].sort(
-      (a, b) => new Date(b.Timestamp || 0) - new Date(a.Timestamp || 0)
-    )[0];
-
-    return latestXray?.Timestamp || record?.updatedAt || record?.createdAt || null;
-  };
-
-  const getMatchingDiagnosisResult = (orderedTest, diagnosisRecords = [], prescriptionTime) => {
-    const matches = diagnosisRecords
-      .flatMap((record) =>
-        (record?.Tests || []).map((test) => ({
-          ...test,
-          recordId: record?._id
-        }))
-      )
-      .filter((test) => {
-        const sameId =
-          orderedTest?.Test_ID &&
-          test?.Test_ID &&
-          String(test.Test_ID?._id || test.Test_ID) === String(orderedTest.Test_ID);
-
-        const sameName =
-          (test?.Test_Name || test?.Test_ID?.Test_Name || "").trim().toLowerCase() ===
-          (orderedTest?.Test_Name || orderedTest?.Test_ID?.Test_Name || "").trim().toLowerCase();
-
-        const testTime = new Date(test?.Timestamp || 0).getTime();
-        const orderTime = new Date(prescriptionTime || 0).getTime();
-
-        return (sameId || sameName) && testTime >= orderTime;
-      })
-      .sort(
-        (a, b) =>
-          new Date(a?.Timestamp || 0).getTime() - new Date(b?.Timestamp || 0).getTime()
-      );
-
-    return matches[0] || null;
-  };
-
-  const getMatchingXrayResult = (orderedXray, xrayRecords = [], prescriptionTime) => {
-    const matches = xrayRecords
-      .flatMap((record) =>
-        (record?.Xrays || []).map((xray) => ({
-          ...xray,
-          recordId: record?._id
-        }))
-      )
-      .filter((xray) => {
-        const sameId =
-          orderedXray?.Xray_ID &&
-          xray?.Xray_ID &&
-          String(xray.Xray_ID?._id || xray.Xray_ID) === String(orderedXray.Xray_ID);
-
-        const sameType =
-          (xray?.Xray_Type || "").trim().toLowerCase() ===
-          (orderedXray?.Xray_Type || "").trim().toLowerCase();
-
-        const xrayTime = new Date(xray?.Timestamp || 0).getTime();
-        const orderTime = new Date(prescriptionTime || 0).getTime();
-
-        return (sameId || sameType) && xrayTime >= orderTime;
-      })
-      .sort(
-        (a, b) =>
-          new Date(a?.Timestamp || 0).getTime() - new Date(b?.Timestamp || 0).getTime()
-      );
-
-    return matches[0] || null;
-  };
-
-  const buildVisitNotes = (visitSummary) => {
-    if (!visitSummary) return "";
-
-    const vitals = visitSummary.vitals || {};
-    const noteParts = [
-      visitSummary.symptoms ? `Symptoms: ${visitSummary.symptoms}` : "",
-      vitals.Temperature != null && vitals.Temperature !== ""
-        ? `Temperature: ${vitals.Temperature}°F`
-        : "",
-      vitals.Blood_Pressure
-        ? `BP: ${vitals.Blood_Pressure}`
-        : "",
-      vitals.Pulse != null && vitals.Pulse !== ""
-        ? `Pulse: ${vitals.Pulse}`
-        : "",
-      vitals.Oxygen != null && vitals.Oxygen !== ""
-        ? `Oxygen: ${vitals.Oxygen}`
-        : "",
-      vitals.Sugar != null && vitals.Sugar !== ""
-        ? `Sugar: ${vitals.Sugar}`
-        : "",
-      vitals.GRBS != null && vitals.GRBS !== ""
-        ? `GRBS: ${vitals.GRBS}`
-        : ""
-    ].filter(Boolean);
-
-    return noteParts.join(" | ");
-  };
-
-  const actionMatchesSelectedPatient = (action, familyId = null) => {
-    const isFamilyAction = action?.data?.IsFamilyMember === true;
-    const actionFamilyId = action?.data?.FamilyMember_ID || null;
-
-    if (familyId) {
-      return isFamilyAction && String(actionFamilyId) === String(familyId);
-    }
-
-    return !isFamilyAction;
-  };
-
-  const prescriptionMatchesSelectedPatient = (prescription, familyId = null) => {
-    const isFamilyPrescription = prescription?.IsFamilyMember === true;
-    const prescriptionFamilyId =
-      prescription?.FamilyMember?._id || prescription?.FamilyMember || null;
-
-    if (familyId) {
-      return isFamilyPrescription && String(prescriptionFamilyId) === String(familyId);
-    }
-
-    return !isFamilyPrescription;
-  };
-
-  const getPrescriptionTimestamp = (record) =>
-    record?.created_at || record?.Timestamp || record?.createdAt || null;
-
-  const normalizeDoctorMedicine = (medicine) => ({
-    ...medicine,
-    _source: "Doctor"
-  });
-
-  const normalizePharmacyMedicine = (medicine) => ({
-    Medicine_Name: medicine?.Medicine_Name || medicine?.Medicine_ID?.Medicine_Name || "",
-    Type: medicine?.Type || medicine?.Medicine_ID?.Type || "",
-    Dosage_Form: medicine?.Dosage_Form || medicine?.Medicine_ID?.Type || "",
-    FoodTiming: medicine?.FoodTiming || "",
-    Strength: medicine?.Strength || medicine?.Medicine_ID?.Strength || "",
-    Morning: medicine?.Morning ?? "",
-    Afternoon: medicine?.Afternoon ?? "",
-    Night: medicine?.Night ?? "",
-    Duration: medicine?.Duration || "",
-    Remarks: medicine?.Remarks || "",
-    Quantity: Number(medicine?.Quantity) || 0,
-    _source: "Pharmacy"
-  });
-
-  const findMatchingPrescriptionReport = (reports, pharmacyRecord) => {
-    const visitKey = pharmacyRecord?.visit_id ? String(pharmacyRecord.visit_id) : null;
-    if (visitKey) {
-      const exactMatch = reports.find(
-        (report) => report?.visit_id && String(report.visit_id) === visitKey
-      );
-      if (exactMatch) return exactMatch;
-    }
-
-    const pharmacyTime = new Date(getPrescriptionTimestamp(pharmacyRecord) || 0).getTime();
-    const twelveHours = 12 * 60 * 60 * 1000;
-
-    return reports.find((report) => {
-      const reportTime = new Date(getPrescriptionTimestamp(report) || 0).getTime();
-      if (!reportTime || !pharmacyTime) return false;
-      return Math.abs(reportTime - pharmacyTime) <= twelveHours;
-    }) || null;
-  };
-
-  const getEnrichedPrescriptionHistory = (
-    actions = [],
-    pharmacyRecords = [],
-    diagnosisRecords = [],
-    xrayRecords = [],
-    familyId = null
-  ) => {
-    const patientActions = actions.filter((action) =>
-      actionMatchesSelectedPatient(action, familyId)
-    );
-    const patientPharmacyRecords = pharmacyRecords.filter((record) =>
-      prescriptionMatchesSelectedPatient(record, familyId)
-    );
-
-    const relatedOrdersByVisit = new Map();
-
-    patientActions.forEach((action) => {
-      const visitKey = action?.visit_id ? String(action.visit_id) : null;
-      if (!visitKey) return;
-
-      if (!relatedOrdersByVisit.has(visitKey)) {
-        relatedOrdersByVisit.set(visitKey, {
-          tests: [],
-          xrays: []
-        });
-      }
-
-      const visitOrders = relatedOrdersByVisit.get(visitKey);
-
-      if (action?.action_type === "DOCTOR_DIAGNOSIS") {
-        visitOrders.tests.push(...(action?.data?.tests || []));
-      }
-
-      if (action?.action_type === "DOCTOR_XRAY") {
-        visitOrders.xrays.push(...(action?.data?.xrays || []));
-      }
-    });
-
-    const reports = patientActions
-      .filter((action) => action?.action_type === "DOCTOR_PRESCRIPTION")
-      .sort((a, b) => new Date(b?.created_at || 0) - new Date(a?.created_at || 0))
-      .map((prescription) => {
-        const visitKey = prescription?.visit_id ? String(prescription.visit_id) : null;
-        const relatedOrders = visitKey
-          ? relatedOrdersByVisit.get(visitKey) || { tests: [], xrays: [] }
-          : { tests: [], xrays: [] };
-        const doctorMedicines = (prescription?.data?.medicines || []).map(normalizeDoctorMedicine);
-
-        return {
-          ...prescription,
-          combinedMedicines: doctorMedicines,
-          doctorNotes: prescription?.data?.notes || "",
-          pharmacyNotes: [],
-          instituteDisplayName: instituteName || "-",
-          relatedTests: relatedOrders.tests.map((test) => ({
-            ...test,
-            matchedResult: getMatchingDiagnosisResult(
-              test,
-              diagnosisRecords,
-              prescription?.created_at
-            )
-          })),
-          relatedXrays: relatedOrders.xrays.map((xray) => ({
-            ...xray,
-            matchedResult: getMatchingXrayResult(
-              xray,
-              xrayRecords,
-              prescription?.created_at
-            )
+    try {
+      const instituteId = localStorage.getItem("instituteId") || "";
+      const res = await axios.get(`${BACKEND_URL}/master-data-api/medicines-structure`, {
+        params: instituteId ? { instituteId } : {}
+      });
+      const payload = res.data && res.data.data ? res.data.data : res.data || {};
+      medicineEntries = Array.isArray(payload?.medicines)
+        ? payload.medicines.map((item) => ({
+            value_name: item?.value_name,
+            medicineType: item?.medicineType,
+            dosageForm: item?.dosageForm,
+            strength: item?.strength,
+            status: item?.status || "Active"
           }))
-        };
-      });
-
-    patientPharmacyRecords.forEach((record) => {
-      const matchedReport = findMatchingPrescriptionReport(reports, record);
-      const pharmacyMedicines = (record?.Medicines || []).map(normalizePharmacyMedicine);
-      const pharmacyNote = String(record?.Notes || "").trim();
-
-      if (matchedReport) {
-        matchedReport.combinedMedicines = [
-          ...(matchedReport.combinedMedicines || []),
-          ...pharmacyMedicines
-        ];
-        matchedReport.pharmacyNotes = pharmacyNote
-          ? [...(matchedReport.pharmacyNotes || []), pharmacyNote]
-          : matchedReport.pharmacyNotes || [];
-        matchedReport.instituteDisplayName =
-          matchedReport.instituteDisplayName ||
-          record?.Institute?.Institute_Name ||
-          instituteName ||
-          "-";
-        return;
-      }
-
-      const visitKey = record?.visit_id ? String(record.visit_id) : null;
-      const relatedOrders = visitKey
-        ? relatedOrdersByVisit.get(visitKey) || { tests: [], xrays: [] }
-        : { tests: [], xrays: [] };
-
-      reports.push({
-        _id: `pharmacy-${record?._id || getPrescriptionTimestamp(record) || Math.random()}`,
-        visit_id: record?.visit_id || null,
-        created_at: getPrescriptionTimestamp(record),
-        data: {
-          IsFamilyMember: record?.IsFamilyMember || false,
-          FamilyMember_ID: record?.FamilyMember?._id || record?.FamilyMember || null,
-          medicines: [],
-          notes: ""
-        },
-        IsFamilyMember: record?.IsFamilyMember || false,
-        FamilyMember: record?.FamilyMember || null,
-        combinedMedicines: pharmacyMedicines,
-        doctorNotes: "",
-        pharmacyNotes: pharmacyNote ? [pharmacyNote] : [],
-        instituteDisplayName: record?.Institute?.Institute_Name || instituteName || "-",
-        relatedTests: relatedOrders.tests.map((test) => ({
-          ...test,
-          matchedResult: getMatchingDiagnosisResult(
-            test,
-            diagnosisRecords,
-            getPrescriptionTimestamp(record)
-          )
-        })),
-        relatedXrays: relatedOrders.xrays.map((xray) => ({
-          ...xray,
-          matchedResult: getMatchingXrayResult(
-            xray,
-            xrayRecords,
-            getPrescriptionTimestamp(record)
-          )
-        }))
-      });
-    });
-
-    return reports.sort(
-      (a, b) => new Date(getPrescriptionTimestamp(b) || 0) - new Date(getPrescriptionTimestamp(a) || 0)
-    );
-  };
-
-  const getPrescriptionReportForLabel = (prescription) => {
-    const isFamilyPrescription =
-      prescription?.data?.IsFamilyMember === true || prescription?.IsFamilyMember === true;
-
-    if (isFamilyPrescription) {
-      const familyName =
-        selectedVisit?.FamilyMember?.Name ||
-        prescription?.FamilyMember?.Name ||
-        "Family Member";
-      const relationship =
-        selectedVisit?.FamilyMember?.Relationship ||
-        prescription?.FamilyMember?.Relationship;
-      return relationship ? `${familyName} (${relationship})` : familyName;
+        : [];
+    } catch {
+      medicineEntries = getMasterMedicineEntries(masterMap);
     }
 
-    return selectedEmployee?.Name || employeeProfile?.Name || prescription?.Employee?.Name || "Employee";
-  };
-
-  const getPrescriptionMedicines = (prescription) =>
-    prescription?.combinedMedicines || prescription?.data?.medicines || [];
-
-  const formatDoseCell = (value) => {
-    if (value === true) return "1";
-    if (value === false) return "0";
-    return value || "-";
-  };
-
-  const renderPrescriptionHistoryCard = (prescription, keyPrefix = "prescription") => {
-    const medicines = getPrescriptionMedicines(prescription);
-    const tests = prescription?.relatedTests || [];
-    const xrays = prescription?.relatedXrays || [];
-    const medicinesPreview = medicines
-      .slice(0, 2)
-      .map((medicine) => medicine?.Medicine_Name || "Medicine")
-      .join(", ");
-
-    return (
-      <div
-        key={`${keyPrefix}-${prescription?._id || prescription?.created_at || "item"}`}
-        className="border rounded p-3 mb-3 bg-light-subtle"
-      >
-        <div className="d-flex justify-content-between align-items-start gap-2">
-          <div>
-            <div className="fw-semibold">
-              {formatDateDMY(getPrescriptionTimestamp(prescription))}
-            </div>
-            <small className="text-muted">
-              {medicines.length} medicine{medicines.length === 1 ? "" : "s"}
-            </small>
-            {(tests.length > 0 || xrays.length > 0) ? (
-              <div className="small text-muted mt-1">
-                {tests.length} test{tests.length === 1 ? "" : "s"} • {xrays.length} X-ray{xrays.length === 1 ? "" : "s"}
-              </div>
-            ) : null}
-          </div>
-
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-dark"
-            onClick={() => setSelectedPrescriptionReport(prescription)}
-          >
-            View Report
-          </button>
-        </div>
-
-        <div className="small text-muted mt-2">
-          {medicinesPreview || "No medicine details available"}
-          {medicines.length > 2 ? ` +${medicines.length - 2} more` : ""}
-        </div>
-      </div>
+    setInventoryMedicines(
+      medicineEntries.map((item) => ({
+        Medicine_Name: item.value_name,
+        Medicine_Type: item.medicineType,
+        Dosage_Form: item.dosageForm,
+        Strength: item.strength
+      }))
     );
-  };
 
-  useEffect(() => {
-    const textarea = notesTextareaRef.current;
-    if (!textarea) return;
+    const strengthMap = {};
+    medicineEntries.forEach((med) => {
+      const name = String(med?.value_name || "").trim();
+      const medicineType = String(med?.medicineType || "").trim();
+      const dosageForm = String(med?.dosageForm || "").trim();
+      const strength = String(med?.strength || "").trim();
+      if (!name || !strength) return;
 
-    textarea.style.height = "auto";
-    textarea.style.height = `${textarea.scrollHeight}px`;
-  }, [formData.Notes]);
-
- const loadEmployeeReports = async () => {
-  if (!formData.Employee_ID) {
-    alert("No employee selected");
-    return;
-  }
-
-
-  try {
-    const params = {
-      isFamily: formData.IsFamilyMember,
-      familyId: formData.IsFamilyMember ? formData.FamilyMember_ID : null
-    };
-
-    const [diseaseRes, diagnosisRes, xrayRes, doctorPrescriptionRes, pharmacyPrescriptionRes] = await Promise.all([
-      axios.get(`${BACKEND_URL}/disease-api/employee/${formData.Employee_ID}`),
-      axios.get(`${BACKEND_URL}/diagnosis-api/records/${formData.Employee_ID}`, { params }),
-      axios.get(`${BACKEND_URL}/xray-api/records/${formData.Employee_ID}`, { params }),
-      axios.get(`${BACKEND_URL}/api/medical-actions/employee/${formData.Employee_ID}`),
-      axios.get(`${BACKEND_URL}/prescription-api/employee/${formData.Employee_ID}`)
-    ]);
-
-    const allDiseases =
-  diseaseData.Category === "Communicable"
-    ? cdDiseases
-    : ncdDiseases;
-
-    const filteredDiseases = allDiseases.filter((disease) => {
-      if (formData.IsFamilyMember) {
-        return (
-          disease.IsFamilyMember === true &&
-          String(disease.FamilyMember_ID?._id || disease.FamilyMember_ID) ===
-            String(formData.FamilyMember_ID)
-        );
+      const strictKey = makeMedicineLookupKey(medicineType, dosageForm, name);
+      const typeFallbackKey = makeMedicineLookupKey(medicineType, "", name);
+      const fallbackKey = makeMedicineLookupKey("", "", name);
+      strengthMap[strictKey] = strengthMap[strictKey] || [];
+      if (!strengthMap[strictKey].includes(strength)) {
+        strengthMap[strictKey].push(strength);
       }
-
-      return disease.IsFamilyMember === false;
+      strengthMap[typeFallbackKey] = strengthMap[typeFallbackKey] || [];
+      if (!strengthMap[typeFallbackKey].includes(strength)) {
+        strengthMap[typeFallbackKey].push(strength);
+      }
+      strengthMap[fallbackKey] = strengthMap[fallbackKey] || [];
+      if (!strengthMap[fallbackKey].includes(strength)) {
+        strengthMap[fallbackKey].push(strength);
+      }
     });
 
-    const reportPayload = {
-      diseases: filteredDiseases,
-      diagnosisRecords: diagnosisRes.data || [],
-      xrayRecords: xrayRes.data || [],
-      previousPrescriptions: getEnrichedPrescriptionHistory(
-        doctorPrescriptionRes.data || [],
-        pharmacyPrescriptionRes.data || [],
-        diagnosisRes.data || [],
-        xrayRes.data || [],
-        formData.IsFamilyMember ? formData.FamilyMember_ID : null
-      ).slice(0, 5)
-    };
+    setMedicineStrengths(strengthMap);
+  };
 
-    setEmployeeReport(reportPayload);
-    setDiseases(filteredDiseases);
-    setShowReports(true);
-
-  } catch (err) {
-    console.error(err);
-    alert("Unable to fetch reports");
-  }
-};
   useEffect(() => {
-    axios
-      .get(`${BACKEND_URL}/diagnosis-api/tests`, {
-        params: (() => {
-          const instituteId = localStorage.getItem("instituteId") || "";
-          return instituteId ? { instituteId } : {};
-        })()
-      })
-      .then(res => setTestsMaster(res.data || []))
-      .catch(() => setTestsMaster([]));
+    refreshMedicines();
   }, []);
 
-useEffect(() => {
-  axios
-    .get(`${BACKEND_URL}/xray-api/types`, {
-      params: (() => {
-        const instituteId = localStorage.getItem("instituteId") || "";
-        return instituteId ? { instituteId } : {};
-      })()
-    })
-    .then(res => setXrayMaster(res.data || []))
-    .catch(() => setXrayMaster([]));
-}, []);
+  useEffect(() => {
+    const instituteId = localStorage.getItem("instituteId") || "";
+    let mounted = true;
 
+    const normalizeRows = (rows) =>
+      (Array.isArray(rows) ? rows : [])
+        .map((item) => (typeof item === "string" ? { name: item } : item))
+        .filter((item) => item?.name)
+        .map((item) => ({ ...item, name: String(item.name).trim() }));
 
-  /* ================= INITIAL LOAD ================= */
+      medicineEntries.map((item) => ({
+        Medicine_Name: item.value_name,
+        Medicine_Type: item.medicineType,
+        Dosage_Form: item.dosageForm,
+        Strength: item.strength
+      }))
+    );
+
+    const strengthMap = {};
+    medicineEntries.forEach((med) => {
+      const name = String(med?.value_name || "").trim();
+      const medicineType = String(med?.medicineType || "").trim();
+      const dosageForm = String(med?.dosageForm || "").trim();
+      const strength = String(med?.strength || "").trim();
+      if (!name || !strength) return;
+
+      const strictKey = makeMedicineLookupKey(medicineType, dosageForm, name);
+      const typeFallbackKey = makeMedicineLookupKey(medicineType, "", name);
+      const fallbackKey = makeMedicineLookupKey("", "", name);
+      strengthMap[strictKey] = strengthMap[strictKey] || [];
+      if (!strengthMap[strictKey].includes(strength)) {
+        strengthMap[strictKey].push(strength);
+      }
+      strengthMap[typeFallbackKey] = strengthMap[typeFallbackKey] || [];
+      if (!strengthMap[typeFallbackKey].includes(strength)) {
+        strengthMap[typeFallbackKey].push(strength);
+      }
+      strengthMap[fallbackKey] = strengthMap[fallbackKey] || [];
+      if (!strengthMap[fallbackKey].includes(strength)) {
+        strengthMap[fallbackKey].push(strength);
+      }
+    });
+
+    setMedicineStrengths(strengthMap);
+  };
 
   useEffect(() => {
-    const hydrateMedicines = async () => {
-      try {
-        const instituteId = localStorage.getItem("instituteId") || "";
-        const [apiRes, masterMapData] = await Promise.all([
-          axios
-            .get(`${BACKEND_URL}/master-data-api/medicines-structure`, { params: instituteId ? { instituteId } : {} })
-            .catch(() => ({ data: {} })),
-          fetchMasterDataMap({ force: true }).catch(() => ({}))
-        ]);
-
-        const payload = apiRes.data && apiRes.data.data ? apiRes.data.data : apiRes.data || {};
-        const apiMedicines = Array.isArray(payload?.medicines)
-          ? payload.medicines.map((item) => ({
-              value_name: item?.value_name || item?.Medicine_Name,
-              medicineType: item?.medicineType || item?.Medicine_Type,
-              dosageForm: item?.dosageForm || item?.Dosage_Form,
-              strength: item?.strength || item?.Strength,
-              status: item?.status || "Active"
-            }))
-          : [];
-
-        const masterMedicines = Array.isArray(masterMapData?.Medicines)
-          ? getMasterMedicineEntries(masterMapData)
-          : getMasterMedicineEntries(masterMapData || {});
-
-        const combined = [];
-        const seen = new Set();
-        const mk = (it) =>
-          `${String(it?.value_name || it?.Medicine_Name || "").trim().toLowerCase()}::${String(
-            it?.medicineType || it?.Medicine_Type || ""
-          )
-            .trim()
-            .toLowerCase()}::${String(it?.dosageForm || it?.Dosage_Form || "").trim().toLowerCase()}::${String(
-            it?.strength || it?.Strength || ""
-          )
-            .trim()
-            .toLowerCase()}`;
-
-        // prefer persisted/api medicines first
-        apiMedicines.forEach((it) => {
-          const k = mk(it);
-          if (!seen.has(k)) {
-            seen.add(k);
-            if (String(it.status || "Active").toLowerCase() !== "inactive") combined.push(it);
-          }
-        });
-
-        // then add masterMap entries (includes local overrides)
-        (masterMedicines || []).forEach((it) => {
-          const k = mk(it);
-          if (!seen.has(k) && String(it.status || "Active").toLowerCase() !== "inactive") {
-            seen.add(k);
-            combined.push({
-              value_name: it.value_name,
-              medicineType: it.medicineType,
-              dosageForm: it.dosageForm,
-              strength: it.strength,
-              status: it.status || "Active"
-            });
-          }
-        });
-
-        setInventoryMedicines(
-          combined.map((item) => ({
-            Medicine_Name: item.value_name,
-            Medicine_Type: item.medicineType,
-            Dosage_Form: item.dosageForm,
-            Strength: item.strength
-          }))
-        );
-
-        const strengthMap = {};
-        combined.forEach((med) => {
-          const name = String(med?.value_name || "").trim();
-          const medicineType = String(med?.medicineType || "").trim();
-          const dosageForm = String(med?.dosageForm || "").trim();
-          const strength = String(med?.strength || "").trim();
-          if (!name || !strength) return;
-
-          const strictKey = makeMedicineLookupKey(medicineType, dosageForm, name);
-          const typeFallbackKey = makeMedicineLookupKey(medicineType, "", name);
-          const fallbackKey = makeMedicineLookupKey("", "", name);
-          strengthMap[strictKey] = strengthMap[strictKey] || [];
-          if (!strengthMap[strictKey].includes(strength)) {
-            strengthMap[strictKey].push(strength);
-          }
-          strengthMap[typeFallbackKey] = strengthMap[typeFallbackKey] || [];
-          if (!strengthMap[typeFallbackKey].includes(strength)) {
-            strengthMap[typeFallbackKey].push(strength);
-          }
-          strengthMap[fallbackKey] = strengthMap[fallbackKey] || [];
-          if (!strengthMap[fallbackKey].includes(strength)) {
-            strengthMap[fallbackKey].push(strength);
-          }
-        });
-
-        setMedicineStrengths(strengthMap);
-      } catch (err) {
-        console.error("hydrateMedicines error:", err);
-        setInventoryMedicines([]);
-        setMedicineStrengths({});
-      }
-    };
-
-    hydrateMedicines();
-  }, [masterMap, BACKEND_URL]);
+    refreshMedicines();
+  }, []);
+  // medicines are refreshed on mount; updates are handled by a single
+  // `master-data-updated` listener registered in the disease/masters effect
+  // below to avoid duplicate listeners and merge conflict fragments.
 
 
   useEffect(() => {
@@ -873,6 +335,8 @@ useEffect(() => {
   useEffect(() => {
     const instituteId = localStorage.getItem("instituteId") || "";
 
+    let mounted = true;
+
     const loadDiseaseMasters = async () => {
       const normalizeRows = (rows) =>
         (Array.isArray(rows) ? rows : [])
@@ -897,10 +361,10 @@ useEffect(() => {
         const [cdRes, ncdRes, masterMap] = await Promise.all([
           axios.get(`${BACKEND_URL}/disease-master-api/cd`, { params: { instituteId } }).catch(() => ({ data: [] })),
           axios.get(`${BACKEND_URL}/disease-master-api/ncd`, { params: { instituteId } }).catch(() => ({ data: [] })),
-          fetchMasterDataMap({ force: true }).catch(() => ({}))
+          fetchMasterDataMap({ force: false }).catch(() => ({}))
         ]);
 
-        setMasterMap(masterMap || {});
+        if (mounted) setMasterMap(masterMap || {});
 
         const customDiseases = Array.isArray(masterMap?.Diseases) ? masterMap.Diseases : [];
         const customCd = customDiseases
@@ -920,9 +384,18 @@ useEffect(() => {
     };
 
     loadDiseaseMasters();
-    const onMasterUpdated = () => loadDiseaseMasters();
+    const onMasterUpdated = () => {
+      loadDiseaseMasters();
+      try {
+        refreshMedicines();
+      } catch (e) {
+        // ignore
+      }
+    };
     window.addEventListener("master-data-updated", onMasterUpdated);
+
     return () => {
+      mounted = false;
       window.removeEventListener("master-data-updated", onMasterUpdated);
     };
   }, []);

@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import "./PharmacyPrescriptionForm.css";
 import { useNavigate } from "react-router-dom";
-import { fetchMasterDataMap, getMasterMedicinesByTypeAndForm, getMasterOptions } from "../../utils/masterData";
+import { fetchMasterDataMap, getMasterMedicinesByTypeAndForm, getMasterOptions, getMasterMedicineEntries } from "../../utils/masterData";
 
 const { useMemo } = React;
 
@@ -36,52 +36,45 @@ const PharmacyPrescriptionForm = () => {
     IsFamilyMember: false,
     FamilyMember_ID: "",
     Medicines: [{ medicineId: "", medicineName: "", medicineType: "", dosageForm: "", type: "", strength: "", expiryDate: "", quantity: 0 }],
-    Notes: ""
-  });
+    const options = [];
 
-  const medicineTypeOptions = useMemo(() => {
-    return getMasterOptions(masterMap, "Medicine Types");
-  }, [masterMap]);
-
-  const dosageFormOptions = useMemo(() => {
-    const masterForms = getMasterOptions(masterMap, "Dosage Forms");
-    const inventoryForms = [...new Set(
-      (inventory || [])
-        .map((item) => String(item?.Type || "").trim())
-        .filter(Boolean)
-    )];
-    return [...new Set([...masterForms, ...inventoryForms])];
-  }, [inventory, masterMap]);
-
-  const getPharmacyOptionsByTypeAndForm = (medicineTypeValue, dosageFormValue) => {
-    const normalizedType = normalizeText(medicineTypeValue);
-    if (!normalizedType) return [];
-
-    const normalizedForm = normalizeText(dosageFormValue);
-    const masterEntries = getMasterMedicinesByTypeAndForm(masterMap, medicineTypeValue, dosageFormValue);
-    const allowedNames = masterEntries.map((entry) => normalizeText(entry.value_name));
-
-    const inventoryByForm = (inventory || []).filter((item) => {
-      if (!normalizedForm) return true;
-      return normalizeText(item?.Type) === normalizedForm;
+    // Add inventory options first (if any)
+    inventoryByForm.forEach((item) => {
+      options.push({
+        value: `code::${item.Medicine_Code}`,
+        label: `${item.Medicine_Name}${item.Strength ? ` (${item.Strength})` : ""}${item.Expiry_Date ? ` - Exp ${formatExpiryMY(item.Expiry_Date)}` : ""} - Stock ${item.Quantity || 0}`,
+        kind: "inventory",
+        inventory: item
+      });
     });
 
-    if (!allowedNames.length) return inventoryByForm;
-
-    // If there are no inventory items for this form, fall back to master entries
-    // so the UI still shows the correct medicine names from master data.
+    // If there are no inventory entries, expose master entries as selectable options
     if (!inventoryByForm.length) {
-      return masterEntries.map((entry) => ({ Medicine_Name: entry.value_name, meta: entry }));
+      masterNames.forEach((m) => {
+        options.push({
+          value: `name::${m.name}`,
+          label: `${m.name}${m.strength ? ` (${m.strength})` : ""} - Not in stock`,
+          kind: "master",
+          master: m
+        });
+      });
+      return options;
     }
 
-    // Filter inventory to allowed names, then deduplicate by normalized medicine name
-    const filteredInventory = inventoryByForm.filter((item) => allowedNames.includes(normalizeText(item?.Medicine_Name)));
-    if (!filteredInventory.length) {
-      return masterEntries.map((entry) => ({ Medicine_Name: entry.value_name, meta: entry }));
-    }
+    // Add master-only names that are not already present in inventory
+    masterNames.forEach((m) => {
+      const exists = inventoryByForm.some((inv) => normalizeText(inv.Medicine_Name) === normalizeText(m.name) && (m.strength ? normalizeText(inv.Strength) === normalizeText(m.strength) : true));
+      if (!exists) {
+        options.push({
+          value: `name::${m.name}`,
+          label: `${m.name}${m.strength ? ` (${m.strength})` : ""} - Not in stock`,
+          kind: "master",
+          master: m
+        });
+      }
+    });
 
-    const seen = new Set();
-    const deduped = [];
+    return options;
     filteredInventory.forEach((item) => {
       const nameKey = normalizeText(item?.Medicine_Name);
       if (!seen.has(nameKey)) {
@@ -91,6 +84,32 @@ const PharmacyPrescriptionForm = () => {
     });
 
     return deduped;
+=======
+    // Add inventory options first
+    inventoryByForm.forEach((item) => {
+      options.push({
+        value: `code::${item.Medicine_Code}`,
+        label: `${item.Medicine_Name}${item.Strength ? ` (${item.Strength})` : ""}${item.Expiry_Date ? ` - Exp ${formatExpiryMY(item.Expiry_Date)}` : ""} - Stock ${item.Quantity || 0}`,
+        kind: "inventory",
+        inventory: item
+      });
+    });
+
+    // Add master-only names that are not already present in inventory
+    masterNames.forEach((m) => {
+      const exists = inventoryByForm.some((inv) => normalizeText(inv.Medicine_Name) === normalizeText(m.name) && (m.strength ? normalizeText(inv.Strength) === normalizeText(m.strength) : true));
+      if (!exists) {
+        options.push({
+          value: `name::${m.name}`,
+          label: `${m.name}${m.strength ? ` (${m.strength})` : ""} - Not in stock`,
+          kind: "master",
+          master: m
+        });
+      }
+    });
+
+    return options;
+>>>>>>> f14dbc1 (wip: restore stash after pull)
   };
 
   /* ================= FILTER DOCTOR PRESCRIPTIONS ================= */
@@ -246,10 +265,11 @@ const loadEmployeeReports = async () => {
   };
 
   /* ================= INITIAL LOAD ================= */
-useEffect(() => {
-  const instituteId = localStorage.getItem("instituteId");
-  if (!instituteId) return;
+  useEffect(() => {
+    const instituteId = localStorage.getItem("instituteId");
+    if (!instituteId) return;
 
+<<<<<<< HEAD
   setFormData((f) => ({ ...f, Institute_ID: instituteId }));
   fetchInstitute(instituteId);
   fetchInventory(instituteId);
@@ -263,6 +283,32 @@ useEffect(() => {
   window.addEventListener("master-data-updated", loadMaster);
   return () => window.removeEventListener("master-data-updated", loadMaster);
 }, []);
+=======
+    setFormData((f) => ({ ...f, Institute_ID: instituteId }));
+    fetchInstitute(instituteId);
+    fetchInventory(instituteId);
+
+    let mounted = true;
+    const loadMaster = async () => {
+      try {
+        const data = await fetchMasterDataMap({ force: false });
+        if (mounted) setMasterMap(data || {});
+      } catch {
+        if (mounted) setMasterMap({});
+      }
+    };
+
+    loadMaster();
+
+    const onMasterUpdated = () => loadMaster();
+    window.addEventListener("master-data-updated", onMasterUpdated);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("master-data-updated", onMasterUpdated);
+    };
+  }, []);
+>>>>>>> f14dbc1 (wip: restore stash after pull)
 
 
   /* ================= API CALLS ================= */
@@ -350,18 +396,49 @@ const handleMedicineChange = (index, field, value) => {
   setFormData(prev => {
     const updated = [...prev.Medicines];
     if (field === "medicineId") {
-      const selected = inventory.find(m => String(m.Medicine_Code) === String(value));
-      if (!selected) return prev;
+      // value can be 'code::<Medicine_Code>' for inventory or 'name::<Medicine Name>' for master-only
+      if (String(value).startsWith("code::")) {
+        const code = String(value).slice(6);
+        const selected = inventory.find(m => String(m.Medicine_Code) === String(code));
+        if (!selected) return prev;
 
-      updated[index] = {
-        ...updated[index],   // 🔥 keep existing quantity
-        medicineId: selected.Medicine_Code,
-        medicineName: selected.Medicine_Name,
-        dosageForm: selected.Type || updated[index].dosageForm || "",
-        type: updated[index].medicineType || updated[index].type || "",
-        strength: selected.Strength || updated[index].strength || "",
-        expiryDate: selected.Expiry_Date
-      };
+        updated[index] = {
+          ...updated[index],   // keep existing quantity
+          medicineId: selected.Medicine_Code,
+          medicineName: selected.Medicine_Name,
+          dosageForm: selected.Type || updated[index].dosageForm || "",
+          type: updated[index].medicineType || updated[index].type || updated[index].medicineType || "",
+          strength: selected.Strength || updated[index].strength || "",
+          expiryDate: selected.Expiry_Date
+        };
+      } else if (String(value).startsWith("name::")) {
+        const name = String(value).slice(6);
+        // find in master entries
+        const masterEntry = (getMasterMedicineEntries(masterMap) || []).find(e => normalizeText(e.value_name) === normalizeText(name) && (updated[index].dosageForm ? normalizeText(e.dosageForm) === normalizeText(updated[index].dosageForm) : true));
+
+        updated[index] = {
+          ...updated[index],
+          medicineId: "",
+          medicineName: name,
+          dosageForm: updated[index].dosageForm || (masterEntry ? masterEntry.dosageForm : ""),
+          type: updated[index].medicineType || updated[index].type || (masterEntry ? masterEntry.medicineType : ""),
+          strength: masterEntry ? masterEntry.strength || "" : "",
+          expiryDate: masterEntry ? masterEntry.expiryDate || "" : ""
+        };
+      } else {
+        // legacy: treat as code
+        const selected = inventory.find(m => String(m.Medicine_Code) === String(value));
+        if (!selected) return prev;
+        updated[index] = {
+          ...updated[index],
+          medicineId: selected.Medicine_Code,
+          medicineName: selected.Medicine_Name,
+          dosageForm: selected.Type || updated[index].dosageForm || "",
+          type: updated[index].medicineType || updated[index].type || "",
+          strength: selected.Strength || updated[index].strength || "",
+          expiryDate: selected.Expiry_Date
+        };
+      }
     }
 
     if (field === "medicineType") {
@@ -1003,14 +1080,14 @@ const handleSubmit = async (e) => {
 
                       <select
                         className={`form-select ${med.medicineName ? "medicine-auto-filled" : ""}`}
-                        value={med.medicineId || ""}
+                        value={med.medicineId || med.medicineName || ""}
                         disabled={!med.medicineType}
                         onChange={(e) => handleMedicineChange(i, "medicineId", e.target.value)}
                       >
                         <option value="">{med.medicineType ? "Select Medicine" : "Select Medicine Type First"}</option>
-                        {getPharmacyOptionsByTypeAndForm(med.medicineType, med.dosageForm).map((item) => (
-                          <option key={item._id || item.Medicine_Code} value={item.Medicine_Code}>
-                            {`${item.Medicine_Name}${item.Strength ? ` (${item.Strength})` : ""}${item.Expiry_Date ? ` - Exp ${formatExpiryMY(item.Expiry_Date)}` : ""} - Stock ${item.Quantity}`}
+                        {getPharmacyOptionsByTypeAndForm(med.medicineType, med.dosageForm).map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
                           </option>
                         ))}
                       </select>

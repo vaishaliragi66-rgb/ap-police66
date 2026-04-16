@@ -434,23 +434,24 @@ export const deleteLocalMedicine = (identifier) => {
       value_name: String(identifier.value_name || identifier.medicineName || "").trim(),
       meta: identifier.meta || {
         kind: "medicine",
-        medicineType: identifier.medicineType || "",
-        dosageForm: identifier.dosageForm || "",
-        strength: identifier.strength || ""
-      },
-      status: "Inactive"
-    };
-    localMedicineOverrides = [entry, ...localMedicineOverrides];
-    invalidateMasterDataCache();
-    return;
-  }
-
-  localMedicineOverrides = localMedicineOverrides.filter((m) => !((m._id && m._id === identifier) || m._clientId === identifier));
-  invalidateMasterDataCache();
-};
-
-export const toggleLocalMedicineStatus = (identifier) => {
+        // record fetch time and notify listeners on forced refresh
+        cacheTime = now;
+        try {
+          if (typeof window !== "undefined" && force) {
+            try {
+              console.debug("fetchMasterDataMap: dispatching master-data-updated after forced refresh", { time: Date.now() });
+            } catch (e) {}
+            try {
+              window.dispatchEvent(new Event("master-data-updated"));
+            } catch (e) {
+              // ignore non-browser dispatch issues
+            }
+          }
+        } catch (e) {
+          // ignore non-browser environments
+        }
   localMedicineOverrides = localMedicineOverrides.map((m) => {
+        // Merge client-side local medicine overrides into cache.Medicines for instant UI updates
     if ((m._id && m._id === identifier) || m._clientId === identifier) {
       return { ...m, status: m.status === "Active" ? "Inactive" : "Active" };
     }
@@ -505,7 +506,22 @@ export const fetchMasterDataMap = async ({ force = false } = {}) => {
   }
 
   cache = res.data || {};
+<<<<<<< HEAD
   // Merge client-side local medicine overrides into cache.Medicines for instant UI updates
+=======
+  cacheTime = now;
+  // If this was a forced refresh, notify listeners so consumers refresh their local views
+  try {
+    if (typeof window !== "undefined" && force) {
+      try {
+        console.debug("fetchMasterDataMap: dispatching master-data-updated after forced refresh", { time: Date.now() });
+      } catch (e) {}
+      window.dispatchEvent(new Event("master-data-updated"));
+    }
+  } catch (e) {
+    // ignore non-browser environments
+  }
+>>>>>>> f14dbc1 (wip: restore stash after pull)
   try {
     const dbMedicines = Array.isArray(cache.Medicines) ? cache.Medicines : [];
     const merged = [];
