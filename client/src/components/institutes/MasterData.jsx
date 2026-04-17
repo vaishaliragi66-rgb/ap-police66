@@ -2192,39 +2192,19 @@ const MasterData = () => {
               {selectedCategory?.category_name === "Xray Types" && (
                 <>
                   <div className="row g-2 mb-3">
-                    <div className="col-md-4">
-                      <select
-                        className="form-select"
-                        value={selectedXrayBodyPart}
-                        onChange={(e) => setSelectedXrayBodyPart(e.target.value)}
-                      >
-                        <option value="">Select body part</option>
-                        {xrayBodyParts.map((bp) => (
-                          <option key={bp} value={bp}>{bp}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="col-md-4">
+                    <div className="col-12">
                       <input
-                        className="form-control"
-                        placeholder="New body part"
-                        value={newXrayBodyPart}
-                        onChange={(e) => setNewXrayBodyPart(e.target.value)}
-                        disabled={!isInstituteAdmin || saving}
+                        className="form-control mb-3"
+                        placeholder="Search values"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
                       />
-                    </div>
-                    <div className="col-md-4">
-                      <input
-                        className="form-control"
-                        placeholder="X-ray name"
-                        value={newXrayName}
-                        onChange={(e) => setNewXrayName(e.target.value)}
-                        disabled={!isInstituteAdmin || saving}
-                      />
+
+                      <div className="alert alert-light">Manage the X-ray master list here. Add a new body part by typing a new body part name, then add X-ray tests under it.</div>
                     </div>
                   </div>
 
-                  <div className="table-responsive">
+                  <div className="table-responsive mb-3">
                     <table className="table table-bordered table-striped align-middle">
                       <thead className="table-light">
                         <tr>
@@ -2258,6 +2238,63 @@ const MasterData = () => {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  <div className="row g-2 mb-3 align-items-center">
+                    <div className="col-md-9">
+                      <input
+                        className="form-control"
+                        placeholder="Add new body part"
+                        value={newXrayBodyPart}
+                        onChange={(e) => setNewXrayBodyPart(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
+                      />
+                    </div>
+                    <div className="col-md-3">
+                      <button className="btn btn-success w-100" onClick={handleAddXrayBodyPart} disabled={!isInstituteAdmin || saving || !newXrayBodyPart.trim()}>
+                        Add Body Part
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-3">
+                      <select
+                        className="form-select"
+                        value={selectedXrayBodyPart}
+                        onChange={(e) => setSelectedXrayBodyPart(e.target.value)}
+                      >
+                        <option value="">Select body part</option>
+                        {xrayBodyParts.map((bp) => (
+                          <option key={bp} value={bp}>{bp}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <input
+                        className="form-control"
+                        placeholder="Add X-ray type name"
+                        value={newXrayName}
+                        onChange={(e) => setNewXrayName(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
+                      />
+                    </div>
+                    <div className="col-md-2">
+                      <select className="form-select" value={newXraySide} onChange={(e) => setNewXraySide(e.target.value)} disabled={!isInstituteAdmin || saving}>
+                        <option value="NA">NA</option>
+                        <option value="Left">Left</option>
+                        <option value="Right">Right</option>
+                      </select>
+                    </div>
+                    <div className="col-md-3">
+                      <input className="form-control" placeholder="Film size (optional)" value={newXrayFilmSize} onChange={(e) => setNewXrayFilmSize(e.target.value)} disabled={!isInstituteAdmin || saving} />
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <button className="btn btn-success" onClick={handleAddXray} disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart || !newXrayName.trim()}>
+                      Add X-ray
+                    </button>
                   </div>
                 </>
               )}
