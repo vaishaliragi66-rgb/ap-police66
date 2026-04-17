@@ -1756,6 +1756,27 @@ const MasterData = () => {
                   </div>
 
                   <div className="row g-2 mb-3">
+                    <div className="col-md-10">
+                      <input
+                        className="form-control"
+                        placeholder="Add new medicine type"
+                        value={newMedicineType}
+                        onChange={(e) => setNewMedicineType(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
+                      />
+                    </div>
+                    <div className="col-md-2">
+                      <button
+                        className="btn btn-primary w-100"
+                        onClick={handleAddMedicineType}
+                        disabled={!isInstituteAdmin || saving || !newMedicineType.trim()}
+                      >
+                        Add Type
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="row g-2 mb-3">
                     <div className="col-md-4">
                       <select
                         className="form-select"
@@ -1978,7 +1999,7 @@ const MasterData = () => {
                       </thead>
                       <tbody>
                         {medicinesStructure.medicineTypes.map((item, idx) => {
-                          const masterValue = customMedicineTypeMap[normalizeText(item)] || null;
+                          const masterValue = customMedicineTypeMap[getMedicineTypeKey(item)] || null;
                           const isCustom = Boolean(masterValue?._id);
                           const status = masterValue?.status || "Active";
 
@@ -2025,7 +2046,43 @@ const MasterData = () => {
                   </div>
 
                   <div className="row g-2 mb-3">
-                    <div className="col-md-6">
+                    <div className="col-12 mb-2">
+                      <div className="row g-2">
+                        <div className="col-md-8">
+                          <input
+                            className="form-control"
+                            placeholder="Add new medicine type"
+                            value={newMedicineType}
+                            onChange={(e) => setNewMedicineType(e.target.value)}
+                            disabled={!isInstituteAdmin || saving}
+                          />
+                        </div>
+                        <div className="col-md-4">
+                          <button
+                            className="btn btn-primary w-100"
+                            onClick={handleAddMedicineType}
+                            disabled={!isInstituteAdmin || saving || !newMedicineType.trim()}
+                          >
+                            Add Type
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-md-4">
+                      <select
+                        className="form-select"
+                        value={selectedMedicineType}
+                        onChange={(e) => setSelectedMedicineType(e.target.value)}
+                        disabled={!isInstituteAdmin || saving}
+                      >
+                        <option value="">Select medicine type</option>
+                        {medicinesStructure.medicineTypes.map((mt) => (
+                          <option key={mt} value={mt}>{mt}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
                       <input
                         className="form-control"
                         placeholder="Medicine name"
@@ -2034,16 +2091,20 @@ const MasterData = () => {
                         disabled={!isInstituteAdmin || saving}
                       />
                     </div>
-                    <div className="col-md-3">
-                      <input
-                        className="form-control"
-                        placeholder="Dosage form"
+                    <div className="col-md-2">
+                      <select
+                        className="form-select"
                         value={newMedicineDosageForm}
                         onChange={(e) => setNewMedicineDosageForm(e.target.value)}
                         disabled={!isInstituteAdmin || saving}
-                      />
+                      >
+                        <option value="">All dosage forms</option>
+                        {medicinesStructure.dosageForms.map((df) => (
+                          <option key={df} value={df}>{df}</option>
+                        ))}
+                      </select>
                     </div>
-                    <div className="col-md-2">
+                    <div className="col-md-1">
                       <input
                         className="form-control"
                         placeholder="Strength"
@@ -2056,11 +2117,74 @@ const MasterData = () => {
                       <button
                         className="btn btn-primary w-100"
                         onClick={handleAddMedicine}
-                        disabled={!isInstituteAdmin || saving || !newMedicineName.trim()}
+                        disabled={!isInstituteAdmin || saving || !newMedicineName.trim() || !selectedMedicineType}
                       >
                         Add
                       </button>
                     </div>
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="table table-bordered table-striped align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: 80 }}>ID</th>
+                          <th>Medicine Name</th>
+                          <th>Medicine Type</th>
+                          <th>Dosage Form</th>
+                          <th>Strength</th>
+                          <th style={{ width: 120 }}>Status</th>
+                          <th style={{ width: 240 }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {!loading && filteredMedicines.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="text-center py-4 text-muted">No medicines found</td>
+                          </tr>
+                        )}
+                        {filteredMedicines.map((item, idx) => (
+                          <tr key={`${item.value_name || item.name}-${idx}`}>
+                            <td>{idx + 1}</td>
+                            <td>{item.value_name || item.name}</td>
+                            <td>{item.medicineType}</td>
+                            <td>{item.dosageForm || "-"}</td>
+                            <td>{item.strength || "-"}</td>
+                            <td>
+                              <span className={`badge ${item.status === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                {item.status || "Active"}
+                              </span>
+                            </td>
+                            <td className="d-flex flex-wrap gap-2">
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => handleEditMedicine(item)}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Edit this medicine" : "Cannot edit built-in medicines"}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-warning"
+                                onClick={() => handleToggleMedicine(item)}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Toggle status" : "Cannot deactivate built-in medicines"}
+                              >
+                                {item.status === "Active" ? "Deactivate" : "Activate"}
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => handleDeleteMedicine(item)}
+                                disabled={!isInstituteAdmin || saving}
+                                title={item.masterValue?._id ? "Delete this medicine" : "Cannot delete built-in medicines"}
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </>
               )}
