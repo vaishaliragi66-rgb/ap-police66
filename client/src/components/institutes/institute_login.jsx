@@ -29,7 +29,7 @@ const InstituteLogin = () => {
     setLoading(true);
 
     const normalizedEmail = formData.Email_ID.trim().toLowerCase();
-    const normalizedPassword = formData.password.trim();
+    const normalizedPassword = formData.password;
 
     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
     if (!emailRegex.test(normalizedEmail)) {

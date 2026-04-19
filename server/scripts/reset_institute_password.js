@@ -1,4 +1,5 @@
-require('dotenv').config({ path: '.env' });
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const dns = require('dns');
@@ -52,7 +53,20 @@ const buildFallbackMongoUri = async (mongoSrvUri) => {
 
 (async () => {
   try {
+    const email = (process.argv[2] || '').trim();
+    const newPass = process.argv[3] || '';
+
+    if (!email || !newPass) {
+      console.error('Usage: node server/scripts/reset_institute_password.js <email> <new-password>');
+      process.exit(1);
+    }
+
     const mongoUri = process.env.MONGO_URL;
+    if (!mongoUri) {
+      console.error('MONGO_URL is not configured');
+      process.exit(1);
+    }
+
     try {
       await mongoose.connect(mongoUri);
       console.log('Connected to Mongo (SRV)');
@@ -63,17 +77,16 @@ const buildFallbackMongoUri = async (mongoSrvUri) => {
       console.log('Connected to Mongo (fallback)');
     }
 
-    const email = 'apollo@gmail.com';
     const inst = await Institute.findOne({ Email_ID: { $regex: `^${email.trim()}$`, $options: 'i' } });
     if (!inst) {
       console.error('Institute not found');
       process.exit(1);
     }
-    const newPass = 'Apollo@123';
+
     const hashed = await bcrypt.hash(newPass, 10);
     inst.password = hashed;
     await inst.save();
-    console.log('Password updated for', inst.Email_ID, '-> newPassword:', newPass);
+    console.log('Password updated for', inst.Email_ID);
     process.exit(0);
   } catch (e) {
     console.error('ERR', e && e.message);
