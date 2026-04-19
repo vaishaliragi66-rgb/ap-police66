@@ -100,7 +100,7 @@ const SARCPLPrescriptionReport = ({ reportData = {} }) => {
               <div className="card-content">
                 <div className="kv"><span>BP</span><span>{vitals.bp || '—'}</span></div>
                 <div className="kv"><span>Pulse</span><span>{vitals.pulse || '—'}</span></div>
-                <div className="kv"><span>Temperature</span><span>{vitals.temperature !== undefined && vitals.temperature !== null ? `${vitals.temperature} °C` : '—'}</span></div>
+                <div className="kv"><span>Temperature</span><span>{vitals.temperature !== undefined && vitals.temperature !== null ? `${vitals.temperature} °F` : '—'}</span></div>
                 <div className="kv"><span>SpO₂</span><span>{vitals.spo2 || '—'}</span></div>
                 <div className="kv"><span>Height</span><span>{vitals.height ? `${vitals.height} cm` : '—'}</span></div>
                 <div className="kv"><span>Weight</span><span>{vitals.weight ? `${vitals.weight} kg` : '—'}</span></div>

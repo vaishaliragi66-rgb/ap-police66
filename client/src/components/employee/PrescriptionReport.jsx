@@ -74,13 +74,17 @@ const getPrescriptionMedicines = (record) => {
 };
 
 const getPrescriptionVisitVitals = (record) => {
-  const vitals = record?.VisitSummary?.Vitals || {};
+  const vitals =
+    record?.VisitSummary?.Vitals ||
+    record?.Vitals ||
+    record?.PatientMetrics ||
+    {};
 
   return {
-    bp: vitals?.Blood_Pressure || "",
-    pulse: vitals?.Pulse || "",
-    temperature: vitals?.Temperature ?? null,
-    spo2: vitals?.Oxygen || "",
+    bp: vitals?.Blood_Pressure || vitals?.bp || "",
+    pulse: vitals?.Pulse ?? vitals?.pulse ?? "",
+    temperature: vitals?.Temperature ?? vitals?.temperature ?? null,
+    spo2: vitals?.Oxygen ?? vitals?.spo2 ?? vitals?.SpO2 ?? "",
   };
 };
 

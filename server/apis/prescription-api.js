@@ -96,6 +96,18 @@ const normalizeMedicineRows = (medicines) =>
     Quantity: Number(medicine?.Quantity || 0)
   }));
 
+const hasAnyVitals = (vitals = {}) =>
+  Boolean(
+    vitals.Temperature !== null && vitals.Temperature !== undefined && vitals.Temperature !== "" ||
+    vitals.Blood_Pressure ||
+    vitals.Oxygen !== null && vitals.Oxygen !== undefined && vitals.Oxygen !== "" ||
+    vitals.Pulse !== null && vitals.Pulse !== undefined && vitals.Pulse !== "" ||
+    vitals.GRBS !== null && vitals.GRBS !== undefined && vitals.GRBS !== "" ||
+    vitals.Height ||
+    vitals.Weight ||
+    vitals.BMI
+  );
+
 const groupPrescriptionRows = (records) => {
   const grouped = new Map();
 
@@ -122,7 +134,19 @@ const groupPrescriptionRows = (records) => {
       });
     }
 
-    grouped.get(key).Medicines.push(...normalizeMedicineRows(record.Medicines));
+    const groupedRecord = grouped.get(key);
+    const incomingVitals = record?.VisitSummary?.Vitals || {};
+    const existingVitals = groupedRecord?.VisitSummary?.Vitals || {};
+
+    if (hasAnyVitals(incomingVitals) && !hasAnyVitals(existingVitals)) {
+      groupedRecord.VisitSummary = record.VisitSummary;
+    }
+
+    if (!hasAnyVitals(groupedRecord.PatientMetrics || {}) && hasAnyVitals(record.PatientMetrics || {})) {
+      groupedRecord.PatientMetrics = record.PatientMetrics;
+    }
+
+    groupedRecord.Medicines.push(...normalizeMedicineRows(record.Medicines));
   });
 
   return Array.from(grouped.values()).sort(
