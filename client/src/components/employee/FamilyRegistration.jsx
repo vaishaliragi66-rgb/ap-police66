@@ -30,6 +30,7 @@ const FamilyMemberRegistration = () => {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [masterMap, setMasterMap] = useState({});
+  const [employeeProfile, setEmployeeProfile] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -53,6 +54,25 @@ const FamilyMemberRegistration = () => {
       window.removeEventListener("master-data-updated", onMasterUpdated);
     };
   }, []);
+
+  useEffect(() => {
+    if (!employeeId) return;
+
+    let mounted = true;
+
+    axios
+      .get(`${BACKEND_URL}/employee-api/profile/${employeeId}`)
+      .then((res) => {
+        if (mounted) setEmployeeProfile(res.data || null);
+      })
+      .catch(() => {
+        if (mounted) setEmployeeProfile(null);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [BACKEND_URL, employeeId]);
 
   const relationshipOptions = getMasterOptions(masterMap, "Relationships");
   const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
@@ -89,6 +109,35 @@ const FamilyMemberRegistration = () => {
     setPhotoFile(null);
     setPhotoPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSameAsEmployeePhone = () => {
+    if (!employeeProfile?.Phone_No) {
+      alert("Employee phone number is not available.");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      Phone_No: employeeProfile.Phone_No,
+    }));
+  };
+
+  const handleSameAsEmployeeAddress = () => {
+    if (!employeeProfile?.Address) {
+      alert("Employee address is not available.");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      Address: {
+        Street: employeeProfile.Address.Street || "",
+        District: employeeProfile.Address.District || "",
+        State: employeeProfile.Address.State || "",
+        Pincode: employeeProfile.Address.Pincode || "",
+      },
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -401,7 +450,26 @@ const FamilyMemberRegistration = () => {
   
           {/* Phone */}
           <div className="mb-3">
-            <label className="form-label fw-semibold">Phone Number</label>
+            <div className="d-flex align-items-center justify-content-between gap-2 mb-1">
+              <label className="form-label fw-semibold mb-0">Phone Number</label>
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={handleSameAsEmployeePhone}
+                disabled={!employeeProfile}
+                style={{
+                  backgroundColor: "#EAF2FF",
+                  color: "#4A70A9",
+                  border: "1px solid #4A70A9",
+                  borderRadius: "999px",
+                  fontSize: "12px",
+                  padding: "3px 12px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Same as employee
+              </button>
+            </div>
             <input
               type="text"
               className="form-control"
@@ -412,12 +480,31 @@ const FamilyMemberRegistration = () => {
           </div>
   
           {/* Address */}
-          <h6
-            className="fw-semibold mt-4 mb-2"
-            style={{ color: "#4A70A9" }}
-          >
-            Address Details
-          </h6>
+          <div className="d-flex align-items-center justify-content-between gap-2 mt-4 mb-2">
+            <h6
+              className="fw-semibold mb-0"
+              style={{ color: "#4A70A9" }}
+            >
+              Address Details
+            </h6>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={handleSameAsEmployeeAddress}
+              disabled={!employeeProfile}
+              style={{
+                backgroundColor: "#EAF2FF",
+                color: "#4A70A9",
+                border: "1px solid #4A70A9",
+                borderRadius: "999px",
+                fontSize: "12px",
+                padding: "3px 12px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Same as employee
+            </button>
+          </div>
   
           <input
             className="form-control mb-2"

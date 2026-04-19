@@ -1,0 +1,4 @@
+[dotenv@17.2.3] injecting env (5) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+🤖 Groq AI initialized ✅
+Server started on port 6100
+MongoDB connected
