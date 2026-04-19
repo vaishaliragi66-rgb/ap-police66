@@ -303,13 +303,42 @@ useEffect(() => {
 
 return (
   <div
+    className="employee-diagnosis-page"
     style={{
-      backgroundColor: "#F8FAFC",
+      background:
+        "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
       minHeight: "100vh",
       padding: "40px 0",
       fontFamily: "'Inter', sans-serif",
     }}
   >
+    <style>
+      {`
+        .employee-diagnosis-page .report-card,
+        .employee-diagnosis-page .modal-content {
+          background: rgba(255,255,255,0.78);
+          border: 1px solid rgba(255,255,255,0.88);
+          border-radius: 24px;
+          box-shadow: 0 24px 44px rgba(148,184,255,0.18);
+          backdrop-filter: blur(18px);
+        }
+
+        .employee-diagnosis-page .table {
+          --bs-table-bg: transparent;
+        }
+
+        .employee-diagnosis-page .table thead th {
+          background: #EFF6FF;
+          color: #1E3A8A;
+          border-color: rgba(191,219,254,0.78);
+          white-space: nowrap;
+        }
+
+        .employee-diagnosis-page .table tbody tr:hover {
+          background: rgba(239,246,255,0.72);
+        }
+      `}
+    </style>
     <div className="container">
 
       {/* Back Button */}
@@ -317,12 +346,13 @@ return (
         className="btn mb-3"
         onClick={() => navigate(-1)}
         style={{
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #D6E0F0",
-          borderRadius: "8px",
+          backgroundColor: "rgba(255,255,255,0.82)",
+          border: "1px solid rgba(191,219,254,0.82)",
+          borderRadius: "14px",
           padding: "6px 14px",
           fontSize: "14px",
           color: "#1F2933",
+          boxShadow: "0 12px 20px rgba(191,219,254,0.14)",
         }}
       >
         ← Back
@@ -330,10 +360,9 @@ return (
 
       {/* MAIN CARD */}
       <div
-        className="card border-0"
+        className="card border-0 report-card"
         style={{
-          borderRadius: "16px",
-          boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+          borderRadius: "24px",
         }}
       >
         <div className="card-body">
@@ -341,10 +370,10 @@ return (
           {/* Header Strip */}
         <div
           style={{
-            background: "linear-gradient(90deg, #F8FAFC, #F3F7FF)",
+            background: "linear-gradient(135deg, rgba(239,246,255,0.95), rgba(255,255,255,0.82))",
             padding: "16px 24px",
-            borderBottom: "1px solid #D6E0F0",
-            borderRadius: "16px 16px 0 0",
+            borderBottom: "1px solid rgba(191,219,254,0.5)",
+            borderRadius: "24px 24px 0 0",
           }}
           className="d-flex justify-content-between align-items-center"
         >
@@ -375,13 +404,14 @@ return (
                 <button
                   className="btn btn-sm"
                   style={{
-                    backgroundColor: "#4A70A9",
+                    background: "linear-gradient(135deg, #2563EB, #38BDF8)",
                     color: "#FFFFFF",
-                    borderRadius: "999px",
+                    borderRadius: "14px",
                     padding: "6px 16px",
-                    fontWeight: 500,
+                    fontWeight: 600,
                     border: "none",
-                    height: "38px"
+                    height: "44px",
+                    boxShadow: "0 14px 24px rgba(96,165,250,0.22)"
                   }}
                   onClick={() => setRefreshKey((p) => p + 1)}
                 >
@@ -513,9 +543,12 @@ return (
     {showModal && selectedReport && (
   <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
     <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-      <div className="modal-content">
+      <div className="modal-content border-0">
 
-        <div className="modal-header bg-primary text-white">
+        <div
+          className="modal-header text-white"
+          style={{ background: "linear-gradient(135deg, #2563EB, #38BDF8)", borderBottom: "none", borderRadius: "24px 24px 0 0" }}
+        >
           <h5 className="modal-title">
             Diagnosis Report Details
           </h5>
@@ -618,15 +651,32 @@ return (
 
         <div className="modal-footer">
           <button
-            className="btn btn-secondary"
+            className="btn"
             onClick={() => setShowModal(false)}
+            style={{
+              borderRadius: "14px",
+              padding: "10px 16px",
+              background: "rgba(255,255,255,0.84)",
+              border: "1px solid rgba(191,219,254,0.82)",
+              color: "#2563EB",
+              fontWeight: 600,
+            }}
           >
             Close
           </button>
 
           <button
-            className="btn btn-primary"
+            className="btn"
             onClick={() => downloadLabReport(selectedReport)}
+            style={{
+              borderRadius: "14px",
+              padding: "10px 16px",
+              background: "linear-gradient(135deg, #2563EB, #38BDF8)",
+              border: "none",
+              color: "#fff",
+              fontWeight: 600,
+              boxShadow: "0 14px 24px rgba(96,165,250,0.22)",
+            }}
           >
             Download PDF
           </button>

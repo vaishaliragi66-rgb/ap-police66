@@ -13,6 +13,7 @@ import {
   FaDatabase
 } from "react-icons/fa";
 import { APP_HEADER_HEIGHT } from "../GlobalHeader";
+import "./InstitutesTheme.css";
 
 const OthersLayout = () => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ const OthersLayout = () => {
   ];
 
   return (
-    <div className="d-flex">
+    <div className="d-flex institutes-theme">
 
       {/* ================= SIDEBAR ================= */}
       {!hideSidebar && open && (
@@ -51,13 +52,15 @@ const OthersLayout = () => {
             position: "fixed",
             left: 0,
             top: `${APP_HEADER_HEIGHT}px`,
-            background: "linear-gradient(180deg, #BED2EB 0%, #e6f0ff 100%)",
+            background: "linear-gradient(180deg, rgba(219,234,254,0.94) 0%, rgba(255,255,255,0.78) 100%)",
             color: "#1f2937",
-            borderRight: "1px solid #dbeafe",
+            borderRight: "1px solid rgba(255,255,255,0.82)",
             overflowY: "auto",
             paddingTop: "20px",
             transition: "all 0.3s ease",
-            zIndex: 1000
+            zIndex: 1000,
+            boxShadow: "0 24px 44px rgba(148,184,255,0.16)",
+            backdropFilter: "blur(18px)"
           }}
         >
           {/* Header */}
@@ -125,7 +128,7 @@ const OthersLayout = () => {
           position: "fixed",
           bottom: "25px",
           left: "20px",
-          background: "#2563eb",
+          background: "linear-gradient(135deg, #2563eb, #38bdf8)",
           color: "white",
           border: "none",
           borderRadius: "50px",
@@ -133,7 +136,7 @@ const OthersLayout = () => {
           display: "flex",
           alignItems: "center",
           gap: "8px",
-          boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
+          boxShadow: "0 18px 30px rgba(96,165,250,0.26)",
           zIndex: 2000,
           fontWeight: "600",
           cursor: "pointer"

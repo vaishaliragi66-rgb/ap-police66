@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./AdminDashboard.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -268,18 +269,94 @@ export default function EmployeeReports() {
 
   return (
     <div
+      className="employee-reports-page"
       style={{
-        backgroundColor: "#F8FAFC",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 28%), radial-gradient(circle at right center, rgba(224,242,254,0.66), transparent 30%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
         minHeight: "100vh",
         padding: "28px",
         fontFamily: "'Inter', sans-serif",
       }}
     >
+      <style>
+        {`
+          .employee-reports-page .health-card {
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.74);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 24px 44px rgba(148, 184, 255, 0.16);
+            backdrop-filter: blur(18px);
+          }
+
+          .employee-reports-page .form-control,
+          .employee-reports-page .form-check-input {
+            border-color: rgba(191, 219, 254, 0.72);
+          }
+
+          .employee-reports-page .form-control {
+            background: rgba(248, 250, 252, 0.96);
+            box-shadow: 0 10px 22px rgba(148, 163, 184, 0.10);
+          }
+
+          .employee-reports-page .form-control:focus,
+          .employee-reports-page .form-check-input:focus {
+            border-color: #60A5FA;
+            box-shadow: 0 0 0 0.18rem rgba(96, 165, 250, 0.14);
+          }
+
+          .employee-reports-page .table {
+            --bs-table-bg: transparent;
+          }
+
+          .employee-reports-page .table thead th {
+            background: #eff6ff;
+            color: #1e3a8a;
+            border-bottom: 1px solid rgba(191, 219, 254, 0.8);
+            white-space: nowrap;
+          }
+
+          .employee-reports-page .table tbody tr:hover {
+            background: rgba(239, 246, 255, 0.72);
+          }
+
+          .employee-reports-page .page-link {
+            border-radius: 12px;
+            margin: 0 4px;
+            border-color: rgba(191, 219, 254, 0.8);
+            color: #2563eb;
+            box-shadow: 0 10px 20px rgba(191, 219, 254, 0.12);
+          }
+
+          .employee-reports-page .page-item.active .page-link {
+            background: linear-gradient(135deg, #2563EB, #38BDF8);
+            border-color: transparent;
+          }
+        `}
+      </style>
       <div className="container-fluid">
   
         {/* ================= HEADER ================= */}
         <div className="mb-4 mt-4">
-          <h3 style={{ fontWeight: 600, color: "#111827", marginBottom: 4 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "7px 14px",
+              borderRadius: "999px",
+              background: "rgba(255,255,255,0.72)",
+              border: "1px solid rgba(255,255,255,0.85)",
+              color: "#2563EB",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.16em",
+              marginBottom: 14,
+              boxShadow: "0 12px 26px rgba(147,197,253,0.18)",
+            }}
+          >
+            Health Analytics
+          </div>
+          <h3 style={{ fontWeight: 600, color: "#111827", marginBottom: 4, letterSpacing: "-0.03em" }}>
             Employee Medical Analytics
           </h3>
           <p style={{ color: "#6B7280", fontSize: 14, margin: 0 }}>
@@ -289,11 +366,7 @@ export default function EmployeeReports() {
   
         {/* ================= FILTER PANEL ================= */}
         <div
-          className="card mb-4 border-0"
-          style={{
-            borderRadius: 14,
-            boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
-          }}
+          className="card mb-4 border-0 health-card"
         >
           <div className="card-body">
             <div className="row g-3 align-items-center">
@@ -374,16 +447,36 @@ export default function EmployeeReports() {
   
               <div className="col-md-4 text-end">
                 <button
-                  className="btn btn-success me-2 px-4"
+                  className="btn me-2 px-4"
                   onClick={() => downloadCSV(filteredRows)}
                   disabled={!filteredRows.length}
+                  style={{
+                    borderRadius: "16px",
+                    paddingTop: "10px",
+                    paddingBottom: "10px",
+                    background: "linear-gradient(135deg, #059669, #2DD4BF)",
+                    color: "#fff",
+                    border: "none",
+                    fontWeight: 600,
+                    boxShadow: "0 14px 28px rgba(45,212,191,0.22)",
+                  }}
                 >
                   Download CSV
                 </button>
                 <button
-                  className="btn btn-danger px-4"
+                  className="btn px-4"
                   onClick={() => downloadPDF(filteredRows)}
                   disabled={!filteredRows.length}
+                  style={{
+                    borderRadius: "16px",
+                    paddingTop: "10px",
+                    paddingBottom: "10px",
+                    background: "linear-gradient(135deg, #2563EB, #38BDF8)",
+                    color: "#fff",
+                    border: "none",
+                    fontWeight: 600,
+                    boxShadow: "0 14px 28px rgba(96,165,250,0.24)",
+                  }}
                 >
                   Download PDF
                 </button>
@@ -395,11 +488,7 @@ export default function EmployeeReports() {
   
         {/* ================= TABLE ================= */}
         <div
-          className="card border-0"
-          style={{
-            borderRadius: 14,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
-          }}
+          className="card border-0 health-card"
         >
           <div className="table-responsive">
             <table className="table align-middle mb-0">
@@ -434,7 +523,13 @@ export default function EmployeeReports() {
                   const expanded = expandedRow === idx;
   
                   return (
-                    <tr key={idx} style={{ borderBottom: "1px solid #E5E7EB" }}>
+                    <tr
+                      key={idx}
+                      style={{
+                        borderBottom: "1px solid #E5E7EB",
+                        background: expanded ? "rgba(239,246,255,0.78)" : "transparent"
+                      }}
+                    >
                       <td>{r.Role}</td>
                       <td>{r.ABS_NO || "—"}</td>
                       <td style={{ fontWeight: 600 }}>{r.Name}</td>
@@ -480,15 +575,7 @@ export default function EmployeeReports() {
 
                       <td>
                         <button
-                          className="btn btn-sm"
-                          style={{
-                            borderRadius: 999,
-                            padding: "4px 14px",
-                            border: "1px solid #4F6FAF",
-                            background: "#fff",
-                            color: "#4F6FAF",
-                            fontWeight: 500
-                          }}
+                          className="btn btn-sm admin-view-btn"
                           onClick={() => toggleRow(idx)}
                         >
                           {expanded ? "Collapse" : "View"}

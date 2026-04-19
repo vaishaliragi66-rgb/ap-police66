@@ -166,43 +166,72 @@ const XrayReport = () => {
 
   return (
     <div
+      className="employee-xray-page"
       style={{
-        backgroundColor: "#F8FAFC",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
         minHeight: "100vh",
         padding: "40px 0",
         fontFamily: "'Inter', sans-serif",
       }}
     >
+      <style>
+        {`
+          .employee-xray-page .report-card,
+          .employee-xray-page .modal-content {
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(255,255,255,0.88);
+            border-radius: 24px;
+            box-shadow: 0 24px 44px rgba(148,184,255,0.18);
+            backdrop-filter: blur(18px);
+          }
+
+          .employee-xray-page .table {
+            --bs-table-bg: transparent;
+          }
+
+          .employee-xray-page .table thead th {
+            background: #EFF6FF;
+            color: #1E3A8A;
+            border-color: rgba(191,219,254,0.78);
+            white-space: nowrap;
+          }
+
+          .employee-xray-page .table tbody tr:hover {
+            background: rgba(239,246,255,0.72);
+          }
+        `}
+      </style>
       <div className="container">
         <button
           className="btn mb-3"
           onClick={() => navigate(-1)}
           style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D6E0F0",
-            borderRadius: "8px",
+            backgroundColor: "rgba(255,255,255,0.82)",
+            border: "1px solid rgba(191,219,254,0.82)",
+            borderRadius: "14px",
             padding: "6px 14px",
             fontSize: "14px",
             color: "#1F2933",
+            boxShadow: "0 12px 20px rgba(191,219,254,0.14)",
           }}
         >
           ← Back
         </button>
 
         <div
-          className="card border-0"
+          className="card border-0 report-card"
           style={{
-            borderRadius: "16px",
-            boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+            borderRadius: "24px",
           }}
         >
           <div className="card-body">
             <div
               style={{
-                background: "linear-gradient(90deg, #F8FAFC, #F3F7FF)",
+                background: "linear-gradient(135deg, rgba(239,246,255,0.95), rgba(255,255,255,0.82))",
                 padding: "16px 24px",
-                borderBottom: "1px solid #D6E0F0",
-                borderRadius: "16px 16px 0 0",
+                borderBottom: "1px solid rgba(191,219,254,0.5)",
+                borderRadius: "24px 24px 0 0",
               }}
               className="d-flex flex-column gap-2"
             >
@@ -235,13 +264,14 @@ const XrayReport = () => {
                     <button
                       className="btn btn-sm"
                       style={{
-                        backgroundColor: "#4A70A9",
+                        background: "linear-gradient(135deg, #2563EB, #38BDF8)",
                         color: "#FFFFFF",
-                        borderRadius: "999px",
+                        borderRadius: "14px",
                         padding: "6px 16px",
-                        fontWeight: 500,
+                        fontWeight: 600,
                         border: "none",
-                        height: "38px"
+                        height: "44px",
+                        boxShadow: "0 14px 24px rgba(96,165,250,0.22)"
                       }}
                       onClick={() => setRefreshKey((p) => p + 1)}
                     >
@@ -312,8 +342,11 @@ const XrayReport = () => {
       {showModal && selectedReport && (
         <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
+            <div className="modal-content border-0">
+              <div
+                className="modal-header text-white"
+                style={{ background: "linear-gradient(135deg, #2563EB, #38BDF8)", borderBottom: "none", borderRadius: "24px 24px 0 0" }}
+              >
                 <h5 className="modal-title">X‑ray Details</h5>
                 <button className="btn-close btn-close-white" onClick={() => setShowModal(false)} />
               </div>
@@ -413,8 +446,8 @@ const XrayReport = () => {
               </div>
 
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
-                <button className="btn btn-primary" onClick={() => downloadXrayReport(selectedReport)}>Download PDF</button>
+                <button className="btn" onClick={() => setShowModal(false)} style={{ borderRadius: "14px", padding: "10px 16px", background: "rgba(255,255,255,0.84)", border: "1px solid rgba(191,219,254,0.82)", color: "#2563EB", fontWeight: 600 }}>Close</button>
+                <button className="btn" onClick={() => downloadXrayReport(selectedReport)} style={{ borderRadius: "14px", padding: "10px 16px", background: "linear-gradient(135deg, #2563EB, #38BDF8)", border: "none", color: "#fff", fontWeight: 600, boxShadow: "0 14px 24px rgba(96,165,250,0.22)" }}>Download PDF</button>
               </div>
             </div>
           </div>

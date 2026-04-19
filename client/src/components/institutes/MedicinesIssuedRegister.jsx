@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
+import "./InstitutesTheme.css";
 
 const MedicinesIssuedRegister = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -660,43 +661,36 @@ const printPrescription = () => {
   
 
   return (
-    <div className=" mt-4 print-area" style={{
-      backgroundColor: "#F2F3F5",
+    <div className="mt-4 print-area institutes-theme" style={{
+      background: "transparent",
       minHeight: "100vh",
       paddingBottom: "30px"
     }}>
-      <div className="card shadow">
+      <div className="card shadow border-0 glass-card">
 
         {/* ---------- HEADER ---------- */}
         <div className="card-header d-flex justify-content-between align-items-center"
           style={{
-            background: COLORS.primary,
-            color: "#fff",
+            background: "linear-gradient(135deg, rgba(239,246,255,0.96), rgba(255,255,255,0.84))",
+            color: "#0F172A",
             borderBottom: `1px solid ${COLORS.border}`
           }}
         >
-          <h5 className="mb-0">Medicines Issued</h5>
+          <div>
+            <div className="section-pill mb-2">Pharmacy Register</div>
+            <h5 className="mb-0" style={{ color: "#0F172A" }}>Medicines Issued</h5>
+          </div>
 
           <div className="d-flex gap-2">
             <button
-              className="btn btn-sm"
-              style={{
-                background: "#fff",
-                color: COLORS.primary,
-                border: `1px solid ${COLORS.primary}`
-              }}
+              className="btn btn-sm btn-outline-primary"
               onClick={handleDownloadCSV}
             >
               ⬇ Download
             </button>
 
             <button
-              className="btn btn-sm"
-              style={{
-                background: "#fff",
-                color: COLORS.primary,
-                border: `1px solid ${COLORS.primary}`
-              }}
+              className="btn btn-sm btn-outline-primary"
               onClick={handlePrint}
             >
               🖨 Print
@@ -910,11 +904,7 @@ const printPrescription = () => {
           {/* ---------- ROWS PER PAGE (TOP RIGHT – CONSISTENT) ---------- */}
           <div className="d-flex justify-content-end align-items-center gap-3 mb-3">
             <button
-              className="btn btn-sm"
-              style={{
-                border: `1px solid ${COLORS.primary}`,
-                color: COLORS.primary
-              }}
+              className="btn btn-sm btn-outline-primary"
               onClick={() => setShowFilters(prev => !prev)}
             >
               {showFilters ? "Hide Filters ▲" : "Show Filters ▼"}
@@ -987,11 +977,7 @@ const printPrescription = () => {
                     <td>
                       <div className="d-flex gap-1">
                         <button
-                          className="btn btn-sm"
-                          style={{
-                            border: "1px solid #3B6FB6",
-                            color: "#3B6FB6"
-                          }}
+                          className="btn btn-sm btn-outline-primary"
                           onClick={() => viewPrescription(r)}
                         >
                           View
@@ -1069,7 +1055,7 @@ const printPrescription = () => {
       {viewMode && selectedPrescription && (
   <div
     className="modal fade show"
-    style={{ display: "block", background: "rgba(0,0,0,.6)" }}
+    style={{ display: "block", background: "rgba(15,23,42,0.28)" }}
   >
     <div className="modal-dialog modal-fullscreen">
       <div className="modal-content">
@@ -1088,7 +1074,7 @@ const printPrescription = () => {
 
   <div className="text-center mb-3">
     <h4 className="fw-bold">AP POLICE HEALTH INSTITUTE</h4>
-    <small className="text-muted">MEDICAL PRESCRIPTION</small>
+    <small className="text-muted d-block" style={{ color: "#475569" }}>MEDICAL PRESCRIPTION</small>
   </div>
 
   <hr />
@@ -1125,7 +1111,7 @@ const printPrescription = () => {
   </div>
 
   <table className="table table-bordered mt-3">
-    <thead style={{ backgroundColor: "#003366", color: "#fff" }}>
+    <thead style={{ backgroundColor: "#EFF6FF", color: "#1E3A8A" }}>
       <tr>
         <th style={{ width: "8%" }}>S.No</th>
         <th>Medicine</th>

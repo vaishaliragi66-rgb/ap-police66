@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaUniversity, FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import "./InstitutesTheme.css";
 
 const InstituteRegister = () => {
   const [formData, setFormData] = useState({
@@ -88,8 +89,8 @@ const InstituteRegister = () => {
 
   return (
     <div
+      className="institutes-auth-theme"
       style={{
-        backgroundColor: "#F8FAFC",
         minHeight: "100vh",
         padding: "40px 16px",
         fontFamily: "'Inter', sans-serif",
@@ -98,16 +99,21 @@ const InstituteRegister = () => {
       {/* Header */}
       <div className="text-center mb-4">
         <div
-          className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+          className="mx-auto d-flex align-items-center justify-content-center mb-3"
           style={{
             width: "64px",
             height: "64px",
-            backgroundColor: "#EAF2FF",
-            color: "#4A70A9",
+            borderRadius: "18px",
+            background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
+            color: "#2563EB",
+            border: "1px solid rgba(255,255,255,0.84)",
+            boxShadow: "0 16px 30px rgba(147,197,253,0.2)",
           }}
         >
           <FaUniversity size={30} />
         </div>
+
+        <div className="section-pill mb-3">Institute Onboarding</div>
   
         <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
           Institute Registration
@@ -118,17 +124,7 @@ const InstituteRegister = () => {
       </div>
   
       {/* Form Card */}
-      <div
-        className="mx-auto"
-        style={{
-          maxWidth: "620px",
-          backgroundColor: "#FFFFFF",
-          borderRadius: "16px",
-          padding: "32px",
-          border: "1px solid #D6E0F0",
-          boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
-        }}
-      >
+      <div className="mx-auto glass-card" style={{ maxWidth: "620px", padding: "32px" }}>
         <div
           className="mb-4 pb-2"
           style={{

@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAIQuerySuggestions } from '../../hooks/useAIQuerySuggestions';
 import AIQuerySuggestions from '../common/AIQuerySuggestions';
+import "./AdminDashboard.css";
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
 
@@ -296,20 +297,20 @@ const AIInsights2 = () => {
         label: yField,
         data: results.results.map(item => item[yField] || item.count || 0),
         backgroundColor: [
-          'rgba(255, 99, 132, 0.5)',
-          'rgba(54, 162, 235, 0.5)',
-          'rgba(255, 206, 86, 0.5)',
-          'rgba(75, 192, 192, 0.5)',
-          'rgba(153, 102, 255, 0.5)',
-          'rgba(255, 159, 64, 0.5)',
+          'rgba(59, 130, 246, 0.55)',
+          'rgba(56, 189, 248, 0.55)',
+          'rgba(45, 212, 191, 0.55)',
+          'rgba(16, 185, 129, 0.55)',
+          'rgba(251, 191, 36, 0.55)',
+          'rgba(248, 113, 113, 0.55)',
         ],
         borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
+          'rgba(37, 99, 235, 1)',
+          'rgba(14, 165, 233, 1)',
+          'rgba(13, 148, 136, 1)',
+          'rgba(5, 150, 105, 1)',
+          'rgba(245, 158, 11, 1)',
+          'rgba(239, 68, 68, 1)',
         ],
         borderWidth: 1,
       }]
@@ -344,11 +345,30 @@ const AIInsights2 = () => {
 
     return (
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-300">
-          <thead className="bg-gray-100">
+        <table
+          className="min-w-full"
+          style={{
+            background: "transparent",
+            borderCollapse: "separate",
+            borderSpacing: 0,
+            border: "1px solid rgba(191,219,254,0.7)",
+            borderRadius: "18px",
+            overflow: "hidden",
+          }}
+        >
+          <thead>
             <tr>
               {columns.map(col => (
-                <th key={col} className="px-4 py-2 border-b text-left text-sm font-semibold text-gray-700">
+                <th
+                  key={col}
+                  className="px-4 py-2 border-b text-left text-sm font-semibold text-gray-700"
+                  style={{
+                    background: "#EFF6FF",
+                    borderColor: "rgba(191,219,254,0.7)",
+                    color: "#1E3A8A",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {col}
                 </th>
               ))}
@@ -356,9 +376,13 @@ const AIInsights2 = () => {
           </thead>
           <tbody>
             {results.results.map((row, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
+              <tr key={idx} style={{ transition: "background 0.3s ease" }}>
                 {columns.map(col => (
-                  <td key={col} className="px-4 py-2 border-b text-sm text-gray-600">
+                  <td
+                    key={col}
+                    className="px-4 py-2 border-b text-sm text-gray-600"
+                    style={{ borderColor: "rgba(226,232,240,0.9)" }}
+                  >
                     {typeof row[col] === 'object' ? JSON.stringify(row[col]) : String(row[col])}
                   </td>
                 ))}
@@ -372,26 +396,82 @@ const AIInsights2 = () => {
 
   return (
     <div
+      className="ai-insights-page"
       style={{
-        backgroundColor: "#F8FAFC",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 28%), radial-gradient(circle at right center, rgba(224,242,254,0.65), transparent 30%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
         minHeight: "100vh",
         padding: "30px 0",
         fontFamily: "'Inter', sans-serif",
       }}
     >
       <div className="container">
+        <style>
+          {`
+            .ai-insights-page .health-card {
+              border-radius: 24px;
+              background: rgba(255, 255, 255, 0.74);
+              border: 1px solid rgba(255, 255, 255, 0.85);
+              box-shadow: 0 24px 44px rgba(148, 184, 255, 0.16);
+              backdrop-filter: blur(18px);
+            }
+
+            .ai-insights-page .form-control {
+              min-height: 48px;
+              border-radius: 16px;
+              border: 1px solid rgba(191, 219, 254, 0.7);
+              background: rgba(248, 250, 252, 0.96);
+              box-shadow: 0 10px 22px rgba(148, 163, 184, 0.10);
+            }
+
+            .ai-insights-page .form-control:focus {
+              border-color: #60A5FA;
+              box-shadow: 0 0 0 0.18rem rgba(96, 165, 250, 0.14);
+            }
+
+            .ai-insights-page .table {
+              --bs-table-bg: transparent;
+            }
+
+            .ai-insights-page .table thead th {
+              background: #eff6ff;
+              color: #1e3a8a;
+              border-color: rgba(191, 219, 254, 0.75);
+            }
+
+            .ai-insights-page .table tbody tr:hover {
+              background: rgba(239, 246, 255, 0.72);
+            }
+          `}
+        </style>
   
         {/* HEADER */}
         <div
-          className="card border-0 mb-4"
-          style={{
-            borderRadius: "14px",
-            boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-          }}
+          className="card border-0 mb-4 health-card"
+          style={{ position: "relative", zIndex: showSuggestions ? 30 : 1, overflow: "visible" }}
         >
           <div className="card-body">
-            <h3 className="fw-bold mb-1 text-dark">AI Insights</h3>
-            <p className="text-muted mb-0">
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "7px 14px",
+                borderRadius: "999px",
+                background: "linear-gradient(135deg, rgba(219,234,254,0.95), rgba(255,255,255,0.9))",
+                border: "1px solid rgba(255,255,255,0.85)",
+                color: "#2563EB",
+                fontSize: "0.72rem",
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                marginBottom: 14,
+                boxShadow: "0 10px 24px rgba(147,197,253,0.18)"
+              }}
+            >
+              Analytics Assistant
+            </div>
+            <h3 className="fw-semibold mb-1 text-dark" style={{ letterSpacing: "-0.03em" }}>AI Insights</h3>
+            <p className="text-muted mb-0" style={{ lineHeight: 1.7 }}>
               Ask questions and visualize medical & inventory data
             </p>
           </div>
@@ -399,16 +479,17 @@ const AIInsights2 = () => {
   
         {/* QUERY INPUT */}
         <div
-          className="card border-0 mb-4"
-          style={{
-            borderRadius: "14px",
-            boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-          }}
+          className="card border-0 mb-4 health-card"
+          style={{ position: "relative", zIndex: showSuggestions ? 1200 : 2, overflow: "visible" }}
         >
           <div className="card-body">
             <div className="row g-2 align-items-center">
               <div className="col-md-9">
-                <div className="position-relative" ref={wrapperRef}>
+                <div
+                  className="position-relative"
+                  ref={wrapperRef}
+                  style={{ zIndex: showSuggestions ? 1300 : "auto", isolation: "isolate" }}
+                >
                   <input
                     ref={inputRef}
                     type="text"
@@ -442,10 +523,14 @@ const AIInsights2 = () => {
                   onClick={handleQuery}
                   disabled={loading || !query.trim()}
                   style={{
-                    height: "44px",
-                    backgroundColor: "#4A70A9",
+                    height: "48px",
+                    background: "linear-gradient(135deg, #2563EB, #38BDF8)",
                     color: "#fff",
-                    fontWeight: 500,
+                    fontWeight: 600,
+                    borderRadius: "16px",
+                    border: "none",
+                    boxShadow: "0 14px 28px rgba(96,165,250,0.28)",
+                    transition: "all 0.3s ease",
                   }}
                 >
                   {loading ? "Processing..." : "Ask AI"}
@@ -465,8 +550,17 @@ const AIInsights2 = () => {
                 ].map((q) => (
                   <button
                     key={q}
-                    className="btn btn-sm btn-outline-secondary"
+                    className="btn btn-sm"
                     onClick={() => setQuery(q)}
+                    style={{
+                      borderRadius: "999px",
+                      padding: "8px 14px",
+                      background: "rgba(255,255,255,0.82)",
+                      border: "1px solid rgba(191,219,254,0.8)",
+                      color: "#2563EB",
+                      fontWeight: 500,
+                      boxShadow: "0 10px 20px rgba(191,219,254,0.14)",
+                    }}
                   >
                     {q}
                   </button>
@@ -486,11 +580,8 @@ const AIInsights2 = () => {
         {/* RESULTS */}
         {results && (
           <div
-            className="card border-0"
-            style={{
-              borderRadius: "14px",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-            }}
+            className="card border-0 health-card"
+            style={{ position: "relative", zIndex: 1 }}
           >
             <div className="card-body">
   
@@ -504,6 +595,10 @@ const AIInsights2 = () => {
                         : "btn-outline-primary"
                     }`}
                     onClick={() => setViewMode("table")}
+                    style={{
+                      borderRadius: "14px",
+                      fontWeight: 600,
+                    }}
                   >
                     Table View
                   </button>
@@ -516,6 +611,10 @@ const AIInsights2 = () => {
                     }`}
                     disabled={results.chartType === "none"}
                     onClick={() => setViewMode("chart")}
+                    style={{
+                      borderRadius: "14px",
+                      fontWeight: 600,
+                    }}
                   >
                     Chart View
                   </button>
@@ -529,6 +628,7 @@ const AIInsights2 = () => {
                   <button
                     className="btn btn-outline-success btn-sm"
                     onClick={downloadPDF}
+                    style={{ borderRadius: "12px", fontWeight: 600 }}
                   >
                     Download PDF
                   </button>

@@ -83,18 +83,40 @@ const FamilyMemberProfile = () => {
   }
 
   return (
-    <div className="container mt-4">
+    <div
+      className="container mt-4 family-member-profile-page"
+      style={{
+        minHeight: "100vh",
+        paddingTop: "16px",
+        paddingBottom: "32px",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)"
+      }}
+    >
+      <style>
+        {`
+          .family-member-profile-page .form-control,
+          .family-member-profile-page .form-select {
+            min-height: 44px;
+            border-radius: 14px;
+            border: 1px solid rgba(191, 219, 254, 0.75);
+            background: rgba(248, 250, 252, 0.96);
+            box-shadow: 0 10px 20px rgba(148, 163, 184, 0.08);
+          }
+        `}
+      </style>
       <div className="d-flex justify-content-between mb-3">
         <button
           className="btn"
           onClick={() => navigate(-1)}
           style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D6E0F0",
-            borderRadius: "8px",
+            backgroundColor: "rgba(255,255,255,0.82)",
+            border: "1px solid rgba(191,219,254,0.82)",
+            borderRadius: "14px",
             padding: "6px 14px",
             fontSize: "14px",
             color: "#1F2933",
+            boxShadow: "0 12px 20px rgba(191,219,254,0.14)",
           }}
         >
           &larr; Back
@@ -104,9 +126,12 @@ const FamilyMemberProfile = () => {
             className="btn btn-primary"
             onClick={handleEdit}
             style={{
-              borderRadius: "8px",
+              borderRadius: "14px",
               padding: "6px 14px",
               fontSize: "14px",
+              background: "linear-gradient(135deg, #2563EB, #38BDF8)",
+              border: "none",
+              boxShadow: "0 14px 24px rgba(96,165,250,0.22)",
             }}
           >
             Edit Profile
@@ -117,9 +142,10 @@ const FamilyMemberProfile = () => {
               className="btn btn-success me-2"
               onClick={handleSave}
               style={{
-                borderRadius: "8px",
+                borderRadius: "14px",
                 padding: "6px 14px",
                 fontSize: "14px",
+                boxShadow: "0 12px 20px rgba(16,185,129,0.18)",
               }}
             >
               Save
@@ -128,7 +154,7 @@ const FamilyMemberProfile = () => {
               className="btn btn-secondary"
               onClick={handleCancel}
               style={{
-                borderRadius: "8px",
+                borderRadius: "14px",
                 padding: "6px 14px",
                 fontSize: "14px",
               }}
@@ -139,7 +165,16 @@ const FamilyMemberProfile = () => {
         )}
       </div>
 
-      <div className="card shadow p-4">
+      <div
+        className="card shadow p-4 border-0"
+        style={{
+          background: "rgba(255,255,255,0.78)",
+          borderRadius: "24px",
+          border: "1px solid rgba(255,255,255,0.88)",
+          boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
+          backdropFilter: "blur(18px)",
+        }}
+      >
         <h4 className="mb-3">
           {isEditing ? (
             <input

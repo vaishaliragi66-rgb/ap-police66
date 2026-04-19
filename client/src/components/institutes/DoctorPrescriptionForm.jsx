@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData_clean";
+import "./InstitutesTheme.css";
 
 const DoctorPrescriptionForm = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
@@ -992,7 +993,7 @@ const relevantDiseases = diseases.filter((d) => {
           </small>
           <button
             type="button"
-            className="btn btn-sm btn-outline-dark"
+            className="btn btn-sm btn-outline-primary view-action"
             onClick={() => {
               setSelectedPrescriptionReport(prescription);
             }}
@@ -1084,7 +1085,7 @@ if (validXrays.length === 0) {
   /* ================= UI ================= */
   return (
 
-    <div className="container-fluid mt-1">
+    <div className="container-fluid mt-1 institutes-theme">
       {/* Back Button */}
       <button
         className="btn mb-3"
@@ -1194,7 +1195,7 @@ if (validXrays.length === 0) {
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="btn btn-sm btn-outline-dark mt-2 me-2"
+                  className="btn btn-sm btn-outline-primary mt-2 me-2 view-action"
                 >
                   View Report
                 </a>
@@ -1270,7 +1271,7 @@ if (validXrays.length === 0) {
 
           <button
             type="button"
-            className="btn btn-sm btn-outline-dark mt-2"
+            className="btn btn-sm btn-outline-primary mt-2 view-action"
             disabled={status !== "result out"}
             onClick={() => {
               // remove any other modal elements from the DOM so they don't appear behind
@@ -1358,7 +1359,7 @@ if (validXrays.length === 0) {
 
           {/* X-ray single-item modal */}
           {selectedXrayReport && (
-            <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", zIndex: 2050 }}>
+            <div className="modal fade show d-block" style={{ background: "rgba(15,23,42,0.28)", zIndex: 2050 }}>
               <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060, maxWidth: '90%' }}>
                 <div className="modal-content">
                   <div className="modal-header bg-primary text-white">
@@ -1437,7 +1438,7 @@ if (validXrays.length === 0) {
                   </div>
 
                   <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={() => setSelectedXrayReport(null)}>Close</button>
+                    <button className="btn btn-outline-primary" onClick={() => setSelectedXrayReport(null)}>Close</button>
                   </div>
                 </div>
               </div>
@@ -1445,7 +1446,7 @@ if (validXrays.length === 0) {
           )}
 
           {selectedPrescriptionReport && (
-        <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", zIndex: 2050 }}>
+        <div className="modal fade show d-block" style={{ background: "rgba(15,23,42,0.28)", zIndex: 2050 }}>
           <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060 }}>
             <div className="modal-content">
               <div className="modal-header bg-dark text-white d-flex justify-content-between align-items-center">
@@ -1691,7 +1692,7 @@ if (validXrays.length === 0) {
                   <div className="modal-footer">
                     <button
                       type="button"
-                      className="btn btn-secondary"
+                      className="btn btn-outline-primary"
                       onClick={() => setSelectedPrescriptionReport(null)}
                     >
                       Close
@@ -1821,7 +1822,7 @@ if (validXrays.length === 0) {
 
                     <button
                       type="button"
-                      className="btn btn-sm btn-dark"
+                      className="btn btn-sm btn-outline-primary view-action"
                       onClick={loadEmployeeReports}
                     >
                       View Reports
@@ -2512,7 +2513,7 @@ if (validXrays.length === 0) {
       {selectedXrayReport && (
         <div
           className="modal fade show d-block"
-          style={{ background: "rgba(0,0,0,0.5)" }}
+          style={{ background: "rgba(15,23,42,0.28)" }}
         >
           <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
@@ -2621,7 +2622,7 @@ if (validXrays.length === 0) {
               <div className="modal-footer">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-outline-primary"
                   onClick={() => setSelectedXrayReport(null)}
                 >
                   Close

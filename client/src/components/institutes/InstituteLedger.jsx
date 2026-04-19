@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import "./InstitutesTheme.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 
 const LedgerStore = () => {
@@ -390,7 +391,7 @@ const downloadCSV = () => {
   }
 
   return (
-    <div className="container mt-4 ledger-page">
+    <div className="container mt-4 ledger-page institutes-theme">
       {/* Store Type Selection */}
       <div className="card shadow mb-4">
         <div className="card-body text-center">

@@ -514,24 +514,54 @@ const PrescriptionReport = () => {
 
   return (
     <div
+      className="employee-prescription-page"
       style={{
-        backgroundColor: "#F8FAFC",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
         minHeight: "100vh",
         padding: "40px 0",
         fontFamily: "'Inter', sans-serif",
       }}
     >
+      <style>
+        {`
+          .employee-prescription-page .health-card,
+          .employee-prescription-page .modal-content {
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(255,255,255,0.88);
+            border-radius: 24px;
+            box-shadow: 0 24px 44px rgba(148,184,255,0.18);
+            backdrop-filter: blur(18px);
+          }
+
+          .employee-prescription-page .table {
+            --bs-table-bg: transparent;
+          }
+
+          .employee-prescription-page .table thead th {
+            background: #EFF6FF;
+            color: #1E3A8A;
+            border-color: rgba(191,219,254,0.78);
+            white-space: nowrap;
+          }
+
+          .employee-prescription-page .table tbody tr:hover {
+            background: rgba(239,246,255,0.72);
+          }
+        `}
+      </style>
       <div className="container">
         <button
           className="btn mb-4"
           onClick={() => window.history.back()}
           style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D6E0F0",
-            borderRadius: "8px",
+            backgroundColor: "rgba(255,255,255,0.82)",
+            border: "1px solid rgba(191,219,254,0.82)",
+            borderRadius: "14px",
             padding: "6px 14px",
             fontSize: "14px",
             color: "#1F2933",
+            boxShadow: "0 12px 20px rgba(191,219,254,0.14)",
           }}
         >
           ← Back
@@ -594,12 +624,13 @@ const PrescriptionReport = () => {
         <div className="d-flex gap-3 mb-4 flex-wrap">
           <div
             style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #D6E0F0",
-              borderRadius: "12px",
+              backgroundColor: "rgba(255,255,255,0.82)",
+              border: "1px solid rgba(255,255,255,0.88)",
+              borderRadius: "18px",
               padding: "14px 20px",
               fontWeight: 600,
               color: "#1F2933",
+              boxShadow: "0 18px 30px rgba(191,219,254,0.14)",
             }}
           >
             Total Prescriptions:{" "}
@@ -610,12 +641,13 @@ const PrescriptionReport = () => {
 
           <div
             style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #D6E0F0",
-              borderRadius: "12px",
+              backgroundColor: "rgba(255,255,255,0.82)",
+              border: "1px solid rgba(255,255,255,0.88)",
+              borderRadius: "18px",
               padding: "14px 20px",
               fontWeight: 600,
               color: "#1F2933",
+              boxShadow: "0 18px 30px rgba(191,219,254,0.14)",
             }}
           >
             Total Medicines:{" "}
@@ -626,10 +658,9 @@ const PrescriptionReport = () => {
         </div>
 
         <div
-          className="card border-0"
+          className="card border-0 health-card"
           style={{
-            borderRadius: "16px",
-            boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+            borderRadius: "24px",
           }}
         >
           <div className="card-body">
@@ -733,8 +764,8 @@ const PrescriptionReport = () => {
       {showModal && selectedPrescription && selectedReportData && (
         <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style={{ maxWidth: "90%" }}>
-            <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
+            <div className="modal-content border-0">
+              <div className="modal-header text-white" style={{ background: "linear-gradient(135deg, #2563EB, #38BDF8)", borderBottom: "none", borderRadius: "24px 24px 0 0" }}>
                 <h5 className="modal-title">Prescription Report</h5>
                 <button
                   className="btn-close btn-close-white"
@@ -748,16 +779,18 @@ const PrescriptionReport = () => {
 
               <div className="modal-footer">
                 <button
-                  className="btn btn-secondary"
+                  className="btn"
                   onClick={() => setShowModal(false)}
+                  style={{ borderRadius: "14px", padding: "10px 16px", background: "rgba(255,255,255,0.84)", border: "1px solid rgba(191,219,254,0.82)", color: "#2563EB", fontWeight: 600 }}
                 >
                   Close
                 </button>
 
                 <button
-                  className="btn btn-primary"
+                  className="btn"
                   onClick={() => downloadPrescriptionReport(selectedPrescription)}
                   disabled={downloadingId === String(selectedPrescription?._id || selectedPrescription?.visit_id || "download")}
+                  style={{ borderRadius: "14px", padding: "10px 16px", background: "linear-gradient(135deg, #2563EB, #38BDF8)", border: "none", color: "#fff", fontWeight: 600, boxShadow: "0 14px 24px rgba(96,165,250,0.22)" }}
                 >
                   {downloadingId === String(selectedPrescription?._id || selectedPrescription?.visit_id || "download")
                     ? "Preparing..."

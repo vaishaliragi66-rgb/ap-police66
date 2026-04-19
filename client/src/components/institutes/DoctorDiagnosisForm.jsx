@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
+import "./InstitutesTheme.css";
 
 const DoctorDiagnosisForm = () => {
   const [testsMaster, setTestsMaster] = useState([]);
@@ -160,28 +161,29 @@ const DoctorDiagnosisForm = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f8fe', padding: '40px 16px' }}>
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: 32, background: '#fff', borderRadius: 14 }}>
-        <h2 style={{ textAlign: 'center', marginBottom: 32 }}>🏥 Diagnosis / Lab Test Entry</h2>
+    <div className="institutes-theme" style={{ minHeight: "100vh", background: "transparent", padding: "40px 16px" }}>
+      <div className="glass-card" style={{ maxWidth: 800, margin: "0 auto", padding: 32, borderRadius: 24 }}>
+        <div className="section-pill mb-3">Lab Entry</div>
+        <h2 style={{ textAlign: "center", marginBottom: 32, color: "#0f172a", fontWeight: 700 }}>🏥 Diagnosis / Lab Test Entry</h2>
         <form onSubmit={handleSubmit} autoComplete="off">
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontWeight:600 }}>Institute</label>
-            <input type="text" readOnly value={instituteName || 'Loading...'} style={{ width: '100%', padding:12, borderRadius:8, border:'1px solid #ddd', backgroundColor:'#f9fafb' }} />
+            <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>Institute</label>
+            <input type="text" className="form-control" readOnly value={instituteName || "Loading..."} style={{ width: "100%", padding: 12, borderRadius: 14, backgroundColor: "rgba(248,250,252,0.96)" }} />
           </div>
 
           <div style={{ marginBottom: 24 }}>
             <PatientSelector instituteId={formData.Institute_ID} onSelect={({ employee, visit_id }) => { setSelectedEmployee(employee); setVisitId(visit_id||null); setFormData(prev => ({ ...prev, Employee_ID: employee._id, IsFamilyMember: false, FamilyMember_ID: '' })); }} />
           </div>
 
-          {formData.Employee_ID && (<div style={{ marginBottom: 24, padding:14, borderRadius:8, background:'#f3f4f6' }}><strong>Selected Employee:</strong> {selectedEmployee?.Name} (ABS_NO: {selectedEmployee?.ABS_NO})</div>)}
+          {formData.Employee_ID && (<div className="alert alert-info" style={{ marginBottom: 24, padding: 14, borderRadius: 18 }}><strong>Selected Employee:</strong> {selectedEmployee?.Name} (ABS_NO: {selectedEmployee?.ABS_NO})</div>)}
 
-          <h4 style={{ marginBottom: 16, borderBottom: '2px solid #000', paddingBottom:8 }}>Tests</h4>
+          <h4 style={{ marginBottom: 16, borderBottom: "1px solid rgba(191,219,254,0.72)", paddingBottom: 8, color: "#0f172a" }}>Tests</h4>
 
           {formData.Tests.map((t,i)=> (
-            <div key={i} style={{ padding:16, marginBottom:16, borderRadius:10, border:'1px solid #e5e7eb', background:'#fafafa' }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr auto', gap:12, alignItems:'end' }}>
+            <div key={i} style={{ padding: 16, marginBottom: 16, borderRadius: 18, border: "1px solid rgba(191,219,254,0.72)", background: "rgba(248,250,252,0.78)", boxShadow: "0 16px 24px rgba(148,184,255,0.08)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, alignItems: "end" }}>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600 }}>Category</label>
+                  <label style={{ fontSize: 12, fontWeight: 600 }}>Category</label>
                   <select className="form-select" value={t.Category||""} onChange={e=>handleTestChange(i,'Category', e.target.value)}>
                     <option value="">Select Category</option>
                     {(testCategories.length ? testCategories : Object.keys(testsByCategory)).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
@@ -189,26 +191,26 @@ const DoctorDiagnosisForm = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600 }}>Test Name</label>
+                  <label style={{ fontSize: 12, fontWeight: 600 }}>Test Name</label>
                   <select className="form-select" value={t.Test_Name||""} onChange={e=>handleTestChange(i,'Test_Name', e.target.value)} disabled={!t.Category}>
                     <option value="">Select Test</option>
                     {(t.Category && testsByCategory[t.Category] ? testsByCategory[t.Category] : []).map(testObj => (<option key={testObj.name} value={testObj.name}>{testObj.name}</option>))}
                   </select>
                 </div>
 
-                {formData.Tests.length > 1 && (<button type="button" onClick={()=>removeTest(i)} style={{ padding:'10px 14px', background:'#000', color:'#fff', border:'none', borderRadius:6 }}>Remove</button>)}
+                {formData.Tests.length > 1 && (<button type="button" className="btn btn-outline-danger" onClick={()=>removeTest(i)}>Remove</button>)}
               </div>
             </div>
           ))}
 
-          <button type="button" onClick={addTest} style={{ marginBottom:28, padding:'12px 18px', background:'#000', color:'#fff', border:'none', borderRadius:8 }}>+ Add Another Test</button>
+          <button type="button" className="btn btn-outline-primary" onClick={addTest} style={{ marginBottom: 28 }}>+ Add Another Test</button>
 
           <div style={{ marginBottom:28 }}>
-            <label style={{ display:'block', marginBottom:6, fontWeight:600 }}>Diagnosis Notes</label>
-            <textarea rows={4} value={formData.Diagnosis_Notes} onChange={e=>setFormData(prev=>({...prev, Diagnosis_Notes: e.target.value}))} style={{ width:'100%', padding:12, borderRadius:8, border:'1px solid #ccc' }} />
+            <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>Diagnosis Notes</label>
+            <textarea className="form-control" rows={4} value={formData.Diagnosis_Notes} onChange={e=>setFormData(prev=>({...prev, Diagnosis_Notes: e.target.value}))} style={{ width: "100%", padding: 12, borderRadius: 14 }} />
           </div>
 
-          <button type="submit" style={{ width: '100%', padding:16, background:'#000', color:'#fff', border:'none', borderRadius:10 }}>💾 Save Diagnosis Record</button>
+          <button type="submit" className="btn btn-primary w-100" style={{ padding: 16 }}>💾 Save Diagnosis Record</button>
         </form>
       </div>
     </div>

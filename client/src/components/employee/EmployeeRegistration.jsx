@@ -289,8 +289,32 @@ if (validationErrors.length > 0) {
   };
 
   return (
-    <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center py-5" 
-         style={{ backgroundColor: "#f8f9fa" }}>
+    <div
+      className="min-vh-100 d-flex flex-column align-items-center justify-content-center py-5 employee-registration-page"
+      style={{
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)"
+      }}
+    >
+      <style>
+        {`
+          .employee-registration-page .form-control,
+          .employee-registration-page .form-select {
+            min-height: 46px;
+            border-radius: 14px;
+            border: 1px solid rgba(191, 219, 254, 0.75);
+            background: rgba(248, 250, 252, 0.96);
+            box-shadow: 0 10px 20px rgba(148, 163, 184, 0.08);
+          }
+
+          .employee-registration-page .form-control:focus,
+          .employee-registration-page .form-select:focus,
+          .employee-registration-page .form-check-input:focus {
+            border-color: #60A5FA;
+            box-shadow: 0 0 0 0.18rem rgba(96, 165, 250, 0.14);
+          }
+        `}
+      </style>
       {/* Header */}
       <div className="text-center mb-4">
         <div className="d-flex justify-content-center align-items-center mb-3">
@@ -299,19 +323,40 @@ if (validationErrors.length > 0) {
             style={{
               width: "60px",
               height: "60px",
-              borderRadius: "50%",
-              backgroundColor: "#E6EEFA",   // light blue circle
-              color: "#4A70A9",             // primary blue icon
-              boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+              borderRadius: "18px",
+              background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
+              color: "#2563EB",
+              border: "1px solid rgba(255,255,255,0.84)",
+              boxShadow: "0 16px 30px rgba(147,197,253,0.2)",
             }}
           >
             <FaUserPlus size={26} />
           </div>
         </div>
 
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "7px 14px",
+            borderRadius: "999px",
+            background: "rgba(255,255,255,0.74)",
+            border: "1px solid rgba(255,255,255,0.86)",
+            color: "#2563EB",
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.16em",
+            marginBottom: "14px",
+            boxShadow: "0 12px 26px rgba(147,197,253,0.18)",
+          }}
+        >
+          New Employee Account
+        </div>
+
         <h2
           className="fw-semibold"
-          style={{ color: "#1F2933" }}
+          style={{ color: "#1F2933", letterSpacing: "-0.03em" }}
         >
           Employee Registration
         </h2>
@@ -353,14 +398,16 @@ if (validationErrors.length > 0) {
 
       {/* Form Card */}
       <div
-  className="bg-white p-4 w-100"
-  style={{
-    maxWidth: "900px",
-    borderRadius: "14px",
-    border: "1px solid #D6E0F0",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
-  }}
->
+        className="p-4 w-100"
+        style={{
+          maxWidth: "900px",
+          background: "rgba(255,255,255,0.78)",
+          borderRadius: "24px",
+          border: "1px solid rgba(255,255,255,0.88)",
+          boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
+          backdropFilter: "blur(18px)",
+        }}
+      >
 
         <form onSubmit={handleSubmit}>
           <div className="row">
@@ -371,7 +418,7 @@ if (validationErrors.length > 0) {
             className="fw-semibold mb-3 pb-2"
             style={{
               color: "#1F2933",
-              borderBottom: "2px solid #EAF2FF",
+              borderBottom: "2px solid rgba(191,219,254,0.5)",
             }}
           >
           Personal Details</h5>
@@ -650,7 +697,7 @@ if (validationErrors.length > 0) {
             className="fw-semibold mb-3 pb-2"
             style={{
               color: "#1F2933",
-              borderBottom: "2px solid #EAF2FF",
+              borderBottom: "2px solid rgba(191,219,254,0.5)",
             }}
           >
           Additional Information</h5>
@@ -744,7 +791,7 @@ if (validationErrors.length > 0) {
               className="fw-semibold mb-3 pb-2"
               style={{
                 color: "#1F2933",
-                borderBottom: "2px solid #EAF2FF",
+                borderBottom: "2px solid rgba(191,219,254,0.5)",
               }}
             >
             Address Details</h5>
@@ -816,15 +863,15 @@ if (validationErrors.length > 0) {
               type="submit"
               disabled={loading}
               style={{
-                backgroundColor: "#4A70A9",
+                background: "linear-gradient(135deg, #2563EB, #38BDF8)",
                 color: "#FFFFFF",
                 border: "none",
-                borderRadius: "999px",
+                borderRadius: "16px",
                 padding: "10px 36px",
                 fontSize: "14px",
-                fontWeight: 500,
+                fontWeight: 600,
                 minWidth: "200px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                boxShadow: "0 14px 28px rgba(96,165,250,0.28)",
                 transition: "all 0.2s ease",
               }}
             >

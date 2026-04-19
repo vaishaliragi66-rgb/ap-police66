@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
+import "./InstitutesTheme.css";
 
 const InstituteReports = () => {
 
@@ -140,29 +141,32 @@ const InstituteReports = () => {
 
   return (
     <div
+      className="institutes-theme"
       style={{
         minHeight: "100vh",
-        background: "#f9fafb",
+        background: "transparent",
         padding: "32px 16px"
       }}
     >
       <div
+        className="glass-card"
         style={{
           maxWidth: 980,
           margin: "0 auto",
-          background: "#ffffff",
-          borderRadius: 14,
+          background: "rgba(255,255,255,0.78)",
+          borderRadius: 24,
           padding: 28,
-          boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
+          boxShadow: "0 24px 44px rgba(148,184,255,0.18)"
         }}
       >
+        <div className="section-pill mb-3">Health Reports</div>
         {/* HEADER */}
         <h3
           style={{
             fontWeight: 700,
             marginBottom: 20,
-            color: "#000",
-            borderBottom: "2px solid #000",
+            color: "#0f172a",
+            borderBottom: "1px solid rgba(191,219,254,0.72)",
             paddingBottom: 10
           }}
         >
@@ -208,7 +212,7 @@ const InstituteReports = () => {
                         <td>
                           <button
                             type="button"
-                            className="btn btn-sm btn-dark"
+                            className="btn btn-sm btn-outline-primary view-action"
                             onClick={() => loadHealthReport(absNo)}
                             disabled={!absNo}
                           >
@@ -258,10 +262,11 @@ const InstituteReports = () => {
           {searchTerm && filteredEmployees.length > 0 && (
             <div
               style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 8,
+                border: "1px solid rgba(191,219,254,0.72)",
+                borderRadius: 18,
                 marginTop: 6,
-                background: "#ffffff",
+                background: "rgba(255,255,255,0.88)",
+                boxShadow: "0 18px 28px rgba(148,184,255,0.16)",
                 maxHeight: 220,
                 overflowY: "auto"
               }}
@@ -273,13 +278,13 @@ const InstituteReports = () => {
                   style={{
                     padding: "10px 12px",
                     cursor: "pointer",
-                    borderBottom: "1px solid #f1f5f9"
+                    borderBottom: "1px solid rgba(241,245,249,0.95)"
                   }}
                   onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#f9fafb")
+                    (e.currentTarget.style.background = "rgba(239,246,255,0.9)")
                   }
                   onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "#ffffff")
+                    (e.currentTarget.style.background = "rgba(255,255,255,0.88)")
                   }
                 >
                   <strong>{emp.ABS_NO}</strong> — {emp.Name}
@@ -361,7 +366,7 @@ const InstituteReports = () => {
                       <div>
                         <button
                           type="button"
-                          className="btn btn-sm btn-dark"
+                            className="btn btn-sm btn-outline-primary view-action"
                           onClick={() => viewRecord(rec)}
                           disabled={loadingRec}
                         >
@@ -421,7 +426,7 @@ const InstituteReports = () => {
 
             {/* Diagnosis record modal */}
             {showRecModal && selectedDiagnosisRec && (
-              <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+              <div className="modal fade show d-block" style={{ background: "rgba(15,23,42,0.28)" }}>
                 <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                   <div className="modal-content">
                     <div className="modal-header bg-primary text-white">
@@ -473,7 +478,7 @@ const InstituteReports = () => {
                     </div>
 
                     <div className="modal-footer">
-                      <button type="button" className="btn btn-secondary" onClick={() => setShowRecModal(false)}>Close</button>
+                      <button type="button" className="btn btn-outline-primary" onClick={() => setShowRecModal(false)}>Close</button>
                     </div>
                   </div>
                 </div>

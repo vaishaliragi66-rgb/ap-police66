@@ -4,6 +4,7 @@ import axios from "axios";
 import { FaEye, FaEyeSlash, FaUniversity } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./InstitutesTheme.css";
 
 const InstituteLogin = () => {
   const [formData, setFormData] = useState({
@@ -100,25 +101,29 @@ const InstituteLogin = () => {
 
   return (
     <div
-      className="d-flex flex-column align-items-center justify-content-center min-vh-100"
+      className="d-flex flex-column align-items-center justify-content-center min-vh-100 institutes-auth-theme"
       style={{
-        backgroundColor: "#F8FAFC",
         fontFamily: "'Inter', sans-serif",
         padding: "24px",
       }}
     >
       <div className="text-center mb-4">
         <div
-          className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+          className="mx-auto d-flex align-items-center justify-content-center mb-3"
           style={{
             width: "64px",
             height: "64px",
-            backgroundColor: "#EAF2FF",
-            color: "#4A70A9",
+            borderRadius: "18px",
+            background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
+            color: "#2563EB",
+            border: "1px solid rgba(255,255,255,0.84)",
+            boxShadow: "0 16px 30px rgba(147,197,253,0.2)",
           }}
         >
           <FaUniversity size={30} />
         </div>
+
+        <div className="section-pill mb-3">Institute Access</div>
 
         <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
           Institute Login
@@ -128,17 +133,7 @@ const InstituteLogin = () => {
         </p>
       </div>
 
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "420px",
-          backgroundColor: "#FFFFFF",
-          borderRadius: "16px",
-          padding: "32px",
-          border: "1px solid #D6E0F0",
-          boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
-        }}
-      >
+      <div className="glass-card" style={{ width: "100%", maxWidth: "420px", padding: "32px" }}>
         <form onSubmit={handleSubmit}>
 
           {/* ROLE */}

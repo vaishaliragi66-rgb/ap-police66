@@ -5,6 +5,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAIQuerySuggestions } from '../../hooks/useAIQuerySuggestions';
 import AIQuerySuggestions from '../common/AIQuerySuggestions';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './InstitutesTheme.css';
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
 
@@ -285,7 +287,7 @@ const AIInsights = () => {
 
   const renderChart = () => {
     if (!results || !results.chartConfig || results.chartType === 'none') {
-      return <div className="text-gray-500 text-center py-8">No chart available for this query</div>;
+      return <div className="text-muted text-center py-4">No chart available for this query</div>;
     }
 
     const { xField, yField, title } = results.chartConfig;
@@ -337,18 +339,30 @@ const AIInsights = () => {
 
   const renderTable = () => {
     if (!results || !results.results || results.results.length === 0) {
-      return <div className="text-gray-500 text-center py-8">No data found</div>;
+      return <div className="text-muted text-center py-4">No data found</div>;
     }
 
     const columns = Object.keys(results.results[0]);
 
     return (
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-300">
-          <thead className="bg-gray-100">
+      <div className="table-responsive">
+        <table
+          className="table align-middle mb-0"
+          style={{ border: '1px solid rgba(191, 219, 254, 0.72)', borderRadius: '16px', overflow: 'hidden' }}
+        >
+          <thead>
             <tr>
               {columns.map(col => (
-                <th key={col} className="px-4 py-2 border-b text-left text-sm font-semibold text-gray-700">
+                <th
+                  key={col}
+                  style={{
+                    background: '#EFF6FF',
+                    color: '#1E3A8A',
+                    borderColor: 'rgba(191, 219, 254, 0.78)',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {col}
                 </th>
               ))}
@@ -356,9 +370,9 @@ const AIInsights = () => {
           </thead>
           <tbody>
             {results.results.map((row, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
+              <tr key={idx}>
                 {columns.map(col => (
-                  <td key={col} className="px-4 py-2 border-b text-sm text-gray-600">
+                  <td key={col} style={{ borderColor: 'rgba(226, 232, 240, 0.92)', color: '#334155' }}>
                     {typeof row[col] === 'object' ? JSON.stringify(row[col]) : String(row[col])}
                   </td>
                 ))}
@@ -371,54 +385,103 @@ const AIInsights = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="institutes-theme py-4" style={{ minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
+      <div className="container">
+        <style>
+          {`
+            .institutes-ai-insights .health-card {
+              border-radius: 24px;
+              background: rgba(255, 255, 255, 0.76);
+              border: 1px solid rgba(255, 255, 255, 0.88);
+              box-shadow: 0 24px 44px rgba(148, 184, 255, 0.16);
+              backdrop-filter: blur(18px);
+            }
+
+            .institutes-ai-insights .query-action-btn {
+              height: 48px;
+              background: linear-gradient(135deg, #2563EB, #38BDF8);
+              color: #fff;
+              font-weight: 600;
+              border-radius: 16px;
+              border: none;
+              box-shadow: 0 14px 28px rgba(96,165,250,0.28);
+            }
+
+            .institutes-ai-insights .query-action-btn:disabled {
+              background: #94a3b8;
+              box-shadow: none;
+            }
+          `}
+        </style>
+        <div className="institutes-ai-insights">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">AI Insights</h1>
+        <div
+          className="card border-0 mb-4 health-card"
+          style={{ position: 'relative', zIndex: showSuggestions ? 30 : 1, overflow: 'visible' }}
+        >
+          <div className="card-body">
+            <div className="section-pill mb-3">Analytics Assistant</div>
+            <h3 className="fw-semibold mb-1 text-dark" style={{ letterSpacing: '-0.03em' }}>AI Insights</h3>
+            <p className="text-muted mb-0" style={{ lineHeight: 1.7 }}>
+              Ask questions and visualize medical and inventory data.
+            </p>
+          </div>
         </div>
 
         {/* Query Input */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="relative" ref={wrapperRef}>
-            <div className="flex gap-4">
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={handleInputChange}
-                onFocus={handleInputFocus}
-                onKeyDown={handleKeyPress}
-                placeholder="e.g., List employees with blood group O+, Show diabetes patients by age..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              />
-              <button
-                onClick={handleQuery}
-                disabled={loading || !query.trim()}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                {loading ? 'Processing...' : 'Ask AI'}
-              </button>
+        <div
+          className="card border-0 mb-4 health-card"
+          style={{ position: 'relative', zIndex: showSuggestions ? 1200 : 2, overflow: 'visible' }}
+        >
+          <div className="card-body">
+            <div className="row g-2 align-items-center">
+              <div className="col-md-9">
+                <div
+                  className="position-relative"
+                  ref={wrapperRef}
+                  style={{ zIndex: showSuggestions ? 1300 : 'auto', isolation: 'isolate' }}
+                >
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    onKeyDown={handleKeyPress}
+                    placeholder="e.g., List employees with blood group O+, Show diabetes patients by age..."
+                    className="form-control"
+                    disabled={loading}
+                    style={{ minHeight: '48px' }}
+                  />
+
+                  {/* Suggestions Dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <AIQuerySuggestions
+                      suggestions={suggestions}
+                      loading={suggestionsLoading}
+                      selectedIndex={selectedIndex}
+                      onSelect={handleSuggestionSelect}
+                      onClearHistory={handleClearHistory}
+                      showClearButton={true}
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="col-md-3 d-grid">
+                <button
+                  onClick={handleQuery}
+                  disabled={loading || !query.trim()}
+                  className="btn query-action-btn"
+                >
+                  {loading ? 'Processing...' : 'Ask AI'}
+                </button>
+              </div>
             </div>
 
-            {/* Suggestions Dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
-              <AIQuerySuggestions
-                suggestions={suggestions}
-                loading={suggestionsLoading}
-                selectedIndex={selectedIndex}
-                onSelect={handleSuggestionSelect}
-                onClearHistory={handleClearHistory}
-                showClearButton={true}
-              />
-            )}
-          </div>
-
-          {/* Sample Queries */}
-          <div className="mt-4">
-            <p className="text-sm text-gray-600 mb-2">Sample queries:</p>
-            <div className="flex flex-wrap gap-2">
+            {/* Sample Queries */}
+            <div className="mt-3">
+              <small className="text-muted">Quick examples:</small>
+              <div className="d-flex flex-wrap gap-2 mt-2">
               {[
                 'List all employees with blood group O+',
                 'Show age distribution of diabetes patients',
@@ -428,7 +491,16 @@ const AIInsights = () => {
                 <button
                   key={sample}
                   onClick={() => setQuery(sample)}
-                  className="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                    className="btn btn-sm"
+                    style={{
+                      borderRadius: '999px',
+                      padding: '8px 14px',
+                      background: 'rgba(255,255,255,0.84)',
+                      border: '1px solid rgba(191,219,254,0.82)',
+                      color: '#2563EB',
+                      fontWeight: 500,
+                      boxShadow: '0 10px 20px rgba(191,219,254,0.14)'
+                    }}
                 >
                   {sample}
                 </button>
@@ -436,62 +508,69 @@ const AIInsights = () => {
             </div>
           </div>
         </div>
+        </div>
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800">❌ {error}</p>
+          <div className="alert alert-danger mb-4">
+            ❌ {error}
           </div>
         )}
 
         {/* Results */}
         {results && (
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="card border-0 health-card" style={{ position: 'relative', zIndex: 1 }}>
+            <div className="card-body">
             {/* Controls */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2">
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                <div className="btn-group">
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    className={`btn ${
                     viewMode === 'table' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? 'btn-primary'
+                        : 'btn-outline-primary'
                   }`}
+                    style={{ borderRadius: '14px', fontWeight: 600 }}
                 >
-                  📊 Table View
+                    Table View
                 </button>
                 <button
                   onClick={() => setViewMode('chart')}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    className={`btn ${
                     viewMode === 'chart' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? 'btn-primary'
+                        : 'btn-outline-primary'
                   }`}
                   disabled={results.chartType === 'none'}
+                    style={{ borderRadius: '14px', fontWeight: 600 }}
                 >
-                  📈 Chart View
+                    Chart View
                 </button>
               </div>
 
-              <div className="flex gap-2">
-                <span className="px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm">
-                  ✓ {results.metadata.count} results
+                <div className="d-flex align-items-center gap-2">
+                  <span className="badge bg-success">
+                    {results.metadata.count} Records
                 </span>
                 <button
                   onClick={downloadPDF}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    className="btn btn-outline-success btn-sm"
+                    style={{ borderRadius: '12px', fontWeight: 600 }}
                 >
-                  📥 Download PDF
+                    Download PDF
                 </button>
+                </div>
               </div>
-            </div>
 
             {/* Content */}
-            <div className="mt-4">
+              <div className="mt-3">
               {viewMode === 'table' ? renderTable() : renderChart()}
+              </div>
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

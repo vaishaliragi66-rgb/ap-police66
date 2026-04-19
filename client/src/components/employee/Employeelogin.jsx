@@ -66,22 +66,32 @@ const Employeelogin = () => {
   return (
     <div
       className="min-vh-100 d-flex"
-      style={{ backgroundColor: "#F8FAFC", fontFamily: "Inter, sans-serif" }}
+      style={{
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
+        fontFamily: "Inter, sans-serif"
+      }}
     >
       {/* LEFT SIDE */}
       <div
         className="d-none d-md-flex flex-column justify-content-center align-items-center text-center"
         style={{
           width: "50%",
-          backgroundColor: "#EAF2FF",
+          background: "linear-gradient(135deg, rgba(219,234,254,0.92), rgba(255,255,255,0.68))",
           padding: "60px",
+          borderRight: "1px solid rgba(255,255,255,0.82)",
         }}
       >
         <div
-          className="rounded-circle d-flex align-items-center justify-content-center mb-4"
+          className="d-flex align-items-center justify-content-center mb-4"
           style={{
             width: "140px",
             height: "140px",
+            borderRadius: "36px",
+            background: "rgba(255,255,255,0.62)",
+            border: "1px solid rgba(255,255,255,0.82)",
+            boxShadow: "0 24px 44px rgba(148,184,255,0.16)",
+            backdropFilter: "blur(16px)",
           }}
         >
           <img
@@ -124,18 +134,41 @@ const Employeelogin = () => {
         {/* Header */}
         <div className="text-center mb-4">
           <div
-            className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+            className="mx-auto d-flex align-items-center justify-content-center mb-3"
             style={{
               width: "60px",
               height: "60px",
-              backgroundColor: "#EAF2FF",
-              color: "#4A70A9",
+              borderRadius: "18px",
+              background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
+              color: "#2563EB",
+              border: "1px solid rgba(255,255,255,0.84)",
+              boxShadow: "0 16px 30px rgba(147,197,253,0.2)",
             }}
           >
             <FaUserLock size={28} />
           </div>
 
-          <h3 style={{ fontWeight: 600, color: "#1F2933" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "7px 14px",
+              borderRadius: "999px",
+              background: "rgba(255,255,255,0.74)",
+              border: "1px solid rgba(255,255,255,0.86)",
+              color: "#2563EB",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.16em",
+              marginBottom: "14px",
+              boxShadow: "0 12px 26px rgba(147,197,253,0.18)",
+            }}
+          >
+            Employee Access
+          </div>
+
+          <h3 style={{ fontWeight: 600, color: "#1F2933", letterSpacing: "-0.03em" }}>
             Employee Login
           </h3>
           <p style={{ color: "#6B7280", fontSize: "14px" }}>
@@ -145,12 +178,14 @@ const Employeelogin = () => {
 
         {/* Login Card */}
         <div
-          className="bg-white w-100"
+          className="w-100"
           style={{
-            borderRadius: "14px",
+            background: "rgba(255,255,255,0.78)",
+            borderRadius: "24px",
             padding: "32px",
-            border: "1px solid #D6E0F0",
-            boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+            border: "1px solid rgba(255,255,255,0.86)",
+            boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
+            backdropFilter: "blur(18px)",
           }}
         >
           <form onSubmit={handleLogin}>
@@ -165,6 +200,13 @@ const Employeelogin = () => {
                 onChange={(e) => setAbsNo(e.target.value)}
                 minLength="6"
                 required
+                style={{
+                  minHeight: "46px",
+                  borderRadius: "14px",
+                  border: "1px solid rgba(191,219,254,0.75)",
+                  background: "rgba(248,250,252,0.96)",
+                  boxShadow: "0 10px 20px rgba(148,163,184,0.08)",
+                }}
               />
             </div>
 
@@ -179,13 +221,28 @@ const Employeelogin = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  style={{
+                    minHeight: "46px",
+                    borderRadius: "14px 0 0 14px",
+                    border: "1px solid rgba(191,219,254,0.75)",
+                    background: "rgba(248,250,252,0.96)",
+                    boxShadow: "0 10px 20px rgba(148,163,184,0.08)",
+                  }}
                 />
                 <button
                   type="button"
-                  className="btn btn-outline-secondary"
+                  className="btn"
                   onClick={() => setShowPassword((prev) => !prev)}
                   disabled={loading}
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  style={{
+                    borderRadius: "0 14px 14px 0",
+                    border: "1px solid rgba(191,219,254,0.75)",
+                    borderLeft: "none",
+                    background: "rgba(248,250,252,0.96)",
+                    color: "#2563EB",
+                    boxShadow: "0 10px 20px rgba(148,163,184,0.08)",
+                  }}
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
@@ -213,13 +270,14 @@ const Employeelogin = () => {
               disabled={loading}
               className="w-100"
               style={{
-                backgroundColor: "#4A70A9",
+                background: "linear-gradient(135deg, #2563EB, #38BDF8)",
                 color: "#fff",
                 border: "none",
-                borderRadius: "999px",
-                padding: "10px",
+                borderRadius: "16px",
+                padding: "12px",
                 fontSize: "14px",
-                fontWeight: 500,
+                fontWeight: 600,
+                boxShadow: "0 14px 28px rgba(96,165,250,0.28)",
               }}
             >
               {loading ? "Logging in..." : "Login"}
@@ -234,6 +292,7 @@ const Employeelogin = () => {
                   ? "alert-success"
                   : "alert-danger"
               }`}
+              style={{ borderRadius: "18px" }}
             >
               {message}
             </div>

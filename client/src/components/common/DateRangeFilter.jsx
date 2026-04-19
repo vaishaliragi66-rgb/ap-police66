@@ -23,19 +23,62 @@ const DateRangeFilter = ({ fromDate, toDate, setFromDate, setToDate, onApply, di
   };
 
   return (
-    <div className="d-flex gap-2 align-items-end">
+    <div className="d-flex gap-2 align-items-end flex-wrap">
       <div>
-        <label className="form-label" style={{ fontSize: 12 }}>From Date</label>
-        <input type="date" max={today} className="form-control" value={fromDate || ''} onChange={(e) => setFromDate(e.target.value)} />
+        <label className="form-label" style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>From Date</label>
+        <input
+          type="date"
+          max={today}
+          className="form-control"
+          value={fromDate || ''}
+          onChange={(e) => setFromDate(e.target.value)}
+          style={{
+            minHeight: 44,
+            borderRadius: 14,
+            border: "1px solid rgba(191,219,254,0.75)",
+            background: "rgba(248,250,252,0.96)",
+            boxShadow: "0 10px 20px rgba(148,163,184,0.08)",
+          }}
+        />
       </div>
 
       <div>
-        <label className="form-label" style={{ fontSize: 12 }}>To Date</label>
-        <input type="date" max={today} className="form-control" value={toDate || ''} onChange={(e) => setToDate(e.target.value)} />
+        <label className="form-label" style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>To Date</label>
+        <input
+          type="date"
+          max={today}
+          className="form-control"
+          value={toDate || ''}
+          onChange={(e) => setToDate(e.target.value)}
+          style={{
+            minHeight: 44,
+            borderRadius: 14,
+            border: "1px solid rgba(191,219,254,0.75)",
+            background: "rgba(248,250,252,0.96)",
+            boxShadow: "0 10px 20px rgba(148,163,184,0.08)",
+          }}
+        />
       </div>
 
       <div>
-        <button className="btn btn-sm btn-primary" style={{ height: 38 }} disabled={disabled} onClick={handleApply}>Apply Filter</button>
+        <button
+          className="btn btn-sm"
+          style={{
+            height: 44,
+            borderRadius: 14,
+            padding: "0 18px",
+            background: "linear-gradient(135deg, #2563EB, #38BDF8)",
+            color: "#fff",
+            fontWeight: 600,
+            border: "none",
+            boxShadow: "0 14px 24px rgba(96,165,250,0.24)",
+            whiteSpace: "nowrap",
+          }}
+          disabled={disabled}
+          onClick={handleApply}
+        >
+          Apply Filter
+        </button>
       </div>
     </div>
   );

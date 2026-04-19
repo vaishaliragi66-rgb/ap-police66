@@ -164,26 +164,41 @@ const EmployeeProfile = () => {
       : false;
 
     return (
-            <div
+      <div
+        className="employee-profile-page"
         style={{
-          backgroundColor: "#F8FAFC", // light neutral (NOT blue)
+          background:
+            "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
           minHeight: "100vh",
           padding: "24px 0",
           fontFamily: "'Inter', sans-serif",
         }}
       >
+        <style>
+          {`
+            .employee-profile-page .form-control,
+            .employee-profile-page .form-select {
+              min-height: 44px;
+              border-radius: 14px;
+              border: 1px solid rgba(191, 219, 254, 0.75);
+              background: rgba(248, 250, 252, 0.96);
+              box-shadow: 0 10px 20px rgba(148, 163, 184, 0.08);
+            }
+          `}
+        </style>
 
         <div className="container" style={{ maxWidth: "1100px" }}>
 
           {/* Page Header */}
         <div
           style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D6E0F0",
-            borderRadius: "12px",
+            background: "rgba(255,255,255,0.78)",
+            border: "1px solid rgba(255,255,255,0.88)",
+            borderRadius: "24px",
             padding: "20px 24px",
             marginBottom: "20px",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.04)",
+            boxShadow: "0 24px 44px rgba(148,184,255,0.16)",
+            backdropFilter: "blur(18px)",
           }}
         >
           <h4 style={{ margin: 0, color: "#1F2933", fontWeight: 600 }}>
@@ -200,12 +215,13 @@ const EmployeeProfile = () => {
             className="btn"
             onClick={() => navigate(-1)}
             style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #D6E0F0",
-              borderRadius: "8px",
+              backgroundColor: "rgba(255,255,255,0.82)",
+              border: "1px solid rgba(191,219,254,0.82)",
+              borderRadius: "14px",
               padding: "6px 14px",
               fontSize: "14px",
               color: "#1F2933",
+              boxShadow: "0 12px 20px rgba(191,219,254,0.14)",
             }}
           >
             ← Back
@@ -215,9 +231,12 @@ const EmployeeProfile = () => {
               className="btn btn-primary"
               onClick={handleEdit}
               style={{
-                borderRadius: "8px",
+                borderRadius: "14px",
                 padding: "6px 14px",
                 fontSize: "14px",
+                background: "linear-gradient(135deg, #2563EB, #38BDF8)",
+                border: "none",
+                boxShadow: "0 14px 24px rgba(96,165,250,0.22)",
               }}
             >
               Edit Profile
@@ -228,9 +247,10 @@ const EmployeeProfile = () => {
                 className="btn btn-success me-2"
                 onClick={handleSave}
                 style={{
-                  borderRadius: "8px",
+                  borderRadius: "14px",
                   padding: "6px 14px",
                   fontSize: "14px",
+                  boxShadow: "0 12px 20px rgba(16,185,129,0.18)",
                 }}
               >
                 Save
@@ -239,7 +259,7 @@ const EmployeeProfile = () => {
                 className="btn btn-secondary"
                 onClick={handleCancel}
                 style={{
-                  borderRadius: "8px",
+                  borderRadius: "14px",
                   padding: "6px 14px",
                   fontSize: "14px",
                 }}
@@ -254,18 +274,21 @@ const EmployeeProfile = () => {
           <div
             className="card border-0"
             style={{
-              borderRadius: "16px",
-              boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+              borderRadius: "24px",
+              boxShadow: "0 24px 44px rgba(148,184,255,0.16)",
               overflow: "hidden",
+              background: "rgba(255,255,255,0.78)",
+              border: "1px solid rgba(255,255,255,0.88)",
+              backdropFilter: "blur(18px)",
             }}
           >
            
                 {/* Top Strip */}
       <div
         style={{
-          backgroundColor: "#F3F7FF",
+          background: "linear-gradient(135deg, rgba(239,246,255,0.95), rgba(255,255,255,0.82))",
           padding: "28px 24px",
-          borderBottom: "1px solid #D6E0F0",
+          borderBottom: "1px solid rgba(191,219,254,0.5)",
         }}
       >
         <div className="row align-items-center">
@@ -275,9 +298,10 @@ const EmployeeProfile = () => {
               style={{
                 display: "inline-block",
                 padding: "6px",
-                borderRadius: "50%",
-                backgroundColor: "#FFFFFF",
-                border: "1px solid #D6E0F0",
+                borderRadius: "32px",
+                background: "rgba(255,255,255,0.88)",
+                border: "1px solid rgba(255,255,255,0.92)",
+                boxShadow: "0 18px 30px rgba(191,219,254,0.16)",
               }}
             >
               <img
@@ -294,7 +318,7 @@ const EmployeeProfile = () => {
                   width: "120px",
                   height: "120px",
                   objectFit: "cover",
-                  border: "3px solid #4A70A9",
+                  border: "3px solid #60A5FA",
                 }}
               />
             </div>
@@ -339,11 +363,12 @@ const EmployeeProfile = () => {
   <div className="col-md-6">
     <div
       style={{
-        backgroundColor: "#FFFFFF",
-        border: "1px solid #D6E0F0",
-        borderRadius: "12px",
+        background: "rgba(255,255,255,0.82)",
+        border: "1px solid rgba(255,255,255,0.88)",
+        borderRadius: "20px",
         padding: "18px",
         height: "100%",
+        boxShadow: "0 18px 30px rgba(191,219,254,0.14)",
       }}
     >
       <h6
@@ -503,11 +528,12 @@ const EmployeeProfile = () => {
   <div className="col-md-6">
     <div
       style={{
-        backgroundColor: "#FFFFFF",
-        border: "1px solid #D6E0F0",
-        borderRadius: "12px",
+        background: "rgba(255,255,255,0.82)",
+        border: "1px solid rgba(255,255,255,0.88)",
+        borderRadius: "20px",
         padding: "18px",
         height: "100%",
+        boxShadow: "0 18px 30px rgba(191,219,254,0.14)",
       }}
     >
       <h6
@@ -598,11 +624,11 @@ const EmployeeProfile = () => {
               {/* FAMILY MEMBERS */}
               <div
           style={{
-            backgroundColor: "#F3F7FF",
+            background: "linear-gradient(135deg, rgba(239,246,255,0.95), rgba(255,255,255,0.82))",
             padding: "12px 16px",
-            borderRadius: "8px",
+            borderRadius: "18px",
             marginBottom: "16px",
-            border: "1px solid #D6E0F0",
+            border: "1px solid rgba(191,219,254,0.7)",
           }}
         >
           <h5
@@ -620,9 +646,9 @@ const EmployeeProfile = () => {
         {family.length === 0 ? (
   <div
     style={{
-      backgroundColor: "#FFFFFF",
-      border: "1px dashed #D6E0F0",
-      borderRadius: "10px",
+      background: "rgba(255,255,255,0.78)",
+      border: "1px dashed rgba(191,219,254,0.8)",
+      borderRadius: "18px",
       padding: "16px",
       color: "#6B7280",
       fontSize: "14px",
@@ -637,10 +663,10 @@ const EmployeeProfile = () => {
         <div
           className="h-100 p-3"
           style={{
-            backgroundColor: "#FFFFFF",
-            borderRadius: "12px",
-            border: "1px solid #D6E0F0",
-            boxShadow: "0 6px 14px rgba(0,0,0,0.06)",
+            background: "rgba(255,255,255,0.82)",
+            borderRadius: "20px",
+            border: "1px solid rgba(255,255,255,0.88)",
+            boxShadow: "0 20px 34px rgba(191,219,254,0.16)",
             cursor: "pointer",
             transition: "all 0.25s ease",
             minHeight: "140px",

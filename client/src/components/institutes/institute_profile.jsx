@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 import { FaUniversity } from "react-icons/fa";
+import "./InstitutesTheme.css";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -130,10 +131,10 @@ useEffect(() => {
 
   return (
     <div
-      className="d-flex flex-column justify-content-start align-items-center min-vh-100"
+      className="d-flex flex-column justify-content-start align-items-center min-vh-100 institutes-theme"
       style={{
         fontFamily: "Inter, sans-serif",
-        backgroundColor: "#fafafa",
+        backgroundColor: "transparent",
         padding: "60px 20px 40px",
       }}
     >
@@ -159,12 +160,9 @@ useEffect(() => {
 
       {/* Profile Card */}
       <div
-        className="p-4 rounded-4 shadow-sm mb-4 w-100"
+        className="p-4 rounded-4 shadow-sm mb-4 w-100 glass-card"
         style={{
-          backgroundColor: "#fff",
-          border: "1px solid #eee",
           maxWidth: "700px",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
         }}
       >
         <div className="d-flex justify-content-between align-items-center mb-3">
@@ -175,11 +173,13 @@ useEffect(() => {
             onClick={() => setEditing((s) => !s)}
             className="btn fw-semibold"
             style={{
-              backgroundColor: "#000",
+              background: "linear-gradient(135deg, #2563eb, #38bdf8)",
               color: "#fff",
-              borderRadius: "8px",
+              borderRadius: "14px",
               padding: "6px 14px",
               transition: "0.3s ease",
+              border: "none",
+              boxShadow: "0 14px 24px rgba(96,165,250,0.22)"
             }}
             onMouseOver={(e) => (e.target.style.opacity = "0.8")}
             onMouseOut={(e) => (e.target.style.opacity = "1")}
@@ -211,12 +211,9 @@ useEffect(() => {
       {editing && (
         <form
           onSubmit={submitEdit}
-          className="p-4 rounded-4 shadow-sm w-100"
+          className="p-4 rounded-4 shadow-sm w-100 glass-card"
           style={{
-            backgroundColor: "#fff",
-            border: "1px solid #eee",
             maxWidth: "700px",
-            boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
           }}
         >
           <h5 className="fw-bold text-dark mb-4">Edit Profile</h5>

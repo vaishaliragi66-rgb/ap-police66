@@ -203,24 +203,45 @@ const FamilyMemberRegistration = () => {
   };
 
   return (
-          <div
-        className="d-flex justify-content-center"
-        style={{
-          backgroundColor: "#F8FAFC",
-          fontFamily: "'Inter', sans-serif",
-          paddingTop: "60px",   // ✅ space from top
-          paddingBottom: "40px"
-        }}
-      >
+    <div
+      className="d-flex justify-content-center family-registration-page"
+      style={{
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
+        fontFamily: "'Inter', sans-serif",
+        paddingTop: "60px",
+        paddingBottom: "40px"
+      }}
+    >
+      <style>
+        {`
+          .family-registration-page .form-control,
+          .family-registration-page .form-select {
+            min-height: 46px;
+            border-radius: 14px;
+            border: 1px solid rgba(191, 219, 254, 0.75);
+            background: rgba(248, 250, 252, 0.96);
+            box-shadow: 0 10px 20px rgba(148, 163, 184, 0.08);
+          }
+
+          .family-registration-page .form-control:focus,
+          .family-registration-page .form-select:focus,
+          .family-registration-page .form-check-input:focus {
+            border-color: #60A5FA;
+            box-shadow: 0 0 0 0.18rem rgba(96, 165, 250, 0.14);
+          }
+        `}
+      </style>
 
       <div
         className="p-4"
         style={{
           width: "700px",
-          backgroundColor: "#FFFFFF",
-          borderRadius: "16px",
-          border: "1px solid #D6E0F0",
-          boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+          background: "rgba(255,255,255,0.78)",
+          borderRadius: "24px",
+          border: "1px solid rgba(255,255,255,0.88)",
+          boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
+          backdropFilter: "blur(18px)",
         }}
       >
               <h3
@@ -229,7 +250,8 @@ const FamilyMemberRegistration = () => {
           fontWeight: 600,
           color: "#1F2933",
           paddingBottom: "10px",
-          borderBottom: "1px solid #D6E0F0",
+          borderBottom: "1px solid rgba(191,219,254,0.5)",
+          letterSpacing: "-0.03em",
         }}
       >
         Family Member Registration
@@ -244,9 +266,9 @@ const FamilyMemberRegistration = () => {
               style={{
                 width: "110px",
                 height: "110px",
-                borderRadius: "50%",
-                border: "2px dashed #4A70A9",
-                backgroundColor: "#EAF2FF",
+                borderRadius: "28px",
+                border: "2px dashed #60A5FA",
+                background: "linear-gradient(135deg, rgba(219,234,254,0.95), rgba(255,255,255,0.84))",
                 cursor: "pointer",
                 overflow: "hidden",
                 display: "flex",
@@ -277,7 +299,7 @@ const FamilyMemberRegistration = () => {
                   width: "26px",
                   height: "26px",
                   borderRadius: "50%",
-                  backgroundColor: "#4A70A9",
+                  background: "linear-gradient(135deg, #2563EB, #38BDF8)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -302,9 +324,9 @@ const FamilyMemberRegistration = () => {
                 onClick={() => fileInputRef.current?.click()}
                 className="btn btn-sm"
                 style={{
-                  backgroundColor: "#EAF2FF",
-                  color: "#4A70A9",
-                  border: "1px solid #4A70A9",
+                  background: "rgba(255,255,255,0.82)",
+                  color: "#2563EB",
+                  border: "1px solid rgba(191,219,254,0.82)",
                   borderRadius: "999px",
                   fontSize: "12px",
                   padding: "3px 14px",
@@ -499,7 +521,7 @@ const FamilyMemberRegistration = () => {
           <div className="d-flex align-items-center justify-content-between gap-2 mt-4 mb-2">
             <h6
               className="fw-semibold mb-0"
-              style={{ color: "#4A70A9" }}
+              style={{ color: "#2563EB" }}
             >
               Address Details
             </h6>
@@ -509,9 +531,9 @@ const FamilyMemberRegistration = () => {
               onClick={handleSameAsEmployeeAddress}
               disabled={!employeeProfile}
               style={{
-                backgroundColor: "#EAF2FF",
-                color: "#4A70A9",
-                border: "1px solid #4A70A9",
+                background: "rgba(255,255,255,0.82)",
+                color: "#2563EB",
+                border: "1px solid rgba(191,219,254,0.82)",
                 borderRadius: "999px",
                 fontSize: "12px",
                 padding: "3px 12px",
@@ -557,10 +579,12 @@ const FamilyMemberRegistration = () => {
             disabled={loading}
             className="btn w-100 mt-3"
             style={{
-              backgroundColor: "#4A70A9",
+              background: "linear-gradient(135deg, #2563EB, #38BDF8)",
               color: "#FFFFFF",
-              fontWeight: 500,
-              borderRadius: "999px",
+              fontWeight: 600,
+              borderRadius: "16px",
+              border: "none",
+              boxShadow: "0 14px 28px rgba(96,165,250,0.28)",
             }}
           >
             {loading ? "Registering..." : "Register Family Member"}

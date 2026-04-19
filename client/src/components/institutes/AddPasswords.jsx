@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "./InstitutesTheme.css";
 
 const AddPasswords = () => {
   const [formData, setFormData] = useState({
@@ -73,7 +74,8 @@ const AddPasswords = () => {
   };
 
   return (
-    <div className="container mt-5" style={{ maxWidth: "500px" }}>
+    <div className="container mt-5 institutes-theme glass-card p-4" style={{ maxWidth: "500px" }}>
+      <div className="section-pill mb-3">Role Access</div>
       <h3>Configure Role Passwords</h3>
 
       {Object.keys(formData).map((role) => (

@@ -121,13 +121,49 @@ const cleanNotesWithoutSymptoms = (notes) => {
 
   return (
     <div
+      className="employee-disease-page"
       style={{
-        backgroundColor: "#F8FAFC",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
         minHeight: "100vh",
         padding: "40px 0",
         fontFamily: "'Inter', sans-serif",
       }}
     >
+      <style>
+        {`
+          .employee-disease-page .health-card {
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(255,255,255,0.88);
+            border-radius: 24px;
+            box-shadow: 0 24px 44px rgba(148,184,255,0.18);
+            backdrop-filter: blur(18px);
+          }
+
+          .employee-disease-page .form-select {
+            min-height: 44px;
+            border-radius: 14px;
+            border: 1px solid rgba(191,219,254,0.75);
+            background: rgba(248,250,252,0.96);
+            box-shadow: 0 10px 20px rgba(148,163,184,0.08);
+          }
+
+          .employee-disease-page .table {
+            --bs-table-bg: transparent;
+          }
+
+          .employee-disease-page .table thead th {
+            background: #EFF6FF;
+            color: #1E3A8A;
+            border-color: rgba(191,219,254,0.78);
+            white-space: nowrap;
+          }
+
+          .employee-disease-page .table tbody tr:hover {
+            background: rgba(239,246,255,0.72);
+          }
+        `}
+      </style>
       <div className="container">
   
         {/* BACK */}
@@ -135,12 +171,13 @@ const cleanNotesWithoutSymptoms = (notes) => {
           className="btn mb-4"
           onClick={() => window.history.back()}
           style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D6E0F0",
-            borderRadius: "8px",
+            backgroundColor: "rgba(255,255,255,0.82)",
+            border: "1px solid rgba(191,219,254,0.82)",
+            borderRadius: "14px",
             padding: "6px 14px",
             fontSize: "14px",
             color: "#1F2933",
+            boxShadow: "0 12px 20px rgba(191,219,254,0.14)",
           }}
         >
           ← Back
@@ -158,13 +195,10 @@ const cleanNotesWithoutSymptoms = (notes) => {
   
         {/* FILTER CARD */}
         <div
-          className="mb-4"
+          className="mb-4 health-card"
           style={{
-            backgroundColor: "#FFFFFF",
-            borderRadius: "14px",
-            border: "1px solid #D6E0F0",
+            borderRadius: "24px",
             padding: "20px",
-            boxShadow: "0 6px 14px rgba(0,0,0,0.06)",
           }}
         >
           <div className="row g-3">
@@ -211,10 +245,9 @@ const cleanNotesWithoutSymptoms = (notes) => {
   
         {/* TABLE CARD */}
         <div
-          className="card border-0"
+          className="card border-0 health-card"
           style={{
-            borderRadius: "16px",
-            boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
+            borderRadius: "24px",
           }}
         >
           <div className="card-body">

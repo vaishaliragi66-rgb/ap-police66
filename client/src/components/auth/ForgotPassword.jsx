@@ -271,25 +271,84 @@ const ForgotPassword = () => {
     <div
       className="d-flex flex-column align-items-center justify-content-center min-vh-100"
       style={{
-        background: "linear-gradient(180deg, #F8FAFC, #EEF2F7)",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.65), transparent 28%), radial-gradient(circle at right center, rgba(224,242,254,0.72), transparent 32%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
         fontFamily: "Inter, sans-serif",
         padding: "30px 20px",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <div className="text-center mb-4">
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+        }}
+      >
         <div
-          className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+          style={{
+            position: "absolute",
+            top: "-80px",
+            left: "-70px",
+            width: "260px",
+            height: "260px",
+            borderRadius: "999px",
+            background: "rgba(147,197,253,0.32)",
+            filter: "blur(70px)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: "-90px",
+            bottom: "10%",
+            width: "300px",
+            height: "300px",
+            borderRadius: "999px",
+            background: "rgba(186,230,253,0.38)",
+            filter: "blur(80px)",
+          }}
+        />
+      </div>
+
+      <div className="text-center mb-4 position-relative" style={{ zIndex: 1 }}>
+        <div
+          className="mx-auto d-flex align-items-center justify-content-center mb-3"
           style={{
             width: "72px",
             height: "72px",
-            backgroundColor: config.color,
-            color: "#fff",
+            borderRadius: "22px",
+            background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
+            color: "#2563EB",
+            border: "1px solid rgba(255,255,255,0.82)",
+            boxShadow: "0 18px 34px rgba(147,197,253,0.24)",
           }}
         >
           <FaLock size={28} />
         </div>
 
-        <h3 className="fw-bold text-dark mb-1">{config.label} - Forgot Password</h3>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "7px 14px",
+            borderRadius: "999px",
+            background: "rgba(255,255,255,0.74)",
+            border: "1px solid rgba(255,255,255,0.86)",
+            color: "#2563EB",
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            marginBottom: 14,
+            boxShadow: "0 12px 26px rgba(147,197,253,0.18)",
+          }}
+        >
+          Password Recovery
+        </div>
+
+        <h3 className="fw-semibold text-dark mb-1" style={{ letterSpacing: "-0.03em" }}>{config.label} - Forgot Password</h3>
 
         <div
           style={{
@@ -340,7 +399,7 @@ const ForgotPassword = () => {
       {error && (
         <div
           className="alert alert-danger w-100 mb-3"
-          style={{ maxWidth: "420px", borderRadius: "10px", fontSize: "14px" }}
+          style={{ maxWidth: "420px", borderRadius: "18px", fontSize: "14px", zIndex: 1 }}
         >
           {error}
         </div>
@@ -349,7 +408,7 @@ const ForgotPassword = () => {
       {success && !resetDone && (
         <div
           className="alert alert-success w-100 mb-3"
-          style={{ maxWidth: "420px", borderRadius: "10px", fontSize: "14px" }}
+          style={{ maxWidth: "420px", borderRadius: "18px", fontSize: "14px", zIndex: 1 }}
         >
           <div>{success}</div>
           {debugOtp && (
@@ -362,13 +421,17 @@ const ForgotPassword = () => {
 
       {resetDone ? (
         <div
-          className="bg-white w-100 text-center"
+          className="w-100 text-center"
           style={{
             maxWidth: "420px",
-            borderRadius: "16px",
+            background: "rgba(255,255,255,0.76)",
+            borderRadius: "24px",
             padding: "40px 32px",
-            border: "1px solid #D6E0F0",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.07)",
+            border: "1px solid rgba(255,255,255,0.88)",
+            boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
+            backdropFilter: "blur(18px)",
+            position: "relative",
+            zIndex: 1,
           }}
         >
           <div
@@ -392,12 +455,13 @@ const ForgotPassword = () => {
             to={config.loginPath}
             className="btn fw-semibold w-100"
             style={{
-              backgroundColor: config.color,
+              background: "linear-gradient(135deg, #2563EB, #38BDF8)",
               color: "#fff",
-              borderRadius: "999px",
-              padding: "10px",
+              borderRadius: "16px",
+              padding: "12px",
               fontSize: "14px",
               textDecoration: "none",
+              boxShadow: "0 14px 28px rgba(96,165,250,0.28)",
             }}
           >
             Go to Login
@@ -405,13 +469,17 @@ const ForgotPassword = () => {
         </div>
       ) : (
         <div
-          className="bg-white w-100"
+          className="w-100"
           style={{
             maxWidth: "420px",
-            borderRadius: "16px",
+            background: "rgba(255,255,255,0.76)",
+            borderRadius: "24px",
             padding: "32px",
-            border: "1px solid #D6E0F0",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.07)",
+            border: "1px solid rgba(255,255,255,0.88)",
+            boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
+            backdropFilter: "blur(18px)",
+            position: "relative",
+            zIndex: 1,
           }}
         >
           {step === 1 && (
@@ -439,11 +507,12 @@ const ForgotPassword = () => {
                   required
                   inputMode={isEmployee ? "numeric" : undefined}
                   style={{
-                    backgroundColor: "#F8FAFC",
-                    borderRadius: "10px",
-                    height: "44px",
-                    border: "1px solid #D6E0F0",
+                    backgroundColor: "rgba(248,250,252,0.96)",
+                    borderRadius: "14px",
+                    height: "46px",
+                    border: "1px solid rgba(191,219,254,0.7)",
                     fontSize: "14px",
+                    boxShadow: "0 10px 20px rgba(148,163,184,0.1)",
                   }}
                 />
               </div>
@@ -453,12 +522,13 @@ const ForgotPassword = () => {
                 disabled={loading}
                 className="btn w-100 fw-semibold"
                 style={{
-                  backgroundColor: config.color,
+                  background: "linear-gradient(135deg, #2563EB, #38BDF8)",
                   color: "#fff",
-                  borderRadius: "999px",
-                  padding: "10px",
+                  borderRadius: "16px",
+                  padding: "12px",
                   fontSize: "14px",
                   border: "none",
+                  boxShadow: "0 14px 28px rgba(96,165,250,0.28)",
                 }}
               >
                 {loading ? "Sending OTP..." : "Send OTP"}
@@ -481,12 +551,13 @@ const ForgotPassword = () => {
                   value={normalizeIdentifier(identifier, role)}
                   readOnly
                   style={{
-                    backgroundColor: "#F1F5F9",
-                    borderRadius: "10px",
-                    height: "44px",
-                    border: "1px solid #D6E0F0",
+                    backgroundColor: "rgba(241,245,249,0.95)",
+                    borderRadius: "14px",
+                    height: "46px",
+                    border: "1px solid rgba(191,219,254,0.7)",
                     fontSize: "14px",
                     color: "#64748B",
+                    boxShadow: "0 10px 20px rgba(148,163,184,0.08)",
                   }}
                 />
               </div>
@@ -514,14 +585,15 @@ const ForgotPassword = () => {
                   pattern="[0-9]{6}"
                   required
                   style={{
-                    backgroundColor: "#F8FAFC",
-                    borderRadius: "10px",
-                    height: "44px",
-                    border: "1px solid #D6E0F0",
+                    backgroundColor: "rgba(248,250,252,0.96)",
+                    borderRadius: "14px",
+                    height: "46px",
+                    border: "1px solid rgba(191,219,254,0.7)",
                     fontSize: "20px",
                     letterSpacing: "8px",
                     textAlign: "center",
                     fontWeight: 600,
+                    boxShadow: "0 10px 20px rgba(148,163,184,0.1)",
                   }}
                 />
                 <div className="d-flex justify-content-between align-items-center mt-1">
@@ -565,11 +637,12 @@ const ForgotPassword = () => {
                   minLength={8}
                   required
                   style={{
-                    backgroundColor: "#F8FAFC",
-                    borderRadius: "10px",
-                    height: "44px",
-                    border: "1px solid #D6E0F0",
+                    backgroundColor: "rgba(248,250,252,0.96)",
+                    borderRadius: "14px",
+                    height: "46px",
+                    border: "1px solid rgba(191,219,254,0.7)",
                     fontSize: "14px",
+                    boxShadow: "0 10px 20px rgba(148,163,184,0.1)",
                   }}
                 />
               </div>
@@ -594,13 +667,14 @@ const ForgotPassword = () => {
                   required
                   style={{
                     backgroundColor: "#F8FAFC",
-                    borderRadius: "10px",
-                    height: "44px",
+                    borderRadius: "14px",
+                    height: "46px",
                     border:
                       confirmPassword && newPassword !== confirmPassword
                         ? "1px solid #EF4444"
-                        : "1px solid #D6E0F0",
+                        : "1px solid rgba(191,219,254,0.7)",
                     fontSize: "14px",
+                    boxShadow: "0 10px 20px rgba(148,163,184,0.1)",
                   }}
                 />
                 {confirmPassword && newPassword !== confirmPassword && (
@@ -615,12 +689,13 @@ const ForgotPassword = () => {
                 disabled={loading}
                 className="btn w-100 fw-semibold"
                 style={{
-                  backgroundColor: config.color,
+                  background: "linear-gradient(135deg, #2563EB, #38BDF8)",
                   color: "#fff",
-                  borderRadius: "999px",
-                  padding: "10px",
+                  borderRadius: "16px",
+                  padding: "12px",
                   fontSize: "14px",
                   border: "none",
+                  boxShadow: "0 14px 28px rgba(96,165,250,0.28)",
                 }}
               >
                 {loading ? "Resetting Password..." : "Reset Password"}
@@ -646,11 +721,14 @@ const ForgotPassword = () => {
       <div
         className="text-center mt-4"
         style={{
-          backgroundColor: "#F3F7FF",
-          border: "1px solid #D6E0F0",
-          borderRadius: "10px",
-          padding: "10px 16px",
+          backgroundColor: "rgba(255,255,255,0.72)",
+          border: "1px solid rgba(255,255,255,0.86)",
+          borderRadius: "18px",
+          padding: "12px 16px",
           maxWidth: "420px",
+          boxShadow: "0 16px 30px rgba(191,219,254,0.18)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <p className="text-muted mb-0" style={{ fontSize: "12px" }}>

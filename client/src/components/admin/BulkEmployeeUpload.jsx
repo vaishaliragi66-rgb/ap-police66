@@ -150,20 +150,106 @@ const BulkEmployeeUpload = () => {
   };
 
   return (
-    <div className="container py-5" style={{ maxWidth: 960 }}>
+    <div
+      className="container py-5"
+      style={{
+        maxWidth: 960,
+        minHeight: "100vh",
+      }}
+    >
+      <style>
+        {`
+          .bulk-upload-card {
+            background: rgba(255, 255, 255, 0.74);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            border-radius: 26px;
+            box-shadow: 0 24px 44px rgba(148, 184, 255, 0.16);
+            backdrop-filter: blur(18px);
+          }
+
+          .bulk-upload-card .form-control {
+            min-height: 48px;
+            border-radius: 16px;
+            border: 1px solid rgba(191, 219, 254, 0.7);
+            background: rgba(248, 250, 252, 0.96);
+            box-shadow: 0 10px 22px rgba(148, 163, 184, 0.10);
+          }
+
+          .bulk-upload-card .form-control:focus {
+            border-color: #60A5FA;
+            box-shadow: 0 0 0 0.18rem rgba(96, 165, 250, 0.14);
+          }
+
+          .bulk-upload-card .table {
+            --bs-table-bg: transparent;
+            margin-bottom: 0;
+          }
+
+          .bulk-upload-card .table thead th {
+            background: #eff6ff;
+            color: #1e3a8a;
+            border-color: rgba(191, 219, 254, 0.75);
+            font-weight: 600;
+            white-space: nowrap;
+          }
+
+          .bulk-upload-card .table tbody tr:hover {
+            background: rgba(239, 246, 255, 0.7);
+          }
+        `}
+      </style>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2>Bulk Employee Upload</h2>
-          <p className="text-muted">
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "7px 14px",
+              borderRadius: "999px",
+              background: "rgba(255,255,255,0.72)",
+              border: "1px solid rgba(255,255,255,0.85)",
+              color: "#2563EB",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.16em",
+              marginBottom: "14px",
+              boxShadow: "0 12px 26px rgba(147,197,253,0.18)",
+            }}
+          >
+            Employee Import
+          </div>
+          <h2 style={{ fontWeight: 600, letterSpacing: "-0.03em", color: "#0F172A" }}>Bulk Employee Upload</h2>
+          <p className="text-muted mb-0" style={{ maxWidth: 680, lineHeight: 1.7 }}>
             Upload employee records through Excel and place each employee photo directly on the same row inside the sheet.
           </p>
         </div>
-        <button className="btn btn-light" onClick={() => navigate("/admin/dashboard")}>Back to Dashboard</button>
+        <button
+          className="btn"
+          onClick={() => navigate("/admin/dashboard")}
+          style={{
+            borderRadius: "999px",
+            padding: "10px 18px",
+            background: "rgba(255,255,255,0.78)",
+            border: "1px solid rgba(191,219,254,0.8)",
+            color: "#2563EB",
+            boxShadow: "0 12px 26px rgba(191,219,254,0.16)",
+            transition: "all 0.3s ease",
+          }}
+        >
+          Back to Dashboard
+        </button>
       </div>
 
-      <div className="card shadow-sm p-4 mb-4">
+      <div
+        className="card shadow-sm p-4 mb-4 bulk-upload-card"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,255,255,0.76), rgba(255,255,255,0.68))",
+        }}
+      >
         <div className="mb-3">
-          <label className="form-label fw-semibold">Employee Excel file (.xlsx)</label>
+          <label className="form-label fw-semibold" style={{ color: "#0F172A" }}>Employee Excel file (.xlsx)</label>
           <input
             type="file"
             accept=".xlsx"
@@ -174,16 +260,53 @@ const BulkEmployeeUpload = () => {
         </div>
 
         <div className="d-flex flex-wrap gap-2 mb-4">
-          <button className="btn btn-primary" onClick={handleUpload} disabled={uploading || !excelFile}>
+          <button
+            className="btn"
+            onClick={handleUpload}
+            disabled={uploading || !excelFile}
+            style={{
+              borderRadius: "16px",
+              padding: "11px 18px",
+              background: "linear-gradient(135deg, #2563EB, #38BDF8)",
+              color: "#fff",
+              fontWeight: 600,
+              boxShadow: "0 14px 28px rgba(96,165,250,0.28)",
+              border: "none",
+              transition: "all 0.3s ease",
+            }}
+          >
             <FaCloudUploadAlt className="me-2" />
             {uploading ? "Uploading..." : "Upload Excel"}
           </button>
-          <button className="btn btn-outline-secondary" onClick={downloadTemplate} type="button">
+          <button
+            className="btn"
+            onClick={downloadTemplate}
+            type="button"
+            style={{
+              borderRadius: "16px",
+              padding: "11px 18px",
+              background: "rgba(255,255,255,0.84)",
+              border: "1px solid rgba(191,219,254,0.8)",
+              color: "#2563EB",
+              fontWeight: 600,
+              boxShadow: "0 12px 24px rgba(191,219,254,0.16)",
+              transition: "all 0.3s ease",
+            }}
+          >
             <FaFileUpload className="me-2" />Download Excel Template
           </button>
         </div>
 
-        <div className="mb-3 text-muted">
+        <div
+          className="mb-3 text-muted"
+          style={{
+            background: "linear-gradient(135deg, rgba(239,246,255,0.92), rgba(255,255,255,0.78))",
+            border: "1px solid rgba(191,219,254,0.7)",
+            borderRadius: "18px",
+            padding: "14px 16px",
+            boxShadow: "0 12px 24px rgba(191,219,254,0.12)",
+          }}
+        >
           <small>
             Excel file must include headers like <code>ABS_NO</code>, <code>Name</code>, <code>Email</code>, <code>Password</code>, <code>Gender</code>, and address columns.
             Insert each photo into the worksheet on the same row as that employee. The upload will use the first image anchored to each row.
@@ -207,7 +330,7 @@ const BulkEmployeeUpload = () => {
 
         {previewRows.length > 0 && (
           <div className="mt-4">
-            <h6>Excel preview (first 5 rows)</h6>
+            <h6 style={{ color: "#0F172A", fontWeight: 600 }}>Excel preview (first 5 rows)</h6>
             <div className="table-responsive" style={{ maxHeight: 320, overflowY: "auto" }}>
               <table className="table table-sm table-bordered">
                 <thead>

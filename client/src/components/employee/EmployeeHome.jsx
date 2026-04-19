@@ -76,7 +76,8 @@ const EmployeeHome = () => {
   return (
     <div
       style={{
-        backgroundColor: "#F4F7FB",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 24%), radial-gradient(circle at right center, rgba(224,242,254,0.74), transparent 28%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
@@ -85,28 +86,57 @@ const EmployeeHome = () => {
       }}
     >
       {/* Header */}
-      <header
+<header
   style={{
-    background: "#FFFFFF",
+    background: "rgba(255,255,255,0.78)",
     width: "100%",
     padding: "18px 32px",
     fontWeight: 600,
     fontSize: "1.6rem",
     color: "#1F2933",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    boxShadow: "0 20px 40px rgba(148,184,255,0.14)",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    borderBottom: "1px solid #D6E0F0",
+    borderBottom: "1px solid rgba(255,255,255,0.84)",
+    backdropFilter: "blur(18px)",
   }}
 >
-  <span>Employee Dashboard</span>
+  <div>
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "6px 12px",
+        borderRadius: "999px",
+        background: "linear-gradient(135deg, rgba(219,234,254,0.95), rgba(255,255,255,0.86))",
+        border: "1px solid rgba(255,255,255,0.88)",
+        color: "#2563EB",
+        fontSize: "0.68rem",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.16em",
+        marginBottom: "10px",
+      }}
+    >
+      Employee Portal
+    </div>
+    <div>Employee Dashboard</div>
+  </div>
 
   <div
     style={{
       cursor: "pointer",
-      fontSize: "1.4rem",
-      color: "#4A70A9",
+      fontSize: "1.2rem",
+      color: "#2563EB",
+      width: "48px",
+      height: "48px",
+      borderRadius: "16px",
+      background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow: "0 12px 24px rgba(191,219,254,0.16)",
     }}
     title="Profile"
     onClick={() => navigate("/employee/profile")}
@@ -120,12 +150,13 @@ const EmployeeHome = () => {
           className="btn mb-3"
           onClick={() => navigate(-1)}
           style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D6E0F0",
-            borderRadius: "8px",
+            backgroundColor: "rgba(255,255,255,0.82)",
+            border: "1px solid rgba(191,219,254,0.82)",
+            borderRadius: "14px",
             padding: "6px 14px",
             fontSize: "14px",
             color: "#1F2933",
+            boxShadow: "0 12px 20px rgba(191,219,254,0.14)",
           }}
         >
           &larr; Back
@@ -134,6 +165,25 @@ const EmployeeHome = () => {
 
       {/* Welcome Section */}
       <div className="text-center mt-5 mb-5">
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "7px 14px",
+            borderRadius: "999px",
+            background: "rgba(255,255,255,0.74)",
+            border: "1px solid rgba(255,255,255,0.86)",
+            color: "#2563EB",
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.16em",
+            marginBottom: "16px",
+            boxShadow: "0 12px 26px rgba(147,197,253,0.18)",
+          }}
+        >
+          Personal Workspace
+        </div>
         <h3
           style={{
             fontWeight: 700,
@@ -161,10 +211,11 @@ const EmployeeHome = () => {
             className="text-center p-4"
             style={{
               width: "240px",
-              backgroundColor: "#FFFFFF",
-              borderRadius: "16px",
-              border: "1px solid #E2EAF6",
-              boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
+              background: "rgba(255,255,255,0.76)",
+              borderRadius: "24px",
+              border: "1px solid rgba(255,255,255,0.88)",
+              boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
+              backdropFilter: "blur(18px)",
               transition: "all 0.3s ease",
               cursor: "pointer",
               position: "relative",
@@ -189,7 +240,7 @@ const EmployeeHome = () => {
                 left: 0,
                 width: "100%",
                 height: "5px",
-                background: "linear-gradient(90deg, #4A70A9, #6FA4D8)",
+                background: "linear-gradient(90deg, #2563EB, #38BDF8)",
               }}
             />
   
@@ -198,13 +249,14 @@ const EmployeeHome = () => {
               style={{
                 width: "58px",
                 height: "58px",
-                borderRadius: "50%",
-                backgroundColor: "#EAF2FF",
+                borderRadius: "18px",
+                background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#4A70A9",
+                color: "#2563EB",
                 margin: "20px auto 14px",
+                boxShadow: "0 12px 24px rgba(191,219,254,0.16)",
               }}
             >
               {card.icon}
@@ -232,11 +284,12 @@ const EmployeeHome = () => {
               className="btn btn-sm px-4"
               style={{
                 borderRadius: "999px",
-                fontWeight: 500,
+                fontWeight: 600,
                 background:
-                  "linear-gradient(90deg, #4A70A9, #6FA4D8)",
+                  "linear-gradient(90deg, #2563EB, #38BDF8)",
                 color: "#FFFFFF",
                 border: "none",
+                boxShadow: "0 14px 24px rgba(96,165,250,0.22)",
               }}
               onClick={card.onClick}
             >

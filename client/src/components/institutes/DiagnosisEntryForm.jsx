@@ -3,6 +3,7 @@ import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./InstitutesTheme.css";
 
 const DiagnosisEntryForm = () => {
   const [testsMaster, setTestsMaster] = useState([]);
@@ -529,7 +530,7 @@ const fetchPastRecords = async () => {
 
   return (
    
-       <div className="container-fluid mt-2">
+       <div className="container-fluid mt-2 institutes-theme">
       {/* Back Button */}
       <button
         className="btn mb-3"
@@ -643,7 +644,7 @@ const fetchPastRecords = async () => {
               <h5 className="mb-0">🏥 Diagnosis / Lab Test Entry</h5>
               <button
                 type="button"
-                className="btn btn-outline-light btn-sm"
+                className="btn btn-outline-primary btn-sm"
                 onClick={handlePrint}
               >
                 🖨️ Print
@@ -746,7 +747,7 @@ const fetchPastRecords = async () => {
                     <h6 className="alert-heading">👨‍⚕️ Doctor Diagnosis (Reference)</h6>
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline-dark mb-3"
+                      className="btn btn-sm btn-outline-primary mb-3"
                       onClick={() =>
                         mergeDoctorTestsIntoForm(
                           filteredDoctorDiagnosis.flatMap((order) => order.tests || [])

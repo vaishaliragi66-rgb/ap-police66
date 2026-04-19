@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import "./InstitutesTheme.css";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -474,7 +475,7 @@ const categoryChartData = {
 
   return (
    
-       <div className="container-fluid mt-2">
+       <div className="container-fluid mt-2 institutes-theme">
       {/* Back Button */}
       <button
         className="btn mb-1"

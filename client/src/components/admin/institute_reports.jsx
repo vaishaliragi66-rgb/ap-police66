@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./AdminDashboard.css";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -76,13 +77,96 @@ export default function InstituteReports() {
   }
 
   return (
-    <div className="container-fluid mt-4">
-      <h4 className="text-center mb-3">Institute Reports (Admin)</h4>
+    <div
+      className="container-fluid mt-4 institute-reports-page"
+      style={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.62), transparent 28%), radial-gradient(circle at right center, rgba(224,242,254,0.66), transparent 30%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
+        padding: "24px",
+      }}
+    >
+      <style>
+        {`
+          .institute-reports-page .health-card,
+          .institute-reports-page .modal-content {
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.76);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 24px 44px rgba(148, 184, 255, 0.16);
+            backdrop-filter: blur(18px);
+          }
+
+          .institute-reports-page .form-control {
+            min-height: 46px;
+            border-radius: 14px;
+            border: 1px solid rgba(191, 219, 254, 0.72);
+            background: rgba(248, 250, 252, 0.96);
+            box-shadow: 0 10px 22px rgba(148, 163, 184, 0.10);
+          }
+
+          .institute-reports-page .form-control:focus {
+            border-color: #60A5FA;
+            box-shadow: 0 0 0 0.18rem rgba(96, 165, 250, 0.14);
+          }
+
+          .institute-reports-page .table {
+            --bs-table-bg: transparent;
+          }
+
+          .institute-reports-page .table thead th {
+            background: #eff6ff;
+            color: #1e3a8a;
+            border-color: rgba(191, 219, 254, 0.78);
+            white-space: nowrap;
+          }
+
+          .institute-reports-page .table tbody tr:hover {
+            background: rgba(239, 246, 255, 0.72);
+          }
+
+          .institute-reports-page .page-link {
+            border-radius: 12px;
+            margin: 0 4px;
+            border-color: rgba(191, 219, 254, 0.8);
+            color: #2563eb;
+            box-shadow: 0 10px 20px rgba(191, 219, 254, 0.12);
+          }
+
+          .institute-reports-page .page-item.active .page-link {
+            background: linear-gradient(135deg, #2563EB, #38BDF8);
+            border-color: transparent;
+          }
+        `}
+      </style>
+
+      <div className="text-center mb-4">
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "7px 14px",
+            borderRadius: "999px",
+            background: "rgba(255,255,255,0.72)",
+            border: "1px solid rgba(255,255,255,0.85)",
+            color: "#2563EB",
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.16em",
+            marginBottom: 14,
+            boxShadow: "0 12px 26px rgba(147,197,253,0.18)",
+          }}
+        >
+          Institute Monitoring
+        </div>
+        <h4 className="mb-2" style={{ color: "#0F172A", fontWeight: 600, letterSpacing: "-0.03em" }}>Institute Reports (Admin)</h4>
+      </div>
 
       {/* ===============================
           FILTERS
       ================================*/}
-      <div className="card mb-3">
+      <div className="card mb-3 health-card border-0">
         <div className="card-body row g-2">
           <div className="col-md-3">
             <input
@@ -107,9 +191,9 @@ export default function InstituteReports() {
       {/* ===============================
           TABLE
       ================================*/}
-      <div className="table-responsive">
+      <div className="table-responsive health-card p-2">
         <table className="table table-bordered table-hover align-middle">
-          <thead className="table-dark">
+          <thead>
             <tr>
               <th>ID</th>
               <th>Institute</th>
@@ -141,6 +225,7 @@ export default function InstituteReports() {
                   <button
                     className="btn btn-link p-0"
                     onClick={() => setMailInstitute(r)}
+                    style={{ color: "#2563EB", fontWeight: 600, textDecoration: "none" }}
                   >
                     {r.Email_ID}
                   </button>
@@ -157,7 +242,7 @@ export default function InstituteReports() {
 
                 <td>
                   <button
-                    className="btn btn-sm btn-outline-primary"
+                    className="btn btn-sm admin-view-btn"
                     onClick={() => setSelectedInstitute(r)}
                   >
                     View Medicines
@@ -192,13 +277,13 @@ export default function InstituteReports() {
           MEDICINES MODAL
       ================================*/}
       {selectedInstitute && (
-        <div className="modal show fade d-block mt-4" style={{ background: "#00000080", marginTop: "1000px" }}>
-          <div className="modal-dialog modal-xl "style={{ marginTop: "7rem" }}>
-            <div className="modal-content">
+        <div className="modal show fade d-block admin-modal-backdrop">
+          <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content admin-modal-content">
               <div className="modal-header">
                 <h5>{selectedInstitute.Institute_Name} – Medicines Inventory</h5>
                 <button
-                  className="btn-close"
+                  className="btn-close btn-close-white"
                   onClick={() => setSelectedInstitute(null)}
                 />
               </div>
@@ -256,13 +341,13 @@ export default function InstituteReports() {
           COMPOSE MAIL MODAL
       ================================*/}
       {mailInstitute && (
-        <div className="modal show fade d-block" style={{ background: "#00000080" }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
+        <div className="modal show fade d-block admin-modal-backdrop">
+          <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content admin-modal-content">
               <div className="modal-header">
                 <h5>Compose Mail – {mailInstitute.Institute_Name}</h5>
                 <button
-                  className="btn-close"
+                  className="btn-close btn-close-white"
                   onClick={() => {
                     setMailInstitute(null);
                     setMailSubject("");
@@ -304,14 +389,22 @@ export default function InstituteReports() {
 
               <div className="modal-footer">
                 <button
-                  className="btn btn-secondary"
+                  className="btn"
                   onClick={() => setMailInstitute(null)}
+                  style={{
+                    borderRadius: "14px",
+                    padding: "10px 16px",
+                    background: "rgba(255,255,255,0.84)",
+                    border: "1px solid rgba(191,219,254,0.8)",
+                    color: "#2563EB",
+                    fontWeight: 600
+                  }}
                 >
                   Cancel
                 </button>
 
                 <button
-                  className="btn btn-primary"
+                  className="btn"
                   disabled={sending || !mailSubject || !mailBody || !adminEmail}
                   onClick={async () => {
                     try {
@@ -334,6 +427,15 @@ export default function InstituteReports() {
                     } finally {
                       setSending(false);
                     }
+                  }}
+                  style={{
+                    borderRadius: "14px",
+                    padding: "10px 16px",
+                    background: "linear-gradient(135deg, #2563EB, #38BDF8)",
+                    border: "none",
+                    color: "#fff",
+                    fontWeight: 600,
+                    boxShadow: "0 14px 28px rgba(96,165,250,0.24)"
                   }}
                 >
                   {sending ? "Sending..." : "Send Mail"}

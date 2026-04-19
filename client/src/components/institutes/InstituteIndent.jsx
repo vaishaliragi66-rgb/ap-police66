@@ -5,6 +5,7 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
+import "./InstitutesTheme.css";
 
 const InstituteIndent = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -303,10 +304,11 @@ const InstituteIndent = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <h4 style={{ color: "#2c3e50" }}>Indent Report</h4>
+    <div className="container mt-4 institutes-theme">
+      <div className="section-pill mb-3">Inventory Report</div>
+      <h4 style={{ color: "#0f172a", fontWeight: 700 }}>Indent Report</h4>
       
-      <div className="card shadow-sm border-0 mt-4">
+      <div className="card shadow-sm border-0 mt-4 glass-card">
         <div className="card-body">
           <div className="d-flex flex-wrap gap-3">
             <button
@@ -346,7 +348,7 @@ const InstituteIndent = () => {
 
       {/* Preview Modal */}
       {showModal && indentData && (
-        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(15, 23, 42, 0.28)" }}>
           <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
               <div className="modal-header bg-dark text-white">
@@ -430,7 +432,7 @@ const InstituteIndent = () => {
                 </button>
 
                 <button 
-                  className="btn btn-danger"
+                  className="btn btn-outline-danger"
                   onClick={() => {
                     setShowModal(false);
                     generatePDF();
@@ -440,7 +442,7 @@ const InstituteIndent = () => {
                 </button>
 
                 <button 
-                  className="btn btn-dark"
+                  className="btn btn-outline-primary"
                   onClick={() => {
                     setShowModal(false);
                     generateWordDocument();
@@ -464,15 +466,6 @@ const InstituteIndent = () => {
       {/* Add CSS for modal */}
       <style>
         {`
-          .modal-content {
-            animation: fadeIn 0.3s ease;
-          }
-          
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          
           .signature-line {
             border-top: 1px solid #000;
             margin-top: 40px;

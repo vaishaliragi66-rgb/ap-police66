@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "./InstitutesTheme.css";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -135,7 +136,8 @@ const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
   };
 
   return (
-    <div className="container py-4">
+    <div className="container py-4 institutes-theme">
+      <div className="section-pill mb-3">Inventory Control</div>
       <h3 className="fw-bold mb-3">Main Store</h3>
 
       <div className="d-flex gap-3 mb-3">
@@ -150,7 +152,7 @@ const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
         </button>
       </div>
 
-      <div className="card shadow-sm">
+      <div className="card shadow-sm border-0 glass-card">
         <div className="card-header fw-semibold">
           Main Store Stock ({medicines.length})
         </div>
@@ -281,7 +283,7 @@ const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
       {/* ================= UPDATE MODAL ================= */}
       {showModal && selectedMed && (
         <div className="modal fade show d-block"
-             style={{ background: "rgba(0,0,0,0.5)" }}>
+             style={{ background: "rgba(15,23,42,0.28)" }}>
           <div className="modal-dialog modal-lg modal-dialog-centered">
             <div className="modal-content">
 

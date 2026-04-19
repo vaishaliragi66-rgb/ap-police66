@@ -37,10 +37,22 @@ const PDFDownloadButton = ({ modulePath, params = {}, filenamePrefix = 'report',
 
   return (
     <button
-      className="btn btn-sm btn-outline-primary"
+      className="btn btn-sm"
       onClick={handleDownload}
       disabled={loading}
-      style={{ height: 38, whiteSpace: 'nowrap' }}
+      style={{
+        height: 44,
+        whiteSpace: 'nowrap',
+        borderRadius: 14,
+        padding: "0 18px",
+        background: loading
+          ? "rgba(255,255,255,0.78)"
+          : "rgba(255,255,255,0.86)",
+        border: "1px solid rgba(191,219,254,0.8)",
+        color: "#2563EB",
+        fontWeight: 600,
+        boxShadow: "0 12px 22px rgba(191,219,254,0.16)",
+      }}
     >
       {label}
     </button>

@@ -3,6 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import "./PharmacyPrescriptionForm.css";
+import "./InstitutesTheme.css";
 import { useNavigate } from "react-router-dom";
 import { fetchMasterDataMap, getMasterMedicinesByTypeAndForm, getMasterOptions, getMasterMedicineEntries } from "../../utils/masterData_clean";
 
@@ -709,7 +710,7 @@ const handleSubmit = async (e) => {
 
   /* ================= UI ================= */
   return (
-    <div className="container-fluid mt-2">
+    <div className="container-fluid mt-2 institutes-theme">
 
       {/* Back Button */}
       <button
@@ -882,7 +883,7 @@ const handleSubmit = async (e) => {
 
                     <button
                       type="button"
-                      className="btn btn-sm btn-dark"
+                      className="btn btn-sm btn-outline-primary view-action"
                       onClick={()=>{
                         loadEmployeeReports()}}
                     >

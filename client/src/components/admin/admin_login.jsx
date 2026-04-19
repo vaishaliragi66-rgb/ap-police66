@@ -100,32 +100,92 @@ const AdminLogin = () => {
     <div
       className="d-flex flex-column align-items-center justify-content-center min-vh-100"
       style={{
-        background: "linear-gradient(180deg, #F8FAFC, #EEF2F7)",
+        background:
+          "radial-gradient(circle at top left, rgba(191,219,254,0.65), transparent 28%), radial-gradient(circle at right center, rgba(224,242,254,0.7), transparent 30%), linear-gradient(180deg, #F5FAFF, #EEF6FF)",
         fontFamily: "Inter, sans-serif",
         padding: "30px 20px",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* Header */}
-      <div className="text-center mb-4">
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+        }}
+      >
         <div
-          className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+          style={{
+            position: "absolute",
+            top: "-80px",
+            left: "-70px",
+            width: "240px",
+            height: "240px",
+            borderRadius: "999px",
+            background: "rgba(147,197,253,0.35)",
+            filter: "blur(60px)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: "-90px",
+            bottom: "12%",
+            width: "280px",
+            height: "280px",
+            borderRadius: "999px",
+            background: "rgba(186,230,253,0.4)",
+            filter: "blur(70px)",
+          }}
+        />
+      </div>
+
+      {/* Header */}
+      <div className="text-center mb-4 position-relative" style={{ zIndex: 1 }}>
+        <div
+          className="mx-auto d-flex align-items-center justify-content-center mb-3"
           style={{
             width: "80px",
             height: "80px",
-            backgroundColor: "#4A70A9",
-            color: "#fff",
+            borderRadius: "24px",
+            background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
+            color: "#2563EB",
+            border: "1px solid rgba(255,255,255,0.8)",
+            boxShadow: "0 18px 34px rgba(147,197,253,0.28)",
+            backdropFilter: "blur(14px)",
           }}
         >
           <FaUserShield size={32} />
         </div>
   
-        <h2 className="fw-bold text-dark mb-2">Admin Login</h2>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "7px 14px",
+            borderRadius: "999px",
+            background: "rgba(255,255,255,0.72)",
+            border: "1px solid rgba(255,255,255,0.85)",
+            color: "#2563EB",
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.16em",
+            marginBottom: "14px",
+            boxShadow: "0 12px 26px rgba(147,197,253,0.18)",
+          }}
+        >
+          Secure Access
+        </div>
+
+        <h2 className="fw-semibold text-dark mb-2" style={{ letterSpacing: "-0.03em" }}>Admin Login</h2>
   
         <div
           style={{
             width: "70px",
             height: "3px",
-            backgroundColor: "#4A70A9",
+            background: "linear-gradient(90deg, #60A5FA, #BFDBFE)",
             opacity: 0.7,
             borderRadius: "3px",
             margin: "0 auto 14px auto",
@@ -141,7 +201,7 @@ const AdminLogin = () => {
       {error && (
         <div
           className="alert alert-danger w-100 mb-3"
-          style={{ maxWidth: "400px" }}
+          style={{ maxWidth: "420px", zIndex: 1, borderRadius: "18px", border: "1px solid rgba(248,113,113,0.25)" }}
         >
           {error}
         </div>
@@ -149,10 +209,17 @@ const AdminLogin = () => {
   
       {/* Login Card */}
       <div
-        className="bg-white p-5 rounded-4 shadow-sm w-100"
+        className="w-100"
         style={{
-          maxWidth: "400px",
-          border: "1px solid #E2E8F0",
+          maxWidth: "420px",
+          background: "rgba(255,255,255,0.72)",
+          borderRadius: "24px",
+          border: "1px solid rgba(255,255,255,0.85)",
+          boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
+          backdropFilter: "blur(18px)",
+          padding: "36px 32px",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <form onSubmit={handleLogin}>
@@ -170,9 +237,10 @@ const AdminLogin = () => {
               disabled={loading}
               required
               style={{
-                backgroundColor: "#F8FAFC",
-                borderRadius: "10px",
-                height: "42px",
+                backgroundColor: "rgba(248,250,252,0.96)",
+                borderRadius: "14px",
+                height: "46px",
+                boxShadow: "0 8px 18px rgba(148,163,184,0.12)",
               }}
             />
           </div>
@@ -192,9 +260,10 @@ const AdminLogin = () => {
                 disabled={loading}
                 required
                 style={{
-                  backgroundColor: "#F8FAFC",
-                  borderRadius: "10px 0 0 10px",
-                  height: "42px",
+                  backgroundColor: "rgba(248,250,252,0.96)",
+                  borderRadius: "14px 0 0 14px",
+                  height: "46px",
+                  boxShadow: "0 8px 18px rgba(148,163,184,0.12)",
                 }}
               />
               <button
@@ -204,9 +273,10 @@ const AdminLogin = () => {
                 disabled={loading}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 style={{
-                  backgroundColor: "#F8FAFC",
-                  borderRadius: "0 10px 10px 0",
-                  color: "#4A70A9",
+                  backgroundColor: "rgba(248,250,252,0.96)",
+                  borderRadius: "0 14px 14px 0",
+                  color: "#2563EB",
+                  boxShadow: "0 8px 18px rgba(148,163,184,0.12)",
                 }}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -230,39 +300,42 @@ const AdminLogin = () => {
             className="btn w-100 fw-semibold"
             disabled={loading}
             style={{
-              background: "linear-gradient(135deg, #4A70A9, #355C8C)",
+              background: "linear-gradient(135deg, #2563EB, #38BDF8)",
               color: "#fff",
-              borderRadius: "12px",
-              height: "46px",
+              borderRadius: "16px",
+              height: "48px",
               fontSize: "0.95rem",
               letterSpacing: "0.4px",
-              boxShadow: "0 6px 14px rgba(74,112,169,0.35)",
+              boxShadow: "0 14px 28px rgba(96,165,250,0.34)",
               border: "none",
-              transition: "all 0.25s ease",
+              transition: "all 0.3s ease",
             }}
             onMouseEnter={(e) => {
-              e.target.style.transform = "translateY(-1px)";
-              e.target.style.boxShadow = "0 10px 20px rgba(74,112,169,0.45)";
+              e.target.style.transform = "translateY(-2px) scale(1.01)";
+              e.target.style.boxShadow = "0 18px 30px rgba(96,165,250,0.4)";
             }}
             onMouseLeave={(e) => {
               e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0 6px 14px rgba(74,112,169,0.35)";
+              e.target.style.boxShadow = "0 14px 28px rgba(96,165,250,0.34)";
             }}
           >
             {loading ? "Logging in..." : "Login as Admin"}
           </button>
         </form>
-        </div>
+      </div>
   
       {/* Security Note */}
       <div
         className="text-center mt-4"
         style={{
-          backgroundColor: "#F3F7FF",
-          border: "1px solid #D6E0F0",
-          borderRadius: "10px",
-          padding: "10px",
-          maxWidth: "400px",
+          backgroundColor: "rgba(255,255,255,0.7)",
+          border: "1px solid rgba(255,255,255,0.85)",
+          borderRadius: "18px",
+          padding: "12px 16px",
+          maxWidth: "420px",
+          boxShadow: "0 16px 30px rgba(191,219,254,0.18)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <p className="text-muted small mb-0">

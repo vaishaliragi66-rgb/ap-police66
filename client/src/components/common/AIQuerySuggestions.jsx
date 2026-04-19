@@ -18,12 +18,33 @@ const AIQuerySuggestions = ({
 
   return (
     <div 
-      className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-96 overflow-y-auto"
-      style={{ top: '100%' }}
+      className="absolute z-50 w-full mt-2 max-h-96 overflow-y-auto"
+      style={{
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        zIndex: 2140,
+        isolation: "isolate",
+        overscrollBehavior: "contain",
+        background: "rgba(255,255,255,0.86)",
+        border: "1px solid rgba(255,255,255,0.92)",
+        borderRadius: "20px",
+        boxShadow: "0 24px 44px rgba(148,184,255,0.2)",
+        backdropFilter: "blur(20px)",
+        maxHeight: '24rem',
+        overflowY: 'auto',
+      }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-        <span className="text-xs font-semibold text-gray-600 uppercase">
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{
+          background: "linear-gradient(135deg, rgba(239,246,255,0.92), rgba(255,255,255,0.82))",
+          borderBottom: "1px solid rgba(191,219,254,0.7)",
+        }}
+      >
+        <span className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: "#2563EB" }}>
           {loading ? 'Loading...' : 'Recent & Frequent Queries'}
         </span>
         {showClearButton && onClearHistory && (
@@ -32,7 +53,8 @@ const AIQuerySuggestions = ({
               e.stopPropagation();
               onClearHistory();
             }}
-            className="text-xs text-red-500 hover:text-red-700 transition-colors"
+            className="text-xs transition-colors"
+            style={{ color: "#EF4444", fontWeight: 600 }}
           >
             Clear History
           </button>
@@ -45,29 +67,47 @@ const AIQuerySuggestions = ({
           Loading suggestions...
         </div>
       ) : (
-        <ul className="py-1">
+        <ul className="py-2">
           {suggestions.map((suggestion, index) => (
             <li
               key={`${suggestion.text}-${index}`}
               onClick={() => onSelect(suggestion.text)}
-              className={`
-                px-4 py-2.5 cursor-pointer transition-colors
-                flex items-center justify-between
-                ${
+              className="px-4 py-3 cursor-pointer transition-all duration-300 flex items-center justify-between"
+              style={{
+                background:
                   selectedIndex === index
-                    ? 'bg-blue-50 border-l-4 border-blue-500'
-                    : 'hover:bg-gray-50 border-l-4 border-transparent'
-                }
-              `}
+                    ? "linear-gradient(135deg, rgba(219,234,254,0.9), rgba(255,255,255,0.78))"
+                    : "transparent",
+                borderLeft:
+                  selectedIndex === index
+                    ? "4px solid #3B82F6"
+                    : "4px solid transparent",
+              }}
             >
               <div className="flex items-start flex-1 min-w-0">
                 {/* Icon */}
-                <span className="mr-3 text-gray-400 flex-shrink-0 mt-0.5">
+                <span
+                  className="mr-3 flex-shrink-0 mt-0.5"
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "999px",
+                    background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
+                    color: "#2563EB",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    boxShadow: "0 10px 18px rgba(191,219,254,0.18)",
+                  }}
+                >
                   {/* {suggestion.count} */}
+                  AI
                 </span>
                 
                 {/* Query Text */}
-                <span className="text-sm text-gray-800 flex-1 truncate">
+                <span className="text-sm flex-1 truncate" style={{ color: "#0F172A" }}>
                   {suggestion.text}
                 </span>
               </div>
@@ -75,7 +115,14 @@ const AIQuerySuggestions = ({
               {/* Metadata */}
               <div className="ml-3 flex items-center gap-2 flex-shrink-0">
                 {suggestion.count > 1 && (
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full"
+                    style={{
+                      background: "linear-gradient(135deg, #DBEAFE, #EFF6FF)",
+                      color: "#1D4ED8",
+                      fontWeight: 600,
+                    }}
+                  >
                     {suggestion.count}x
                   </span>
                 )}

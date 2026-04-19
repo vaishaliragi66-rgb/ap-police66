@@ -12,6 +12,7 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./InstitutesTheme.css";
 const Institute_home = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -69,17 +70,34 @@ const Institute_home = () => {
   const QuickCard = ({ icon, title, desc, onClick }) => (
     <div className="col-lg-4 col-md-6">
       <div
-        className="card h-100 text-center border-0 shadow-sm"
+        className="card h-100 text-center border-0 shadow-sm quick-dashboard-card"
         style={{
-          borderRadius: "20px",
+          borderRadius: "24px",
           cursor: "pointer",
-          transition: "all 0.3s ease"
+          transition: "all 0.3s ease",
+          background: "linear-gradient(145deg, rgba(255,255,255,0.88), rgba(239,246,255,0.74))",
+          border: "1px solid rgba(255,255,255,0.88)",
+          boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
+          backdropFilter: "blur(18px)",
+          overflow: "hidden"
         }}
         onClick={onClick}
       >
-        <div className="card-body p-5">
-          {icon}
-          <h5 className="fw-semibold mt-4">{title}</h5>
+        <div className="card-body p-5 position-relative">
+          <div
+            className="mx-auto mb-4 d-flex align-items-center justify-content-center"
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: 24,
+              color: "#2563EB",
+              background: "linear-gradient(145deg, rgba(219,234,254,0.95), rgba(255,255,255,0.92))",
+              boxShadow: "0 16px 28px rgba(147,197,253,0.22)"
+            }}
+          >
+            {icon}
+          </div>
+          <h5 className="fw-semibold mt-2" style={{ color: "#0F172A", letterSpacing: "-0.02em" }}>{title}</h5>
           <p className="text-muted mb-0">{desc}</p>
         </div>
       </div>
@@ -88,16 +106,25 @@ const Institute_home = () => {
 
   return (
     <div
-      className="min-vh-100"
+      className="min-vh-100 institutes-theme"
       style={{
         fontFamily: "Inter, sans-serif",
-        background: "linear-gradient(135deg, #f4f7ff 0%, #eef2ff 100%)"
+        background: "transparent"
       }}
     >
+      <style>
+        {`
+          .quick-dashboard-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 28px 48px rgba(96, 165, 250, 0.22) !important;
+            border-color: rgba(147, 197, 253, 0.95) !important;
+          }
+        `}
+      </style>
       {/* HEADER */}
-<div className="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center position-relative">
+<div className="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center position-relative glass-card" style={{ borderRadius: 0, borderLeft: "none", borderRight: "none", borderTop: "none", zIndex: 1200, overflow: "visible" }}>
   <div>
-    <small className="text-muted">
+    <small className="text-muted section-pill">
       {welcomeMessage}
     </small>
     <h3 className="fw-bold mb-2">{dashboardTitle}</h3>
@@ -106,7 +133,7 @@ const Institute_home = () => {
    
 {/* <small className="text-muted center">SARCPL
     </small> */}
-  <div style={{ position: "relative" }}>
+  <div style={{ position: "relative", zIndex: 1250 }}>
    
     <FaUserCircle
       size={36}
@@ -121,10 +148,12 @@ const Institute_home = () => {
           right: 0,
           top: "45px",
           width: "180px",
-          backgroundColor: "#fff",
-          borderRadius: "10px",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-          zIndex: 999
+          backgroundColor: "rgba(255,255,255,0.88)",
+          borderRadius: "18px",
+          boxShadow: "0 20px 34px rgba(148,184,255,0.18)",
+          border: "1px solid rgba(255,255,255,0.88)",
+          backdropFilter: "blur(18px)",
+          zIndex: 1300
         }}
       >
         <button
@@ -153,7 +182,7 @@ const Institute_home = () => {
 
 
       {/* DASHBOARD */}
-      <div className="container-fluid p-4">
+      <div className="container-fluid p-4" style={{ position: "relative", zIndex: 1 }}>
         <div className="row g-4">
 
           {hasAccess("doctorCard") && (

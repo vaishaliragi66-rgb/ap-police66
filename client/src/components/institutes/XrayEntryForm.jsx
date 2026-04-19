@@ -3,6 +3,7 @@ import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import "./InstitutesTheme.css";
 
 const normalizeFilmSize = (value) => {
   const cleaned = String(value || "")
@@ -360,7 +361,7 @@ alert("✅ Xray saved");
 
   return (
     
-       <div className="container-fluid mt-2">
+       <div className="container-fluid mt-2 institutes-theme">
       {/* Back Button */}
       <button
         className="btn mb-3"
@@ -472,7 +473,7 @@ alert("✅ Xray saved");
               <h5 className="mb-0">🩻 X-ray Entry Form</h5>
               <button
                 type="button"
-                className="btn btn-outline-light btn-sm"
+                className="btn btn-outline-primary btn-sm"
                 onClick={handlePrint}
               >
                 🖨️ Print

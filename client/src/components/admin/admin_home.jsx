@@ -4,9 +4,6 @@ import {
   FaHospital,
   FaUserMd,
   FaRobot,
-  FaBuilding,
-  FaUsers,
-  FaFileMedical,
   FaUpload
 } from "react-icons/fa";
 import "./AdminDashboard.css";
@@ -37,19 +34,53 @@ function AdminDashboard() {
       <div className="admin-header">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <div>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "7px 14px",
+                borderRadius: 999,
+                background: "linear-gradient(135deg, rgba(219,234,254,0.95), rgba(255,255,255,0.9))",
+                border: "1px solid rgba(255,255,255,0.85)",
+                color: "#2563EB",
+                fontSize: "0.72rem",
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                marginBottom: 14,
+                boxShadow: "0 10px 24px rgba(147,197,253,0.18)"
+              }}
+            >
+              Control Center
+            </span>
             <h1>Admin Dashboard</h1>
             <p>Manage institutes, employees, and system insights</p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <button className="btn btn-outline-secondary" onClick={handleLogout} style={{ borderRadius: 8 }}>
+            <div style={{ color: "#64748B", fontSize: "0.95rem", marginBottom: 12 }}>
+              Signed in as <span style={{ color: "#0F172A", fontWeight: 600 }}>{adminName}</span>
+            </div>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={handleLogout}
+              style={{
+                borderRadius: 999,
+                padding: "10px 18px",
+                borderColor: "#BFDBFE",
+                color: "#2563EB",
+                background: "rgba(255,255,255,0.65)",
+                boxShadow: "0 10px 22px rgba(191,219,254,0.2)",
+                transition: "all 0.3s ease"
+              }}
+            >
               Logout
             </button>
           </div>
         </div>
       </div>
 
-<br />
-<br/>
+      <br />
+      <br/>
       {/* KPI / STATS
       <div className="admin-stats">
         <div className="stat-card">
