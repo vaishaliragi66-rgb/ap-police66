@@ -21,6 +21,13 @@ const getPatientMetrics = async ({ employeeId, isFamilyMember, familyMemberId })
   return normalizePatientMetrics(patient || {});
 };
 
+const getDisplayPatientMetrics = (currentPatient = {}, fallbackMetrics = {}) =>
+  normalizePatientMetrics({
+    Height: currentPatient?.Height || fallbackMetrics?.Height || "",
+    Weight: currentPatient?.Weight || fallbackMetrics?.Weight || "",
+    BMI: currentPatient?.BMI || fallbackMetrics?.BMI || ""
+  });
+
 const parseDateInput = (value, endOfDay = false) => {
   if (!value) return null;
 
@@ -149,7 +156,10 @@ const buildDoctorPrescriptionRecord = (action, visitMap, employeeMap, familyMap)
           Vitals: visit.Vitals || {}
         }
       : null,
-    PatientMetrics: actionData.PatientMetrics || visit?.Vitals || {},
+    PatientMetrics: getDisplayPatientMetrics(
+      Boolean(isFamilyMember) ? familyMember : employee,
+      visit?.Vitals || actionData.PatientMetrics || {}
+    ),
     Medicines: medicines,
     Notes: actionData.notes || action.remarks || "",
     Source: "DOCTOR_PRESCRIPTION"
@@ -157,7 +167,7 @@ const buildDoctorPrescriptionRecord = (action, visitMap, employeeMap, familyMap)
 };
 
 const fetchCombinedPrescriptionHistory = async ({ employeeId, personId, fromDate, toDate }) => {
-  const familyMembers = await FamilyMember.find({ Employee: employeeId }).select("_id Name Relationship").lean();
+  const familyMembers = await FamilyMember.find({ Employee: employeeId }).select("_id Name Relationship Height Weight BMI").lean();
   const familyIds = familyMembers.map((member) => member._id);
 
   const { start, end } = buildDateRange(fromDate, toDate);
@@ -186,8 +196,8 @@ const fetchCombinedPrescriptionHistory = async ({ employeeId, personId, fromDate
 
   const prescriptions = await Prescription.find(prescriptionQuery)
     .populate("Institute", "Institute_Name")
-    .populate("Employee", "Name ABS_NO")
-    .populate("FamilyMember", "Name Relationship")
+    .populate("Employee", "Name ABS_NO Height Weight BMI")
+    .populate("FamilyMember", "Name Relationship Height Weight BMI")
     .populate("Medicines.Medicine_ID", "Medicine_Code Expiry_Date Strength")
     .sort({ Timestamp: -1 })
     .lean();
@@ -222,7 +232,7 @@ const fetchCombinedPrescriptionHistory = async ({ employeeId, personId, fromDate
     visitIds.length
       ? DailyVisit.find({ _id: { $in: visitIds } }).populate("Institute_ID", "Institute_Name").lean()
       : Promise.resolve([]),
-    Employee.find({ _id: employeeId }).select("_id Name ABS_NO").lean()
+    Employee.find({ _id: employeeId }).select("_id Name ABS_NO Height Weight BMI").lean()
   ]);
 
   const visitMap = new Map(visits.map((visit) => [String(visit._id), visit]));
@@ -257,7 +267,10 @@ const fetchCombinedPrescriptionHistory = async ({ employeeId, personId, fromDate
             Vitals: visit.Vitals || {}
           }
         : null,
-      PatientMetrics: record.PatientMetrics || visit?.Vitals || {}
+      PatientMetrics: getDisplayPatientMetrics(
+        record.IsFamilyMember ? record.FamilyMember : record.Employee,
+        visit?.Vitals || record.PatientMetrics || {}
+      )
     };
   });
 

@@ -624,8 +624,16 @@ const relevantDiseases = diseases.filter((d) => {
     _source: source
   });
 
-  const getMetricValue = (source, key) =>
-    source?.PatientMetrics?.[key] ?? source?.Vitals?.[key] ?? source?.VisitSummary?.Vitals?.[key] ?? "";
+  const getMetricValue = (source, key) => {
+    const profile = source?.IsFamilyMember ? source?.FamilyMember : source?.Employee;
+    return (
+      profile?.[key] ||
+      source?.VisitSummary?.Vitals?.[key] ||
+      source?.Vitals?.[key] ||
+      source?.PatientMetrics?.[key] ||
+      ""
+    );
+  };
 
   const formatDateDMY = (value) => {
     if (!value) return "-";
@@ -1735,7 +1743,14 @@ if (validXrays.length === 0) {
 
                     // Set visit vitals (read-only) and keep doctor's notes editable
                     if (visit) {
-                      const vitals = visit.Vitals || {};
+                      const patientProfile = isFamily ? visit.FamilyMember : employee;
+                      const visitVitals = visit.Vitals || {};
+                      const vitals = {
+                        ...visitVitals,
+                        Height: patientProfile?.Height || visitVitals.Height || "",
+                        Weight: patientProfile?.Weight || visitVitals.Weight || "",
+                        BMI: patientProfile?.BMI || visitVitals.BMI || ""
+                      };
                       setFormData(prev => ({
                         ...prev,
                         Vitals: vitals,
