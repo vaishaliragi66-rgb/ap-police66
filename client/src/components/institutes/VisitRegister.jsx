@@ -30,8 +30,18 @@ const VisitRegister = () => {
     Blood_Pressure: "",
     Oxygen: "",
     Pulse: "",
-    GRBS: ""
+    GRBS: "",
+    Height: "",
+    Weight: ""
   });
+
+  const calculateBMI = (heightCm, weightKg) => {
+    const height = Number(heightCm);
+    const weight = Number(weightKg);
+    if (!height || !weight || height <= 0 || weight <= 0) return "";
+    const heightM = height / 100;
+    return (weight / (heightM * heightM)).toFixed(2);
+  };
 
   /* ================= FETCH EMPLOYEES ================= */
   useEffect(() => {
@@ -105,6 +115,16 @@ const VisitRegister = () => {
       alert("Select family member");
       return;
     }
+
+    if (!vitals.Height || Number(vitals.Height) <= 0) {
+      setFormError("Height is required and must be a positive number in cm.");
+      return;
+    }
+
+    if (!vitals.Weight || Number(vitals.Weight) <= 0) {
+      setFormError("Weight is required and must be a positive number in kg.");
+      return;
+    }
   
     setFormError("");
     setLoading(true);
@@ -120,6 +140,7 @@ const VisitRegister = () => {
         }
         vitalsCopy.Temperature = tempValue;
       }
+      vitalsCopy.BMI = calculateBMI(vitalsCopy.Height, vitalsCopy.Weight);
 
       await axios.post(
         `${BACKEND_URL}/api/visits/register`,
@@ -147,7 +168,9 @@ const VisitRegister = () => {
         Blood_Pressure: "",
         Oxygen: "",
         Pulse: "",
-        GRBS: ""
+        GRBS: "",
+        Height: "",
+        Weight: ""
       });
   
     } catch (err) {
@@ -235,6 +258,11 @@ const VisitRegister = () => {
                       setSelectedEmployee(emp);
                       setSearch(`${emp.ABS_NO} - ${emp.Name}`);
                       setFiltered([]);
+                      setVitals((prev) => ({
+                        ...prev,
+                        Height: emp.Height || "",
+                        Weight: emp.Weight || ""
+                      }));
                     
                       // 🔥 RESET FAMILY STATE
                       setIsFamily(false);
@@ -255,7 +283,17 @@ const VisitRegister = () => {
                 type="checkbox"
                 className="form-check-input"
                 checked={isFamily}
-                onChange={e => setIsFamily(e.target.checked)}
+                onChange={e => {
+                  const checked = e.target.checked;
+                  setIsFamily(checked);
+                  if (!checked && selectedEmployee) {
+                    setVitals((prev) => ({
+                      ...prev,
+                      Height: selectedEmployee.Height || "",
+                      Weight: selectedEmployee.Weight || ""
+                    }));
+                  }
+                }}
                 disabled={!selectedEmployee}
               />
               <label className="form-check-label">
@@ -277,9 +315,15 @@ const VisitRegister = () => {
                   className="form-select"
                   value={selectedFamily?._id || ""}
                   onChange={e =>
-                    setSelectedFamily(
-                      familyMembers.find(f => f._id === e.target.value)
-                    )
+                    {
+                      const family = familyMembers.find(f => f._id === e.target.value) || null;
+                      setSelectedFamily(family);
+                      setVitals((prev) => ({
+                        ...prev,
+                        Height: family?.Height || "",
+                        Weight: family?.Weight || ""
+                      }));
+                    }
                   }
                 >
                   <option value="">Select</option>
@@ -384,6 +428,44 @@ const VisitRegister = () => {
           }
         />
       </div>
+      <div className="col-md-6 mb-2">
+        <label>Height (cm)</label>
+        <input
+          type="number"
+          min="1"
+          step="0.1"
+          className="form-control"
+          value={vitals.Height}
+          onChange={(e) => {
+            setFormError("");
+            setVitals({ ...vitals, Height: e.target.value });
+          }}
+          required
+        />
+      </div>
+      <div className="col-md-6 mb-2">
+        <label>Weight (kg)</label>
+        <input
+          type="number"
+          min="1"
+          step="0.1"
+          className="form-control"
+          value={vitals.Weight}
+          onChange={(e) => {
+            setFormError("");
+            setVitals({ ...vitals, Weight: e.target.value });
+          }}
+          required
+        />
+      </div>
+      <div className="col-md-6 mb-2">
+        <label>BMI</label>
+        <input
+          className="form-control"
+          value={calculateBMI(vitals.Height, vitals.Weight) || "-"}
+          readOnly
+        />
+      </div>
     </div>
   </div>
 
@@ -436,8 +518,9 @@ const VisitRegister = () => {
         {/* RIGHT COLUMN */}
         <div className="col-md-6">
           <p><strong>Blood Group:</strong> {selectedEmployee.Blood_Group}</p>
-          <p><strong>Height:</strong> {selectedEmployee.Height}</p>
-          <p><strong>Weight:</strong> {selectedEmployee.Weight}</p>
+          <p><strong>Height:</strong> {vitals.Height || selectedEmployee.Height}</p>
+          <p><strong>Weight:</strong> {vitals.Weight || selectedEmployee.Weight}</p>
+          <p><strong>BMI:</strong> {calculateBMI(vitals.Height || selectedEmployee.Height, vitals.Weight || selectedEmployee.Weight) || selectedEmployee.BMI || "-"}</p>
           <p><strong>Phone:</strong> {selectedEmployee.Phone_No}</p>
         </div>
       </div>
@@ -479,8 +562,9 @@ const VisitRegister = () => {
         <div className="col-md-6">
           <p><strong>Gender:</strong> {selectedFamily.Gender}</p>
           <p><strong>Blood Group:</strong> {selectedFamily.Blood_Group}</p>
-          <p><strong>Height:</strong> {selectedFamily.Height}</p>
-          <p><strong>Weight:</strong> {selectedFamily.Weight}</p>
+          <p><strong>Height:</strong> {vitals.Height || selectedFamily.Height}</p>
+          <p><strong>Weight:</strong> {vitals.Weight || selectedFamily.Weight}</p>
+          <p><strong>BMI:</strong> {calculateBMI(vitals.Height || selectedFamily.Height, vitals.Weight || selectedFamily.Weight) || selectedFamily.BMI || "-"}</p>
         </div>
       </div>
     </div>

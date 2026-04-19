@@ -624,6 +624,9 @@ const relevantDiseases = diseases.filter((d) => {
     _source: source
   });
 
+  const getMetricValue = (source, key) =>
+    source?.PatientMetrics?.[key] ?? source?.Vitals?.[key] ?? source?.VisitSummary?.Vitals?.[key] ?? "";
+
   const formatDateDMY = (value) => {
     if (!value) return "-";
     const parsed = new Date(value);
@@ -957,6 +960,9 @@ const relevantDiseases = diseases.filter((d) => {
         </div>
 
         <div className="small mt-2">
+          <div className="text-muted mb-2">
+            Height: {getMetricValue(prescription, "Height") || "-"} cm | Weight: {getMetricValue(prescription, "Weight") || "-"} kg | BMI: {getMetricValue(prescription, "BMI") || "-"}
+          </div>
           {medicines.length > 0 ? (
             medicines.map((medicine, index) => (
               <div key={`${medicine?.Medicine_Name || "medicine"}-${index}`}>
@@ -1452,6 +1458,9 @@ if (validXrays.length === 0) {
                         const tests = selectedPrescriptionReport?.relatedTests || [];
                         const xrays = selectedPrescriptionReport?.relatedXrays || [];
                         const pharmacyNotes = selectedPrescriptionReport?.pharmacyNotes || [];
+                        const height = getMetricValue(selectedPrescriptionReport, "Height");
+                        const weight = getMetricValue(selectedPrescriptionReport, "Weight");
+                        const bmi = getMetricValue(selectedPrescriptionReport, "BMI");
 
                         return (
                           <>
@@ -1467,6 +1476,15 @@ if (validXrays.length === 0) {
                               </div>
                               <div className="col-md-6 text-md-end">
                                 <strong>ABS No:</strong> {selectedEmployee?.ABS_NO || employeeProfile?.ABS_NO || "-"}
+                              </div>
+                              <div className="col-md-4">
+                                <strong>Height:</strong> {height ? `${height} cm` : "-"}
+                              </div>
+                              <div className="col-md-4">
+                                <strong>Weight:</strong> {weight ? `${weight} kg` : "-"}
+                              </div>
+                              <div className="col-md-4">
+                                <strong>BMI:</strong> {bmi || "-"}
                               </div>
                             </div>
 
@@ -1934,6 +1952,9 @@ if (validXrays.length === 0) {
                       <div><strong>Pulse:</strong> {formData.Vitals?.Pulse || "—"}</div>
                       <div><strong>Oxygen:</strong> {formData.Vitals?.Oxygen || "—"}</div>
                       <div><strong>GRBS:</strong> {formData.Vitals?.GRBS || "—"}</div>
+                      <div><strong>Height:</strong> {formData.Vitals?.Height ? `${formData.Vitals.Height} cm` : "—"}</div>
+                      <div><strong>Weight:</strong> {formData.Vitals?.Weight ? `${formData.Vitals.Weight} kg` : "—"}</div>
+                      <div><strong>BMI:</strong> {formData.Vitals?.BMI || "—"}</div>
                     </div>
                   </div>
 

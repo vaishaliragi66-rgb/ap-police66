@@ -44,6 +44,7 @@ const MedicinesIssuedRegister = () => {
 const [viewMode, setViewMode] = useState(false);
 const [selectedPrescription, setSelectedPrescription] = useState(null);
 
+const getPrescriptionMetrics = (prescription = {}) => prescription.PatientMetrics || {};
 
   // Smart search bar
   const [searchFilter, setSearchFilter] = useState("");
@@ -483,9 +484,11 @@ const downloadPrescriptionPDF = (prescription) => {
 
   doc.text(`Employee: ${prescription.Employee?.Name}`, 14, 48);
   doc.text(`ABS No: ${prescription.Employee?.ABS_NO}`, pageWidth - 14, 48, { align: "right" });
+  const metrics = getPrescriptionMetrics(prescription);
+  doc.text(`Height: ${metrics.Height || "-"} cm   Weight: ${metrics.Weight || "-"} kg   BMI: ${metrics.BMI || "-"}`, 14, 56);
 
   autoTable(doc, {
-    startY: 60,
+    startY: 66,
     head: [["S.No", "Medicine", "Type", "Category", "Quantity"]],
     body: prescription.Medicines.map((m, i) => [
       i + 1,
@@ -548,6 +551,7 @@ const downloadPrescriptionWord = (prescription) => {
     <p><strong>Prescription Ref:</strong> ${prescription._id.slice(-6)}</p>
     <p><strong>Employee:</strong> ${prescription.Employee?.Name}</p>
     <p><strong>ABS No:</strong> ${prescription.Employee?.ABS_NO}</p>
+    <p><strong>Height:</strong> ${getPrescriptionMetrics(prescription).Height || "-"} cm &nbsp; <strong>Weight:</strong> ${getPrescriptionMetrics(prescription).Weight || "-"} kg &nbsp; <strong>BMI:</strong> ${getPrescriptionMetrics(prescription).BMI || "-"}</p>
     <p><strong>Test Date:</strong> ${new Date(prescription.Timestamp).toLocaleString()}</p>
     <p><strong>Downloaded On:</strong> ${formatReportTimestamp()}</p>
 
@@ -1105,6 +1109,18 @@ const printPrescription = () => {
     <div className="col-md-6 text-end">
       <strong>Date:</strong>{" "}
       {new Date(selectedPrescription.Timestamp).toLocaleString()}
+    </div>
+  </div>
+
+  <div className="row mb-3">
+    <div className="col-md-4">
+      <strong>Height:</strong> {getPrescriptionMetrics(selectedPrescription).Height || "-"} cm
+    </div>
+    <div className="col-md-4">
+      <strong>Weight:</strong> {getPrescriptionMetrics(selectedPrescription).Weight || "-"} kg
+    </div>
+    <div className="col-md-4 text-md-end">
+      <strong>BMI:</strong> {getPrescriptionMetrics(selectedPrescription).BMI || "-"}
     </div>
   </div>
 

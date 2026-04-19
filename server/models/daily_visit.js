@@ -57,7 +57,10 @@ const DailyVisitSchema = new mongoose.Schema({
     Blood_Pressure: { type: String, default: null },
     Oxygen: { type: Number, default: null },
     Pulse: { type: Number, default: null },
-    GRBS: { type: Number, default: null }
+    GRBS: { type: Number, default: null },
+    Height: { type: String, default: "" },
+    Weight: { type: String, default: "" },
+    BMI: { type: String, default: "" }
   },
 
   token_no: {

@@ -61,6 +61,16 @@ const EmployeeProfile = () => {
   };
 
   const handleSave = () => {
+    if (!editData.Height || Number(editData.Height) <= 0 || Number.isNaN(Number(editData.Height))) {
+      alert("Height is required and must be a positive number in cm.");
+      return;
+    }
+
+    if (!editData.Weight || Number(editData.Weight) <= 0 || Number.isNaN(Number(editData.Weight))) {
+      alert("Weight is required and must be a positive number in kg.");
+      return;
+    }
+
     axios.put(`${BACKEND_URL}/employee-api/update-profile/${employeeId}`, editData)
       .then((res) => {
         setEmployee(res.data.employee);
@@ -565,6 +575,13 @@ const EmployeeProfile = () => {
         )}
       </p>
 
+      <p className="mb-2">
+        <strong>BMI:</strong>{" "}
+        <span style={{ color: "#6B7280" }}>
+          {employee.BMI || "-"}
+        </span>
+      </p>
+
       <p className="mb-0">
         <strong>Address:</strong>{" "}
         <span style={{ color: "#6B7280" }}>
@@ -660,7 +677,7 @@ const EmployeeProfile = () => {
           </p>
 
           <p style={{ fontSize: "13px", color: "#6B7280", marginBottom: 0 }}>
-            Height: {f.Height} cm &nbsp;|&nbsp; Weight: {f.Weight} kg
+            Height: {f.Height} cm &nbsp;|&nbsp; Weight: {f.Weight} kg &nbsp;|&nbsp; BMI: {f.BMI || "-"}
           </p>
         </div>
       </div>

@@ -168,12 +168,12 @@ const validateForm = () => {
     errors.push("Pincode must be 6 digits");
   }
 
-  if (formData.Height && isNaN(formData.Height)) {
-    errors.push("Height must be numeric");
+  if (!formData.Height || isNaN(formData.Height) || Number(formData.Height) <= 0) {
+    errors.push("Height is required and must be a positive number in cm");
   }
 
-  if (formData.Weight && isNaN(formData.Weight)) {
-    errors.push("Weight must be numeric");
+  if (!formData.Weight || isNaN(formData.Weight) || Number(formData.Weight) <= 0) {
+    errors.push("Weight is required and must be a positive number in kg");
   }
 
   if (formData.DOB) {
@@ -708,13 +708,16 @@ if (validationErrors.length > 0) {
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">Height (cm)</label>
                   <input
-                    type="text"
+                    type="number"
+                    min="1"
+                    step="0.1"
                     name="Height"
                     className="form-control"
                     placeholder="Height in cm"
                     value={formData.Height}
                     onChange={handleChange}
                     disabled={loading}
+                    required
                   />
                 </div>
               </div>
@@ -723,13 +726,16 @@ if (validationErrors.length > 0) {
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">Weight (kg)</label>
                   <input
-                    type="text"
+                    type="number"
+                    min="1"
+                    step="0.1"
                     name="Weight"
                     className="form-control"
                     placeholder="Weight in kg"
                     value={formData.Weight}
                     onChange={handleChange}
                     disabled={loading}
+                    required
                   />
                 </div>
               </div>

@@ -6,6 +6,10 @@ const fs = require("fs");
 const FamilyMember = require("../models/family_member");
 const Employee = require("../models/employee");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
+const {
+  normalizePatientMetrics,
+  validateRequiredPatientMetrics
+} = require("../utils/healthMetrics");
 const FamilyApp = express.Router();
 
 // Ensure upload directory exists
@@ -92,6 +96,12 @@ FamilyApp.post(
       });
     }
 
+    const metricError = validateRequiredPatientMetrics({ Height, Weight });
+    if (metricError) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: metricError });
+    }
+
     // Check Employee Exists
     const employee = await Employee.findById(EmployeeId);
     if (!employee) {
@@ -121,6 +131,8 @@ FamilyApp.post(
       try { parsedAddress = JSON.parse(Address); } catch { parsedAddress = {}; }
     }
 
+    const patientMetrics = normalizePatientMetrics({ Height, Weight });
+
     const memberData = {
       Employee: EmployeeId,
       Name,
@@ -129,8 +141,9 @@ FamilyApp.post(
       DOB,
       Blood_Group,
       ABHA_Number: normalizedAbhaNumber,
-      Height,
-      Weight,
+      Height: patientMetrics.Height,
+      Weight: patientMetrics.Weight,
+      BMI: patientMetrics.BMI,
       Phone_No,
       Address: parsedAddress,
       Medical_History,
@@ -191,6 +204,11 @@ FamilyApp.put("/update/:id", expressAsyncHandler(async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     const normalizedAbhaNumber = normalizeAbhaNumber(updateData.ABHA_Number);
+    const metricError = validateRequiredPatientMetrics(updateData);
+
+    if (metricError) {
+      return res.status(400).json({ message: metricError });
+    }
 
     if (!isValidAbhaNumber(normalizedAbhaNumber)) {
       return res.status(400).json({
@@ -214,8 +232,7 @@ FamilyApp.put("/update/:id", expressAsyncHandler(async (req, res) => {
         DOB: updateData.DOB,
         Blood_Group: updateData.Blood_Group,
         ABHA_Number: normalizedAbhaNumber,
-        Height: updateData.Height,
-        Weight: updateData.Weight,
+        ...normalizePatientMetrics(updateData),
         Phone_No: updateData.Phone_No,
         Address: updateData.Address,
         Medical_History: updateData.Medical_History

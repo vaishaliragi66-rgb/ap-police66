@@ -29,6 +29,7 @@ const EmployeeSchema = new Schema(
 
     Height: { type: String, default: "" },
     Weight: { type: String, default: "" },
+    BMI: { type: String, default: "" },
     Phone_No: { type: String, default: "" },
 
     Photo: { type: String, default: "" },

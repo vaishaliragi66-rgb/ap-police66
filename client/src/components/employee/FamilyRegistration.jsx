@@ -148,6 +148,16 @@ const FamilyMemberRegistration = () => {
       return;
     }
 
+    if (!formData.Height || Number(formData.Height) <= 0 || Number.isNaN(Number(formData.Height))) {
+      alert("Height is required and must be a positive number in cm.");
+      return;
+    }
+
+    if (!formData.Weight || Number(formData.Weight) <= 0 || Number.isNaN(Number(formData.Weight))) {
+      alert("Weight is required and must be a positive number in kg.");
+      return;
+    }
+
     setLoading(true);
     try {
       const data = new FormData();
@@ -428,22 +438,28 @@ const FamilyMemberRegistration = () => {
             <div className="col-md-6 mb-3">
               <label className="form-label fw-semibold">Height (cm)</label>
               <input
-                type="text"
+                type="number"
+                min="1"
+                step="0.1"
                 className="form-control"
                 name="Height"
                 value={formData.Height}
                 onChange={handleChange}
+                required
               />
             </div>
   
             <div className="col-md-6 mb-3">
               <label className="form-label fw-semibold">Weight (kg)</label>
               <input
-                type="text"
+                type="number"
+                min="1"
+                step="0.1"
                 className="form-control"
                 name="Weight"
                 value={formData.Weight}
                 onChange={handleChange}
+                required
               />
             </div>
           </div>

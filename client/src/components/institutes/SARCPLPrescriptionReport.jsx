@@ -44,7 +44,7 @@ const SARCPLPrescriptionReport = ({ reportData = {} }) => {
   const prescriptions = Array.isArray(reportData.prescriptions) ? reportData.prescriptions : [];
   const qrUrl = reportData.qrUrl || null;
 
-  const bmi = calculateBMI(vitals.height, vitals.weight);
+  const bmi = vitals.bmi || calculateBMI(vitals.height, vitals.weight);
 
   return (
     <div className="sarcpl-report-root">

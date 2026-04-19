@@ -31,6 +31,12 @@ const DoctorPrescriptionSchema = new Schema(
       default: null
     },
 
+    PatientMetrics: {
+      Height: { type: String, default: "" },
+      Weight: { type: String, default: "" },
+      BMI: { type: String, default: "" }
+    },
+
     Medicines: [
       {
         Medicine_Name: { type: String, required: true },

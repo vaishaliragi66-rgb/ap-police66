@@ -55,6 +55,12 @@ const FamilyMemberSchema = new Schema({
     trim: true 
   },
 
+  BMI: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+
   Phone_No: { 
     type: String,
     trim: true 

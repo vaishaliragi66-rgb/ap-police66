@@ -12,6 +12,10 @@ const DiagnosisRecord = require("../models/diagnostics_record");
 const XrayRecord = require("../models/XrayRecordSchema");
 const FamilyMember = require("../models/family_member");
 const MedicalAction = require("../models/medical_action");
+const {
+  normalizePatientMetrics,
+  validateRequiredPatientMetrics
+} = require("../utils/healthMetrics");
 
 const employeeApp = express.Router();
 
@@ -214,7 +218,7 @@ employeeApp.post(
       const data = req.body;
 
       // Validate required fields
-      const requiredFields = ["ABS_NO", "Name", "Email", "Password","Gender"];
+      const requiredFields = ["ABS_NO", "Name", "Email", "Password","Gender", "Height", "Weight"];
       const missingFields = requiredFields.filter(field => !data[field] || data[field].trim() === "");
       
       if (missingFields.length > 0) {
@@ -227,6 +231,16 @@ employeeApp.post(
         });
       }
 
+      const metricError = validateRequiredPatientMetrics(data);
+      if (metricError) {
+        if (req.file) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(400).json({ message: metricError });
+      }
+
+      const patientMetrics = normalizePatientMetrics(data);
+
       // Trim and prepare data
       const employeeData = {
         ABS_NO: data.ABS_NO.trim(),
@@ -237,8 +251,9 @@ employeeApp.post(
         DOB: data.DOB || null,
         Blood_Group: data.Blood_Group || "",
         ABHA_Number: normalizeAbhaNumber(data.ABHA_Number),
-        Height: data.Height ? data.Height.trim() : "",
-        Weight: data.Weight ? data.Weight.trim() : "",
+        Height: patientMetrics.Height,
+        Weight: patientMetrics.Weight,
+        BMI: patientMetrics.BMI,
         Phone_No: data.Phone_No ? data.Phone_No.trim() : "",
         Gender: data.Gender? data.Gender.trim() : "",
         Address: {
@@ -424,7 +439,7 @@ employeeApp.get("/all", async (req, res) => {
   try {
     const employees = await Employee.find({})
       .select(
-        'ABS_NO Name Email DOB Blood_Group Height Weight Phone_No Gender Photo'
+        'ABS_NO Name Email DOB Blood_Group Height Weight BMI Phone_No Gender Photo'
       )
       .sort({ createdAt: -1 });
 
@@ -561,6 +576,11 @@ employeeApp.put("/update-profile/:id", expressAsyncHandler(async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     const normalizedAbhaNumber = normalizeAbhaNumber(updateData.ABHA_Number);
+    const metricError = validateRequiredPatientMetrics(updateData);
+
+    if (metricError) {
+      return res.status(400).json({ message: metricError });
+    }
 
     if (!isValidAbhaNumber(normalizedAbhaNumber)) {
       return res.status(400).json({
@@ -585,8 +605,7 @@ employeeApp.put("/update-profile/:id", expressAsyncHandler(async (req, res) => {
         DOB: updateData.DOB,
         Blood_Group: updateData.Blood_Group,
         ABHA_Number: normalizedAbhaNumber,
-        Height: updateData.Height,
-        Weight: updateData.Weight,
+        ...normalizePatientMetrics(updateData),
         Phone_No: updateData.Phone_No,
         Gender: updateData.Gender,
         Address: updateData.Address

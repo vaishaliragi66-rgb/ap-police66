@@ -7,6 +7,11 @@ const PrescriptionSchema = new Schema({
   visit_id: { type: Schema.Types.ObjectId, ref: "DailyVisit", default: null },
   IsFamilyMember: { type: Boolean, default: false },
   FamilyMember: { type: Schema.Types.ObjectId, ref: "FamilyMember" },
+  PatientMetrics: {
+    Height: { type: String, default: "" },
+    Weight: { type: String, default: "" },
+    BMI: { type: String, default: "" }
+  },
   Medicines: [
     {
       Medicine_ID: { type: Schema.Types.ObjectId, ref: "Medicine", required: true },

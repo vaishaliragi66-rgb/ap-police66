@@ -51,6 +51,16 @@ const FamilyMemberProfile = () => {
   };
 
   const handleSave = () => {
+    if (!editData.Height || Number(editData.Height) <= 0 || Number.isNaN(Number(editData.Height))) {
+      alert("Height is required and must be a positive number in cm.");
+      return;
+    }
+
+    if (!editData.Weight || Number(editData.Weight) <= 0 || Number.isNaN(Number(editData.Weight))) {
+      alert("Weight is required and must be a positive number in kg.");
+      return;
+    }
+
     axios.put(`${BACKEND_URL}/family-api/update/${id}`, editData)
       .then((res) => {
         setMember(res.data.member);
@@ -258,6 +268,9 @@ const FamilyMemberProfile = () => {
               ) : (
                 `${member.Weight} kg`
               )}
+            </p>
+            <p>
+              <strong>BMI:</strong> {member.BMI || "-"}
             </p>
           </div>
         </div>

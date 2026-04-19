@@ -3,6 +3,12 @@ const router = express.Router();
 const DailyVisit = require("../models/daily_visit");
 const MedicalAction = require("../models/medical_action");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
+const Employee = require("../models/employee");
+const FamilyMember = require("../models/family_member");
+const {
+  normalizePatientMetrics,
+  validateRequiredPatientMetrics
+} = require("../utils/healthMetrics");
 // REGISTER VISIT
 
 const mongoose = require("mongoose");
@@ -24,6 +30,13 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
     if (!Institute_ID || !employee_id || !abs_no || !name) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    const metricError = validateRequiredPatientMetrics(Vitals);
+    if (metricError) {
+      return res.status(400).json({ error: metricError });
+    }
+
+    const patientMetrics = normalizePatientMetrics(Vitals);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -53,6 +66,12 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
       OP_No = lastOPVisit.OP_No + 1;
     }
 
+    if (IsFamilyMember) {
+      await FamilyMember.findByIdAndUpdate(FamilyMember, patientMetrics);
+    } else {
+      await Employee.findByIdAndUpdate(employee_id, patientMetrics);
+    }
+
     // Create visit
     const visit = await DailyVisit.create({
       Institute_ID:instituteObjectId,
@@ -69,7 +88,8 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
         Blood_Pressure: Vitals?.Blood_Pressure || null,
         Oxygen: Vitals?.Oxygen || null,
         Pulse: Vitals?.Pulse || null,
-        GRBS: Vitals?.GRBS || null
+        GRBS: Vitals?.GRBS || null,
+        ...patientMetrics
       },
       token_no,
       visit_date: today

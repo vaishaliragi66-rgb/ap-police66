@@ -11,6 +11,15 @@ const MedicalAction = require("../models/medical_action");
 const DailyVisit = require("../models/daily_visit");
 // 🔴 IMPORTANT: THIS IS NOW SUBSTORE STOCK
 const Medicine = require("../models/master_medicine");
+const { normalizePatientMetrics } = require("../utils/healthMetrics");
+
+const getPatientMetrics = async ({ employeeId, isFamilyMember, familyMemberId }) => {
+  const patient = isFamilyMember && familyMemberId
+    ? await FamilyMember.findById(familyMemberId).select("Height Weight BMI").lean()
+    : await Employee.findById(employeeId).select("Height Weight BMI").lean();
+
+  return normalizePatientMetrics(patient || {});
+};
 
 const parseDateInput = (value, endOfDay = false) => {
   if (!value) return null;
@@ -140,6 +149,7 @@ const buildDoctorPrescriptionRecord = (action, visitMap, employeeMap, familyMap)
           Vitals: visit.Vitals || {}
         }
       : null,
+    PatientMetrics: actionData.PatientMetrics || visit?.Vitals || {},
     Medicines: medicines,
     Notes: actionData.notes || action.remarks || "",
     Source: "DOCTOR_PRESCRIPTION"
@@ -246,7 +256,8 @@ const fetchCombinedPrescriptionHistory = async ({ employeeId, personId, fromDate
             symptoms: visit.symptoms || "",
             Vitals: visit.Vitals || {}
           }
-        : null
+        : null,
+      PatientMetrics: record.PatientMetrics || visit?.Vitals || {}
     };
   });
 
@@ -328,6 +339,11 @@ prescriptionApp.post("/add",verifyToken,
 
     const ledgerEntries = [];
     const prescriptionMedicines = [];
+    const patientMetrics = await getPatientMetrics({
+      employeeId: Employee_ID,
+      isFamilyMember: IsFamilyMember,
+      familyMemberId: FamilyMember_ID
+    });
 
     // ================================
     // PROCESS EACH MEDICINE
@@ -421,6 +437,7 @@ prescriptionApp.post("/add",verifyToken,
       visit_id: visit_id || null,
       IsFamilyMember: IsFamilyMember || false,
       FamilyMember: FamilyMember_ID || null,
+      PatientMetrics: patientMetrics,
       Medicines: prescriptionMedicines,
       Notes: Notes || "",
       Timestamp: new Date()
@@ -437,6 +454,7 @@ prescriptionApp.post("/add",verifyToken,
         Institute_ID,
         IsFamilyMember: IsFamilyMember || false,
         FamilyMember_ID: FamilyMember_ID || null,
+        PatientMetrics: patientMetrics,
         prescriptionId: prescriptionDoc._id,
         medicines: prescriptionMedicines.map((medicine) => ({
           Medicine_ID: medicine.Medicine_ID,

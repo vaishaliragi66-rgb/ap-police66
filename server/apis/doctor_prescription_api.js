@@ -5,6 +5,17 @@ const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const DoctorPrescription = require("../models/doctor_prescription");
 const MedicalAction = require("../models/medical_action");
 const ToBePrescribedMedicine = require("../models/to_be_prescribed_medicine");
+const Employee = require("../models/employee");
+const FamilyMember = require("../models/family_member");
+const { normalizePatientMetrics } = require("../utils/healthMetrics");
+
+const getPatientMetrics = async ({ employeeId, isFamilyMember, familyMemberId }) => {
+  const patient = isFamilyMember && familyMemberId
+    ? await FamilyMember.findById(familyMemberId).select("Height Weight BMI").lean()
+    : await Employee.findById(employeeId).select("Height Weight BMI").lean();
+
+  return normalizePatientMetrics(patient || {});
+};
 
 // =======================================================
 // ADD DOCTOR PRESCRIPTION (NO INVENTORY, NO LEDGER)
@@ -33,6 +44,11 @@ router.post("/add", async (req, res) => {
       ...med,
       Strength: (med?.Strength || "").trim() || undefined
     }));
+    const patientMetrics = await getPatientMetrics({
+      employeeId: Employee_ID,
+      isFamilyMember: IsFamilyMember,
+      familyMemberId: FamilyMember_ID
+    });
 
     // Split medicines into regular vs to-be-prescribed based on flags
     const regularMedicines = normalizedMedicines.filter(m => !(m.ToBePrescribed || m.toBePrescribed || m.IsToBePrescribed));
@@ -43,6 +59,7 @@ router.post("/add", async (req, res) => {
       Employee: Employee_ID,
       IsFamilyMember,
       FamilyMember: IsFamilyMember ? FamilyMember_ID : null,
+      PatientMetrics: patientMetrics,
       Medicines: normalizedMedicines,
       Notes
     });
@@ -56,6 +73,9 @@ router.post("/add", async (req, res) => {
         source: "DOCTOR",
         data: {
           doctor_prescription_id: prescription._id,
+          IsFamilyMember,
+          FamilyMember_ID: IsFamilyMember ? FamilyMember_ID : null,
+          PatientMetrics: patientMetrics,
           medicines: regularMedicines
         },
         remarks: Notes || ""

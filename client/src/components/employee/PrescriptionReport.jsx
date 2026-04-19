@@ -336,6 +336,7 @@ const PrescriptionReport = () => {
       : null;
     const patientProfile = prescription?.IsFamilyMember ? familyProfile : employeeProfile;
     const visitVitals = getPrescriptionVisitVitals(prescription);
+    const patientMetrics = prescription?.PatientMetrics || prescription?.VisitSummary?.Vitals || {};
 
     return {
       hospital: {
@@ -365,8 +366,9 @@ const PrescriptionReport = () => {
         pulse: visitVitals.pulse,
         temperature: visitVitals.temperature,
         spo2: visitVitals.spo2,
-        height: patientProfile?.Height || employeeProfile?.Height || "",
-        weight: patientProfile?.Weight || employeeProfile?.Weight || "",
+        height: patientMetrics.Height || patientProfile?.Height || employeeProfile?.Height || "",
+        weight: patientMetrics.Weight || patientProfile?.Weight || employeeProfile?.Weight || "",
+        bmi: patientMetrics.BMI || patientProfile?.BMI || employeeProfile?.BMI || "",
       },
       investigations: {
         tests: (prescription?.relatedTests || []).map((test) => test?.Test_Name || test?.Test_ID?.Test_Name || "").filter(Boolean),
