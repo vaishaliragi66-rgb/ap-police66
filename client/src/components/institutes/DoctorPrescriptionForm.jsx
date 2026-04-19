@@ -4,7 +4,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData_clean";
-import SARCPLPrescriptionReport from "./SARCPLPrescriptionReport";
 
 const DoctorPrescriptionForm = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
@@ -36,7 +35,6 @@ const DoctorPrescriptionForm = () => {
   const [inventoryMedicines, setInventoryMedicines] = useState([]);
   const [medicineStrengths, setMedicineStrengths] = useState({});
   const notesTextareaRef = React.useRef(null);
-  const [showSarcplPreview, setShowSarcplPreview] = useState(false);
 const [xrayMaster, setXrayMaster] = useState([]);
 const [xrayData, setXrayData] = useState({
   Xrays: [{ Xray_ID: "", Xray_Type: "" }]
@@ -595,6 +593,402 @@ const relevantDiseases = diseases.filter((d) => {
     }
   };
 
+  const getRecordFamilyId = (record) =>
+    record?.FamilyMember?._id ||
+    record?.FamilyMember_ID ||
+    record?.data?.FamilyMember_ID ||
+    record?.FamilyMember ||
+    null;
+
+  const matchesPersonScope = (record, familyId = null) => {
+    if (familyId) {
+      return Boolean(record?.IsFamilyMember) && String(getRecordFamilyId(record)) === String(familyId);
+    }
+    return !record?.IsFamilyMember;
+  };
+
+  const normalizeMedicineRow = (medicine = {}, source = "Doctor") => ({
+    ...medicine,
+    Medicine_Name: medicine?.Medicine_Name || medicine?.medicineName || "-",
+    Type: medicine?.Type || medicine?.Medicine_Type || medicine?.medicineType || "",
+    Medicine_Type: medicine?.Medicine_Type || medicine?.Type || medicine?.medicineType || "",
+    Dosage_Form: medicine?.Dosage_Form || medicine?.dosageForm || "",
+    FoodTiming: medicine?.FoodTiming || medicine?.foodTiming || "",
+    Strength: medicine?.Strength || "",
+    Morning: Boolean(medicine?.Morning),
+    Afternoon: Boolean(medicine?.Afternoon),
+    Night: Boolean(medicine?.Night),
+    Duration: medicine?.Duration || "",
+    Remarks: medicine?.Remarks || "",
+    Quantity: medicine?.Quantity || 0,
+    _source: source
+  });
+
+  const formatDateDMY = (value) => {
+    if (!value) return "-";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "-";
+    return parsed.toLocaleDateString("en-GB");
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "-";
+    return parsed.toLocaleString("en-GB");
+  };
+
+  const getPrescriptionTimestamp = (record) =>
+    record?.Timestamp || record?.created_at || record?.createdAt || null;
+
+  const getDiagnosisReportDate = (record) =>
+    record?.Tests?.[0]?.Timestamp || record?.Timestamp || record?.updatedAt || record?.createdAt || null;
+
+  const getXrayReportDate = (record) =>
+    record?.Xrays?.[0]?.Timestamp || record?.Timestamp || record?.updatedAt || record?.createdAt || null;
+
+  const getReportStatus = (resultValue) => {
+    if (resultValue === null || resultValue === undefined) return "pending";
+    return String(resultValue).trim() ? "result out" : "pending";
+  };
+
+  const buildVisitNotes = (visitSummary) => {
+    if (!visitSummary) return "";
+    if (typeof visitSummary === "string") return visitSummary;
+
+    const parts = [
+      visitSummary?.symptoms ? `Symptoms: ${visitSummary.symptoms}` : "",
+      visitSummary?.Notes ? `Notes: ${visitSummary.Notes}` : "",
+      visitSummary?.Vitals?.Blood_Pressure ? `BP: ${visitSummary.Vitals.Blood_Pressure}` : "",
+      visitSummary?.Vitals?.Temperature !== null && visitSummary?.Vitals?.Temperature !== undefined
+        ? `Temp: ${visitSummary.Vitals.Temperature}`
+        : ""
+    ].filter(Boolean);
+
+    return parts.join(" | ");
+  };
+
+  const isSameCalendarDay = (left, right) => {
+    if (!left || !right) return false;
+    const a = new Date(left);
+    const b = new Date(right);
+    if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return false;
+
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
+  };
+
+  const getPrescriptionReportForLabel = (record) => {
+    if (record?.IsFamilyMember) {
+      const name = record?.FamilyMember?.Name || record?.patientLabel || "Family Member";
+      const relation = record?.FamilyMember?.Relationship || record?.relationship || "";
+      return relation ? `${name} (${relation})` : name;
+    }
+    return record?.Employee?.Name || selectedEmployee?.Name || "Self";
+  };
+
+  const getPrescriptionMedicines = (record) => {
+    const source = record?.Source === "DOCTOR_PRESCRIPTION" ? "Doctor" : "Pharmacy";
+    const rows = Array.isArray(record?.mergedMedicines)
+      ? record.mergedMedicines
+      : Array.isArray(record?.Medicines)
+        ? record.Medicines
+        : [];
+
+    return rows.map((medicine) => normalizeMedicineRow(medicine, medicine?._source || source));
+  };
+
+  const isTestResultOut = (result) =>
+    Boolean(result && String(result?.Result_Value || "").trim());
+
+  const isXrayResultOut = (result) =>
+    Boolean(
+      result &&
+      (
+        String(result?.Findings || "").trim() ||
+        String(result?.Impression || "").trim() ||
+        String(result?.Remarks || "").trim() ||
+        (Array.isArray(result?.Reports) && result.Reports.length > 0)
+      )
+    );
+
+  const formatDoseCell = (value) => (value ? "Yes" : "-");
+
+  const getEnrichedPrescriptionHistory = (
+    actions = [],
+    prescriptions = [],
+    diagnosisRecords = [],
+    xrayRecords = [],
+    familyId = null
+  ) => {
+    const safeActions = Array.isArray(actions) ? actions : [];
+    const safePrescriptions = Array.isArray(prescriptions) ? prescriptions : [];
+    const safeDiagnosis = (Array.isArray(diagnosisRecords) ? diagnosisRecords : []).filter((record) =>
+      matchesPersonScope(record, familyId)
+    );
+    const safeXrays = (Array.isArray(xrayRecords) ? xrayRecords : []).filter((record) =>
+      matchesPersonScope(record, familyId)
+    );
+
+    const scopedPrescriptions = safePrescriptions.filter((record) =>
+      matchesPersonScope(record, familyId)
+    );
+
+    const doctorPrescriptionActions = safeActions.filter(
+      (action) => action?.action_type === "DOCTOR_PRESCRIPTION"
+    );
+    const diagnosisActions = safeActions.filter(
+      (action) => action?.action_type === "DOCTOR_DIAGNOSIS" && matchesPersonScope(action?.data || {}, familyId)
+    );
+    const xrayActions = safeActions.filter(
+      (action) => action?.action_type === "DOCTOR_XRAY" && matchesPersonScope(action?.data || {}, familyId)
+    );
+
+    const findDoctorPrescriptionAction = (record) => {
+      const recordActionId = String(record?._id || "");
+      const recordVisitId = String(record?.visit_id || "");
+
+      return doctorPrescriptionActions.find((action) => {
+        if (recordActionId && String(action?._id || "") === recordActionId) return true;
+        if (recordVisitId && String(action?.visit_id || "") === recordVisitId) return true;
+        return false;
+      }) || null;
+    };
+
+    const findRelatedAction = (actionList, record) => {
+      const recordVisitId = String(record?.visit_id || "");
+      if (recordVisitId) {
+        const visitMatch = actionList.find((action) => String(action?.visit_id || "") === recordVisitId);
+        if (visitMatch) return visitMatch;
+      }
+
+      const recordTimestamp = getPrescriptionTimestamp(record);
+      return actionList.find((action) =>
+        isSameCalendarDay(action?.created_at || action?.createdAt, recordTimestamp)
+      ) || null;
+    };
+
+    const matchDiagnosisResult = (requestedTest, record) => {
+      const requestedId = String(requestedTest?.Test_ID?._id || requestedTest?.Test_ID || "");
+      const requestedName = String(
+        requestedTest?.Test_Name || requestedTest?.Test_ID?.Test_Name || ""
+      ).trim().toLowerCase();
+      const recordVisitId = String(record?.visit_id || "");
+
+      const matchingRecord = safeDiagnosis.find((diagnosisRecord) => {
+        const diagnosisVisitId = String(diagnosisRecord?.Visit?._id || diagnosisRecord?.Visit || "");
+        if (recordVisitId && diagnosisVisitId) {
+          return diagnosisVisitId === recordVisitId;
+        }
+        return isSameCalendarDay(getDiagnosisReportDate(diagnosisRecord), getPrescriptionTimestamp(record));
+      });
+
+      if (!matchingRecord) return null;
+
+      const matchedTest = (matchingRecord?.Tests || []).find((test) => {
+        const testId = String(test?.Test_ID?._id || test?.Test_ID || "");
+        const testName = String(test?.Test_Name || test?.Test_ID?.Test_Name || "").trim().toLowerCase();
+        if (requestedId && testId) return requestedId === testId;
+        return requestedName && requestedName === testName;
+      });
+
+      if (!matchedTest) return null;
+
+      return {
+        ...matchedTest,
+        record: matchingRecord
+      };
+    };
+
+    const matchXrayResult = (requestedXray, record) => {
+      const requestedId = String(requestedXray?.Xray_ID?._id || requestedXray?.Xray_ID || "");
+      const requestedType = String(requestedXray?.Xray_Type || "").trim().toLowerCase();
+
+      const matchingRecord = safeXrays.find((xrayRecord) =>
+        isSameCalendarDay(getXrayReportDate(xrayRecord), getPrescriptionTimestamp(record))
+      );
+
+      if (!matchingRecord) return null;
+
+      const matchedXray = (matchingRecord?.Xrays || []).find((xray) => {
+        const xrayId = String(xray?.Xray_ID?._id || xray?.Xray_ID || "");
+        const xrayType = String(xray?.Xray_Type || "").trim().toLowerCase();
+        if (requestedId && xrayId) return requestedId === xrayId;
+        return requestedType && requestedType === xrayType;
+      });
+
+      if (!matchedXray) return null;
+
+      return {
+        ...matchedXray,
+        record: matchingRecord
+      };
+    };
+
+    return scopedPrescriptions
+      .map((record) => {
+        const doctorAction = findDoctorPrescriptionAction(record);
+        const diagnosisAction = findRelatedAction(diagnosisActions, record);
+        const xrayAction = findRelatedAction(xrayActions, record);
+
+        const doctorMedicines = (doctorAction?.data?.medicines || []).map((medicine) =>
+          normalizeMedicineRow(medicine, "Doctor")
+        );
+        const issuedMedicines = (record?.Medicines || []).map((medicine) =>
+          normalizeMedicineRow(medicine, "Pharmacy")
+        );
+
+        const mergedMedicines = doctorMedicines.length > 0
+          ? doctorMedicines.map((doctorMedicine) => {
+              const pharmacyMatch = issuedMedicines.find((issuedMedicine) => {
+                const leftName = String(issuedMedicine?.Medicine_Name || "").trim().toLowerCase();
+                const rightName = String(doctorMedicine?.Medicine_Name || "").trim().toLowerCase();
+                const leftStrength = String(issuedMedicine?.Strength || "").trim().toLowerCase();
+                const rightStrength = String(doctorMedicine?.Strength || "").trim().toLowerCase();
+
+                return leftName === rightName && (!leftStrength || !rightStrength || leftStrength === rightStrength);
+              });
+
+              return {
+                ...doctorMedicine,
+                Quantity: pharmacyMatch?.Quantity || doctorMedicine?.Quantity || 0,
+                _source: pharmacyMatch ? "Pharmacy" : "Doctor"
+              };
+            })
+          : issuedMedicines;
+
+        const relatedTests = (diagnosisAction?.data?.tests || []).map((test) => ({
+          ...test,
+          matchedResult: matchDiagnosisResult(test, record)
+        }));
+
+        const relatedXrays = (xrayAction?.data?.xrays || []).map((xray) => ({
+          ...xray,
+          matchedResult: matchXrayResult(xray, record)
+        }));
+
+        return {
+          ...record,
+          visit_id: record?.visit_id || doctorAction?.visit_id || null,
+          mergedMedicines,
+          doctorNotes: doctorAction?.remarks || record?.doctorNotes || (record?.Source === "DOCTOR_PRESCRIPTION" ? record?.Notes : ""),
+          pharmacyNotes: record?.Source === "DOCTOR_PRESCRIPTION"
+            ? []
+            : (record?.Notes ? [record.Notes] : []),
+          relatedTests,
+          relatedXrays,
+          instituteDisplayName:
+            record?.Institute?.Institute_Name ||
+            doctorAction?.Institute?.Institute_Name ||
+            instituteName ||
+            ""
+        };
+      })
+      .sort((left, right) => new Date(getPrescriptionTimestamp(right) || 0) - new Date(getPrescriptionTimestamp(left) || 0));
+  };
+
+  const loadEmployeeReports = async () => {
+    if (!selectedEmployee?._id) {
+      alert("Please select an employee first");
+      return;
+    }
+
+    const isFamily = Boolean(selectedVisit?.IsFamilyMember);
+    const familyId = selectedVisit?.FamilyMember?._id || null;
+
+    try {
+      const [reportRes, prescriptionRes, actionsRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/employee-api/health-report-detailed`, {
+          params: {
+            employeeId: selectedEmployee._id,
+            isFamily,
+            familyMemberId: familyId || undefined
+          }
+        }),
+        axios.get(`${BACKEND_URL}/prescription-api/employee/${selectedEmployee._id}`, {
+          params: {
+            personId: familyId || "self"
+          }
+        }),
+        axios.get(`${BACKEND_URL}/api/medical-actions/employee/${selectedEmployee._id}`).catch(() => ({ data: [] }))
+      ]);
+
+      const payload = reportRes?.data || {};
+      const diagnosisRows = Array.isArray(payload?.diagnosisRecords) ? payload.diagnosisRecords : [];
+      const xrayRows = Array.isArray(payload?.xrayRecords) ? payload.xrayRecords : [];
+
+      setEmployeeReport({
+        ...payload,
+        diseases: Array.isArray(payload?.diseases) ? payload.diseases : [],
+        diagnosisRecords: diagnosisRows,
+        xrayRecords: xrayRows,
+        previousPrescriptions: getEnrichedPrescriptionHistory(
+          actionsRes?.data || [],
+          prescriptionRes?.data || [],
+          diagnosisRows,
+          xrayRows,
+          familyId
+        )
+      });
+      setShowReports(true);
+    } catch (err) {
+      console.error("Employee reports fetch error:", err);
+      alert("Unable to fetch employee reports");
+    }
+  };
+
+  const renderPrescriptionHistoryCard = (prescription, key) => {
+    const medicines = getPrescriptionMedicines(prescription).slice(0, 3);
+    const remainingCount = Math.max(getPrescriptionMedicines(prescription).length - medicines.length, 0);
+
+    return (
+      <div key={key} className="border rounded p-3 bg-light mb-3">
+        <div className="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div className="fw-semibold">{getPrescriptionReportForLabel(prescription)}</div>
+            <div className="small text-muted">{formatDateTime(getPrescriptionTimestamp(prescription))}</div>
+          </div>
+          <span className={`badge ${prescription?.Source === "DOCTOR_PRESCRIPTION" ? "bg-secondary" : "bg-info text-dark"}`}>
+            {prescription?.Source === "DOCTOR_PRESCRIPTION" ? "Doctor" : "Pharmacy"}
+          </span>
+        </div>
+
+        <div className="small mt-2">
+          {medicines.length > 0 ? (
+            medicines.map((medicine, index) => (
+              <div key={`${medicine?.Medicine_Name || "medicine"}-${index}`}>
+                {medicine?.Medicine_Name}
+                {medicine?.Strength ? ` (${medicine.Strength})` : ""}
+              </div>
+            ))
+          ) : (
+            <span className="text-muted">No medicines recorded</span>
+          )}
+          {remainingCount > 0 && (
+            <div className="text-muted">+{remainingCount} more</div>
+          )}
+        </div>
+
+        <div className="d-flex justify-content-between align-items-center mt-3">
+          <small className="text-muted">
+            Tests: {prescription?.relatedTests?.length || 0} | X-rays: {prescription?.relatedXrays?.length || 0}
+          </small>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-dark"
+            onClick={() => {
+              setSelectedPrescriptionReport(prescription);
+            }}
+          >
+            View
+          </button>
+        </div>
+      </div>
+    );
+  };
 
 
 
@@ -1037,92 +1431,23 @@ if (validXrays.length === 0) {
           )}
 
           {selectedPrescriptionReport && (
-            <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", zIndex: 2050 }}>
-              <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060 }}>
-                <div className="modal-content">
-                  <div className="modal-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", zIndex: 2050 }}>
+          <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style={{ zIndex: 2060 }}>
+            <div className="modal-content">
+              <div className="modal-header bg-dark text-white d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
                       <h5 className="modal-title mb-0">Prescription Report</h5>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-light"
-                        onClick={() => setShowSarcplPreview((s) => !s)}
-                      >
-                        {showSarcplPreview ? "Back to Details" : "Preview SARCPL"}
-                      </button>
                     </div>
 
                     <button
                       type="button"
                       className="btn-close btn-close-white"
-                      onClick={() => { setSelectedPrescriptionReport(null); setShowSarcplPreview(false); }}
+                      onClick={() => { setSelectedPrescriptionReport(null); }}
                     />
                   </div>
 
                   <div className="modal-body">
-                    {showSarcplPreview ? (
-                      (() => {
-                        // Build reportData from selectedPrescriptionReport and current context
-                        const buildReportData = (prescription) => {
-                          const hospital = {
-                            name: prescription?.instituteDisplayName || instituteName || (localStorage.getItem("instituteName") || "SARCPL"),
-                            address: "",
-                            contact: "",
-                            email: "",
-                            logo: ""
-                          };
-
-                          const patient = {
-                            name: getPrescriptionReportForLabel(prescription),
-                            age: selectedEmployee?.age || employeeProfile?.Age || "",
-                            gender: selectedEmployee?.Gender || employeeProfile?.Gender || "",
-                            absNo: selectedEmployee?.ABS_NO || employeeProfile?.ABS_NO || "",
-                            mrn: selectedEmployee?._id || employeeProfile?._id || "",
-                            bloodGroup: employeeProfile?.Blood_Group || ""
-                          };
-
-                          const encounter = {
-                            doctor: (prescription?.doctor || prescription?.created_by || ""),
-                            department: prescription?.department || "",
-                            date: getPrescriptionTimestamp(prescription),
-                            visitType: prescription?.visit_type || prescription?.visitType || "",
-                            prescriptionId: prescription?.visit_id || prescription?._id || prescription?.created_at || ""
-                          };
-
-                          const vitals = (selectedVisit?.Vitals || formData?.Vitals || {});
-
-                          const investigations = {
-                            tests: (prescription?.relatedTests || []).map(t => t?.Test_Name || t?.Test_ID?.Test_Name || ""),
-                            xrays: (prescription?.relatedXrays || []).map(x => x?.Xray_Type || x?.Xray_ID || ""),
-                            notes: ""
-                          };
-
-                          const diagnosis = {
-                            primary: prescription?.doctorNotes || prescription?.data?.notes || "",
-                            icd: prescription?.icd || "",
-                            notes: prescription?.doctorNotes || prescription?.data?.notes || ""
-                          };
-
-                          const prescriptionsArr = (getPrescriptionMedicines(prescription) || []).map(m => ({
-                            name: m?.Medicine_Name || "",
-                            dosage: m?.Strength || m?.dosage || "",
-                            frequency: [m?.Morning ? "Morning" : null, m?.Afternoon ? "Afternoon" : null, m?.Night ? "Night" : null].filter(Boolean).join("/") || (m?.Frequency || m?.Type || ""),
-                            duration: m?.Duration || "",
-                            instructions: m?.Remarks || m?.FoodTiming || ""
-                          }));
-
-                          return { hospital, patient, encounter, vitals, investigations, diagnosis, prescriptions: prescriptionsArr };
-                        };
-
-                        const reportData = buildReportData(selectedPrescriptionReport);
-                        return (
-                          <div style={{ minHeight: '60vh' }}>
-                            <SARCPLPrescriptionReport reportData={reportData} />
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      (() => {
+                    {(() => {
                         const medicines = getPrescriptionMedicines(selectedPrescriptionReport);
                         const tests = selectedPrescriptionReport?.relatedTests || [];
                         const xrays = selectedPrescriptionReport?.relatedXrays || [];
@@ -1334,8 +1659,7 @@ if (validXrays.length === 0) {
                             </div>
                           </>
                         );
-                      })()
-                    )}
+                      })()}
                   </div>
 
                   <div className="modal-footer">
@@ -1609,7 +1933,6 @@ if (validXrays.length === 0) {
                       <div><strong>BP:</strong> {formData.Vitals?.Blood_Pressure || "—"}</div>
                       <div><strong>Pulse:</strong> {formData.Vitals?.Pulse || "—"}</div>
                       <div><strong>Oxygen:</strong> {formData.Vitals?.Oxygen || "—"}</div>
-                      <div><strong>Sugar:</strong> {formData.Vitals?.Sugar || "—"}</div>
                       <div><strong>GRBS:</strong> {formData.Vitals?.GRBS || "—"}</div>
                     </div>
                   </div>

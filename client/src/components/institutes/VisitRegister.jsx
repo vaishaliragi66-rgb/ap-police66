@@ -27,7 +27,6 @@ const VisitRegister = () => {
 
   const [vitals, setVitals] = useState({
     Temperature: "",
-    Sugar: "",
     Blood_Pressure: "",
     Oxygen: "",
     Pulse: "",
@@ -145,7 +144,6 @@ const VisitRegister = () => {
       setSymptoms("");
       setVitals({
         Temperature: "",
-        Sugar: "",
         Blood_Pressure: "",
         Oxygen: "",
         Pulse: "",
@@ -375,19 +373,6 @@ const VisitRegister = () => {
           }
         />
       </div>
-{/* 
-      <div className="col-md-6 mb-2">
-        <label>Sugar</label>
-        <input
-          type="number"
-          className="form-control"
-          value={vitals.Sugar}
-          onChange={(e) =>
-            setVitals({ ...vitals, Sugar: e.target.value })
-          }
-        />
-      </div> */}
-
       <div className="col-md-6 mb-2">
         <label>GRBS</label>
         <input

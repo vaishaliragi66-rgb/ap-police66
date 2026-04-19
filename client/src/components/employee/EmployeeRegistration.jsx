@@ -91,9 +91,9 @@ const EmployeeRegister = () => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!validTypes.includes(file.type)) {
-        setError("Please select a valid image file (JPEG, PNG, GIF)");
+        setError("Please select a valid image file (JPEG, PNG, WebP)");
         return;
       }
 
@@ -112,6 +112,15 @@ const EmployeeRegister = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveProfilePic = () => {
+    setProfilePic(null);
+    setProfilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (error) setError("");
   };
 
   const triggerFileInput = () => {
@@ -249,6 +258,9 @@ if (validationErrors.length > 0) {
       });
       setProfilePic(null);
       setProfilePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
 
       // Navigate after 2 seconds
       setTimeout(() => {
@@ -358,57 +370,105 @@ if (validationErrors.length > 0) {
           Personal Details</h5>
               
               {/* Profile Picture Upload */}
-             <div className="mb-4 text-center">
-  {/* Profile Circle */}
+             <div className="d-flex flex-column align-items-center mb-4">
   <div
-    className="rounded-circle mx-auto d-flex align-items-center justify-content-center"
+    onClick={triggerFileInput}
     style={{
-      width: "120px",
-      height: "120px",
-      border: "2px dashed #D6E0F0",
-      backgroundColor: profilePreview ? "#FFFFFF" : "#F8FAFC",
+      width: "110px",
+      height: "110px",
+      borderRadius: "50%",
+      border: "2px dashed #4A70A9",
+      backgroundColor: "#EAF2FF",
       cursor: "pointer",
       overflow: "hidden",
-      transition: "border-color 0.2s ease",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
     }}
-    onClick={triggerFileInput}
   >
     {profilePreview ? (
       <img
         src={profilePreview}
-        alt="Profile Preview"
-        className="w-100 h-100 object-fit-cover"
+        alt="Preview"
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
       />
     ) : (
-      <FaUser size={38} style={{ color: "#9AA4B2" }} />
+      <div className="text-center" style={{ color: "#4A70A9" }}>
+        <FaUser size={32} style={{ marginBottom: "4px" }} />
+        <div style={{ fontSize: "11px", fontWeight: 500 }}>Add Photo</div>
+      </div>
     )}
+
+    <div
+      style={{
+        position: "absolute",
+        bottom: "6px",
+        right: "6px",
+        width: "26px",
+        height: "26px",
+        borderRadius: "50%",
+        backgroundColor: "#4A70A9",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+      }}
+    >
+      <FaCamera size={12} color="#fff" />
+    </div>
   </div>
 
-  {/* Hint text */}
-  <p
-    style={{
-      marginTop: "8px",
-      fontSize: "12px",
-      color: "#6B7280",
-    }}
-  >
-    Click to upload profile photo
-  </p>
-
-  {/* Hidden input */}
   <input
     type="file"
     ref={fileInputRef}
     onChange={handleProfilePicChange}
-    accept="image/*"
+    accept="image/jpeg,image/jpg,image/png,image/webp"
     className="d-none"
   />
 
-  {/* Action button */}
- 
+  <div className="mt-2 d-flex gap-2 align-items-center">
+    <button
+      type="button"
+      onClick={triggerFileInput}
+      className="btn btn-sm"
+      style={{
+        backgroundColor: "#EAF2FF",
+        color: "#4A70A9",
+        border: "1px solid #4A70A9",
+        borderRadius: "999px",
+        fontSize: "12px",
+        padding: "3px 14px",
+      }}
+    >
+      {profilePreview ? "Change Photo" : "Upload Photo"}
+    </button>
+
+    {profilePreview && (
+      <button
+        type="button"
+        onClick={handleRemoveProfilePic}
+        className="btn btn-sm"
+        style={{
+          backgroundColor: "#FEE2E2",
+          color: "#DC2626",
+          border: "1px solid #FCA5A5",
+          borderRadius: "999px",
+          fontSize: "12px",
+          padding: "3px 14px",
+        }}
+      >
+        Remove
+      </button>
+    )}
+  </div>
+
+  <p style={{ fontSize: "11px", color: "#94A3B8", marginTop: "4px" }}>
+    JPEG, PNG or WebP · Max 5 MB · Optional
+  </p>
 
   {profilePic && (
-    <p className="text-muted small mt-1">
+    <p className="text-muted small mt-1 mb-0">
       {profilePic.name}
     </p>
   )}

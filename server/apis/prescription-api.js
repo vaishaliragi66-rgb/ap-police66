@@ -128,10 +128,18 @@ const buildDoctorPrescriptionRecord = (action, visitMap, employeeMap, familyMap)
   return {
     _id: action._id,
     Timestamp: action.created_at || action.createdAt || new Date(),
+    visit_id: action.visit_id || null,
     IsFamilyMember: Boolean(isFamilyMember),
     FamilyMember: familyMember,
     Employee: employee,
     Institute: visit?.Institute_ID || null,
+    VisitSummary: visit
+      ? {
+          _id: visit._id,
+          symptoms: visit.symptoms || "",
+          Vitals: visit.Vitals || {}
+        }
+      : null,
     Medicines: medicines,
     Notes: actionData.notes || action.remarks || "",
     Source: "DOCTOR_PRESCRIPTION"
@@ -194,6 +202,9 @@ const fetchCombinedPrescriptionHistory = async ({ employeeId, personId, fromDate
 
   const visitIds = relevantActions
     .map((action) => action.visit_id)
+    .concat(
+      prescriptions.map((row) => row.visit_id)
+    )
     .filter((id) => mongoose.Types.ObjectId.isValid(id))
     .map((id) => new mongoose.Types.ObjectId(id));
 
@@ -224,7 +235,22 @@ const fetchCombinedPrescriptionHistory = async ({ employeeId, personId, fromDate
     return !issuedVisitIds.has(String(sourceVisitId));
   });
 
-  const combined = [...prescriptions, ...dedupedActionRecords].filter((record) => matchesPersonFilter(record, personId));
+  const hydratedPrescriptions = prescriptions.map((record) => {
+    const visit = record?.visit_id ? visitMap.get(String(record.visit_id)) || null : null;
+
+    return {
+      ...record,
+      VisitSummary: visit
+        ? {
+            _id: visit._id,
+            symptoms: visit.symptoms || "",
+            Vitals: visit.Vitals || {}
+          }
+        : null
+    };
+  });
+
+  const combined = [...hydratedPrescriptions, ...dedupedActionRecords].filter((record) => matchesPersonFilter(record, personId));
 
   return groupPrescriptionRows(combined);
 };
