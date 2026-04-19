@@ -18,6 +18,7 @@ const EmployeeRegister = () => {
     Designation: "",
     DOB: "",
     Blood_Group: "",
+    ABHA_Number: "",
     Height: "",
     Weight: "",
     Phone_No: "",
@@ -159,6 +160,10 @@ const validateForm = () => {
     errors.push("Enter valid 10-digit Indian phone number");
   }
 
+  if (formData.ABHA_Number && !/^\d{14}$/.test(formData.ABHA_Number)) {
+    errors.push("ABHA number must be exactly 14 digits");
+  }
+
   if (formData.Address.Pincode && !/^\d{6}$/.test(formData.Address.Pincode)) {
     errors.push("Pincode must be 6 digits");
   }
@@ -212,6 +217,7 @@ if (validationErrors.length > 0) {
       // Send DOB as ISO string to ensure backend Date casting succeeds
       formPayload.append("DOB", formData.DOB ? new Date(formData.DOB).toISOString() : "");
       formPayload.append("Blood_Group", formData.Blood_Group || "");
+      formPayload.append("ABHA_Number", formData.ABHA_Number || "");
       formPayload.append("Height", formData.Height || "");
       formPayload.append("Weight", formData.Weight || "");
       formPayload.append("Phone_No", formData.Phone_No || "");
@@ -246,6 +252,7 @@ if (validationErrors.length > 0) {
         Designation: "",
         DOB: "",
         Blood_Group: "",
+        ABHA_Number: "",
         Height: "",
         Weight: "",
         Phone_No: "",
@@ -664,7 +671,28 @@ if (validationErrors.length > 0) {
                     ))}
                   </select>
                 </div>
-                
+
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-semibold">ABHA Number</label>
+                  <input
+                    type="text"
+                    name="ABHA_Number"
+                    className="form-control"
+                    placeholder="14-digit ABHA number"
+                    value={formData.ABHA_Number}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 14);
+                      setFormData((prev) => ({ ...prev, ABHA_Number: value }));
+                      if (error) setError("");
+                    }}
+                    disabled={loading}
+                    maxLength="14"
+                  />
+                  <small className="text-muted">Optional</small>
+                </div>
+              </div>
+
+              <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">Phone Number</label>
                   <input
@@ -677,9 +705,6 @@ if (validationErrors.length > 0) {
                     disabled={loading}
                   />
                 </div>
-              </div>
-
-              <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">Height (cm)</label>
                   <input
@@ -692,6 +717,9 @@ if (validationErrors.length > 0) {
                     disabled={loading}
                   />
                 </div>
+              </div>
+
+              <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">Weight (kg)</label>
                   <input

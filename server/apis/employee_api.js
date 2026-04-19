@@ -89,6 +89,36 @@ const absCardUploadSingle = (req, res, next) => {
   });
 };
 
+const normalizeAbhaNumber = (value) => String(value || "").trim();
+const isValidAbhaNumber = (value) => !value || /^\d{14}$/.test(value);
+
+const findExistingAbhaOwner = async (abhaNumber, { excludeEmployeeId, excludeFamilyId } = {}) => {
+  const normalized = normalizeAbhaNumber(abhaNumber);
+  if (!normalized) return null;
+
+  const employeeQuery = { ABHA_Number: normalized };
+  if (excludeEmployeeId) {
+    employeeQuery._id = { $ne: excludeEmployeeId };
+  }
+
+  const existingEmployee = await Employee.findOne(employeeQuery).select("_id Name");
+  if (existingEmployee) {
+    return `employee ${existingEmployee.Name || ""}`.trim();
+  }
+
+  const familyQuery = { ABHA_Number: normalized };
+  if (excludeFamilyId) {
+    familyQuery._id = { $ne: excludeFamilyId };
+  }
+
+  const existingFamily = await FamilyMember.findOne(familyQuery).select("_id Name Relationship");
+  if (existingFamily) {
+    return `family member ${existingFamily.Name || ""}`.trim();
+  }
+
+  return null;
+};
+
 /* ================= REGISTER ================= */
 employeeApp.get(
   "/health-report-detailed",
@@ -206,6 +236,7 @@ employeeApp.post(
         Designation: data.Designation ? data.Designation.trim() : "",
         DOB: data.DOB || null,
         Blood_Group: data.Blood_Group || "",
+        ABHA_Number: normalizeAbhaNumber(data.ABHA_Number),
         Height: data.Height ? data.Height.trim() : "",
         Weight: data.Weight ? data.Weight.trim() : "",
         Phone_No: data.Phone_No ? data.Phone_No.trim() : "",
@@ -217,6 +248,13 @@ employeeApp.post(
           Pincode: data.Pincode ? data.Pincode.trim() : ""
         }
       };
+
+      if (!isValidAbhaNumber(employeeData.ABHA_Number)) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(400).json({
+          message: "ABHA number must be exactly 14 digits"
+        });
+      }
 
       // Handle profile photo
       if (req.file) {
@@ -239,6 +277,14 @@ employeeApp.post(
         if (req.file) fs.unlinkSync(req.file.path);
         return res.status(409).json({ 
           message: "Employee already registered with this ABS Number" 
+        });
+      }
+
+      const existingAbhaOwner = await findExistingAbhaOwner(employeeData.ABHA_Number);
+      if (existingAbhaOwner) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(409).json({
+          message: `ABHA number already exists for ${existingAbhaOwner}`
         });
       }
 
@@ -514,6 +560,20 @@ employeeApp.put("/update-profile/:id", expressAsyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
+    const normalizedAbhaNumber = normalizeAbhaNumber(updateData.ABHA_Number);
+
+    if (!isValidAbhaNumber(normalizedAbhaNumber)) {
+      return res.status(400).json({
+        message: "ABHA number must be exactly 14 digits"
+      });
+    }
+
+    const existingAbhaOwner = await findExistingAbhaOwner(normalizedAbhaNumber, { excludeEmployeeId: id });
+    if (existingAbhaOwner) {
+      return res.status(409).json({
+        message: `ABHA number already exists for ${existingAbhaOwner}`
+      });
+    }
 
     // Find and update the employee
     const updatedEmployee = await Employee.findByIdAndUpdate(
@@ -524,6 +584,7 @@ employeeApp.put("/update-profile/:id", expressAsyncHandler(async (req, res) => {
         Designation: updateData.Designation,
         DOB: updateData.DOB,
         Blood_Group: updateData.Blood_Group,
+        ABHA_Number: normalizedAbhaNumber,
         Height: updateData.Height,
         Weight: updateData.Weight,
         Phone_No: updateData.Phone_No,

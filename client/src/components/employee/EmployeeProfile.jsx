@@ -68,7 +68,7 @@ const EmployeeProfile = () => {
         alert("Profile updated successfully");
       })
       .catch((err) => {
-        alert("Failed to update profile");
+        alert(err.response?.data?.message || "Failed to update profile");
         console.error(err);
       });
   };
@@ -399,6 +399,28 @@ const EmployeeProfile = () => {
         )}
       </p>
 
+      <p className="mb-0 mt-2">
+        <strong>ABHA Number:</strong>{" "}
+        {isEditing ? (
+          <input
+            type="text"
+            className="form-control d-inline-block"
+            style={{ width: "auto", fontSize: "14px" }}
+            value={editData.ABHA_Number || ""}
+            onChange={(e) =>
+              setEditData({
+                ...editData,
+                ABHA_Number: e.target.value.replace(/\D/g, "").slice(0, 14)
+              })
+            }
+            maxLength="14"
+            placeholder="14-digit ABHA number"
+          />
+        ) : (
+          <span style={{ color: "#6B7280" }}>{employee.ABHA_Number || "-"}</span>
+        )}
+      </p>
+
       <div className="mt-3">
         <strong>ABS Card:</strong>{" "}
         {absCardUrl ? (
@@ -631,6 +653,10 @@ const EmployeeProfile = () => {
 
           <p style={{ marginBottom: "4px", fontSize: "14px" }}>
             <strong>Blood:</strong> {f.Blood_Group}
+          </p>
+
+          <p style={{ marginBottom: "4px", fontSize: "14px" }}>
+            <strong>ABHA:</strong> {f.ABHA_Number || "-"}
           </p>
 
           <p style={{ fontSize: "13px", color: "#6B7280", marginBottom: 0 }}>

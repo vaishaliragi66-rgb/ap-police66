@@ -35,6 +35,36 @@ const upload = multer({
   },
 });
 
+const normalizeAbhaNumber = (value) => String(value || "").trim();
+const isValidAbhaNumber = (value) => !value || /^\d{14}$/.test(value);
+
+const findExistingAbhaOwner = async (abhaNumber, { excludeEmployeeId, excludeFamilyId } = {}) => {
+  const normalized = normalizeAbhaNumber(abhaNumber);
+  if (!normalized) return null;
+
+  const employeeQuery = { ABHA_Number: normalized };
+  if (excludeEmployeeId) {
+    employeeQuery._id = { $ne: excludeEmployeeId };
+  }
+
+  const existingEmployee = await Employee.findOne(employeeQuery).select("_id Name");
+  if (existingEmployee) {
+    return `employee ${existingEmployee.Name || ""}`.trim();
+  }
+
+  const familyQuery = { ABHA_Number: normalized };
+  if (excludeFamilyId) {
+    familyQuery._id = { $ne: excludeFamilyId };
+  }
+
+  const existingFamily = await FamilyMember.findOne(familyQuery).select("_id Name Relationship");
+  if (existingFamily) {
+    return `family member ${existingFamily.Name || ""}`.trim();
+  }
+
+  return null;
+};
+
 // Register Family Member
 FamilyApp.post(
   "/register",
@@ -46,6 +76,7 @@ FamilyApp.post(
       Relationship,
       DOB,
       Blood_Group,
+      ABHA_Number,
       Height,
       Weight,
       Phone_No,
@@ -68,6 +99,22 @@ FamilyApp.post(
       return res.status(404).json({ message: "Employee not found" });
     }
 
+    const normalizedAbhaNumber = normalizeAbhaNumber(ABHA_Number);
+    if (!isValidAbhaNumber(normalizedAbhaNumber)) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        message: "ABHA number must be exactly 14 digits"
+      });
+    }
+
+    const existingAbhaOwner = await findExistingAbhaOwner(normalizedAbhaNumber);
+    if (existingAbhaOwner) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(409).json({
+        message: `ABHA number already exists for ${existingAbhaOwner}`
+      });
+    }
+
     // Parse Address if sent as JSON string (FormData)
     let parsedAddress = Address;
     if (typeof Address === "string") {
@@ -81,6 +128,7 @@ FamilyApp.post(
       Relationship,
       DOB,
       Blood_Group,
+      ABHA_Number: normalizedAbhaNumber,
       Height,
       Weight,
       Phone_No,
@@ -142,6 +190,20 @@ FamilyApp.put("/update/:id", expressAsyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
+    const normalizedAbhaNumber = normalizeAbhaNumber(updateData.ABHA_Number);
+
+    if (!isValidAbhaNumber(normalizedAbhaNumber)) {
+      return res.status(400).json({
+        message: "ABHA number must be exactly 14 digits"
+      });
+    }
+
+    const existingAbhaOwner = await findExistingAbhaOwner(normalizedAbhaNumber, { excludeFamilyId: id });
+    if (existingAbhaOwner) {
+      return res.status(409).json({
+        message: `ABHA number already exists for ${existingAbhaOwner}`
+      });
+    }
 
     const updatedMember = await FamilyMember.findByIdAndUpdate(
       id,
@@ -151,6 +213,7 @@ FamilyApp.put("/update/:id", expressAsyncHandler(async (req, res) => {
         Relationship: updateData.Relationship,
         DOB: updateData.DOB,
         Blood_Group: updateData.Blood_Group,
+        ABHA_Number: normalizedAbhaNumber,
         Height: updateData.Height,
         Weight: updateData.Weight,
         Phone_No: updateData.Phone_No,

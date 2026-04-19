@@ -16,6 +16,15 @@ const EmployeeSchema = new Schema(
       enum: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", ""],
       default: ""
     },
+    ABHA_Number: {
+      type: String,
+      trim: true,
+      default: "",
+      validate: {
+        validator: (value) => !value || /^\d{14}$/.test(value),
+        message: "ABHA number must be exactly 14 digits"
+      }
+    },
     
 
     Height: { type: String, default: "" },

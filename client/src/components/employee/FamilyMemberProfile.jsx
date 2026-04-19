@@ -58,7 +58,7 @@ const FamilyMemberProfile = () => {
         alert("Family member updated successfully");
       })
       .catch((err) => {
-        alert("Failed to update family member");
+        alert(err.response?.data?.message || "Failed to update family member");
         console.error(err);
       });
   };
@@ -196,6 +196,22 @@ const FamilyMemberProfile = () => {
                 </select>
               ) : (
                 member.Blood_Group
+              )}
+            </p>
+            <p>
+              <strong>ABHA Number:</strong>{" "}
+              {isEditing ? (
+                <input
+                  type="text"
+                  className="form-control d-inline-block"
+                  style={{ width: "auto", fontSize: "14px" }}
+                  value={editData.ABHA_Number || ""}
+                  onChange={(e) => setEditData({ ...editData, ABHA_Number: e.target.value.replace(/\D/g, "").slice(0, 14) })}
+                  maxLength="14"
+                  placeholder="14-digit ABHA number"
+                />
+              ) : (
+                member.ABHA_Number || "-"
               )}
             </p>
           </div>

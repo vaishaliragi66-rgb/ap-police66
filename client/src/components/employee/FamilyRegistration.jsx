@@ -14,6 +14,7 @@ const FamilyMemberRegistration = () => {
     Relationship: "",
     DOB: "",
     Blood_Group: "",
+    ABHA_Number: "",
     Height: "",
     Weight: "",
     Phone_No: "",
@@ -107,6 +108,7 @@ const FamilyMemberRegistration = () => {
       data.append("Relationship", formData.Relationship);
       data.append("DOB", formData.DOB);
       data.append("Blood_Group", formData.Blood_Group);
+      data.append("ABHA_Number", formData.ABHA_Number);
       data.append("Height", formData.Height);
       data.append("Weight", formData.Weight);
       data.append("Phone_No", formData.Phone_No);
@@ -127,6 +129,7 @@ const FamilyMemberRegistration = () => {
         Relationship: "",
         DOB: "",
         Blood_Group: "",
+        ABHA_Number: "",
         Height: "",
         Weight: "",
         Phone_No: "",
@@ -352,6 +355,23 @@ const FamilyMemberRegistration = () => {
                 <option key={bg} value={bg}>{bg}</option>
               ))}
             </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label fw-semibold">ABHA Number</label>
+            <input
+              type="text"
+              className="form-control"
+              name="ABHA_Number"
+              placeholder="14-digit ABHA number"
+              value={formData.ABHA_Number}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  ABHA_Number: e.target.value.replace(/\D/g, "").slice(0, 14)
+                }))
+              }
+            />
           </div>
   
           {/* Height & Weight */}
