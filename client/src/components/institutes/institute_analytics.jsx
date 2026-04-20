@@ -737,6 +737,28 @@ export default function InstituteAnalytics() {
   const [ageMax, setAgeMax] = useState("");
   const [showEmployeeFilters, setShowEmployeeFilters] = useState(true);
   const [showMedicineFilters, setShowMedicineFilters] = useState(false);
+  const [showStockFilters, setShowStockFilters] = useState(false);
+  const [showConsumptionFilters, setShowConsumptionFilters] = useState(false);
+  const [showTransferFilters, setShowTransferFilters] = useState(false);
+  const [showReceiptFilters, setShowReceiptFilters] = useState(false);
+  const initialMedFilter = {
+    classification: "",
+    type: "",
+    medicineName: "",
+    mfgDate: "",
+    batchNumber: "",
+    expDate: "",
+    receivedFrom: "",
+    quantity: "",
+    manufacturer: "",
+    fromDate: "",
+    toDate: ""
+  };
+
+  const [stockFilters, setStockFilters] = useState({ ...initialMedFilter });
+  const [consumptionFilters, setConsumptionFilters] = useState({ ...initialMedFilter });
+  const [transferFilters, setTransferFilters] = useState({ ...initialMedFilter });
+  const [receiptFilters, setReceiptFilters] = useState({ ...initialMedFilter });
 const [currentPage, setCurrentPage] = useState(1);
 const rowsPerPage = 10;
 
@@ -912,6 +934,43 @@ const indexOfLast = currentPage * rowsPerPage;
 const indexOfFirst = indexOfLast - rowsPerPage;
 
 const currentRows = filteredRows.slice(indexOfFirst, indexOfLast);
+
+  // Responsive table scaling: scale table down to fit container width when needed
+  const tableWrapperRef = useRef(null);
+  const tableScaleRef = useRef(null);
+  const [tableScale, setTableScale] = useState(1);
+
+  useEffect(() => {
+    const updateScale = () => {
+      const wrapper = tableWrapperRef.current;
+      const content = tableScaleRef.current;
+      if (!wrapper || !content) return;
+      const tableEl = content.querySelector('table');
+      const wrapperWidth = wrapper.clientWidth || wrapper.offsetWidth || 0;
+      const tableWidth = tableEl ? tableEl.scrollWidth : content.scrollWidth;
+      if (!tableWidth || wrapperWidth <= 0) {
+        setTableScale(1);
+        wrapper.style.height = 'auto';
+        return;
+      }
+      const newScale = Math.min(1, wrapperWidth / tableWidth);
+      setTableScale(prev => (Math.abs(prev - newScale) < 1e-6 ? prev : newScale));
+      const tableHeight = tableEl ? tableEl.offsetHeight : content.offsetHeight;
+      wrapper.style.height = `${Math.ceil((tableHeight || 0) * newScale)}px`;
+    };
+
+    updateScale();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScale) : null;
+    if (ro) {
+      if (tableWrapperRef.current) ro.observe(tableWrapperRef.current);
+      if (tableScaleRef.current) ro.observe(tableScaleRef.current);
+    }
+    window.addEventListener('resize', updateScale);
+    return () => {
+      window.removeEventListener('resize', updateScale);
+      if (ro) ro.disconnect();
+    };
+  }, [filteredRows.length, rows.length, currentPage, showEmployeeFilters, showMedicineFilters, showStockFilters, showConsumptionFilters, showTransferFilters, showReceiptFilters]);
 
 const insights = useMemo(() => buildAnalyticsInsights(filteredRows), [filteredRows]);
   const smartCharts = useMemo(
@@ -1176,8 +1235,273 @@ const hasSmartCharts = smartCharts.length > 0;
             </button>
             <div className="mt-3" id="medicineFilters" style={{ display: showMedicineFilters ? 'block' : 'none' }}>
               <div className="row g-3">
-                {/* Add medicine filters here later */}
-                <div className="text-muted">No medicine filters yet.</div>
+                {/* Stock On Hand */}
+                <div className="col-12">
+                  <div className="d-flex justify-content-between align-items-center border-start border-4 border-primary bg-light p-2 rounded mb-2">
+                    <div className="fw-semibold">Stock On Hand</div>
+                    <button className="btn btn-sm btn-outline-primary" onClick={() => setShowStockFilters(prev => !prev)} aria-expanded={showStockFilters}>
+                      {showStockFilters ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                </div>
+                <div className="col-12" style={{ display: showStockFilters ? 'block' : 'none' }}>
+                  <div className="row g-3">
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Classification</label>
+                      <input className="form-control" value={stockFilters.classification} onChange={e => setStockFilters(s => ({ ...s, classification: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Type</label>
+                      <input className="form-control" value={stockFilters.type} onChange={e => setStockFilters(s => ({ ...s, type: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Medicine Name</label>
+                      <select className="form-select" value={stockFilters.medicineName} onChange={e => setStockFilters(s => ({ ...s, medicineName: e.target.value }))}>
+                        <option value="">All Medicines</option>
+                        {uniqueMedicines.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Mfg. Date</label>
+                      <input type="date" className="form-control" value={stockFilters.mfgDate} onChange={e => setStockFilters(s => ({ ...s, mfgDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Batch Number</label>
+                      <input className="form-control" value={stockFilters.batchNumber} onChange={e => setStockFilters(s => ({ ...s, batchNumber: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Exp. Date</label>
+                      <input type="date" className="form-control" value={stockFilters.expDate} onChange={e => setStockFilters(s => ({ ...s, expDate: e.target.value }))} />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Received From</label>
+                      <input className="form-control" value={stockFilters.receivedFrom} onChange={e => setStockFilters(s => ({ ...s, receivedFrom: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Quantity</label>
+                      <input type="number" className="form-control" value={stockFilters.quantity} onChange={e => setStockFilters(s => ({ ...s, quantity: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Manufacturer</label>
+                      <input className="form-control" value={stockFilters.manufacturer} onChange={e => setStockFilters(s => ({ ...s, manufacturer: e.target.value }))} />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">From Date</label>
+                      <input type="date" className="form-control" value={stockFilters.fromDate} onChange={e => setStockFilters(s => ({ ...s, fromDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">To Date</label>
+                      <input type="date" className="form-control" value={stockFilters.toDate} onChange={e => setStockFilters(s => ({ ...s, toDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4 d-flex align-items-end">
+                      <button className="btn btn-outline-secondary btn-sm" onClick={() => setStockFilters({ ...initialMedFilter })}>All</button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Consumption */}
+                <div className="col-12 mt-3">
+                  <div className="d-flex justify-content-between align-items-center border-start border-4 border-primary bg-light p-2 rounded mb-2">
+                    <div className="fw-semibold">Medicine Consumption</div>
+                    <button className="btn btn-sm btn-outline-primary" onClick={() => setShowConsumptionFilters(prev => !prev)} aria-expanded={showConsumptionFilters}>
+                      {showConsumptionFilters ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                </div>
+                <div className="col-12" style={{ display: showConsumptionFilters ? 'block' : 'none' }}>
+                  <div className="row g-3">
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Classification</label>
+                      <input className="form-control" value={consumptionFilters.classification} onChange={e => setConsumptionFilters(s => ({ ...s, classification: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Type</label>
+                      <input className="form-control" value={consumptionFilters.type} onChange={e => setConsumptionFilters(s => ({ ...s, type: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Medicine Name</label>
+                      <select className="form-select" value={consumptionFilters.medicineName} onChange={e => setConsumptionFilters(s => ({ ...s, medicineName: e.target.value }))}>
+                        <option value="">All Medicines</option>
+                        {uniqueMedicines.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Mfg. Date</label>
+                      <input type="date" className="form-control" value={consumptionFilters.mfgDate} onChange={e => setConsumptionFilters(s => ({ ...s, mfgDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Batch Number</label>
+                      <input className="form-control" value={consumptionFilters.batchNumber} onChange={e => setConsumptionFilters(s => ({ ...s, batchNumber: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Exp. Date</label>
+                      <input type="date" className="form-control" value={consumptionFilters.expDate} onChange={e => setConsumptionFilters(s => ({ ...s, expDate: e.target.value }))} />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Received From</label>
+                      <input className="form-control" value={consumptionFilters.receivedFrom} onChange={e => setConsumptionFilters(s => ({ ...s, receivedFrom: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Quantity</label>
+                      <input type="number" className="form-control" value={consumptionFilters.quantity} onChange={e => setConsumptionFilters(s => ({ ...s, quantity: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Manufacturer</label>
+                      <input className="form-control" value={consumptionFilters.manufacturer} onChange={e => setConsumptionFilters(s => ({ ...s, manufacturer: e.target.value }))} />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">From Date</label>
+                      <input type="date" className="form-control" value={consumptionFilters.fromDate} onChange={e => setConsumptionFilters(s => ({ ...s, fromDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">To Date</label>
+                      <input type="date" className="form-control" value={consumptionFilters.toDate} onChange={e => setConsumptionFilters(s => ({ ...s, toDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4 d-flex align-items-end">
+                      <button className="btn btn-outline-secondary btn-sm" onClick={() => setConsumptionFilters({ ...initialMedFilter })}>All</button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transfers */}
+                <div className="col-12 mt-3">
+                  <div className="d-flex justify-content-between align-items-center border-start border-4 border-primary bg-light p-2 rounded mb-2">
+                    <div className="fw-semibold">Medicine Transfers</div>
+                    <button className="btn btn-sm btn-outline-primary" onClick={() => setShowTransferFilters(prev => !prev)} aria-expanded={showTransferFilters}>
+                      {showTransferFilters ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                </div>
+                <div className="col-12" style={{ display: showTransferFilters ? 'block' : 'none' }}>
+                  <div className="row g-3">
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Classification</label>
+                      <input className="form-control" value={transferFilters.classification} onChange={e => setTransferFilters(s => ({ ...s, classification: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Type</label>
+                      <input className="form-control" value={transferFilters.type} onChange={e => setTransferFilters(s => ({ ...s, type: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Medicine Name</label>
+                      <select className="form-select" value={transferFilters.medicineName} onChange={e => setTransferFilters(s => ({ ...s, medicineName: e.target.value }))}>
+                        <option value="">All Medicines</option>
+                        {uniqueMedicines.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Mfg. Date</label>
+                      <input type="date" className="form-control" value={transferFilters.mfgDate} onChange={e => setTransferFilters(s => ({ ...s, mfgDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Batch Number</label>
+                      <input className="form-control" value={transferFilters.batchNumber} onChange={e => setTransferFilters(s => ({ ...s, batchNumber: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Exp. Date</label>
+                      <input type="date" className="form-control" value={transferFilters.expDate} onChange={e => setTransferFilters(s => ({ ...s, expDate: e.target.value }))} />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Received From</label>
+                      <input className="form-control" value={transferFilters.receivedFrom} onChange={e => setTransferFilters(s => ({ ...s, receivedFrom: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Quantity</label>
+                      <input type="number" className="form-control" value={transferFilters.quantity} onChange={e => setTransferFilters(s => ({ ...s, quantity: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Manufacturer</label>
+                      <input className="form-control" value={transferFilters.manufacturer} onChange={e => setTransferFilters(s => ({ ...s, manufacturer: e.target.value }))} />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">From Date</label>
+                      <input type="date" className="form-control" value={transferFilters.fromDate} onChange={e => setTransferFilters(s => ({ ...s, fromDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">To Date</label>
+                      <input type="date" className="form-control" value={transferFilters.toDate} onChange={e => setTransferFilters(s => ({ ...s, toDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4 d-flex align-items-end">
+                      <button className="btn btn-outline-secondary btn-sm" onClick={() => setTransferFilters({ ...initialMedFilter })}>All</button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Receipts */}
+                <div className="col-12 mt-3">
+                  <div className="d-flex justify-content-between align-items-center border-start border-4 border-primary bg-light p-2 rounded mb-2">
+                    <div className="fw-semibold">Medicine Receipts</div>
+                    <button className="btn btn-sm btn-outline-primary" onClick={() => setShowReceiptFilters(prev => !prev)} aria-expanded={showReceiptFilters}>
+                      {showReceiptFilters ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                </div>
+                <div className="col-12" style={{ display: showReceiptFilters ? 'block' : 'none' }}>
+                  <div className="row g-3">
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Classification</label>
+                      <input className="form-control" value={receiptFilters.classification} onChange={e => setReceiptFilters(s => ({ ...s, classification: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Type</label>
+                      <input className="form-control" value={receiptFilters.type} onChange={e => setReceiptFilters(s => ({ ...s, type: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Medicine Name</label>
+                      <select className="form-select" value={receiptFilters.medicineName} onChange={e => setReceiptFilters(s => ({ ...s, medicineName: e.target.value }))}>
+                        <option value="">All Medicines</option>
+                        {uniqueMedicines.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Mfg. Date</label>
+                      <input type="date" className="form-control" value={receiptFilters.mfgDate} onChange={e => setReceiptFilters(s => ({ ...s, mfgDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Batch Number</label>
+                      <input className="form-control" value={receiptFilters.batchNumber} onChange={e => setReceiptFilters(s => ({ ...s, batchNumber: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Exp. Date</label>
+                      <input type="date" className="form-control" value={receiptFilters.expDate} onChange={e => setReceiptFilters(s => ({ ...s, expDate: e.target.value }))} />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Received From</label>
+                      <input className="form-control" value={receiptFilters.receivedFrom} onChange={e => setReceiptFilters(s => ({ ...s, receivedFrom: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Quantity</label>
+                      <input type="number" className="form-control" value={receiptFilters.quantity} onChange={e => setReceiptFilters(s => ({ ...s, quantity: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Manufacturer</label>
+                      <input className="form-control" value={receiptFilters.manufacturer} onChange={e => setReceiptFilters(s => ({ ...s, manufacturer: e.target.value }))} />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">From Date</label>
+                      <input type="date" className="form-control" value={receiptFilters.fromDate} onChange={e => setReceiptFilters(s => ({ ...s, fromDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">To Date</label>
+                      <input type="date" className="form-control" value={receiptFilters.toDate} onChange={e => setReceiptFilters(s => ({ ...s, toDate: e.target.value }))} />
+                    </div>
+                    <div className="col-md-4 d-flex align-items-end">
+                      <button className="btn btn-outline-secondary btn-sm" onClick={() => setReceiptFilters({ ...initialMedFilter })}>All</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1220,8 +1544,10 @@ const hasSmartCharts = smartCharts.length > 0;
       {/* =============================== TABLE ================================*/}
       <div className="card shadow-sm">
         <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover table-striped mb-0">
+          <div className="table-wrapper px-2">
+            <div ref={tableWrapperRef} style={{ width: '100%', overflow: 'hidden' }}>
+              <div ref={tableScaleRef} style={{ transform: `scale(${tableScale})`, transformOrigin: 'top left', width: tableScale === 1 ? '100%' : `${100 / tableScale}%` }}>
+                <table className="table table-hover table-striped mb-0 analytic-table">
               <thead className="table-dark">
                 <tr>
                   <th>Designation</th>
@@ -1253,22 +1579,22 @@ const hasSmartCharts = smartCharts.length > 0;
                 {currentRows.map((r, i) => (
 
                   <tr key={i}>
-                    <td>
+                    <td data-label="Designation">
                       <span className="badge bg-primary">
                         {r.Designation || "—"}
                       </span>
                     </td>
-                    <td>{r.ABS_NO || "—"}</td>
-                    <td className="fw-semibold">{r.Name}</td>
-                    <td>{r.Gender || "—"}</td>
-                    <td>{r.District || "—"}</td>
-                    <td>{r.State || "—"}</td>
-                    <td>{r.Age ?? "—"}</td>
-                    <td>{r.Blood_Group || "—"}</td>
-                    <td>{r.Phone_No || "—"}</td>
-                    <td>{r.Height || "—"}</td>
-                    <td>{r.Weight || "—"}</td>
-                    <td>
+                    <td data-label="ABS Number">{r.ABS_NO || "—"}</td>
+                    <td className="fw-semibold" data-label="Name">{r.Name}</td>
+                    <td data-label="Gender">{r.Gender || "—"}</td>
+                    <td data-label="District">{r.District || "—"}</td>
+                    <td data-label="State">{r.State || "—"}</td>
+                    <td data-label="Age">{r.Age ?? "—"}</td>
+                    <td data-label="Blood Group">{r.Blood_Group || "—"}</td>
+                    <td data-label="Phone Number">{r.Phone_No || "—"}</td>
+                    <td data-label="Height">{r.Height || "—"}</td>
+                    <td data-label="Weight">{r.Weight || "—"}</td>
+                    <td data-label="Diseases">
                       {([...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])]).length ? (
                         <div className="d-flex flex-column gap-1">
                           {([...(r.Communicable_Diseases || []), ...(r.NonCommunicable_Diseases || [])]).map((disease, idx) => (
@@ -1281,7 +1607,7 @@ const hasSmartCharts = smartCharts.length > 0;
                         "—"
                       )}
                     </td>
-                    <td>
+                    <td data-label="Tests">
                       {r.Tests?.length ? (
                         <div className="d-flex flex-column gap-1">
                           {r.Tests.map((t, idx) => {
@@ -1301,7 +1627,7 @@ const hasSmartCharts = smartCharts.length > 0;
                         "—"
                       )}
                     </td>
-                    <td>
+                    <td data-label="Medicines">
                       {r.Medicines?.length ? (
                         <div className="d-flex flex-column gap-1">
                           {r.Medicines.map((m, idx) => (
@@ -1314,12 +1640,12 @@ const hasSmartCharts = smartCharts.length > 0;
                         "—"
                       )}
                     </td>
-                    <td>
+                    <td data-label="First Visit">
                       {r.First_Visit_Date
                         ? new Date(r.First_Visit_Date).toLocaleDateString("en-GB")
                         : "—"}
                     </td>
-                    <td>
+                    <td data-label="Last Visit">
                       {r.Last_Visit_Date
                         ? new Date(r.Last_Visit_Date).toLocaleDateString("en-GB")
                         : "—"}
@@ -1327,8 +1653,8 @@ const hasSmartCharts = smartCharts.length > 0;
                   </tr>
                 ))}
               </tbody>
-            </table>
-            <div className="d-flex justify-content-center align-items-center gap-2 py-3">
+                </table>
+                <div className="d-flex justify-content-center align-items-center gap-2 py-3">
   <button
     className="btn btn-outline-dark btn-sm"
     disabled={currentPage === 1}
@@ -1358,6 +1684,8 @@ const hasSmartCharts = smartCharts.length > 0;
   </button>
 </div>
 
+              </div>
+            </div>
           </div>
         </div>
       </div>
