@@ -735,6 +735,8 @@ export default function InstituteAnalytics() {
   const [abnormalOnly, setAbnormalOnly] = useState(false);
   const [ageMin, setAgeMin] = useState("");
   const [ageMax, setAgeMax] = useState("");
+  const [showEmployeeFilters, setShowEmployeeFilters] = useState(true);
+  const [showMedicineFilters, setShowMedicineFilters] = useState(false);
 const [currentPage, setCurrentPage] = useState(1);
 const rowsPerPage = 10;
 
@@ -977,192 +979,208 @@ const hasSmartCharts = smartCharts.length > 0;
       <div className="card shadow-sm mb-4">
         <div className="card-body">
           <h5 className="card-title mb-3">Filters</h5>
-          <div className="row g-3">
-            {/* Designation Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">Designation</label>
-              <select 
-                className="form-select" 
-                value={designationFilter} 
-                onChange={(e) => setDesignationFilter(e.target.value)}
-              >
-                <option value="">All Designations</option>
-                {(designationOptions.length ? designationOptions : DEFAULT_DESIGNATIONS).map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
+          {/* Employee Dropdown */}
+          <div className="mb-2">
+            <button
+              className="btn btn-outline-primary"
+              type="button"
+              onClick={() => setShowEmployeeFilters(prev => !prev)}
+              aria-expanded={showEmployeeFilters}
+              aria-controls="employeeFilters"
+            >
+              Employee Filters
+            </button>
+            <div className="mt-3" id="employeeFilters" style={{ display: showEmployeeFilters ? 'block' : 'none' }}>
+              <div className="row g-3">
+                {/* Designation Filter */}
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold">Designation</label>
+                  <select 
+                    className="form-select" 
+                    value={designationFilter} 
+                    onChange={(e) => setDesignationFilter(e.target.value)}
+                  >
+                    <option value="">All Designations</option>
+                    {(designationOptions.length ? designationOptions : DEFAULT_DESIGNATIONS).map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Gender Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">Gender</label>
-              <select 
-                className="form-select" 
-                value={genderFilter} 
-                onChange={(e) => setGenderFilter(e.target.value)}
-              >
-                <option value="">All Genders</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
+                {/* Gender Filter */}
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold">Gender</label>
+                  <select 
+                    className="form-select" 
+                    value={genderFilter} 
+                    onChange={(e) => setGenderFilter(e.target.value)}
+                  >
+                    <option value="">All Genders</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
 
-            {/* Blood Group Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">Blood Group</label>
-              <select 
-                className="form-select" 
-                value={bloodGroupFilter} 
-                onChange={(e) => setBloodGroupFilter(e.target.value)}
-              >
-                <option value="">All Blood Groups</option>
-                {(bloodGroupOptions.length ? bloodGroupOptions : DEFAULT_BLOOD_GROUPS).map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
+                {/* Blood Group Filter */}
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold">Blood Group</label>
+                  <select 
+                    className="form-select" 
+                    value={bloodGroupFilter} 
+                    onChange={(e) => setBloodGroupFilter(e.target.value)}
+                  >
+                    <option value="">All Blood Groups</option>
+                    {(bloodGroupOptions.length ? bloodGroupOptions : DEFAULT_BLOOD_GROUPS).map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Name Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">Name</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by name"
-                value={nameFilter}
-                onChange={(e) => setNameFilter(e.target.value)}
-              />
-            </div>
+                {/* Name Filter */}
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold">Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search by name"
+                    value={nameFilter}
+                    onChange={(e) => setNameFilter(e.target.value)}
+                  />
+                </div>
 
-            {/* District Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">District</label>
-              <select
-                className="form-select"
-                value={districtFilter}
-                onChange={(e) => setDistrictFilter(e.target.value)}
-              >
-                <option value="">All Districts</option>
-                {districtOptions.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
+                {/* District Filter */}
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold">District</label>
+                  <select
+                    className="form-select"
+                    value={districtFilter}
+                    onChange={(e) => setDistrictFilter(e.target.value)}
+                  >
+                    <option value="">All Districts</option>
+                    {districtOptions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* State Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">State</label>
-              <select
-                className="form-select"
-                value={stateFilter}
-                onChange={(e) => setStateFilter(e.target.value)}
-              >
-                <option value="">All States</option>
-                {stateOptions.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
+                {/* State Filter */}
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold">State</label>
+                  <select
+                    className="form-select"
+                    value={stateFilter}
+                    onChange={(e) => setStateFilter(e.target.value)}
+                  >
+                    <option value="">All States</option>
+                    {stateOptions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* ABS Number Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">ABS Number</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by ABS number"
-                value={absFilter}
-                onChange={(e) => setAbsFilter(e.target.value)}
-              />
-            </div>
+                {/* ABS Number Filter */}
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold">ABS Number</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search by ABS number"
+                    value={absFilter}
+                    onChange={(e) => setAbsFilter(e.target.value)}
+                  />
+                </div>
 
-            {/* Disease Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">Disease</label>
-              <select
-                className="form-select"
-                value={diseaseFilter}
-                onChange={(e) => setDiseaseFilter(e.target.value)}
-              >
-                <option value="">All Diseases</option>
-                {uniqueDiseases.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
+                {/* Disease Filter */}
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold">Disease</label>
+                  <select
+                    className="form-select"
+                    value={diseaseFilter}
+                    onChange={(e) => setDiseaseFilter(e.target.value)}
+                  >
+                    <option value="">All Diseases</option>
+                    {uniqueDiseases.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Medicine Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">Medicine</label>
-              <select
-                className="form-select"
-                value={medicineFilter}
-                onChange={(e) => setMedicineFilter(e.target.value)}
-              >
-                <option value="">All Medicines</option>
-                {uniqueMedicines.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
+                {/* Test Filter */}
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold">Test</label>
+                  <select
+                    className="form-select"
+                    value={testFilter}
+                    onChange={(e) => setTestFilter(e.target.value)}
+                  >
+                    <option value="">All Tests</option>
+                    {uniqueTests.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Test Filter */}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">Test</label>
-              <select
-                className="form-select"
-                value={testFilter}
-                onChange={(e) => setTestFilter(e.target.value)}
-              >
-                <option value="">All Tests</option>
-                {uniqueTests.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
+                {/* Age Min */}
+                <div className="col-md-2">
+                  <label className="form-label fw-semibold">Age Min</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="Min"
+                    value={ageMin}
+                    onChange={(e) => setAgeMin(e.target.value)}
+                  />
+                </div>
 
-            {/* Age Min */}
-            <div className="col-md-2">
-              <label className="form-label fw-semibold">Age Min</label>
-              <input
-                type="number"
-                className="form-control"
-                placeholder="Min"
-                value={ageMin}
-                onChange={(e) => setAgeMin(e.target.value)}
-              />
-            </div>
+                {/* Age Max */}
+                <div className="col-md-2">
+                  <label className="form-label fw-semibold">Age Max</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="Max"
+                    value={ageMax}
+                    onChange={(e) => setAgeMax(e.target.value)}
+                  />
+                </div>
 
-            {/* Age Max */}
-            <div className="col-md-2">
-              <label className="form-label fw-semibold">Age Max</label>
-              <input
-                type="number"
-                className="form-control"
-                placeholder="Max"
-                value={ageMax}
-                onChange={(e) => setAgeMax(e.target.value)}
-              />
-            </div>
-
-            {/* Abnormal Tests Checkbox */}
-            <div className="col-md-8 d-flex align-items-end">
-              <div className="form-check">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="abnormalCheckbox"
-                  checked={abnormalOnly}
-                  onChange={(e) => setAbnormalOnly(e.target.checked)}
-                />
-                <label className="form-check-label" htmlFor="abnormalCheckbox">
-                  Show only patients with abnormal test results
-                </label>
+                {/* Abnormal Tests Checkbox */}
+                <div className="col-md-8 d-flex align-items-end">
+                  <div className="form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="abnormalCheckbox"
+                      checked={abnormalOnly}
+                      onChange={(e) => setAbnormalOnly(e.target.checked)}
+                    />
+                    <label className="form-check-label" htmlFor="abnormalCheckbox">
+                      Show only patients with abnormal test results
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
+          {/* Medicines Dropdown (empty for now) */}
+          <div className="mb-2">
+            <button
+              className="btn btn-outline-secondary"
+              type="button"
+              onClick={() => setShowMedicineFilters(prev => !prev)}
+              aria-expanded={showMedicineFilters}
+              aria-controls="medicineFilters"
+            >
+              Medicines Filters
+            </button>
+            <div className="mt-3" id="medicineFilters" style={{ display: showMedicineFilters ? 'block' : 'none' }}>
+              <div className="row g-3">
+                {/* Add medicine filters here later */}
+                <div className="text-muted">No medicine filters yet.</div>
+              </div>
+            </div>
+          </div>
           {/* Export Buttons */}
           <div className="mt-3 d-flex gap-2">
             <button 
