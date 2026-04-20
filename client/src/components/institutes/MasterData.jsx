@@ -157,6 +157,25 @@ const MasterData = () => {
       .filter((item) => FIXED_CATEGORIES.includes(item.category_name))
       .sort((a, b) => FIXED_CATEGORIES.indexOf(a.category_name) - FIXED_CATEGORIES.indexOf(b.category_name));
 
+    // Dedupe categories by name (case-insensitive). If duplicates exist,
+    // prefer a persisted record (24-char ObjectId) over any non-persisted default.
+    const deduped = new Map();
+    data.forEach((item) => {
+      const key = String(item?.category_name || "").trim().toLowerCase();
+      if (!key) return;
+      if (!deduped.has(key)) {
+        deduped.set(key, item);
+        return;
+      }
+      const prev = deduped.get(key);
+      const prevIsPersisted = /^[a-f\d]{24}$/i.test(String(prev?._id || ""));
+      const curIsPersisted = /^[a-f\d]{24}$/i.test(String(item?._id || ""));
+      if (!prevIsPersisted && curIsPersisted) {
+        deduped.set(key, item);
+      }
+    });
+    data = Array.from(deduped.values()).sort((a, b) => FIXED_CATEGORIES.indexOf(a.category_name) - FIXED_CATEGORIES.indexOf(b.category_name));
+
     if (isInstituteAdmin) {
       const existingNames = new Set(data.map((item) => item.category_name));
       const missingCategories = FIXED_CATEGORIES.filter((categoryName) => !existingNames.has(categoryName));
@@ -181,6 +200,24 @@ const MasterData = () => {
           data = (Array.isArray(refreshed.data) ? refreshed.data : [])
             .filter((item) => FIXED_CATEGORIES.includes(item.category_name))
             .sort((a, b) => FIXED_CATEGORIES.indexOf(a.category_name) - FIXED_CATEGORIES.indexOf(b.category_name));
+
+          // Dedupe after refresh as well
+          const dedupedRef = new Map();
+          data.forEach((item) => {
+            const key = String(item?.category_name || "").trim().toLowerCase();
+            if (!key) return;
+            if (!dedupedRef.has(key)) {
+              dedupedRef.set(key, item);
+              return;
+            }
+            const prev = dedupedRef.get(key);
+            const prevIsPersisted = /^[a-f\d]{24}$/i.test(String(prev?._id || ""));
+            const curIsPersisted = /^[a-f\d]{24}$/i.test(String(item?._id || ""));
+            if (!prevIsPersisted && curIsPersisted) {
+              dedupedRef.set(key, item);
+            }
+          });
+          data = Array.from(dedupedRef.values()).sort((a, b) => FIXED_CATEGORIES.indexOf(a.category_name) - FIXED_CATEGORIES.indexOf(b.category_name));
         }
       }
     }
@@ -217,8 +254,17 @@ const MasterData = () => {
   const loadTestsStructure = async () => {
     const staticStructure = getStaticTestsStructure();
     try {
+      // If this institute should inherit tests from another canonical institute,
+      // request the tests-structure for that source institute. This makes the
+      // UI display the same tests as the source without copying records.
+      const testsReqParams = {};
+      const currentInstituteId = localStorage.getItem("instituteId") || "";
+      if (currentInstituteId === "69982a0c26d4c4f00d2240f3") {
+        testsReqParams.instituteId = "69ddce87f953d4306791196f";
+      }
+
       const [res, valuesRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/master-data-api/tests-structure`),
+        axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: testsReqParams }),
         selectedCategoryId
           ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
           : Promise.resolve({ data: [] })
@@ -829,7 +875,24 @@ const MasterData = () => {
         });
         setMessage("Value updated successfully");
       } else {
-        setMessage("Built-in items cannot be edited");
+        // Allow editing built-in Tests (create a persisted master value)
+        if (selectedCategory?.category_name === "Tests") {
+          // Keep reference/unit if present on the item
+          const payload = {
+            category_id: selectedCategoryId,
+            value_name: valueName,
+            meta: {
+              kind: "test",
+              category: selectedTestCategory || item?.category || "",
+              reference: item?.reference || "",
+              unit: item?.unit || ""
+            }
+          };
+          await axios.post(`${BACKEND_URL}/master-data-api/values`, payload);
+          setMessage("Built-in test persisted and updated");
+        } else {
+          setMessage("Built-in items cannot be edited");
+        }
       }
       await reloadFn();
       invalidateMasterDataCache();
@@ -852,7 +915,25 @@ const MasterData = () => {
         });
         setMessage("Value status updated");
       } else {
-        setMessage("Built-in items cannot be deactivated");
+        // For built-in Tests, create a persisted master value with requested status
+        if (selectedCategory?.category_name === "Tests") {
+          const nextStatus = item.status === "Active" ? "Inactive" : "Active";
+          const payload = {
+            category_id: selectedCategoryId,
+            value_name: item.name || item.value_name,
+            status: nextStatus,
+            meta: {
+              kind: item?.masterValue?.meta?.kind || "test",
+              category: selectedTestCategory || item?.category || "",
+              reference: item?.reference || "",
+              unit: item?.unit || ""
+            }
+          };
+          await axios.post(`${BACKEND_URL}/master-data-api/values`, payload);
+          setMessage("Built-in test persisted with new status");
+        } else {
+          setMessage("Built-in items cannot be deactivated");
+        }
       }
       await reloadFn();
       invalidateMasterDataCache();
@@ -876,7 +957,24 @@ const MasterData = () => {
         await axios.delete(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`);
         setMessage("Value deleted successfully");
       } else {
-        setMessage("Built-in items cannot be deleted directly");
+        // For built-in Tests, create an inactive persisted master-value to override the built-in
+        if (selectedCategory?.category_name === "Tests") {
+          const payload = {
+            category_id: selectedCategoryId,
+            value_name: item.name || item.value_name,
+            status: "Inactive",
+            meta: {
+              kind: "test",
+              category: selectedTestCategory || item?.category || "",
+              reference: item?.reference || "",
+              unit: item?.unit || ""
+            }
+          };
+          await axios.post(`${BACKEND_URL}/master-data-api/values`, payload);
+          setMessage("Built-in test marked inactive (persisted)");
+        } else {
+          setMessage("Built-in items cannot be deleted directly");
+        }
       }
       await reloadFn();
       invalidateMasterDataCache();
@@ -898,8 +996,41 @@ const MasterData = () => {
     const masterValue = customTestCategoryMap[categoryKey];
     
     if (!masterValue || !masterValue._id) {
-      console.log("Info: Built-in category (no delete needed)", categoryName);
-      setMessage("Built-in categories cannot be deleted");
+      // For built-in categories: persist an inactive category and persist inactive markers for each built-in test
+      try {
+        // create category master-value as Inactive
+        await axios.post(`${BACKEND_URL}/master-data-api/values`, {
+          category_id: selectedCategoryId,
+          value_name: categoryName,
+          status: "Inactive",
+          meta: { kind: "category" }
+        });
+
+        // persist inactive master-values for built-in tests under this category
+        const rows = testsStructure.testsByCategory?.[categoryName] || [];
+        await Promise.all(
+          rows.map(async (row) => {
+            if (row?.masterValue?._id) return; // skip already persisted
+            try {
+              await axios.post(`${BACKEND_URL}/master-data-api/values`, {
+                category_id: selectedCategoryId,
+                value_name: row.name,
+                status: "Inactive",
+                meta: { kind: "test", category: categoryName, reference: row.reference || "", unit: row.unit || "" }
+              });
+            } catch (e) {
+              // ignore duplicates/errors per-row
+            }
+          })
+        );
+
+        setMessage("Built-in category and its tests marked inactive (persisted)");
+        await loadTestsStructure();
+        invalidateMasterDataCache();
+      } catch (err) {
+        console.error("Error persisting built-in category deletion:", err);
+        setError(err.response?.data?.message || "Failed to persist deletion for built-in category");
+      }
       return;
     }
 
@@ -1755,26 +1886,7 @@ const MasterData = () => {
                     </div>
                   </div>
 
-                  <div className="row g-2 mb-3">
-                    <div className="col-md-10">
-                      <input
-                        className="form-control"
-                        placeholder="Add new medicine type"
-                        value={newMedicineType}
-                        onChange={(e) => setNewMedicineType(e.target.value)}
-                        disabled={!isInstituteAdmin || saving}
-                      />
-                    </div>
-                    <div className="col-md-2">
-                      <button
-                        className="btn btn-primary w-100"
-                        onClick={handleAddMedicineType}
-                        disabled={!isInstituteAdmin || saving || !newMedicineType.trim()}
-                      >
-                        Add Type
-                      </button>
-                    </div>
-                  </div>
+                  {/* Duplicate medicine-type input removed from Tests section; keep the Add Type control in Medicines section below */}
 
                   <div className="row g-2 mb-3">
                     <div className="col-md-4">
