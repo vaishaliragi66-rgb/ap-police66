@@ -6,6 +6,7 @@ const MasterCategory = require("../models/master_category");
 const MasterValue = require("../models/master_value");
 const DiagnosisTest = require("../models/diagnostics_test");
 const Xray = require("../models/XraySchema");
+const diagnosticReferencePanel = require("../data/diagnosticReferencePanel");
 
 const DISEASES_FILE = path.join(__dirname, "..", "data", "diseases.json");
 
@@ -159,7 +160,7 @@ const ensureTestMasterValues = async (instituteId) => {
 
   const category = await ensureCategoryDoc(instituteId, TEST_CATEGORY_NAME);
   if (!category) return null;
-  if (Number(category.seed_version || 0) >= 2) {
+  if (Number(category.seed_version || 0) >= 3) {
     return category;
   }
 
@@ -168,8 +169,33 @@ const ensureTestMasterValues = async (instituteId) => {
     .sort({ Group: 1, Test_Name: 1 })
     .lean();
 
+  const referenceTests = Object.entries(diagnosticReferencePanel || {}).flatMap(([group, tests]) =>
+    (tests || []).map((test) => ({
+      Test_Name: trimString(test?.name),
+      Group: trimString(group),
+      Reference_Range: trimString(test?.reference),
+      Units: trimString(test?.unit)
+    }))
+  );
+
+  const mergedTests = new Map();
+  [...referenceTests, ...legacyTests].forEach((test) => {
+    const testName = trimString(test?.Test_Name);
+    const group = trimString(test?.Group);
+    if (!testName || !group) return;
+    const key = `${normalize(group)}::${normalize(testName)}`;
+    const previous = mergedTests.get(key) || {};
+    mergedTests.set(key, {
+      Test_Name: testName,
+      Group: group,
+      Reference_Range: trimString(test?.Reference_Range) || previous.Reference_Range || "",
+      Units: trimString(test?.Units) || previous.Units || ""
+    });
+  });
+
   const categoryNames = sortUniqueStrings([
     ...DEFAULT_TEST_CATEGORIES,
+    ...Object.keys(diagnosticReferencePanel || {}),
     ...legacyTests.map((item) => item?.Group)
   ]);
 
@@ -182,7 +208,7 @@ const ensureTestMasterValues = async (instituteId) => {
     });
   }
 
-  for (const test of legacyTests) {
+  for (const test of mergedTests.values()) {
     const testName = trimString(test?.Test_Name);
     const group = trimString(test?.Group);
     if (!testName) continue;
@@ -201,8 +227,8 @@ const ensureTestMasterValues = async (instituteId) => {
     });
   }
 
-  await MasterCategory.updateOne({ _id: category._id }, { $set: { seed_version: 2 } });
-  category.seed_version = 2;
+  await MasterCategory.updateOne({ _id: category._id }, { $set: { seed_version: 3 } });
+  category.seed_version = 3;
 
   return category;
 };

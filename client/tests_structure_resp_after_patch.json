@@ -1,0 +1,2135 @@
+﻿{
+    "categories":  [
+                       "HEMATOLOGY",
+                       "DIABETES \u0026 GLUCOSE",
+                       "LIPID PROFILE",
+                       "LIVER FUNCTION TESTS (LFT)",
+                       "KIDNEY FUNCTION TESTS (KFT)",
+                       "THYROID PROFILE",
+                       "ELECTROLYTES",
+                       "URINALYSIS",
+                       "CARDIAC MARKERS",
+                       "VITAMINS \u0026 MINERALS",
+                       "COAGULATION STUDIES",
+                       "INFECTIOUS DISEASE PANEL",
+                       "TUMOR MARKERS",
+                       "HORMONAL PROFILE",
+                       "BONE HEALTH",
+                       "IMMUNOLOGY",
+                       "A/G Ratio",
+                       "AFP (Alpha-Fetoprotein)",
+                       "Albumin",
+                       "Alkaline Phosphatase (ALP)",
+                       "Alkaline Phosphatase (Bone)",
+                       "ALT (SGPT)",
+                       "ANA (Antinuclear Antibody)",
+                       "Anti-HCV",
+                       "Anti-TPO Antibody",
+                       "aPTT",
+                       "AST (SGOT)",
+                       "Basophils (DLC)",
+                       "bhavana",
+                       "Bicarbonate (HCO3-)",
+                       "Bilirubin – Direct",
+                       "Bilirubin – Indirect",
+                       "Bilirubin – Total",
+                       "Bleeding Time (BT)",
+                       "Blood Urea Nitrogen (BUN)",
+                       "BNP (B-type Natriuretic Peptide)",
+                       "BUN/Creatinine Ratio",
+                       "C-Peptide (Fasting)",
+                       "CA 19-9",
+                       "CA-125",
+                       "Calcium (Serum)",
+                       "Calcium (Total)",
+                       "CEA (Carcinoembryonic Ag)",
+                       "Chloride (Cl-)",
+                       "CK-MB",
+                       "Cortisol (Morning)",
+                       "CRP (C-Reactive Protein)",
+                       "Cystatin C",
+                       "D-Dimer",
+                       "Dengue NS1 Antigen",
+                       "DHEA-S",
+                       "eGFR",
+                       "Eosinophils (DLC)",
+                       "ESR",
+                       "Fasting Blood Sugar (FBS)",
+                       "Ferritin",
+                       "Fibrinogen",
+                       "Folate (Folic Acid)",
+                       "Free T3 (fT3)",
+                       "Free T4 (fT4)",
+                       "FSH",
+                       "GGT (Gamma GT)",
+                       "Globulin",
+                       "HbA1c",
+                       "HBsAg",
+                       "HDL Cholesterol",
+                       "Hematocrit (PCV)",
+                       "Hemoglobin",
+                       "HIV 1 \u0026 2 ELISA",
+                       "Homocysteine",
+                       "hs-CRP",
+                       "IgE (Total)",
+                       "INR",
+                       "Insulin (Fasting)",
+                       "LDL Cholesterol",
+                       "LDL/HDL Ratio",
+                       "LH",
+                       "Lipoprotein(a) [Lp(a)]",
+                       "Lymphocytes (DLC)",
+                       "Magnesium",
+                       "Malaria Parasite (MP)",
+                       "MCH",
+                       "MCHC",
+                       "MCV",
+                       "Microalbuminuria (Spot)",
+                       "Monocytes (DLC)",
+                       "Neutrophils (DLC)",
+                       "Non-HDL Cholesterol",
+                       "Phosphate (Inorganic)",
+                       "Phosphorus (Serum)",
+                       "Platelet Count",
+                       "Postprandial Blood Sugar (PPBS)",
+                       "Potassium (K+)",
+                       "Prolactin",
+                       "Prothrombin Time (PT)",
+                       "PSA (Prostate Specific Antigen)",
+                       "PTH (Parathyroid Hormone)",
+                       "Random Blood Sugar (RBS)",
+                       "RBC Count",
+                       "RDW (Red Cell Distrib. Width)",
+                       "Rheumatoid Factor (RF)",
+                       "Serum Creatinine",
+                       "Serum Iron",
+                       "Sodium (Na+)",
+                       "Testosterone (Total) – M",
+                       "TIBC (Total Iron Binding Capacity)",
+                       "Total Cholesterol",
+                       "Total Protein",
+                       "Total T3",
+                       "Total T4",
+                       "Triglycerides",
+                       "Troponin I (High Sensitivity)",
+                       "TSH",
+                       "Urea",
+                       "Uric Acid",
+                       "Urine Bilirubin",
+                       "Urine Glucose",
+                       "Urine Ketones",
+                       "Urine Nitrite",
+                       "Urine pH",
+                       "Urine Protein",
+                       "Urine RBC",
+                       "Urine Specific Gravity",
+                       "Urine WBC",
+                       "VDRL / RPR (Syphilis)",
+                       "Vitamin B1 (Thiamine)",
+                       "Vitamin B12",
+                       "Vitamin D (25-OH)",
+                       "VLDL Cholesterol",
+                       "WBC Count (TLC)",
+                       "Widal Test",
+                       "Zinc"
+                   ],
+    "testsByCategory":  {
+                            "bhavana":  [
+
+                                        ],
+                            "Bilirubin – Direct":  [
+
+                                                   ],
+                            "Bilirubin – Indirect":  [
+
+                                                     ],
+                            "Bilirubin – Total":  [
+
+                                                  ],
+                            "BONE HEALTH":  [
+                                                {
+                                                    "id":  "69e4aaf7ba1b1d42f7efd7c7",
+                                                    "name":  "109",
+                                                    "reference":  "2.5–4.5",
+                                                    "unit":  "mg/dL",
+                                                    "source":  "master"
+                                                },
+                                                {
+                                                    "id":  "69e4aaf7ba1b1d42f7efd7b5",
+                                                    "name":  "110",
+                                                    "reference":  "10–65",
+                                                    "unit":  "pg/mL",
+                                                    "source":  "master"
+                                                }
+                                            ],
+                            "CARDIAC MARKERS":  [
+                                                    {
+                                                        "id":  "69e4aafcba1b1d42f7efd88d",
+                                                        "name":  "70",
+                                                        "reference":  "\u003c0.04",
+                                                        "unit":  "ng/mL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4aaf0ba1b1d42f7efd5cb",
+                                                        "name":  "71",
+                                                        "reference":  "\u003c5",
+                                                        "unit":  "ng/mL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4aaedba1b1d42f7efd558",
+                                                        "name":  "72",
+                                                        "reference":  "\u003c100",
+                                                        "unit":  "pg/mL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4ab00ba1b1d42f7efd954",
+                                                        "name":  "73",
+                                                        "reference":  "\u003c3.0",
+                                                        "unit":  "mg/L",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4aaf4ba1b1d42f7efd701",
+                                                        "name":  "74",
+                                                        "reference":  "5–15",
+                                                        "unit":  "µmol/L",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4aaf5ba1b1d42f7efd742",
+                                                        "name":  "75",
+                                                        "reference":  "\u003c30",
+                                                        "unit":  "mg/dL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6967c592599744a561",
+                                                        "name":  "BNP (B-type Natriuretic Peptide)",
+                                                        "reference":  "\u003c100",
+                                                        "unit":  "pg/mL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6967c592599744a55e",
+                                                        "name":  "CK-MB",
+                                                        "reference":  "\u003c5",
+                                                        "unit":  "ng/mL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6967c592599744a567",
+                                                        "name":  "Homocysteine",
+                                                        "reference":  "5-15",
+                                                        "unit":  "umol/L",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6967c592599744a564",
+                                                        "name":  "hs-CRP",
+                                                        "reference":  "\u003c3.0",
+                                                        "unit":  "mg/L",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6967c592599744a56a",
+                                                        "name":  "Lipoprotein(a) [Lp(a)]",
+                                                        "reference":  "\u003c30",
+                                                        "unit":  "mg/dL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6867c592599744a55b",
+                                                        "name":  "Troponin I (High Sensitivity)",
+                                                        "reference":  "\u003c0.04",
+                                                        "unit":  "ng/mL",
+                                                        "source":  "master"
+                                                    }
+                                                ],
+                            "COAGULATION STUDIES":  [
+                                                        {
+                                                            "id":  "69e4aaf9ba1b1d42f7efd7f5",
+                                                            "name":  "84",
+                                                            "reference":  "11.0–13.5",
+                                                            "unit":  "sec",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69e4aaf4ba1b1d42f7efd70a",
+                                                            "name":  "85",
+                                                            "reference":  "0.8–1.2",
+                                                            "unit":  "Ratio",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69e4aaffba1b1d42f7efd942",
+                                                            "name":  "86",
+                                                            "reference":  "30–40",
+                                                            "unit":  "sec",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69e4aaf2ba1b1d42f7efd68b",
+                                                            "name":  "87",
+                                                            "reference":  "200–400",
+                                                            "unit":  "mg/dL",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69e4aaf0ba1b1d42f7efd61f",
+                                                            "name":  "88",
+                                                            "reference":  "\u003c0.5",
+                                                            "unit":  "µg/mL FEU",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69e4aaefba1b1d42f7efd58f",
+                                                            "name":  "89",
+                                                            "reference":  "2–7",
+                                                            "unit":  "min",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69de8a6b67c592599744a58b",
+                                                            "name":  "aPTT",
+                                                            "reference":  "30-40",
+                                                            "unit":  "sec",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69de8a6c67c592599744a594",
+                                                            "name":  "Bleeding Time (BT)",
+                                                            "reference":  "2-7",
+                                                            "unit":  "min",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69de8a6c67c592599744a591",
+                                                            "name":  "D-Dimer",
+                                                            "reference":  "\u003c0.5",
+                                                            "unit":  "ug/mL FEU",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69de8a6c67c592599744a58e",
+                                                            "name":  "Fibrinogen",
+                                                            "reference":  "200-400",
+                                                            "unit":  "mg/dL",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69de8a6b67c592599744a588",
+                                                            "name":  "INR",
+                                                            "reference":  "0.8-1.2",
+                                                            "unit":  "Ratio",
+                                                            "source":  "master"
+                                                        },
+                                                        {
+                                                            "id":  "69de8a6b67c592599744a585",
+                                                            "name":  "Prothrombin Time (PT)",
+                                                            "reference":  "11.0-13.5",
+                                                            "unit":  "sec",
+                                                            "source":  "master"
+                                                        }
+                                                    ],
+                            "DIABETES \u0026 GLUCOSE":  [
+                                                            {
+                                                                "id":  "69e4aaf2ba1b1d42f7efd671",
+                                                                "name":  "16",
+                                                                "reference":  "70–100",
+                                                                "unit":  "mg/dL",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69e4aaf8ba1b1d42f7efd7da",
+                                                                "name":  "17",
+                                                                "reference":  "\u003c140",
+                                                                "unit":  "mg/dL",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69e4aaf3ba1b1d42f7efd6e6",
+                                                                "name":  "18",
+                                                                "reference":  "\u003c5.7% Normal | 5.7–6.4% Pre | ≥6.5% DM",
+                                                                "unit":  "%",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69e4aaf9ba1b1d42f7efd814",
+                                                                "name":  "19",
+                                                                "reference":  "\u003c200",
+                                                                "unit":  "mg/dL",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69e4aaf4ba1b1d42f7efd71e",
+                                                                "name":  "20",
+                                                                "reference":  "2.6–24.9",
+                                                                "unit":  "µIU/mL",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69e4aaefba1b1d42f7efd59f",
+                                                                "name":  "21",
+                                                                "reference":  "1.1–4.4",
+                                                                "unit":  "ng/mL",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69de8a6067c592599744a4c8",
+                                                                "name":  "C-Peptide (Fasting)",
+                                                                "reference":  "1.1-4.4",
+                                                                "unit":  "ng/mL",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69de8a5f67c592599744a4b9",
+                                                                "name":  "Fasting Blood Sugar (FBS)",
+                                                                "reference":  "70-100",
+                                                                "unit":  "mg/dL",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69de8a6067c592599744a4bf",
+                                                                "name":  "HbA1c",
+                                                                "reference":  "\u003c5.7% Normal | 5.7-6.4% Pre | \u003e=6.5% DM",
+                                                                "unit":  "%",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69de8a6067c592599744a4c5",
+                                                                "name":  "Insulin (Fasting)",
+                                                                "reference":  "2.6-24.9",
+                                                                "unit":  "uIU/mL",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69de8a5f67c592599744a4bc",
+                                                                "name":  "Postprandial Blood Sugar (PPBS)",
+                                                                "reference":  "\u003c140",
+                                                                "unit":  "mg/dL",
+                                                                "source":  "master"
+                                                            },
+                                                            {
+                                                                "id":  "69de8a6067c592599744a4c2",
+                                                                "name":  "Random Blood Sugar (RBS)",
+                                                                "reference":  "\u003c200",
+                                                                "unit":  "mg/dL",
+                                                                "source":  "master"
+                                                            }
+                                                        ],
+                            "ELECTROLYTES":  [
+                                                 {
+                                                     "id":  "69e4aaf0ba1b1d42f7efd5e1",
+                                                     "name":  "108",
+                                                     "reference":  "8.5–10.5",
+                                                     "unit":  "mg/dL",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69e4aafaba1b1d42f7efd839",
+                                                     "name":  "53",
+                                                     "reference":  "135–145",
+                                                     "unit":  "mEq/L",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69e4aaf8ba1b1d42f7efd7e3",
+                                                     "name":  "54",
+                                                     "reference":  "3.5–5.0",
+                                                     "unit":  "mEq/L",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69e4aaf0ba1b1d42f7efd5fc",
+                                                     "name":  "55",
+                                                     "reference":  "98–106",
+                                                     "unit":  "mEq/L",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69e4aaf0ba1b1d42f7efd5f0",
+                                                     "name":  "56",
+                                                     "reference":  "8.5–10.5",
+                                                     "unit":  "mg/dL",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69e4aaf6ba1b1d42f7efd772",
+                                                     "name":  "57",
+                                                     "reference":  "1.7–2.2",
+                                                     "unit":  "mg/dL",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69e4aaf7ba1b1d42f7efd7be",
+                                                     "name":  "58",
+                                                     "reference":  "2.5–4.5",
+                                                     "unit":  "mg/dL",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69e4aaeeba1b1d42f7efd56e",
+                                                     "name":  "59",
+                                                     "reference":  "22–29",
+                                                     "unit":  "mEq/L",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69d4de3a3a6364745eb36bbe",
+                                                     "name":  "bhavs",
+                                                     "reference":  "",
+                                                     "unit":  "",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69de8a6767c592599744a53a",
+                                                     "name":  "Bicarbonate (HCO3-)",
+                                                     "reference":  "22-29",
+                                                     "unit":  "mEq/L",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69de8a6667c592599744a531",
+                                                     "name":  "Calcium (Total)",
+                                                     "reference":  "8.5-10.5",
+                                                     "unit":  "mg/dL",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69de8a6667c592599744a52e",
+                                                     "name":  "Chloride (Cl-)",
+                                                     "reference":  "98-106",
+                                                     "unit":  "mEq/L",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69de8a6667c592599744a534",
+                                                     "name":  "Magnesium",
+                                                     "reference":  "1.7-2.2",
+                                                     "unit":  "mg/dL",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69de8a6767c592599744a537",
+                                                     "name":  "Phosphate (Inorganic)",
+                                                     "reference":  "2.5-4.5",
+                                                     "unit":  "mg/dL",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69de8a6667c592599744a52b",
+                                                     "name":  "Potassium (K+)",
+                                                     "reference":  "3.5-5.0",
+                                                     "unit":  "mEq/L",
+                                                     "source":  "master"
+                                                 },
+                                                 {
+                                                     "id":  "69de8a6667c592599744a528",
+                                                     "name":  "Sodium (Na+)",
+                                                     "reference":  "135-145",
+                                                     "unit":  "mEq/L",
+                                                     "source":  "master"
+                                                 }
+                                             ],
+                            "HEMATOLOGY":  [
+                                               {
+                                                   "id":  "69e4aaf4ba1b1d42f7efd6f8",
+                                                   "name":  "1",
+                                                   "reference":  "M: 13.0–17.0 | F: 12.0–15.0",
+                                                   "unit":  "g/dL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf6ba1b1d42f7efd798",
+                                                   "name":  "10",
+                                                   "reference":  "50–70",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf5ba1b1d42f7efd74c",
+                                                   "name":  "11",
+                                                   "reference":  "20–40",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf1ba1b1d42f7efd65c",
+                                                   "name":  "12",
+                                                   "reference":  "1–6",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf6ba1b1d42f7efd78f",
+                                                   "name":  "13",
+                                                   "reference":  "2–8",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaeeba1b1d42f7efd568",
+                                                   "name":  "14",
+                                                   "reference":  "0–1",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf9ba1b1d42f7efd809",
+                                                   "name":  "15",
+                                                   "reference":  "11.5–14.5",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf9ba1b1d42f7efd7ff",
+                                                   "name":  "2",
+                                                   "reference":  "M: 4.7–6.1 | F: 4.2–5.4",
+                                                   "unit":  "million/µL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaffba1b1d42f7efd927",
+                                                   "name":  "3",
+                                                   "reference":  "4,000–11,000",
+                                                   "unit":  "/µL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf8ba1b1d42f7efd7d1",
+                                                   "name":  "4",
+                                                   "reference":  "1,50,000–4,50,000",
+                                                   "unit":  "/µL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf3ba1b1d42f7efd6ef",
+                                                   "name":  "5",
+                                                   "reference":  "M: 40–54 | F: 36–48",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf5ba1b1d42f7efd769",
+                                                   "name":  "6",
+                                                   "reference":  "80–96",
+                                                   "unit":  "fL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aafdba1b1d42f7efd8d8",
+                                                   "name":  "65",
+                                                   "reference":  "0–2",
+                                                   "unit":  "/HPF",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aafeba1b1d42f7efd8ea",
+                                                   "name":  "66",
+                                                   "reference":  "0–5",
+                                                   "unit":  "/HPF",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf5ba1b1d42f7efd757",
+                                                   "name":  "7",
+                                                   "reference":  "27–33",
+                                                   "unit":  "pg",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf5ba1b1d42f7efd760",
+                                                   "name":  "8",
+                                                   "reference":  "32–36",
+                                                   "unit":  "g/dL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf1ba1b1d42f7efd651",
+                                                   "name":  "9",
+                                                   "reference":  "M: 0–15 | F: 0–20",
+                                                   "unit":  "mm/hr",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5f67c592599744a4b3",
+                                                   "name":  "Basophils (DLC)",
+                                                   "reference":  "0-1",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5f67c592599744a4ad",
+                                                   "name":  "Eosinophils (DLC)",
+                                                   "reference":  "1-6",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5e67c592599744a4a4",
+                                                   "name":  "ESR",
+                                                   "reference":  "M: 0-15 | F: 0-20",
+                                                   "unit":  "mm/hr",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5d67c592599744a498",
+                                                   "name":  "Hematocrit (PCV)",
+                                                   "reference":  "M: 40-54 | F: 36-48",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5c67c592599744a48c",
+                                                   "name":  "Hemoglobin",
+                                                   "reference":  "M: 13.0-17.0 | F: 12.0-15.0",
+                                                   "unit":  "g/dL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5e67c592599744a4aa",
+                                                   "name":  "Lymphocytes (DLC)",
+                                                   "reference":  "20-40",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5e67c592599744a49e",
+                                                   "name":  "MCH",
+                                                   "reference":  "27-33",
+                                                   "unit":  "pg",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5e67c592599744a4a1",
+                                                   "name":  "MCHC",
+                                                   "reference":  "32-36",
+                                                   "unit":  "g/dL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5e67c592599744a49b",
+                                                   "name":  "MCV",
+                                                   "reference":  "80-96",
+                                                   "unit":  "fL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5f67c592599744a4b0",
+                                                   "name":  "Monocytes (DLC)",
+                                                   "reference":  "2-8",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5e67c592599744a4a7",
+                                                   "name":  "Neutrophils (DLC)",
+                                                   "reference":  "50-70",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5d67c592599744a495",
+                                                   "name":  "Platelet Count",
+                                                   "reference":  "1,50,000-4,50,000",
+                                                   "unit":  "/uL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5d67c592599744a48f",
+                                                   "name":  "RBC Count",
+                                                   "reference":  "M: 4.7-6.1 | F: 4.2-5.4",
+                                                   "unit":  "million/uL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5f67c592599744a4b6",
+                                                   "name":  "RDW (Red Cell Distrib. Width)",
+                                                   "reference":  "11.5-14.5",
+                                                   "unit":  "%",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a6867c592599744a54c",
+                                                   "name":  "Urine RBC",
+                                                   "reference":  "0-2",
+                                                   "unit":  "/HPF",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a6867c592599744a54f",
+                                                   "name":  "Urine WBC",
+                                                   "reference":  "0-5",
+                                                   "unit":  "/HPF",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a5d67c592599744a492",
+                                                   "name":  "WBC Count (TLC)",
+                                                   "reference":  "4,000-11,000",
+                                                   "unit":  "/uL",
+                                                   "source":  "master"
+                                               }
+                                           ],
+                            "HORMONAL PROFILE":  [
+                                                     {
+                                                         "id":  "69e4aafaba1b1d42f7efd856",
+                                                         "name":  "102",
+                                                         "reference":  "270–1070",
+                                                         "unit":  "ng/dL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69e4aaf1ba1b1d42f7efd665",
+                                                         "name":  "103",
+                                                         "reference":  "M: 1.5–12.4 | F: varies by phase",
+                                                         "unit":  "mIU/mL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69e4aaf4ba1b1d42f7efd739",
+                                                         "name":  "104",
+                                                         "reference":  "M: 1.7–8.6 | F: varies by phase",
+                                                         "unit":  "mIU/mL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69e4aaf8ba1b1d42f7efd7ec",
+                                                         "name":  "105",
+                                                         "reference":  "M: 2–18 | F: 2–29",
+                                                         "unit":  "ng/mL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69e4aaf0ba1b1d42f7efd606",
+                                                         "name":  "106",
+                                                         "reference":  "6.2–19.4",
+                                                         "unit":  "µg/dL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69e4aaf0ba1b1d42f7efd62d",
+                                                         "name":  "107",
+                                                         "reference":  "M: 80–560 | F: 35–430",
+                                                         "unit":  "µg/dL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69de8a6f67c592599744a5c7",
+                                                         "name":  "Cortisol (Morning)",
+                                                         "reference":  "6.2-19.4",
+                                                         "unit":  "ug/dL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69de8a6f67c592599744a5ca",
+                                                         "name":  "DHEA-S",
+                                                         "reference":  "M: 80-560 | F: 35-430",
+                                                         "unit":  "ug/dL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69de8a6e67c592599744a5be",
+                                                         "name":  "FSH",
+                                                         "reference":  "M: 1.5-12.4 | F: varies by phase",
+                                                         "unit":  "mIU/mL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69de8a6e67c592599744a5c1",
+                                                         "name":  "LH",
+                                                         "reference":  "M: 1.7-8.6 | F: varies by phase",
+                                                         "unit":  "mIU/mL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69de8a6f67c592599744a5c4",
+                                                         "name":  "Prolactin",
+                                                         "reference":  "M: 2-18 | F: 2-29",
+                                                         "unit":  "ng/mL",
+                                                         "source":  "master"
+                                                     },
+                                                     {
+                                                         "id":  "69e8e9e7aa8556f88d491f8c",
+                                                         "name":  "Testosterone (Total) - M",
+                                                         "reference":  "270-1070",
+                                                         "unit":  "ng/dL",
+                                                         "source":  "master"
+                                                     }
+                                                 ],
+                            "IMMUNOLOGY":  [
+                                               {
+                                                   "id":  "69e4aaf4ba1b1d42f7efd713",
+                                                   "name":  "112",
+                                                   "reference":  "\u003c 100 (adults)",
+                                                   "unit":  "IU/mL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaeaba1b1d42f7efd520",
+                                                   "name":  "113",
+                                                   "reference":  "Negative (\u003c1:40)",
+                                                   "unit":  "Titer",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf9ba1b1d42f7efd81d",
+                                                   "name":  "114",
+                                                   "reference":  "\u003c20",
+                                                   "unit":  "IU/mL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aaf0ba1b1d42f7efd5d7",
+                                                   "name":  "115",
+                                                   "reference":  "\u003c6.0",
+                                                   "unit":  "mg/L",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a7067c592599744a5dc",
+                                                   "name":  "ANA (Antinuclear Antibody)",
+                                                   "reference":  "Negative (\u003c1:40)",
+                                                   "unit":  "Titer",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a7067c592599744a5e2",
+                                                   "name":  "CRP (C-Reactive Protein)",
+                                                   "reference":  "\u003c6.0",
+                                                   "unit":  "mg/L",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a7067c592599744a5d9",
+                                                   "name":  "IgE (Total)",
+                                                   "reference":  "\u003c100 (adults)",
+                                                   "unit":  "IU/mL",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a7067c592599744a5df",
+                                                   "name":  "Rheumatoid Factor (RF)",
+                                                   "reference":  "\u003c20",
+                                                   "unit":  "IU/mL",
+                                                   "source":  "master"
+                                               }
+                                           ],
+                            "INFECTIOUS DISEASE PANEL":  [
+                                                             {
+                                                                 "id":  "69e4aaf3ba1b1d42f7efd6cb",
+                                                                 "name":  "90",
+                                                                 "reference":  "Negative (Non-Reactive)",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aaebba1b1d42f7efd545",
+                                                                 "name":  "91",
+                                                                 "reference":  "Negative (Non-Reactive)",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aaf3ba1b1d42f7efd6dc",
+                                                                 "name":  "92",
+                                                                 "reference":  "Non-Reactive",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aafeba1b1d42f7efd8fc",
+                                                                 "name":  "93",
+                                                                 "reference":  "Non-Reactive",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aaf1ba1b1d42f7efd639",
+                                                                 "name":  "94",
+                                                                 "reference":  "Negative",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aaf6ba1b1d42f7efd77a",
+                                                                 "name":  "95",
+                                                                 "reference":  "Negative",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aaffba1b1d42f7efd930",
+                                                                 "name":  "96",
+                                                                 "reference":  "O \u003c1:80 | H \u003c1:80",
+                                                                 "unit":  "Titer",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6c67c592599744a59a",
+                                                                 "name":  "Anti-HCV",
+                                                                 "reference":  "Negative (Non-Reactive)",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6d67c592599744a5a3",
+                                                                 "name":  "Dengue NS1 Antigen",
+                                                                 "reference":  "Negative",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6c67c592599744a597",
+                                                                 "name":  "HBsAg",
+                                                                 "reference":  "Negative (Non-Reactive)",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6c67c592599744a59d",
+                                                                 "name":  "HIV 1 \u0026 2 ELISA",
+                                                                 "reference":  "Non-Reactive",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6d67c592599744a5a6",
+                                                                 "name":  "Malaria Parasite (MP)",
+                                                                 "reference":  "Negative",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6c67c592599744a5a0",
+                                                                 "name":  "VDRL / RPR (Syphilis)",
+                                                                 "reference":  "Non-Reactive",
+                                                                 "unit":  "",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6d67c592599744a5a9",
+                                                                 "name":  "Widal Test",
+                                                                 "reference":  "O \u003c1:80 | H \u003c1:80",
+                                                                 "unit":  "Titer",
+                                                                 "source":  "master"
+                                                             }
+                                                         ],
+                            "KIDNEY FUNCTION TESTS (KFT)":  [
+                                                                {
+                                                                    "id":  "69e4aafaba1b1d42f7efd826",
+                                                                    "name":  "40",
+                                                                    "reference":  "M: 0.6–1.2 | F: 0.5–1.1",
+                                                                    "unit":  "mg/dL",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69e4aaefba1b1d42f7efd597",
+                                                                    "name":  "41",
+                                                                    "reference":  "10–20",
+                                                                    "unit":  "mg/dL",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69e4aafcba1b1d42f7efd897",
+                                                                    "name":  "42",
+                                                                    "reference":  "15–40",
+                                                                    "unit":  "mg/dL",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69e4aafcba1b1d42f7efd8a0",
+                                                                    "name":  "43",
+                                                                    "reference":  "M: 3.5–7.2 | F: 2.6–6.0",
+                                                                    "unit":  "mg/dL",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69e4ab00ba1b1d42f7efd94b",
+                                                                    "name":  "44",
+                                                                    "reference":  "\u003e90 (Normal)",
+                                                                    "unit":  "mL/min/1.73m²",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69e4aaedba1b1d42f7efd55f",
+                                                                    "name":  "45",
+                                                                    "reference":  "10:1–20:1",
+                                                                    "unit":  "Ratio",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69e4aaf0ba1b1d42f7efd613",
+                                                                    "name":  "46",
+                                                                    "reference":  "0.52–0.98",
+                                                                    "unit":  "mg/L",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69de8a6467c592599744a504",
+                                                                    "name":  "Blood Urea Nitrogen (BUN)",
+                                                                    "reference":  "10-20",
+                                                                    "unit":  "mg/dL",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69de8a6467c592599744a510",
+                                                                    "name":  "BUN/Creatinine Ratio",
+                                                                    "reference":  "10:1-20:1",
+                                                                    "unit":  "Ratio",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69de8a6467c592599744a513",
+                                                                    "name":  "Cystatin C",
+                                                                    "reference":  "0.52-0.98",
+                                                                    "unit":  "mg/L",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69de8a6467c592599744a50d",
+                                                                    "name":  "eGFR",
+                                                                    "reference":  "\u003e90 (Normal)",
+                                                                    "unit":  "mL/min/1.73m2",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69de8a6467c592599744a501",
+                                                                    "name":  "Serum Creatinine",
+                                                                    "reference":  "M: 0.6-1.2 | F: 0.5-1.1",
+                                                                    "unit":  "mg/dL",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69de8a6467c592599744a507",
+                                                                    "name":  "Urea",
+                                                                    "reference":  "15-40",
+                                                                    "unit":  "mg/dL",
+                                                                    "source":  "master"
+                                                                },
+                                                                {
+                                                                    "id":  "69de8a6467c592599744a50a",
+                                                                    "name":  "Uric Acid",
+                                                                    "reference":  "M: 3.5-7.2 | F: 2.6-6.0",
+                                                                    "unit":  "mg/dL",
+                                                                    "source":  "master"
+                                                                }
+                                                            ],
+                            "LIPID PROFILE":  [
+                                                  {
+                                                      "id":  "69e4aafbba1b1d42f7efd860",
+                                                      "name":  "22",
+                                                      "reference":  "\u003c200",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aaf4ba1b1d42f7efd727",
+                                                      "name":  "23",
+                                                      "reference":  "\u003c100 (Optimal)",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aaf3ba1b1d42f7efd6d4",
+                                                      "name":  "24",
+                                                      "reference":  "M: \u003e40 | F: \u003e50",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aafbba1b1d42f7efd884",
+                                                      "name":  "25",
+                                                      "reference":  "\u003c150",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aafeba1b1d42f7efd904",
+                                                      "name":  "26",
+                                                      "reference":  "5–40",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aaf7ba1b1d42f7efd7a3",
+                                                      "name":  "27",
+                                                      "reference":  "\u003c130",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aaf4ba1b1d42f7efd730",
+                                                      "name":  "28",
+                                                      "reference":  "\u003c3.0",
+                                                      "unit":  "Ratio",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6167c592599744a4d1",
+                                                      "name":  "HDL Cholesterol",
+                                                      "reference":  "M: \u003e40 | F: \u003e50",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6167c592599744a4ce",
+                                                      "name":  "LDL Cholesterol",
+                                                      "reference":  "\u003c100 (Optimal)",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6167c592599744a4dd",
+                                                      "name":  "LDL/HDL Ratio",
+                                                      "reference":  "\u003c3.0",
+                                                      "unit":  "Ratio",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6167c592599744a4da",
+                                                      "name":  "Non-HDL Cholesterol",
+                                                      "reference":  "\u003c130",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6067c592599744a4cb",
+                                                      "name":  "Total Cholesterol",
+                                                      "reference":  "\u003c200",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6167c592599744a4d4",
+                                                      "name":  "Triglycerides",
+                                                      "reference":  "\u003c150",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6167c592599744a4d7",
+                                                      "name":  "VLDL Cholesterol",
+                                                      "reference":  "5-40",
+                                                      "unit":  "mg/dL",
+                                                      "source":  "master"
+                                                  }
+                                              ],
+                            "LIVER FUNCTION TESTS (LFT)":  [
+                                                               {
+                                                                   "id":  "69e4aaebba1b1d42f7efd53e",
+                                                                   "name":  "111",
+                                                                   "reference":  "15–41",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaeeba1b1d42f7efd588",
+                                                                   "name":  "29",
+                                                                   "reference":  "0.3–1.2",
+                                                                   "unit":  "mg/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaeeba1b1d42f7efd576",
+                                                                   "name":  "30",
+                                                                   "reference":  "0.0–0.3",
+                                                                   "unit":  "mg/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaeeba1b1d42f7efd57f",
+                                                                   "name":  "31",
+                                                                   "reference":  "0.1–1.0",
+                                                                   "unit":  "mg/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaeaba1b1d42f7efd51c",
+                                                                   "name":  "32",
+                                                                   "reference":  "7–56",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaebba1b1d42f7efd527",
+                                                                   "name":  "33",
+                                                                   "reference":  "10–40",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaebba1b1d42f7efd536",
+                                                                   "name":  "34",
+                                                                   "reference":  "44–147",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaf2ba1b1d42f7efd6b9",
+                                                                   "name":  "35",
+                                                                   "reference":  "M: 8–61 | F: 5–36",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aafbba1b1d42f7efd869",
+                                                                   "name":  "36",
+                                                                   "reference":  "6.0–8.3",
+                                                                   "unit":  "g/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaebba1b1d42f7efd52e",
+                                                                   "name":  "37",
+                                                                   "reference":  "3.5–5.0",
+                                                                   "unit":  "g/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaf2ba1b1d42f7efd6c2",
+                                                                   "name":  "38",
+                                                                   "reference":  "2.0–3.5",
+                                                                   "unit":  "g/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaeaba1b1d42f7efd509",
+                                                                   "name":  "39",
+                                                                   "reference":  "1.0–2.2",
+                                                                   "unit":  "Ratio",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aafcba1b1d42f7efd8aa",
+                                                                   "name":  "68",
+                                                                   "reference":  "Negative",
+                                                                   "unit":  "",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e4aaf6ba1b1d42f7efd784",
+                                                                   "name":  "69",
+                                                                   "reference":  "\u003c30",
+                                                                   "unit":  "mg/g creatinine",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6467c592599744a4fe",
+                                                                   "name":  "A/G Ratio",
+                                                                   "reference":  "1.0-2.2",
+                                                                   "unit":  "Ratio",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6367c592599744a4f8",
+                                                                   "name":  "Albumin",
+                                                                   "reference":  "3.5-5.0",
+                                                                   "unit":  "g/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6367c592599744a4ef",
+                                                                   "name":  "Alkaline Phosphatase (ALP)",
+                                                                   "reference":  "44-147",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a7067c592599744a5d6",
+                                                                   "name":  "Alkaline Phosphatase (Bone)",
+                                                                   "reference":  "15-41",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6267c592599744a4e9",
+                                                                   "name":  "ALT (SGPT)",
+                                                                   "reference":  "7-56",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6267c592599744a4ec",
+                                                                   "name":  "AST (SGOT)",
+                                                                   "reference":  "10-40",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e8e9e3aa8556f88d491efa",
+                                                                   "name":  "Bilirubin - Direct",
+                                                                   "reference":  "0.0-0.3",
+                                                                   "unit":  "mg/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e8e9e3aa8556f88d491efd",
+                                                                   "name":  "Bilirubin - Indirect",
+                                                                   "reference":  "0.1-1.0",
+                                                                   "unit":  "mg/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69e8e9e3aa8556f88d491ef7",
+                                                                   "name":  "Bilirubin - Total",
+                                                                   "reference":  "0.3-1.2",
+                                                                   "unit":  "mg/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6f67c592599744a5cd",
+                                                                   "name":  "Calcium (Serum)",
+                                                                   "reference":  "8.5-10.5",
+                                                                   "unit":  "mg/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6367c592599744a4f2",
+                                                                   "name":  "GGT (Gamma GT)",
+                                                                   "reference":  "M: 8-61 | F: 5-36",
+                                                                   "unit":  "U/L",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6367c592599744a4fb",
+                                                                   "name":  "Globulin",
+                                                                   "reference":  "2.0-3.5",
+                                                                   "unit":  "g/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6867c592599744a558",
+                                                                   "name":  "Microalbuminuria (Spot)",
+                                                                   "reference":  "\u003c30",
+                                                                   "unit":  "mg/g creatinine",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6f67c592599744a5d0",
+                                                                   "name":  "Phosphorus (Serum)",
+                                                                   "reference":  "2.5-4.5",
+                                                                   "unit":  "mg/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a7067c592599744a5d3",
+                                                                   "name":  "PTH (Parathyroid Hormone)",
+                                                                   "reference":  "10-65",
+                                                                   "unit":  "pg/mL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6367c592599744a4f5",
+                                                                   "name":  "Total Protein",
+                                                                   "reference":  "6.0-8.3",
+                                                                   "unit":  "g/dL",
+                                                                   "source":  "master"
+                                                               },
+                                                               {
+                                                                   "id":  "69de8a6867c592599744a555",
+                                                                   "name":  "Urine Bilirubin",
+                                                                   "reference":  "Negative",
+                                                                   "unit":  "",
+                                                                   "source":  "master"
+                                                               }
+                                                           ],
+                            "Testosterone (Total) – M":  [
+
+                                                         ],
+                            "THYROID PROFILE":  [
+                                                    {
+                                                        "id":  "69e4aafaba1b1d42f7efd84c",
+                                                        "name":  "47",
+                                                        "reference":  "0.4–4.0",
+                                                        "unit":  "mIU/L",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4aaf2ba1b1d42f7efd6b0",
+                                                        "name":  "48",
+                                                        "reference":  "0.8–2.0",
+                                                        "unit":  "ng/dL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4aaf2ba1b1d42f7efd6a4",
+                                                        "name":  "49",
+                                                        "reference":  "2.3–4.2",
+                                                        "unit":  "pg/mL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4aafbba1b1d42f7efd87b",
+                                                        "name":  "50",
+                                                        "reference":  "4.5–12.5",
+                                                        "unit":  "µg/dL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4aafbba1b1d42f7efd872",
+                                                        "name":  "51",
+                                                        "reference":  "80–200",
+                                                        "unit":  "ng/dL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69e4aaecba1b1d42f7efd551",
+                                                        "name":  "52",
+                                                        "reference":  "\u003c35",
+                                                        "unit":  "IU/mL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6567c592599744a525",
+                                                        "name":  "Anti-TPO Antibody",
+                                                        "reference":  "\u003c35",
+                                                        "unit":  "IU/mL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6567c592599744a51c",
+                                                        "name":  "Free T3 (fT3)",
+                                                        "reference":  "2.3-4.2",
+                                                        "unit":  "pg/mL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6567c592599744a519",
+                                                        "name":  "Free T4 (fT4)",
+                                                        "reference":  "0.8-2.0",
+                                                        "unit":  "ng/dL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6567c592599744a522",
+                                                        "name":  "Total T3",
+                                                        "reference":  "80-200",
+                                                        "unit":  "ng/dL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6567c592599744a51f",
+                                                        "name":  "Total T4",
+                                                        "reference":  "4.5-12.5",
+                                                        "unit":  "ug/dL",
+                                                        "source":  "master"
+                                                    },
+                                                    {
+                                                        "id":  "69de8a6567c592599744a516",
+                                                        "name":  "TSH",
+                                                        "reference":  "0.4-4.0",
+                                                        "unit":  "mIU/L",
+                                                        "source":  "master"
+                                                    }
+                                                ],
+                            "TUMOR MARKERS":  [
+                                                  {
+                                                      "id":  "69e4aaefba1b1d42f7efd5b2",
+                                                      "name":  "100",
+                                                      "reference":  "\u003c35",
+                                                      "unit":  "U/mL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aaefba1b1d42f7efd5a7",
+                                                      "name":  "101",
+                                                      "reference":  "\u003c37",
+                                                      "unit":  "U/mL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aaf7ba1b1d42f7efd7ac",
+                                                      "name":  "97",
+                                                      "reference":  "\u003c4.0",
+                                                      "unit":  "ng/mL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aaf0ba1b1d42f7efd5bf",
+                                                      "name":  "98",
+                                                      "reference":  "\u003c3 (non-smoker), \u003c5 (smoker)",
+                                                      "unit":  "ng/mL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69e4aaeaba1b1d42f7efd514",
+                                                      "name":  "99",
+                                                      "reference":  "\u003c10",
+                                                      "unit":  "ng/mL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6d67c592599744a5b2",
+                                                      "name":  "AFP (Alpha-Fetoprotein)",
+                                                      "reference":  "\u003c10",
+                                                      "unit":  "ng/mL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6e67c592599744a5b8",
+                                                      "name":  "CA 19-9",
+                                                      "reference":  "\u003c37",
+                                                      "unit":  "U/mL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6e67c592599744a5b5",
+                                                      "name":  "CA-125",
+                                                      "reference":  "\u003c35",
+                                                      "unit":  "U/mL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6d67c592599744a5af",
+                                                      "name":  "CEA (Carcinoembryonic Ag)",
+                                                      "reference":  "\u003c3 (non-smoker), \u003c5 (smoker)",
+                                                      "unit":  "ng/mL",
+                                                      "source":  "master"
+                                                  },
+                                                  {
+                                                      "id":  "69de8a6d67c592599744a5ac",
+                                                      "name":  "PSA (Prostate Specific Antigen)",
+                                                      "reference":  "\u003c4.0",
+                                                      "unit":  "ng/mL",
+                                                      "source":  "master"
+                                                  }
+                                              ],
+                            "URINALYSIS":  [
+                                               {
+                                                   "id":  "69e4aafeba1b1d42f7efd8f3",
+                                                   "name":  "60",
+                                                   "reference":  "4.5–8.0",
+                                                   "unit":  "pH",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aafdba1b1d42f7efd8e1",
+                                                   "name":  "61",
+                                                   "reference":  "1.005–1.030",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aafdba1b1d42f7efd8ce",
+                                                   "name":  "62",
+                                                   "reference":  "Negative",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aafcba1b1d42f7efd8b3",
+                                                   "name":  "63",
+                                                   "reference":  "Negative",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aafdba1b1d42f7efd8bc",
+                                                   "name":  "64",
+                                                   "reference":  "Negative",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69e4aafdba1b1d42f7efd8c5",
+                                                   "name":  "67",
+                                                   "reference":  "Negative",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a6767c592599744a546",
+                                                   "name":  "Urine Glucose",
+                                                   "reference":  "Negative",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a6867c592599744a549",
+                                                   "name":  "Urine Ketones",
+                                                   "reference":  "Negative",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a6867c592599744a552",
+                                                   "name":  "Urine Nitrite",
+                                                   "reference":  "Negative",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a6767c592599744a53d",
+                                                   "name":  "Urine pH",
+                                                   "reference":  "4.5-8.0",
+                                                   "unit":  "pH",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a6767c592599744a543",
+                                                   "name":  "Urine Protein",
+                                                   "reference":  "Negative",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               },
+                                               {
+                                                   "id":  "69de8a6767c592599744a540",
+                                                   "name":  "Urine Specific Gravity",
+                                                   "reference":  "1.005-1.030",
+                                                   "unit":  "",
+                                                   "source":  "master"
+                                               }
+                                           ],
+                            "VITAMINS \u0026 MINERALS":  [
+                                                             {
+                                                                 "id":  "69e4aaffba1b1d42f7efd91e",
+                                                                 "name":  "76",
+                                                                 "reference":  "20–50 (Sufficient)",
+                                                                 "unit":  "ng/mL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aafeba1b1d42f7efd915",
+                                                                 "name":  "77",
+                                                                 "reference":  "200–900",
+                                                                 "unit":  "pg/mL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aaf2ba1b1d42f7efd698",
+                                                                 "name":  "78",
+                                                                 "reference":  "2.0–20.0",
+                                                                 "unit":  "ng/mL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aafaba1b1d42f7efd830",
+                                                                 "name":  "79",
+                                                                 "reference":  "M: 60–170 | F: 50–170",
+                                                                 "unit":  "µg/dL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aaf2ba1b1d42f7efd67e",
+                                                                 "name":  "80",
+                                                                 "reference":  "M: 12–300 | F: 12–150",
+                                                                 "unit":  "ng/mL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aafaba1b1d42f7efd842",
+                                                                 "name":  "81",
+                                                                 "reference":  "250–370",
+                                                                 "unit":  "µg/dL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aaffba1b1d42f7efd939",
+                                                                 "name":  "82",
+                                                                 "reference":  "70–120",
+                                                                 "unit":  "µg/dL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69e4aafeba1b1d42f7efd90d",
+                                                                 "name":  "83",
+                                                                 "reference":  "2.5–7.5",
+                                                                 "unit":  "µg/dL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6a67c592599744a579",
+                                                                 "name":  "Ferritin",
+                                                                 "reference":  "M: 12-300 | F: 12-150",
+                                                                 "unit":  "ng/mL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6a67c592599744a573",
+                                                                 "name":  "Folate (Folic Acid)",
+                                                                 "reference":  "2.0-20.0",
+                                                                 "unit":  "ng/mL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6a67c592599744a576",
+                                                                 "name":  "Serum Iron",
+                                                                 "reference":  "M: 60-170 | F: 50-170",
+                                                                 "unit":  "ug/dL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6b67c592599744a57c",
+                                                                 "name":  "TIBC (Total Iron Binding Capacity)",
+                                                                 "reference":  "250-370",
+                                                                 "unit":  "ug/dL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6b67c592599744a582",
+                                                                 "name":  "Vitamin B1 (Thiamine)",
+                                                                 "reference":  "2.5-7.5",
+                                                                 "unit":  "ug/dL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6a67c592599744a570",
+                                                                 "name":  "Vitamin B12",
+                                                                 "reference":  "200-900",
+                                                                 "unit":  "pg/mL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6a67c592599744a56d",
+                                                                 "name":  "Vitamin D (25-OH)",
+                                                                 "reference":  "20-50 (Sufficient)",
+                                                                 "unit":  "ng/mL",
+                                                                 "source":  "master"
+                                                             },
+                                                             {
+                                                                 "id":  "69de8a6b67c592599744a57f",
+                                                                 "name":  "Zinc",
+                                                                 "reference":  "70-120",
+                                                                 "unit":  "ug/dL",
+                                                                 "source":  "master"
+                                                             }
+                                                         ],
+                            "Hemoglobin":  [
+
+                                           ],
+                            "Neutrophils (DLC)":  [
+
+                                                  ],
+                            "CA-125":  [
+
+                                       ],
+                            "CA 19-9":  [
+
+                                        ],
+                            "FSH":  [
+
+                                    ],
+                            "LH":  [
+
+                                   ],
+                            "Prolactin":  [
+
+                                          ],
+                            "Cortisol (Morning)":  [
+
+                                                   ],
+                            "DHEA-S":  [
+
+                                       ],
+                            "Calcium (Serum)":  [
+
+                                                ],
+                            "Phosphorus (Serum)":  [
+
+                                                   ],
+                            "Lymphocytes (DLC)":  [
+
+                                                  ],
+                            "PTH (Parathyroid Hormone)":  [
+
+                                                          ],
+                            "Alkaline Phosphatase (Bone)":  [
+
+                                                            ],
+                            "IgE (Total)":  [
+
+                                            ],
+                            "ANA (Antinuclear Antibody)":  [
+
+                                                           ],
+                            "Rheumatoid Factor (RF)":  [
+
+                                                       ],
+                            "CRP (C-Reactive Protein)":  [
+
+                                                         ],
+                            "Eosinophils (DLC)":  [
+
+                                                  ],
+                            "Monocytes (DLC)":  [
+
+                                                ],
+                            "Basophils (DLC)":  [
+
+                                                ],
+                            "RDW (Red Cell Distrib. Width)":  [
+
+                                                              ],
+                            "Fasting Blood Sugar (FBS)":  [
+
+                                                          ],
+                            "Postprandial Blood Sugar (PPBS)":  [
+
+                                                                ],
+                            "HbA1c":  [
+
+                                      ],
+                            "Random Blood Sugar (RBS)":  [
+
+                                                         ],
+                            "RBC Count":  [
+
+                                          ],
+                            "Insulin (Fasting)":  [
+
+                                                  ],
+                            "C-Peptide (Fasting)":  [
+
+                                                    ],
+                            "Total Cholesterol":  [
+
+                                                  ],
+                            "LDL Cholesterol":  [
+
+                                                ],
+                            "HDL Cholesterol":  [
+
+                                                ],
+                            "Triglycerides":  [
+
+                                              ],
+                            "VLDL Cholesterol":  [
+
+                                                 ],
+                            "Non-HDL Cholesterol":  [
+
+                                                    ],
+                            "LDL/HDL Ratio":  [
+
+                                              ],
+                            "WBC Count (TLC)":  [
+
+                                                ],
+                            "ALT (SGPT)":  [
+
+                                           ],
+                            "AST (SGOT)":  [
+
+                                           ],
+                            "Alkaline Phosphatase (ALP)":  [
+
+                                                           ],
+                            "GGT (Gamma GT)":  [
+
+                                               ],
+                            "Total Protein":  [
+
+                                              ],
+                            "Albumin":  [
+
+                                        ],
+                            "Globulin":  [
+
+                                         ],
+                            "A/G Ratio":  [
+
+                                          ],
+                            "Platelet Count":  [
+
+                                               ],
+                            "Serum Creatinine":  [
+
+                                                 ],
+                            "Blood Urea Nitrogen (BUN)":  [
+
+                                                          ],
+                            "Urea":  [
+
+                                     ],
+                            "Uric Acid":  [
+
+                                          ],
+                            "eGFR":  [
+
+                                     ],
+                            "BUN/Creatinine Ratio":  [
+
+                                                     ],
+                            "Cystatin C":  [
+
+                                           ],
+                            "TSH":  [
+
+                                    ],
+                            "Free T4 (fT4)":  [
+
+                                              ],
+                            "Free T3 (fT3)":  [
+
+                                              ],
+                            "Hematocrit (PCV)":  [
+
+                                                 ],
+                            "Total T4":  [
+
+                                         ],
+                            "Total T3":  [
+
+                                         ],
+                            "Anti-TPO Antibody":  [
+
+                                                  ],
+                            "Sodium (Na+)":  [
+
+                                             ],
+                            "Potassium (K+)":  [
+
+                                               ],
+                            "Chloride (Cl-)":  [
+
+                                               ],
+                            "Calcium (Total)":  [
+
+                                                ],
+                            "Magnesium":  [
+
+                                          ],
+                            "Phosphate (Inorganic)":  [
+
+                                                      ],
+                            "Bicarbonate (HCO3-)":  [
+
+                                                    ],
+                            "MCV":  [
+
+                                    ],
+                            "Urine pH":  [
+
+                                         ],
+                            "Urine Specific Gravity":  [
+
+                                                       ],
+                            "Urine Protein":  [
+
+                                              ],
+                            "Urine Glucose":  [
+
+                                              ],
+                            "Urine Ketones":  [
+
+                                              ],
+                            "Urine RBC":  [
+
+                                          ],
+                            "Urine WBC":  [
+
+                                          ],
+                            "Urine Nitrite":  [
+
+                                              ],
+                            "Urine Bilirubin":  [
+
+                                                ],
+                            "Microalbuminuria (Spot)":  [
+
+                                                        ],
+                            "MCH":  [
+
+                                    ],
+                            "Troponin I (High Sensitivity)":  [
+
+                                                              ],
+                            "CK-MB":  [
+
+                                      ],
+                            "BNP (B-type Natriuretic Peptide)":  [
+
+                                                                 ],
+                            "hs-CRP":  [
+
+                                       ],
+                            "Homocysteine":  [
+
+                                             ],
+                            "Lipoprotein(a) [Lp(a)]":  [
+
+                                                       ],
+                            "Vitamin D (25-OH)":  [
+
+                                                  ],
+                            "Vitamin B12":  [
+
+                                            ],
+                            "Folate (Folic Acid)":  [
+
+                                                    ],
+                            "Serum Iron":  [
+
+                                           ],
+                            "MCHC":  [
+
+                                     ],
+                            "Ferritin":  [
+
+                                         ],
+                            "TIBC (Total Iron Binding Capacity)":  [
+
+                                                                   ],
+                            "Zinc":  [
+
+                                     ],
+                            "Vitamin B1 (Thiamine)":  [
+
+                                                      ],
+                            "Prothrombin Time (PT)":  [
+
+                                                      ],
+                            "INR":  [
+
+                                    ],
+                            "aPTT":  [
+
+                                     ],
+                            "Fibrinogen":  [
+
+                                           ],
+                            "D-Dimer":  [
+
+                                        ],
+                            "Bleeding Time (BT)":  [
+
+                                                   ],
+                            "ESR":  [
+
+                                    ],
+                            "HBsAg":  [
+
+                                      ],
+                            "Anti-HCV":  [
+
+                                         ],
+                            "HIV 1 \u0026 2 ELISA":  [
+
+                                                     ],
+                            "VDRL / RPR (Syphilis)":  [
+
+                                                      ],
+                            "Dengue NS1 Antigen":  [
+
+                                                   ],
+                            "Malaria Parasite (MP)":  [
+
+                                                      ],
+                            "Widal Test":  [
+
+                                           ],
+                            "PSA (Prostate Specific Antigen)":  [
+
+                                                                ],
+                            "CEA (Carcinoembryonic Ag)":  [
+
+                                                          ],
+                            "AFP (Alpha-Fetoprotein)":  [
+
+                                                        ]
+                        }
+}

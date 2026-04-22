@@ -1,0 +1,2219 @@
+{
+  "instituteId": "69982a0c26d4c4f00d2240f3",
+  "candidates": [
+    {
+      "id": "69ddf534471087a91ab06604",
+      "name": "Acetazolamide",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69ddf530471087a91ab06575",
+      "name": "Acyclovir",
+      "dosageForm": "Cream",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06577",
+      "name": "Acyclovir",
+      "dosageForm": "Cream",
+      "strength": "400mg"
+    },
+    {
+      "id": "69ddf530471087a91ab06574",
+      "name": "Acyclovir",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06576",
+      "name": "Acyclovir",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0658a",
+      "name": "Albendazole",
+      "dosageForm": "Syrup",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0658c",
+      "name": "Albendazole",
+      "dosageForm": "Syrup",
+      "strength": "400mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06589",
+      "name": "Albendazole",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0658b",
+      "name": "Albendazole",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69d66c7418bb3351c42f1da2",
+      "name": "Amikacin",
+      "dosageForm": "Injection",
+      "strength": "250mg/ml"
+    },
+    {
+      "id": "69ddf52f471087a91ab0654f",
+      "name": "Amikacin",
+      "dosageForm": "Injection",
+      "strength": "500mg/ml"
+    },
+    {
+      "id": "69ddf538471087a91ab06679",
+      "name": "Aminophylline",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf533471087a91ab065dc",
+      "name": "Amlodipine",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065da",
+      "name": "Amlodipine",
+      "dosageForm": "Tablet",
+      "strength": "2.5mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065db",
+      "name": "Amlodipine",
+      "dosageForm": "Tablet",
+      "strength": "5mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340b",
+      "name": "Amoxicillin",
+      "dosageForm": "Capsule",
+      "strength": "250mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340b",
+      "name": "Amoxicillin",
+      "dosageForm": "Capsule",
+      "strength": "500mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340b",
+      "name": "Amoxicillin",
+      "dosageForm": "Syrup",
+      "strength": "250mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340b",
+      "name": "Amoxicillin",
+      "dosageForm": "Syrup",
+      "strength": "500mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340b",
+      "name": "Amoxicillin",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340b",
+      "name": "Amoxicillin",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69d66c4d18bb3351c42f18d4",
+      "name": "Amoxicillin + Clavulanate",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69ddf52c471087a91ab06512",
+      "name": "Amoxicillin + Clavulanate",
+      "dosageForm": "Syrup",
+      "strength": "250mg"
+    },
+    {
+      "id": "69ddf52c471087a91ab06514",
+      "name": "Amoxicillin + Clavulanate",
+      "dosageForm": "Syrup",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf52c471087a91ab06513",
+      "name": "Amoxicillin + Clavulanate",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06587",
+      "name": "Amphotericin B",
+      "dosageForm": "Injection",
+      "strength": "50mg"
+    },
+    {
+      "id": "69d66c5818bb3351c42f1925",
+      "name": "Ampicillin",
+      "dosageForm": "Capsule",
+      "strength": "250mg"
+    },
+    {
+      "id": "69ddf52c471087a91ab06517",
+      "name": "Ampicillin",
+      "dosageForm": "Capsule",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf52c471087a91ab06516",
+      "name": "Ampicillin",
+      "dosageForm": "Syrup",
+      "strength": "250mg"
+    },
+    {
+      "id": "69ddf52c471087a91ab06518",
+      "name": "Ampicillin",
+      "dosageForm": "Syrup",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf536471087a91ab06641",
+      "name": "ANALGESICS & ANTI PYRETICS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf532471087a91ab065b1",
+      "name": "ANTACIDS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf535471087a91ab0660d",
+      "name": "ANTI ANEMICS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf532471087a91ab0659c",
+      "name": "ANTI DIABETICS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab0665f",
+      "name": "ANTI EPILEPTICS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf531471087a91ab06578",
+      "name": "ANTI FUNGALS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf531471087a91ab06588",
+      "name": "ANTI HELMENTHICS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf533471087a91ab065d9",
+      "name": "ANTI HYPERTENSIVES",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf531471087a91ab0658d",
+      "name": "ANTI MALARIALS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf534471087a91ab06607",
+      "name": "ANTI PLATELETS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf530471087a91ab06573",
+      "name": "ANTI VIRALS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf536471087a91ab06651",
+      "name": "ANTIPSYCHOTICS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf531471087a91ab06599",
+      "name": "Artemether",
+      "dosageForm": "Injection",
+      "strength": "80mg/ml"
+    },
+    {
+      "id": "69ddf532471087a91ab0659b",
+      "name": "Artemether + Lumefantrine 20mg +",
+      "dosageForm": "Tablet",
+      "strength": "120mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06598",
+      "name": "Artesunate",
+      "dosageForm": "Injection",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06596",
+      "name": "Artesunate",
+      "dosageForm": "Injection",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06597",
+      "name": "Artesunate",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06595",
+      "name": "Artesunate",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf534471087a91ab06609",
+      "name": "Aspirin",
+      "dosageForm": "Tablet",
+      "strength": "150mg"
+    },
+    {
+      "id": "69ddf534471087a91ab0660a",
+      "name": "Aspirin",
+      "dosageForm": "Tablet",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf534471087a91ab06608",
+      "name": "Aspirin",
+      "dosageForm": "Tablet",
+      "strength": "75mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065df",
+      "name": "Atenolol",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065dd",
+      "name": "Atenolol",
+      "dosageForm": "Tablet",
+      "strength": "25mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065de",
+      "name": "Atenolol",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065cc",
+      "name": "Atorvastatin",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065cd",
+      "name": "Atorvastatin",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065ce",
+      "name": "Atorvastatin",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065cf",
+      "name": "Atorvastatin",
+      "dosageForm": "Tablet",
+      "strength": "80mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826b6",
+      "name": "Azithromycin",
+      "dosageForm": "Syrup",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826b8",
+      "name": "Azithromycin",
+      "dosageForm": "Syrup",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826b5",
+      "name": "Azithromycin",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826b7",
+      "name": "Azithromycin",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826dd",
+      "name": "Aztreonam",
+      "dosageForm": "Injection",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826dc",
+      "name": "Aztreonam",
+      "dosageForm": "Injection",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf538471087a91ab0667a",
+      "name": "Beclomethasone",
+      "dosageForm": "Inhaler",
+      "strength": ""
+    },
+    {
+      "id": "69dca7a5673414b480785160",
+      "name": "bhavana",
+      "dosageForm": "Capsule",
+      "strength": "500"
+    },
+    {
+      "id": "69ddf533471087a91ab065c5",
+      "name": "Bisacodyl",
+      "dosageForm": "Suppository",
+      "strength": ""
+    },
+    {
+      "id": "69ddf533471087a91ab065c4",
+      "name": "Bisacodyl",
+      "dosageForm": "Tablet",
+      "strength": ""
+    },
+    {
+      "id": "69ddf538471087a91ab0667b",
+      "name": "Budesonide",
+      "dosageForm": "Inhaler",
+      "strength": ""
+    },
+    {
+      "id": "69ddf536471087a91ab06633",
+      "name": "Calcium Carbonate",
+      "dosageForm": "Tablet",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69ddf536471087a91ab06632",
+      "name": "Calcium Carbonate",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf536471087a91ab06635",
+      "name": "Calcium Citrate",
+      "dosageForm": "Tablet",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69ddf536471087a91ab06634",
+      "name": "Calcium Citrate",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06663",
+      "name": "Carbamazepine",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06664",
+      "name": "Carbamazepine",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826d5",
+      "name": "Cefepime",
+      "dosageForm": "Injection",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826d4",
+      "name": "Cefepime",
+      "dosageForm": "Injection",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a6",
+      "name": "Cefixime",
+      "dosageForm": "Syrup",
+      "strength": "200mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a8",
+      "name": "Cefixime",
+      "dosageForm": "Syrup",
+      "strength": "400mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a5",
+      "name": "Cefixime",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a7",
+      "name": "Cefixime",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826d3",
+      "name": "Cefotaxime",
+      "dosageForm": "Injection",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826d2",
+      "name": "Cefotaxime",
+      "dosageForm": "Injection",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826aa",
+      "name": "Cefpodoxime",
+      "dosageForm": "Syrup",
+      "strength": "200mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826ac",
+      "name": "Cefpodoxime",
+      "dosageForm": "Syrup",
+      "strength": "400mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a9",
+      "name": "Cefpodoxime",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826ab",
+      "name": "Cefpodoxime",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826d1",
+      "name": "Ceftriaxone",
+      "dosageForm": "Injection",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826d0",
+      "name": "Ceftriaxone",
+      "dosageForm": "Injection",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a2",
+      "name": "Cefuroxime",
+      "dosageForm": "Syrup",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a4",
+      "name": "Cefuroxime",
+      "dosageForm": "Syrup",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a1",
+      "name": "Cefuroxime",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a3",
+      "name": "Cefuroxime",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b48078269d",
+      "name": "Cephalexin",
+      "dosageForm": "Capsule",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b48078269f",
+      "name": "Cephalexin",
+      "dosageForm": "Capsule",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b48078269e",
+      "name": "Cephalexin",
+      "dosageForm": "Syrup",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826a0",
+      "name": "Cephalexin",
+      "dosageForm": "Syrup",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0658f",
+      "name": "Chloroquine",
+      "dosageForm": "Syrup",
+      "strength": "150mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06591",
+      "name": "Chloroquine",
+      "dosageForm": "Syrup",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0658e",
+      "name": "Chloroquine",
+      "dosageForm": "Tablet",
+      "strength": "150mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06590",
+      "name": "Chloroquine",
+      "dosageForm": "Tablet",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06658",
+      "name": "Chlorpromazine",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab06657",
+      "name": "Chlorpromazine",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06656",
+      "name": "Chlorpromazine",
+      "dosageForm": "Tablet",
+      "strength": "25mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826af",
+      "name": "Ciprofloxacin",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826b0",
+      "name": "Ciprofloxacin",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826b9",
+      "name": "Clarithromycin",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826ba",
+      "name": "Clarithromycin",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826e4",
+      "name": "Clindamycin",
+      "dosageForm": "Capsule",
+      "strength": "150mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826e6",
+      "name": "Clindamycin",
+      "dosageForm": "Capsule",
+      "strength": "300mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826e5",
+      "name": "Clindamycin",
+      "dosageForm": "Injection",
+      "strength": "150mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826e7",
+      "name": "Clindamycin",
+      "dosageForm": "Injection",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065f5",
+      "name": "Clonidine",
+      "dosageForm": "Tablet",
+      "strength": "0.1mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065f6",
+      "name": "Clonidine",
+      "dosageForm": "Tablet",
+      "strength": "0.2mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065f7",
+      "name": "Clonidine",
+      "dosageForm": "Tablet",
+      "strength": "0.3mg"
+    },
+    {
+      "id": "69ddf535471087a91ab0660c",
+      "name": "Clopidogrel",
+      "dosageForm": "Tablet",
+      "strength": "150mg"
+    },
+    {
+      "id": "69ddf535471087a91ab0660b",
+      "name": "Clopidogrel",
+      "dosageForm": "Tablet",
+      "strength": "75mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06583",
+      "name": "Clotrimazole",
+      "dosageForm": "Cream",
+      "strength": "1%"
+    },
+    {
+      "id": "69dbfee1673414b480782699",
+      "name": "Cloxacillin",
+      "dosageForm": "Capsule",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b48078269b",
+      "name": "Cloxacillin",
+      "dosageForm": "Capsule",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b48078269a",
+      "name": "Cloxacillin",
+      "dosageForm": "Syrup",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b48078269c",
+      "name": "Cloxacillin",
+      "dosageForm": "Syrup",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826de",
+      "name": "Colistin",
+      "dosageForm": "Injection",
+      "strength": "1MU"
+    },
+    {
+      "id": "69dbfee1673414b4807826df",
+      "name": "Colistin",
+      "dosageForm": "Injection",
+      "strength": "2MU"
+    },
+    {
+      "id": "69dbfee1673414b4807826c6",
+      "name": "Cotrimoxazole",
+      "dosageForm": "Syrup",
+      "strength": "480mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826c8",
+      "name": "Cotrimoxazole",
+      "dosageForm": "Syrup",
+      "strength": "960mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826c5",
+      "name": "Cotrimoxazole",
+      "dosageForm": "Tablet",
+      "strength": "480mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826c7",
+      "name": "Cotrimoxazole",
+      "dosageForm": "Tablet",
+      "strength": "960mg"
+    },
+    {
+      "id": "69ddf535471087a91ab0661c",
+      "name": "Dexamethasone",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf535471087a91ab0661a",
+      "name": "Dexamethasone",
+      "dosageForm": "Tablet",
+      "strength": "0.5mg"
+    },
+    {
+      "id": "69ddf535471087a91ab0661b",
+      "name": "Dexamethasone",
+      "dosageForm": "Tablet",
+      "strength": "4mg"
+    },
+    {
+      "id": "69ddf536471087a91ab0664b",
+      "name": "Diclofenac",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf536471087a91ab0664a",
+      "name": "Diclofenac",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf536471087a91ab06649",
+      "name": "Diclofenac",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065f8",
+      "name": "DIURETICS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf538471087a91ab06689",
+      "name": "Domperidone",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69ddf538471087a91ab06687",
+      "name": "Domperidone",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf538471087a91ab06688",
+      "name": "Domperidone",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826ad",
+      "name": "Doxycycline",
+      "dosageForm": "Capsule",
+      "strength": "100mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826ae",
+      "name": "Doxycycline",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065e6",
+      "name": "Enalapril",
+      "dosageForm": "Tablet",
+      "strength": "2.5mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826bc",
+      "name": "Erythromycin",
+      "dosageForm": "Syrup",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826be",
+      "name": "Erythromycin",
+      "dosageForm": "Syrup",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826bb",
+      "name": "Erythromycin",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826bd",
+      "name": "Erythromycin",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065b9",
+      "name": "Esomeprazole",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065ba",
+      "name": "Esomeprazole",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf535471087a91ab0661d",
+      "name": "Estrogen (Conjugated)",
+      "dosageForm": "Tablet",
+      "strength": "0.625mg"
+    },
+    {
+      "id": "69ddf535471087a91ab0661e",
+      "name": "Estrogen (Conjugated)",
+      "dosageForm": "Tablet",
+      "strength": "1.25mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826f1",
+      "name": "Ethambutol",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69ddf538471087a91ab06686",
+      "name": "Famotidine",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf532471087a91ab065be",
+      "name": "Famotidine",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065bf",
+      "name": "Famotidine",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065d8",
+      "name": "Fenofibrate",
+      "dosageForm": "Tablet",
+      "strength": "160mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0657c",
+      "name": "Fluconazole",
+      "dosageForm": "Syrup",
+      "strength": "150mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0657e",
+      "name": "Fluconazole",
+      "dosageForm": "Syrup",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0657a",
+      "name": "Fluconazole",
+      "dosageForm": "Syrup",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0657b",
+      "name": "Fluconazole",
+      "dosageForm": "Tablet",
+      "strength": "150mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0657d",
+      "name": "Fluconazole",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06579",
+      "name": "Fluconazole",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf538471087a91ab0667c",
+      "name": "Fluticasone",
+      "dosageForm": "Inhaler",
+      "strength": ""
+    },
+    {
+      "id": "69ddf534471087a91ab065fc",
+      "name": "Furosemide",
+      "dosageForm": "Injection",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065fd",
+      "name": "Furosemide",
+      "dosageForm": "Injection",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065f9",
+      "name": "Furosemide",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065fa",
+      "name": "Furosemide",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065fb",
+      "name": "Furosemide",
+      "dosageForm": "Tablet",
+      "strength": "80mg"
+    },
+    {
+      "id": "69ddf537471087a91ab0666b",
+      "name": "Gabapentin",
+      "dosageForm": "Capsule",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf537471087a91ab0666c",
+      "name": "Gabapentin",
+      "dosageForm": "Capsule",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf537471087a91ab0666d",
+      "name": "Gabapentin",
+      "dosageForm": "Capsule",
+      "strength": "400mg"
+    },
+    {
+      "id": "69ddf538471087a91ab06682",
+      "name": "GASTRO INTESTINAL",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69dbfee1673414b4807826cd",
+      "name": "Gentamicin",
+      "dosageForm": "Injection",
+      "strength": "40mg/ml"
+    },
+    {
+      "id": "69ddf532471087a91ab065a0",
+      "name": "Glibenclamide",
+      "dosageForm": "Tablet",
+      "strength": "2.5mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065a1",
+      "name": "Glibenclamide",
+      "dosageForm": "Tablet",
+      "strength": "5mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065a2",
+      "name": "Gliclazide",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065a3",
+      "name": "Gliclazide",
+      "dosageForm": "Tablet",
+      "strength": "80mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065a4",
+      "name": "Glimepiride",
+      "dosageForm": "Tablet",
+      "strength": "1mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065a5",
+      "name": "Glimepiride",
+      "dosageForm": "Tablet",
+      "strength": "2mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065a6",
+      "name": "Glimepiride",
+      "dosageForm": "Tablet",
+      "strength": "4mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06655",
+      "name": "Haloperidol",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab06654",
+      "name": "Haloperidol",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf536471087a91ab06652",
+      "name": "Haloperidol",
+      "dosageForm": "Tablet",
+      "strength": "1mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06653",
+      "name": "Haloperidol",
+      "dosageForm": "Tablet",
+      "strength": "5mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065f3",
+      "name": "Hydralazine",
+      "dosageForm": "Tablet",
+      "strength": "25mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065f4",
+      "name": "Hydralazine",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065fe",
+      "name": "Hydrochlorothiazide",
+      "dosageForm": "Tablet",
+      "strength": "12.5mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065ff",
+      "name": "Hydrochlorothiazide",
+      "dosageForm": "Tablet",
+      "strength": "25mg"
+    },
+    {
+      "id": "69ddf534471087a91ab06600",
+      "name": "Hydrochlorothiazide",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf535471087a91ab06619",
+      "name": "Hydrocortisone",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf535471087a91ab06617",
+      "name": "Hydrocortisone",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf535471087a91ab06618",
+      "name": "Hydrocortisone",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06592",
+      "name": "Hydroxychloroquine",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06593",
+      "name": "Hydroxychloroquine",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340c",
+      "name": "Ibuprofen",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340c",
+      "name": "Ibuprofen",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826d9",
+      "name": "Imipenem + Cilastatin",
+      "dosageForm": "Injection",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826d8",
+      "name": "Imipenem + Cilastatin",
+      "dosageForm": "Injection",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065b0",
+      "name": "Insulin (Glargine)",
+      "dosageForm": "Injection",
+      "strength": "100IU/ml"
+    },
+    {
+      "id": "69ddf532471087a91ab065af",
+      "name": "Insulin (NPH)",
+      "dosageForm": "Injection",
+      "strength": "100IU/ml"
+    },
+    {
+      "id": "69ddf532471087a91ab065ae",
+      "name": "Insulin (NPH)",
+      "dosageForm": "Injection",
+      "strength": "40IU/ml"
+    },
+    {
+      "id": "69ddf532471087a91ab065ad",
+      "name": "Insulin (Regular)",
+      "dosageForm": "Injection",
+      "strength": "100IU/ml"
+    },
+    {
+      "id": "69ddf532471087a91ab065ac",
+      "name": "Insulin (Regular)",
+      "dosageForm": "Injection",
+      "strength": "40IU/ml"
+    },
+    {
+      "id": "69ddf538471087a91ab06680",
+      "name": "Ipratropium",
+      "dosageForm": "Inhaler",
+      "strength": ""
+    },
+    {
+      "id": "69dbfee1673414b4807826ee",
+      "name": "Isoniazid",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826ef",
+      "name": "Isoniazid",
+      "dosageForm": "Tablet",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0657f",
+      "name": "Itraconazole",
+      "dosageForm": "Capsule",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06580",
+      "name": "Itraconazole",
+      "dosageForm": "Capsule",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06582",
+      "name": "Ketoconazole",
+      "dosageForm": "Cream",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06581",
+      "name": "Ketoconazole",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065c3",
+      "name": "Lactulose",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69ddf532471087a91ab065bb",
+      "name": "Lansoprazole",
+      "dosageForm": "Capsule",
+      "strength": "30mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065c2",
+      "name": "LAXATIVES",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69dbfee1673414b4807826b3",
+      "name": "Levofloxacin",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826b4",
+      "name": "Levofloxacin",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf535471087a91ab06611",
+      "name": "Levothyroxine",
+      "dosageForm": "Tablet",
+      "strength": "100mcg"
+    },
+    {
+      "id": "69ddf535471087a91ab06612",
+      "name": "Levothyroxine",
+      "dosageForm": "Tablet",
+      "strength": "125mcg"
+    },
+    {
+      "id": "69ddf535471087a91ab06613",
+      "name": "Levothyroxine",
+      "dosageForm": "Tablet",
+      "strength": "150mcg"
+    },
+    {
+      "id": "69ddf535471087a91ab0660e",
+      "name": "Levothyroxine",
+      "dosageForm": "Tablet",
+      "strength": "25mcg"
+    },
+    {
+      "id": "69ddf535471087a91ab0660f",
+      "name": "Levothyroxine",
+      "dosageForm": "Tablet",
+      "strength": "50mcg"
+    },
+    {
+      "id": "69ddf535471087a91ab06610",
+      "name": "Levothyroxine",
+      "dosageForm": "Tablet",
+      "strength": "75mcg"
+    },
+    {
+      "id": "69dbfee1673414b4807826ca",
+      "name": "Linezolid",
+      "dosageForm": "Tablet",
+      "strength": "600mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065cb",
+      "name": "LIPID LOWERING AGENTS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf538471087a91ab06690",
+      "name": "Loperamide",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69ddf538471087a91ab0668f",
+      "name": "Loperamide",
+      "dosageForm": "Tablet",
+      "strength": "2mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065eb",
+      "name": "Losartan",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065e9",
+      "name": "Losartan",
+      "dosageForm": "Tablet",
+      "strength": "25mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065ea",
+      "name": "Losartan",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf531471087a91ab0659a",
+      "name": "Lumefantrine",
+      "dosageForm": "Tablet",
+      "strength": "120mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065c8",
+      "name": "Magnesium Hydroxide",
+      "dosageForm": "Suspension",
+      "strength": ""
+    },
+    {
+      "id": "69ddf536471087a91ab06638",
+      "name": "Magnesium Oxide",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69ddf536471087a91ab06639",
+      "name": "Magnesium Oxide",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf534471087a91ab06605",
+      "name": "Mannitol",
+      "dosageForm": "Injection",
+      "strength": "20%"
+    },
+    {
+      "id": "69ddf534471087a91ab06606",
+      "name": "Mannitol",
+      "dosageForm": "Injection",
+      "strength": "25%"
+    },
+    {
+      "id": "69dbfee1673414b4807826d7",
+      "name": "Meropenem",
+      "dosageForm": "Injection",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826d6",
+      "name": "Meropenem",
+      "dosageForm": "Injection",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf532471087a91ab0659f",
+      "name": "Metformin",
+      "dosageForm": "Tablet",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69ddf532471087a91ab0659d",
+      "name": "Metformin",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf532471087a91ab0659e",
+      "name": "Metformin",
+      "dosageForm": "Tablet",
+      "strength": "850mg"
+    },
+    {
+      "id": "69ddf538471087a91ab0668b",
+      "name": "Metoclopramide",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf538471087a91ab0668a",
+      "name": "Metoclopramide",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065e2",
+      "name": "Metoprolol",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065e0",
+      "name": "Metoprolol",
+      "dosageForm": "Tablet",
+      "strength": "25mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065e1",
+      "name": "Metoprolol",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826c0",
+      "name": "Metronidazole",
+      "dosageForm": "Syrup",
+      "strength": "200mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826c2",
+      "name": "Metronidazole",
+      "dosageForm": "Syrup",
+      "strength": "400mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826bf",
+      "name": "Metronidazole",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826c1",
+      "name": "Metronidazole",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06584",
+      "name": "Miconazole",
+      "dosageForm": "Cream",
+      "strength": "2%"
+    },
+    {
+      "id": "69ddf536471087a91ab06631",
+      "name": "MINERALS",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69ddf538471087a91ab0667f",
+      "name": "Montelukast",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf538471087a91ab0667d",
+      "name": "Montelukast",
+      "dosageForm": "Tablet",
+      "strength": "4mg"
+    },
+    {
+      "id": "69ddf538471087a91ab0667e",
+      "name": "Montelukast",
+      "dosageForm": "Tablet",
+      "strength": "5mg"
+    },
+    {
+      "id": "69ddf536471087a91ab06630",
+      "name": "Multivitamin",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69ddf535471087a91ab0662f",
+      "name": "Multivitamin",
+      "dosageForm": "Tablet",
+      "strength": ""
+    },
+    {
+      "id": "69ddf536471087a91ab0664c",
+      "name": "Naproxen",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69ddf536471087a91ab0664d",
+      "name": "Naproxen",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826c9",
+      "name": "Nitrofurantoin",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826b1",
+      "name": "Ofloxacin",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826b2",
+      "name": "Ofloxacin",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69ddf537471087a91ab0665e",
+      "name": "Olanzapine",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf537471087a91ab0665d",
+      "name": "Olanzapine",
+      "dosageForm": "Tablet",
+      "strength": "5mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065b2",
+      "name": "Omeprazole",
+      "dosageForm": "Capsule",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065b4",
+      "name": "Omeprazole",
+      "dosageForm": "Capsule",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf538471087a91ab06683",
+      "name": "Omeprazole",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf532471087a91ab065b3",
+      "name": "Omeprazole",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065b5",
+      "name": "Omeprazole",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf538471087a91ab0668e",
+      "name": "Ondansetron",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf538471087a91ab0668c",
+      "name": "Ondansetron",
+      "dosageForm": "Tablet",
+      "strength": "4mg"
+    },
+    {
+      "id": "69ddf538471087a91ab0668d",
+      "name": "Ondansetron",
+      "dosageForm": "Tablet",
+      "strength": "8mg"
+    },
+    {
+      "id": "69ddf538471087a91ab06691",
+      "name": "Oral Rehydration Salt (ORS)",
+      "dosageForm": "Powder",
+      "strength": ""
+    },
+    {
+      "id": "69ddf538471087a91ab06684",
+      "name": "Pantoprazole",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf532471087a91ab065b6",
+      "name": "Pantoprazole",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065b7",
+      "name": "Pantoprazole",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340a",
+      "name": "Paracetamol",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340a",
+      "name": "Paracetamol",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340a",
+      "name": "Paracetamol",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340a",
+      "name": "Paracetamol",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69d5216fcb0e5eb37973340a",
+      "name": "Paracetamol",
+      "dosageForm": "Tablet",
+      "strength": "650mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06667",
+      "name": "Phenobarbital",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab06666",
+      "name": "Phenobarbital",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06665",
+      "name": "Phenobarbital",
+      "dosageForm": "Tablet",
+      "strength": "30mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06662",
+      "name": "Phenytoin",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab06660",
+      "name": "Phenytoin",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06661",
+      "name": "Phenytoin",
+      "dosageForm": "Tablet",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065a7",
+      "name": "Pioglitazone",
+      "dosageForm": "Tablet",
+      "strength": "15mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065a8",
+      "name": "Pioglitazone",
+      "dosageForm": "Tablet",
+      "strength": "30mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826da",
+      "name": "Piperacillin + Tazobactam",
+      "dosageForm": "Injection",
+      "strength": "2.25g"
+    },
+    {
+      "id": "69dbfee1673414b4807826db",
+      "name": "Piperacillin + Tazobactam",
+      "dosageForm": "Injection",
+      "strength": "4.5g"
+    },
+    {
+      "id": "69dbfee1673414b4807826eb",
+      "name": "Polymyxin B",
+      "dosageForm": "Injection",
+      "strength": "5000U/ml"
+    },
+    {
+      "id": "69ddf536471087a91ab0663c",
+      "name": "Potassium Chloride",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf536471087a91ab0663b",
+      "name": "Potassium Chloride",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69ddf536471087a91ab0663a",
+      "name": "Potassium Chloride",
+      "dosageForm": "Tablet",
+      "strength": "600mg"
+    },
+    {
+      "id": "69ddf535471087a91ab06615",
+      "name": "Prednisolone",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf535471087a91ab06616",
+      "name": "Prednisolone",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf535471087a91ab06614",
+      "name": "Prednisolone",
+      "dosageForm": "Tablet",
+      "strength": "5mg"
+    },
+    {
+      "id": "69ddf535471087a91ab0661f",
+      "name": "Progesterone",
+      "dosageForm": "Capsule",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf535471087a91ab06620",
+      "name": "Progesterone",
+      "dosageForm": "Capsule",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf535471087a91ab06621",
+      "name": "Progesterone",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf533471087a91ab065e3",
+      "name": "Propranolol",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065e4",
+      "name": "Propranolol",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065e5",
+      "name": "Propranolol",
+      "dosageForm": "Tablet",
+      "strength": "80mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826f0",
+      "name": "Pyrazinamide",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06594",
+      "name": "Quinine",
+      "dosageForm": "Tablet",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065b8",
+      "name": "Rabeprazole",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065e8",
+      "name": "Ramipril",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065e7",
+      "name": "Ramipril",
+      "dosageForm": "Tablet",
+      "strength": "5mg"
+    },
+    {
+      "id": "69ddf538471087a91ab06685",
+      "name": "Ranitidine",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf532471087a91ab065bc",
+      "name": "Ranitidine",
+      "dosageForm": "Tablet",
+      "strength": "150mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065bd",
+      "name": "Ranitidine",
+      "dosageForm": "Tablet",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf537471087a91ab0666e",
+      "name": "RESPIRATORY",
+      "dosageForm": "Other",
+      "strength": ""
+    },
+    {
+      "id": "69dbfee1673414b4807826ec",
+      "name": "Rifampicin",
+      "dosageForm": "Capsule",
+      "strength": "150mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826ed",
+      "name": "Rifampicin",
+      "dosageForm": "Capsule",
+      "strength": "300mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06659",
+      "name": "Risperidone",
+      "dosageForm": "Tablet",
+      "strength": "1mg"
+    },
+    {
+      "id": "69ddf537471087a91ab0665a",
+      "name": "Risperidone",
+      "dosageForm": "Tablet",
+      "strength": "2mg"
+    },
+    {
+      "id": "69ddf537471087a91ab0665b",
+      "name": "Risperidone",
+      "dosageForm": "Tablet",
+      "strength": "4mg"
+    },
+    {
+      "id": "69ddf537471087a91ab0665c",
+      "name": "Risperidone",
+      "dosageForm": "Tablet",
+      "strength": "6mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065d5",
+      "name": "Rosuvastatin",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065d6",
+      "name": "Rosuvastatin",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065d7",
+      "name": "Rosuvastatin",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065d4",
+      "name": "Rosuvastatin",
+      "dosageForm": "Tablet",
+      "strength": "5mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06672",
+      "name": "Salbutamol",
+      "dosageForm": "Inhaler",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab06671",
+      "name": "Salbutamol",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab0666f",
+      "name": "Salbutamol",
+      "dosageForm": "Tablet",
+      "strength": "2mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06670",
+      "name": "Salbutamol",
+      "dosageForm": "Tablet",
+      "strength": "4mg"
+    },
+    {
+      "id": "69ddf536471087a91ab06640",
+      "name": "Selenium",
+      "dosageForm": "Tablet",
+      "strength": "100mcg"
+    },
+    {
+      "id": "69ddf536471087a91ab0663f",
+      "name": "Selenium",
+      "dosageForm": "Tablet",
+      "strength": "50mcg"
+    },
+    {
+      "id": "69ddf533471087a91ab065c7",
+      "name": "Senna",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69ddf533471087a91ab065c6",
+      "name": "Senna",
+      "dosageForm": "Tablet",
+      "strength": ""
+    },
+    {
+      "id": "69ddf533471087a91ab065d0",
+      "name": "Simvastatin",
+      "dosageForm": "Tablet",
+      "strength": "10mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065d1",
+      "name": "Simvastatin",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065d2",
+      "name": "Simvastatin",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065d3",
+      "name": "Simvastatin",
+      "dosageForm": "Tablet",
+      "strength": "80mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065aa",
+      "name": "Sitagliptin",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf532471087a91ab065a9",
+      "name": "Sitagliptin",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69ddf536471087a91ab0663e",
+      "name": "Sodium Bicarbonate",
+      "dosageForm": "Injection",
+      "strength": ""
+    },
+    {
+      "id": "69ddf536471087a91ab0663d",
+      "name": "Sodium Bicarbonate",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf533471087a91ab065ca",
+      "name": "Sodium Picosulfate",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69ddf533471087a91ab065c9",
+      "name": "Sodium Picosulfate",
+      "dosageForm": "Tablet",
+      "strength": ""
+    },
+    {
+      "id": "69ddf534471087a91ab06603",
+      "name": "Spironolactone",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf534471087a91ab06601",
+      "name": "Spironolactone",
+      "dosageForm": "Tablet",
+      "strength": "25mg"
+    },
+    {
+      "id": "69ddf534471087a91ab06602",
+      "name": "Spironolactone",
+      "dosageForm": "Tablet",
+      "strength": "50mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826f2",
+      "name": "Streptomycin",
+      "dosageForm": "Injection",
+      "strength": "1g"
+    },
+    {
+      "id": "69ddf538471087a91ab06692",
+      "name": "Sucralfate",
+      "dosageForm": "Suspension",
+      "strength": ""
+    },
+    {
+      "id": "69ddf533471087a91ab065c1",
+      "name": "Sucralfate",
+      "dosageForm": "Syrup",
+      "strength": "1g"
+    },
+    {
+      "id": "69ddf533471087a91ab065c0",
+      "name": "Sucralfate",
+      "dosageForm": "Tablet",
+      "strength": "1g"
+    },
+    {
+      "id": "69dbfee1673414b4807826e1",
+      "name": "Sulbactam",
+      "dosageForm": "Injection",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826e0",
+      "name": "Sulbactam",
+      "dosageForm": "Injection",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826e3",
+      "name": "Tazobactam",
+      "dosageForm": "Injection",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826e2",
+      "name": "Tazobactam",
+      "dosageForm": "Injection",
+      "strength": "500mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826e8",
+      "name": "Teicoplanin",
+      "dosageForm": "Injection",
+      "strength": "200mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826e9",
+      "name": "Teicoplanin",
+      "dosageForm": "Injection",
+      "strength": "400mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065ec",
+      "name": "Telmisartan",
+      "dosageForm": "Tablet",
+      "strength": "20mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065ed",
+      "name": "Telmisartan",
+      "dosageForm": "Tablet",
+      "strength": "40mg"
+    },
+    {
+      "id": "69ddf534471087a91ab065ee",
+      "name": "Telmisartan",
+      "dosageForm": "Tablet",
+      "strength": "80mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06586",
+      "name": "Terbinafine",
+      "dosageForm": "Cream",
+      "strength": "250mg"
+    },
+    {
+      "id": "69ddf531471087a91ab06585",
+      "name": "Terbinafine",
+      "dosageForm": "Tablet",
+      "strength": "250mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06675",
+      "name": "Terbutaline",
+      "dosageForm": "Inhaler",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab06674",
+      "name": "Terbutaline",
+      "dosageForm": "Syrup",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab06673",
+      "name": "Terbutaline",
+      "dosageForm": "Tablet",
+      "strength": "2.5mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06676",
+      "name": "Theophylline",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06677",
+      "name": "Theophylline",
+      "dosageForm": "Tablet",
+      "strength": "200mg"
+    },
+    {
+      "id": "69ddf538471087a91ab06678",
+      "name": "Theophylline",
+      "dosageForm": "Tablet",
+      "strength": "400mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826ea",
+      "name": "Tigecycline",
+      "dosageForm": "Injection",
+      "strength": "50mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826c3",
+      "name": "Tinidazole",
+      "dosageForm": "Tablet",
+      "strength": "300mg"
+    },
+    {
+      "id": "69dbfee1673414b4807826c4",
+      "name": "Tinidazole",
+      "dosageForm": "Tablet",
+      "strength": "500mg"
+    },
+    {
+      "id": "69ddf538471087a91ab06681",
+      "name": "Tiotropium",
+      "dosageForm": "Inhaler",
+      "strength": ""
+    },
+    {
+      "id": "69ddf537471087a91ab0666a",
+      "name": "Topiramate",
+      "dosageForm": "Tablet",
+      "strength": "100mg"
+    },
+    {
+      "id": "69ddf537471087a91ab06668",
+      "name": "Topiramate",
+      "dosageForm": "Tablet",
+      "strength": "25mg"
+    },
+    {
+      "id": "69e5d1bdc96634e36c47e793",
+      "name": "Vancomycin",
+      "dosageForm": "Injection",
+      "strength": "1000mg"
+    },
+    {
+      "id": "69e5ff6bb4c8425c5534266d",
+      "name": "Vancomycin",
+      "dosageForm": "Injection",
+      "strength": "500mg"
+    }
+  ]
+}
