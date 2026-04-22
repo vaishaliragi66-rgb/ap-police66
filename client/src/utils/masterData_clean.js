@@ -327,6 +327,11 @@ export const invalidateMasterDataCache = () => {
   cache = null;
   cacheTime = 0;
   if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("master-data-updated-at", String(Date.now()));
+    } catch {
+      // ignore storage write issues and still notify the current tab
+    }
     window.dispatchEvent(new Event("master-data-updated"));
   }
 };

@@ -6,6 +6,12 @@ const MasterValue = require("../models/master_value");
 const Medicine = require("../models/master_medicine");
 const MainStoreMedicine = require("../models/main_store");
 const {
+  canonicalizeDosageForm,
+  canonicalizeMedicineType,
+  getCanonicalMedicines,
+  normalizeLoose: canonicalNormalizeLoose
+} = require("../utils/canonicalMedicines");
+const {
   DEFAULT_TEST_CATEGORIES,
   ensureTestMasterValues,
   listMasterTests,
@@ -228,26 +234,15 @@ const DEFAULT_VALUE_SEEDS = {
   ],
   "Ledger Directions": ["IN", "OUT"],
   "Rows Per Page": ["5", "10", "25", "50", "100"],
-  "Medicines": (function () {
-    try {
-      const parsed = require(path.join(__dirname, '..', 'imports', 'parsed_medicines_20260413003118.json'));
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .filter((r) => r && r.name && String(r.name).trim().toLowerCase() !== 'medicine')
-        .map((r) => ({
-          value_name: String(r.name || '').trim(),
-          meta: {
-            kind: 'medicine',
-            medicineType: String(r.medicineType || r.medicine_type || '').trim(),
-            dosageForm: String(r.dosageForm || r.dosage_form || r.form || '').trim(),
-            strength: String(r.strength || '').trim()
-          }
-        }));
-    } catch (err) {
-      console.warn('Could not load parsed medicines JSON for default seeds:', err && err.message);
-      return [];
+  "Medicines": getCanonicalMedicines().map((item) => ({
+    value_name: item.value_name,
+    meta: {
+      kind: "medicine",
+      medicineType: item.medicineType,
+      dosageForm: item.dosageForm,
+      strength: item.strength
     }
-  })(),
+  })),
   "Residential Areas": [
     "Hyderabad",
     "Secunderabad",
@@ -324,6 +319,17 @@ const makeMedicineKey = ({ value_name, medicineType, dosageForm, strength }) =>
     normalize(value_name),
     normalize(strength)
   ].join("::");
+const getSeedNormalizedValue = (categoryName, valueName, meta = {}) => {
+  if (String(categoryName || "").trim() === "Medicines") {
+    return makeMedicineKey({
+      value_name: valueName,
+      medicineType: getMedicineTypeFromMeta(meta),
+      dosageForm: getMedicineDosageFormFromMeta(meta),
+      strength: getMedicineStrengthFromMeta(meta)
+    });
+  }
+  return normalize(valueName);
+};
 
 const sortUnique = (arr) => {
   if (!Array.isArray(arr)) return [];
@@ -396,15 +402,15 @@ const ensureDefaultValues = async (instituteId) => {
       ).trim();
       if (!value_name) return;
 
-      const normalized_value = normalize(value_name);
-      if (existingSet.has(normalized_value)) {
-        return;
-      }
-
       const meta =
         seedItem && typeof seedItem === "object" && !Array.isArray(seedItem)
           ? seedItem.meta || {}
           : {};
+
+      const normalized_value = getSeedNormalizedValue(category.category_name, value_name, meta);
+      if (existingSet.has(normalized_value)) {
+        return;
+      }
 
       docs.push({
         Institute_ID: instituteId,
@@ -414,6 +420,7 @@ const ensureDefaultValues = async (instituteId) => {
         status: "Active",
         meta
       });
+      existingSet.add(normalized_value);
     });
   });
 
@@ -434,6 +441,27 @@ const getCategoryByName = async (instituteId, categoryName) => {
   // fallback to global reserved category id
   category = await MasterCategory.findOne({ Institute_ID: GLOBAL_MASTER_INSTITUTE_ID, normalized_name: normalized });
   return category;
+};
+
+const getTestCategoryDocs = async (instituteId) => {
+  const normalized = normalize("Tests");
+  const docs = [];
+  const seen = new Set();
+
+  if (instituteId && mongoose.Types.ObjectId.isValid(String(instituteId))) {
+    const local = await MasterCategory.findOne({ Institute_ID: instituteId, normalized_name: normalized });
+    if (local && !seen.has(String(local._id))) {
+      docs.push(local);
+      seen.add(String(local._id));
+    }
+  }
+
+  const global = await MasterCategory.findOne({ Institute_ID: GLOBAL_MASTER_INSTITUTE_ID, normalized_name: normalized });
+  if (global && !seen.has(String(global._id))) {
+    docs.push(global);
+  }
+
+  return docs;
 };
 
 router.get("/public-map", async (req, res) => {
@@ -633,7 +661,10 @@ router.post("/values", verifyToken, requireInstituteAdmin, async (req, res) => {
       return res.status(400).json({ message: "value_name is required" });
     }
 
-    const category = await MasterCategory.findOne({ _id: categoryId, Institute_ID: instituteId });
+    let category = await MasterCategory.findOne({ _id: categoryId, Institute_ID: instituteId });
+    if (!category) {
+      category = await MasterCategory.findOne({ _id: categoryId, Institute_ID: GLOBAL_MASTER_INSTITUTE_ID });
+    }
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
@@ -766,100 +797,59 @@ router.get("/active-map", verifyToken, async (req, res) => {
   }
 });
 
-router.get("/tests-structure", verifyToken, async (req, res) => {
+router.get("/tests-structure", async (req, res) => {
   try {
-    const instituteId = req.user.instituteId;
+    // Allow public access when a valid instituteId is provided via query or header.
+    // If none provided, fall back to token-based auth (verifyToken sets req.user when used).
+    let instituteId = String(req.query?.instituteId || req.user?.instituteId || req.headers['x-institute-id'] || "").trim();
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({ message: "Valid instituteId is required (provide via token, ?instituteId= or x-institute-id header)" });
+    }
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);
     await ensureTestMasterValues(instituteId);
 
-    const testsCategory = await getCategoryByName(instituteId, "Tests");
-    const allRows = testsCategory
+    const testsCategories = await getTestCategoryDocs(instituteId);
+    const testsCategoryIds = testsCategories.map((category) => category?._id).filter(Boolean);
+    const allRows = testsCategoryIds.length
       ? await MasterValue.find({
           Institute_ID: instituteId,
-          category_id: testsCategory._id,
+          category_id: { $in: testsCategoryIds },
           status: "Active"
         }).lean()
       : [];
 
-    const categoriesSet = new Set(VALID_TEST_CATEGORIES);
+    const categoriesSet = new Set();
+    const isNumericOnly = (value) => /^\d+$/.test(String(value || "").trim());
 
-    // Map of keywords (lowercased) to high-level test categories
-    const TEST_GROUPS = {
-      HEMATOLOGY: ['hemoglobin','rbc','wbc','platelet','hematocrit','mcv','mch','mchc','esr','neutrophil','lymphocyte','eosinophil','monocyte','basophil','rdw'],
-      'DIABETES & GLUCOSE': ['fasting blood sugar','postprandial','ppbs','hba1c','random blood sugar','rbs','insulin','c-peptide'],
-      'LIPID PROFILE': ['total cholesterol','ldl','hdl','triglyceride','vldl','non-hdl','ldl/hdl','ldl ratio'],
-      'LIVER FUNCTION TESTS (LFT)': ['bilirubin','alt','ast','alkaline phosphatase','ggt','total protein','albumin','globulin','a/g ratio'],
-      'KIDNEY FUNCTION TESTS (KFT)': ['creatinine','blood urea nitrogen','bun','urea','uric acid','egfr','cystatin'],
-      'THYROID PROFILE': ['tsh','free t4','free t3','total t4','total t3','anti-tpo'],
-      ELECTROLYTES: ['sodium','potassium','chloride','calcium','magnesium','phosphate','bicarbonate'],
-      URINALYSIS: ['urine pH','urine specific gravity','urine protein','urine glucose','urine ketones','urine rbc','urine wbc','urine nitrite','urine bilirubin','microalbuminuria'],
-      'CARDIAC MARKERS': ['troponin','ck-mb','bnp','hs-crp','homocysteine','lipoprotein'],
-      'VITAMINS & MINERALS': ['vitamin d','vitamin b12','folate','serum iron','ferritin','tibc','zinc','vitamin b1'],
-      'COAGULATION STUDIES': ['prothrombin time','inr','aptt','fibrinogen','d-dimer','bleeding time'],
-      'INFECTIOUS DISEASE PANEL': ['hbsag','anti-hcv','hiv','vdrl','dengue','malaria','widal'],
-      'TUMOR MARKERS': ['psa','cea','afp','ca-125','ca 19-9'],
-      'HORMONAL PROFILE': ['testosterone','fsh','lh','prolactin','cortisol','dhea-s'],
-      'BONE HEALTH': ['pth','alkaline phosphatase (bone)','calcium (serum)','phosphorus'],
-      IMMUNOLOGY: ['ige','ana','rheumatoid factor','crp']
-    };
-
-    const normalizedValidCategories = new Set(Array.from(categoriesSet).map((c) => normalize(c)));
-
-    const guessCategory = (test) => {
-      const name = normalize(test?.Test_Name || '');
-      const group = normalize(test?.Group || '');
-
-      // If group already matches a valid high-level category, keep it
-      if (group && normalizedValidCategories.has(group)) return String(test.Group).trim();
-
-      // If group looks like the same as the test name (mis-grouped), prefer mapping by test name
-      if (group && name && group === name) {
-        // fall through to keyword mapping
-      }
-
-      // Keyword mapping: prefer test name, then group text
-      for (const [category, terms] of Object.entries(TEST_GROUPS)) {
-        for (const term of terms) {
-          if (!term) continue;
-          const t = normalize(term);
-          if (name.includes(t) || group.includes(t)) return category;
-        }
-      }
-
-      // Fallback: if group is present return it, else mark Uncategorized
-      return test?.Group || 'Uncategorized';
-    };
     allRows
       .filter((row) => row?.meta?.kind === "category")
       .forEach((row) => {
         const categoryName = String(row?.value_name || "").trim();
-        if (categoryName) categoriesSet.add(categoryName);
+        if (categoryName && !isNumericOnly(categoryName)) {
+          categoriesSet.add(categoryName);
+        }
       });
-
-    const masterTests = await listMasterTests(instituteId);
-    masterTests.forEach((test) => {
-      const categoryName = String(test?.Group || "").trim();
-      if (categoryName) categoriesSet.add(categoryName);
-    });
 
     const testsByCategory = {};
     [...categoriesSet].forEach((categoryName) => {
       testsByCategory[categoryName] = [];
     });
 
-    masterTests.forEach((test) => {
-      const guessedCategory = String(guessCategory(test) || '').trim();
-      const testName = String(test?.Test_Name || '').trim();
-      const categoryName = guessedCategory || 'Uncategorized';
-      if (!testName) return;
+    allRows
+      .filter((row) => row?.meta?.kind === "test")
+      .forEach((row) => {
+      const testName = String(row?.value_name || "").trim();
+      const categoryName = String(row?.meta?.category || "").trim();
+      if (!testName || !categoryName || isNumericOnly(testName)) return;
+      categoriesSet.add(categoryName);
       if (!testsByCategory[categoryName]) testsByCategory[categoryName] = [];
       testsByCategory[categoryName].push({
-        id: test._id,
+        id: row._id,
         name: testName,
-        reference: test.Reference_Range || '',
-        unit: test.Units || '',
-        source: 'master'
+        reference: String(row?.meta?.reference || "").trim(),
+        unit: String(row?.meta?.unit || "").trim(),
+        source: "master"
       });
     });
 
@@ -1007,6 +997,92 @@ router.delete("/tests/category/:id", verifyToken, requireInstituteAdmin, async (
   }
 });
 
+router.put("/tests/category/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const { id } = req.params;
+    const nextCategoryName = String(req.body.categoryName || "").trim();
+    const nextStatus = req.body.status;
+
+    const testsCategory = await getCategoryByName(instituteId, "Tests");
+    if (!testsCategory) {
+      return res.status(404).json({ message: "Tests category not found" });
+    }
+
+    const categoryValue = await MasterValue.findOne({
+      _id: id,
+      Institute_ID: instituteId,
+      category_id: testsCategory._id,
+      "meta.kind": "category"
+    });
+
+    if (!categoryValue) {
+      return res.status(404).json({ message: "Test category not found" });
+    }
+
+    const currentCategoryName = String(categoryValue.value_name || "").trim();
+
+    if (nextCategoryName && normalize(nextCategoryName) !== normalize(currentCategoryName)) {
+      const duplicate = await MasterValue.findOne({
+        _id: { $ne: id },
+        Institute_ID: instituteId,
+        category_id: testsCategory._id,
+        normalized_value: normalize(nextCategoryName),
+        "meta.kind": "category"
+      });
+      if (duplicate) {
+        return res.status(409).json({ message: "Test category already exists" });
+      }
+
+      categoryValue.value_name = nextCategoryName;
+      categoryValue.normalized_value = normalize(nextCategoryName);
+
+      await MasterValue.updateMany(
+        {
+          Institute_ID: instituteId,
+          category_id: testsCategory._id,
+          "meta.kind": "test",
+          $or: [
+            { "meta.category": currentCategoryName },
+            { "meta.categoryNormalized": normalize(currentCategoryName) }
+          ]
+        },
+        {
+          $set: {
+            "meta.category": nextCategoryName,
+            "meta.categoryNormalized": normalize(nextCategoryName)
+          }
+        }
+      );
+    }
+
+    if (nextStatus === "Active" || nextStatus === "Inactive") {
+      categoryValue.status = nextStatus;
+
+      await MasterValue.updateMany(
+        {
+          Institute_ID: instituteId,
+          category_id: testsCategory._id,
+          "meta.kind": "test",
+          $or: [
+            { "meta.category": nextCategoryName || currentCategoryName },
+            { "meta.categoryNormalized": normalize(nextCategoryName || currentCategoryName) }
+          ]
+        },
+        {
+          $set: { status: nextStatus }
+        }
+      );
+    }
+
+    await categoryValue.save();
+    res.json(categoryValue);
+  } catch (err) {
+    console.error("PUT /master-data-api/tests/category/:id error", err);
+    res.status(500).json({ message: "Failed to update test category", error: err.message });
+  }
+});
+
 router.post("/tests", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
     const instituteId = req.user.instituteId;
@@ -1021,6 +1097,7 @@ router.post("/tests", verifyToken, requireInstituteAdmin, async (req, res) => {
 
     await ensureDefaultCategories(instituteId);
     await ensureDefaultValues(instituteId);
+    await ensureTestMasterValues(instituteId);
     const testsCategory = await getCategoryByName(instituteId, "Tests");
     if (!testsCategory) {
       return res.status(404).json({ message: "Tests category not found" });

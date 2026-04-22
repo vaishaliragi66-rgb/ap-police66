@@ -39,6 +39,15 @@ const makeMedicineKey = (medicineType, dosageForm, valueName, strength) =>
 const isPersistedId = (value) => /^[a-f\d]{24}$/i.test(String(value || "").trim());
 const getMedicineTypeLabel = (value) => canonicalizeMedicineTypeLabel(value || "Others") || "Others";
 const getMedicineTypeKey = (value) => getCanonicalMedicineTypeKey(value || "Others");
+const GLOBAL_MASTER_INSTITUTE_ID = "000000000000000000000000";
+const notifyMasterDataUpdated = () => {
+  try {
+    localStorage.setItem("master-data-updated-at", String(Date.now()));
+  } catch {
+    // ignore storage write issues and still refresh the current tab
+  }
+  window.dispatchEvent(new Event("master-data-updated"));
+};
 
 const getStaticTestsStructure = () => {
   const testsByCategory = {};
@@ -168,6 +177,16 @@ const MasterData = () => {
         return;
       }
       const prev = deduped.get(key);
+      const prevIsGlobalTests =
+        String(prev?.category_name || "").trim() === "Tests" &&
+        String(prev?.Institute_ID || "") === GLOBAL_MASTER_INSTITUTE_ID;
+      const curIsGlobalTests =
+        String(item?.category_name || "").trim() === "Tests" &&
+        String(item?.Institute_ID || "") === GLOBAL_MASTER_INSTITUTE_ID;
+      if (prevIsGlobalTests && !curIsGlobalTests) {
+        deduped.set(key, item);
+        return;
+      }
       const prevIsPersisted = /^[a-f\d]{24}$/i.test(String(prev?._id || ""));
       const curIsPersisted = /^[a-f\d]{24}$/i.test(String(item?._id || ""));
       if (!prevIsPersisted && curIsPersisted) {
@@ -211,6 +230,16 @@ const MasterData = () => {
               return;
             }
             const prev = dedupedRef.get(key);
+            const prevIsGlobalTests =
+              String(prev?.category_name || "").trim() === "Tests" &&
+              String(prev?.Institute_ID || "") === GLOBAL_MASTER_INSTITUTE_ID;
+            const curIsGlobalTests =
+              String(item?.category_name || "").trim() === "Tests" &&
+              String(item?.Institute_ID || "") === GLOBAL_MASTER_INSTITUTE_ID;
+            if (prevIsGlobalTests && !curIsGlobalTests) {
+              dedupedRef.set(key, item);
+              return;
+            }
             const prevIsPersisted = /^[a-f\d]{24}$/i.test(String(prev?._id || ""));
             const curIsPersisted = /^[a-f\d]{24}$/i.test(String(item?._id || ""));
             if (!prevIsPersisted && curIsPersisted) {
@@ -254,21 +283,13 @@ const MasterData = () => {
   const loadTestsStructure = async () => {
     const staticStructure = getStaticTestsStructure();
     try {
-      // If this institute should inherit tests from another canonical institute,
-      // request the tests-structure for that source institute. This makes the
-      // UI display the same tests as the source without copying records.
-      const testsReqParams = {};
-      const currentInstituteId = localStorage.getItem("instituteId") || "";
-      if (currentInstituteId === "69982a0c26d4c4f00d2240f3") {
-        testsReqParams.instituteId = "69ddce87f953d4306791196f";
-      }
-
-      const [res, valuesRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: testsReqParams }),
-        selectedCategoryId
-          ? axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
-          : Promise.resolve({ data: [] })
-      ]);
+      const instituteId = localStorage.getItem("instituteId") || "";
+      const res = await axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, {
+        params: instituteId ? { instituteId } : {}
+      });
+      const valuesRes = selectedCategoryId
+        ? await axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+        : { data: [] };
 
       const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
       const testMap = {};
@@ -289,10 +310,12 @@ const MasterData = () => {
       setCustomTestMap(testMap);
 
       const apiData = res.data && typeof res.data === "object" ? res.data : { categories: [], testsByCategory: {} };
-      const hasApiTests =
-        Array.isArray(apiData.categories) && apiData.categories.length > 0 ||
-        Object.values(apiData.testsByCategory || {}).some((rows) => Array.isArray(rows) && rows.length > 0);
-      const data = hasApiTests ? apiData : staticStructure;
+      const hasApiPayload =
+        Array.isArray(apiData.categories) ||
+        (apiData.testsByCategory && typeof apiData.testsByCategory === "object");
+      const data = hasApiPayload ? apiData : staticStructure;
+      console.log("Fetched Test Categories:", apiData.categories || []);
+      console.log("Fetched Tests By Category:", apiData.testsByCategory || {});
       const withMeta = {
         ...data,
         testsByCategory: Object.fromEntries(
@@ -327,16 +350,12 @@ const MasterData = () => {
         throw err;
       }
 
-      const [testsRes, valuesRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/diagnosis-api/tests`).catch(() => ({ data: [] })),
-        selectedCategoryId
-          ? axios
-              .get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
-              .catch(() => ({ data: [] }))
-          : Promise.resolve({ data: [] })
-      ]);
+      const valuesRes = selectedCategoryId
+        ? await axios
+            .get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+            .catch(() => ({ data: [] }))
+        : { data: [] };
 
-      const diagnosisTests = Array.isArray(testsRes.data) ? testsRes.data : [];
       const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
       const testMap = {};
       const testCategoryMap = {};
@@ -357,21 +376,6 @@ const MasterData = () => {
 
       const grouped = { ...staticStructure.testsByCategory };
       const knownCategories = new Set(Object.keys(grouped));
-
-      diagnosisTests.forEach((test) => {
-        const category = String(test?.Group || "").trim();
-        const name = String(test?.Test_Name || "").trim();
-        if (!category || !name) return;
-        if (!grouped[category]) grouped[category] = [];
-        knownCategories.add(category);
-        grouped[category].push({
-          id: test._id,
-          name,
-          reference: test.Reference_Range || "",
-          unit: test.Units || "",
-          source: "diagnosis-test"
-        });
-      });
 
       masterValues
         .filter((item) => item?.meta?.kind === "category")
@@ -429,8 +433,9 @@ const MasterData = () => {
         ])
       );
       const categories = merged.categories;
+      const preferredStatic = categories.includes("HEMATOLOGY") ? "HEMATOLOGY" : categories[0] || "";
       setTestsStructure(merged);
-      const shouldKeepSelected = selectedTestCategory && staticCategories.includes(selectedTestCategory);
+      const shouldKeepSelected = selectedTestCategory && categories.includes(selectedTestCategory);
       if (shouldKeepSelected) {
         setSelectedTestCategory(selectedTestCategory);
       } else if (preferredStatic && categories.includes(preferredStatic)) {
@@ -904,6 +909,114 @@ const MasterData = () => {
     }
   };
 
+  const handleEditTestCategory = async (categoryName) => {
+    const categoryKey = normalizeText(categoryName);
+    const masterValue = customTestCategoryMap[categoryKey];
+    if (!masterValue?._id) {
+      setError("Test category record not found");
+      return;
+    }
+
+    const updated = window.prompt("Edit test category", categoryName);
+    if (updated === null) return;
+    const nextName = updated.trim();
+    if (!nextName || nextName === categoryName) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`, {
+        categoryName: nextName
+      });
+      setSelectedTestCategory((current) => (current === categoryName ? nextName : current));
+      setMessage("Test category updated successfully");
+      await loadTestsStructure();
+      invalidateMasterDataCache();
+      notifyMasterDataUpdated();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to update test category");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleTestCategory = async (categoryName) => {
+    const categoryKey = normalizeText(categoryName);
+    const masterValue = customTestCategoryMap[categoryKey];
+    if (!masterValue?._id) {
+      setError("Test category record not found");
+      return;
+    }
+
+    const nextStatus = masterValue.status === "Active" ? "Inactive" : "Active";
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`, {
+        status: nextStatus
+      });
+      if (nextStatus === "Inactive" && selectedTestCategory === categoryName) {
+        setSelectedTestCategory("");
+      }
+      setMessage("Test category status updated");
+      await loadTestsStructure();
+      invalidateMasterDataCache();
+      notifyMasterDataUpdated();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to toggle test category");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditTest = async (item) => {
+    if (!item?.masterValue?._id) {
+      setError("Test record not found");
+      return;
+    }
+
+    const nextNameInput = window.prompt("Edit test name", item.name || "");
+    if (nextNameInput === null) return;
+    const nextName = nextNameInput.trim();
+    if (!nextName) return;
+
+    const nextReferenceInput = window.prompt("Edit reference", item.reference || "");
+    if (nextReferenceInput === null) return;
+    const nextUnitInput = window.prompt("Edit unit", item.unit || "");
+    if (nextUnitInput === null) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.put(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, {
+        value_name: nextName,
+        meta: {
+          ...(item.masterValue.meta || {}),
+          kind: "test",
+          category: selectedTestCategory || item?.masterValue?.meta?.category || "",
+          categoryNormalized: normalizeText(selectedTestCategory || item?.masterValue?.meta?.category || ""),
+          reference: nextReferenceInput.trim(),
+          unit: nextUnitInput.trim()
+        }
+      });
+      setMessage("Test updated successfully");
+      await loadTestsStructure();
+      invalidateMasterDataCache();
+      notifyMasterDataUpdated();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to update test");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleToggleSpecialValue = async (item, reloadFn) => {
     setSaving(true);
     setMessage("");
@@ -937,6 +1050,7 @@ const MasterData = () => {
       }
       await reloadFn();
       invalidateMasterDataCache();
+      notifyMasterDataUpdated();
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to toggle status");
@@ -978,6 +1092,7 @@ const MasterData = () => {
       }
       await reloadFn();
       invalidateMasterDataCache();
+      notifyMasterDataUpdated();
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to delete value");
@@ -1027,6 +1142,7 @@ const MasterData = () => {
         setMessage("Built-in category and its tests marked inactive (persisted)");
         await loadTestsStructure();
         invalidateMasterDataCache();
+        notifyMasterDataUpdated();
       } catch (err) {
         console.error("Error persisting built-in category deletion:", err);
         setError(err.response?.data?.message || "Failed to persist deletion for built-in category");
@@ -1045,6 +1161,7 @@ const MasterData = () => {
       setMessage("Test category deleted successfully");
       await loadTestsStructure();
       invalidateMasterDataCache();
+      notifyMasterDataUpdated();
     } catch (err) {
       console.error("Delete category error:", err);
       const errorMsg = err.response?.data?.message || err.message || "Failed to delete test category";
@@ -1165,6 +1282,7 @@ const MasterData = () => {
       setMessage("Test category added successfully");
       await loadTestsStructure();
       invalidateMasterDataCache();
+      notifyMasterDataUpdated();
     } catch (err) {
       console.error("Error adding test category:", err);
       setError(err.response?.data?.message || "Failed to add test category");
@@ -1179,54 +1297,24 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      try {
-        await axios.post(`${BACKEND_URL}/master-data-api/tests`, {
-          category: selectedTestCategory,
-          testName: newTestName.trim(),
-          referenceRange: newTestReference.trim(),
-          unit: newTestUnit.trim()
-        });
-      } catch (err) {
-        if (err?.response?.status !== 404) throw err;
-
-        await axios.post(`${BACKEND_URL}/diagnosis-api/tests/add`, {
-          Test_Name: newTestName.trim(),
-          Group: selectedTestCategory,
-          Reference_Range: newTestReference.trim(),
-          Units: newTestUnit.trim()
-        });
-
-        await axios
-          .post(`${BACKEND_URL}/master-data-api/values`, {
-            category_id: selectedCategoryId,
-            value_name: selectedTestCategory,
-            meta: { kind: "category" }
-          })
-          .catch((postErr) => {
-            if (postErr?.response?.status !== 409) throw postErr;
-          });
-
-        await axios
-          .post(`${BACKEND_URL}/master-data-api/values`, {
-            category_id: selectedCategoryId,
-            value_name: newTestName.trim(),
-            meta: {
-              kind: "test",
-              category: selectedTestCategory,
-              reference: newTestReference.trim(),
-              unit: newTestUnit.trim()
-            }
-          })
-          .catch((postErr) => {
-            if (postErr?.response?.status !== 409) throw postErr;
-          });
-      }
+      const res = await axios.post(`${BACKEND_URL}/master-data-api/tests`, {
+        category: selectedTestCategory,
+        testName: newTestName.trim(),
+        referenceRange: newTestReference.trim(),
+        unit: newTestUnit.trim()
+      });
       setNewTestName("");
       setNewTestReference("");
       setNewTestUnit("");
-      setMessage("Test added successfully");
-      await loadTestsStructure();
+      setMessage(res?.data?.created === false ? "Test already exists; latest data refreshed" : "Test added successfully");
+      try {
+        await loadTestsStructure();
+      } catch (refreshErr) {
+        console.error("Tests refreshed failed after add:", refreshErr);
+        setError(res?.data?.created === false ? "Test already exists, but the latest list could not be refreshed" : "Test was saved, but the latest list could not be refreshed");
+      }
       invalidateMasterDataCache();
+      notifyMasterDataUpdated();
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to add test");
@@ -1835,17 +1923,15 @@ const MasterData = () => {
                               <td className="d-flex flex-wrap gap-2">
                                 <button
                                   className="btn btn-sm btn-outline-primary"
-                                  onClick={() => handleEditSpecialValue({ masterValue, name: item, value_name: item, id: masterValue?._id }, loadTestsStructure)}
+                                  onClick={() => handleEditTestCategory(item)}
                                   disabled={!isInstituteAdmin || saving}
-                                  title={isCustom ? "Edit this category" : "Cannot edit built-in categories"}
                                 >
                                   Edit
                                 </button>
                                 <button
                                   className="btn btn-sm btn-outline-warning"
-                                  onClick={() => handleToggleSpecialValue({ masterValue, name: item, value_name: item, status, id: masterValue?._id }, loadTestsStructure)}
+                                  onClick={() => handleToggleTestCategory(item)}
                                   disabled={!isInstituteAdmin || saving}
-                                  title={isCustom ? "Toggle status" : "Cannot deactivate built-in categories"}
                                 >
                                   {status === "Active" ? "Deactivate" : "Activate"}
                                 </button>
@@ -1853,7 +1939,6 @@ const MasterData = () => {
                                   className="btn btn-sm btn-outline-danger"
                                   onClick={() => handleDeleteTestCategory(item)}
                                   disabled={!isInstituteAdmin || saving}
-                                  title={isCustom ? "Delete this category" : "Cannot delete built-in categories"}
                                 >
                                   Delete
                                 </button>
@@ -1972,9 +2057,8 @@ const MasterData = () => {
                             <td className="d-flex flex-wrap gap-2">
                               <button
                                 className="btn btn-sm btn-outline-primary"
-                                onClick={() => handleEditSpecialValue(item, loadTestsStructure)}
+                                onClick={() => handleEditTest(item)}
                                 disabled={!isInstituteAdmin || saving}
-                                title={item.masterValue?._id ? "Edit this test" : "Cannot edit built-in tests"}
                               >
                                 Edit
                               </button>

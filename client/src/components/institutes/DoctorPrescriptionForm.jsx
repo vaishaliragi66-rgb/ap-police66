@@ -226,18 +226,27 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
   const fetchTests = async () => {
     try {
       const instituteId = localStorage.getItem("instituteId") || "";
-      const [res, structRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/diagnosis-api/tests`, { params: instituteId ? { instituteId } : {} }).catch(() => ({ data: [] })),
-        axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: instituteId ? { instituteId } : {} }).catch(() => ({ data: { categories: [] } }))
-      ]);
-
-      const tests = res.data || [];
-      setTestsMaster(tests);
+      const structRes = await axios
+        .get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: instituteId ? { instituteId } : {} })
+        .catch(() => ({ data: { categories: [], testsByCategory: {} } }));
 
       const structCategories = Array.isArray(structRes.data?.categories) ? structRes.data.categories : [];
-      const groupsFromTests = Array.from(new Set((tests || []).map((t) => String(t?.Group || t?.Test_Name || "").trim()).filter(Boolean)));
-      const combined = Array.from(new Set([...(structCategories || []), ...groupsFromTests])).sort((a, b) => a.localeCompare(b));
-      setTestCategories(combined);
+      const testsByCategoryMap = structRes.data?.testsByCategory && typeof structRes.data.testsByCategory === "object"
+        ? structRes.data.testsByCategory
+        : {};
+
+      const normalizedTests = Object.entries(testsByCategoryMap).flatMap(([category, rows]) =>
+        (Array.isArray(rows) ? rows : []).map((test, idx) => ({
+          _id: test?.id || `master-${category}-${idx}`,
+          Test_Name: String(test?.name || "").trim(),
+          Group: String(category || "").trim(),
+          Reference_Range: String(test?.reference || "").trim(),
+          Units: String(test?.unit || "").trim()
+        }))
+      ).filter((test) => test.Group && test.Test_Name);
+
+      setTestsMaster(normalizedTests);
+      setTestCategories(structCategories);
     } catch (err) {
       console.error(err);
     }
@@ -377,11 +386,18 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     };
     window.addEventListener("master-data-updated", onMasterUpdated);
     window.addEventListener("master-data-updated", onMasterUpdatedAll);
+    const onStorageUpdated = (event) => {
+      if (event.key === "master-data-updated-at") {
+        fetchTests();
+      }
+    };
+    window.addEventListener("storage", onStorageUpdated);
 
     return () => {
       mounted = false;
       window.removeEventListener("master-data-updated", onMasterUpdated);
       window.removeEventListener("master-data-updated", onMasterUpdatedAll);
+      window.removeEventListener("storage", onStorageUpdated);
     };
   }, []);
 
