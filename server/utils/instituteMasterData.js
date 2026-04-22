@@ -7,6 +7,7 @@ const MasterValue = require("../models/master_value");
 const DiagnosisTest = require("../models/diagnostics_test");
 const Xray = require("../models/XraySchema");
 const diagnosticReferencePanel = require("../data/diagnosticReferencePanel");
+const { DEFAULT_XRAY_TYPES } = require("../data/xrayCatalog");
 
 const DISEASES_FILE = path.join(__dirname, "..", "data", "diseases.json");
 
@@ -384,7 +385,26 @@ const ensureXrayMasterValues = async (instituteId) => {
 
   const category = await ensureCategoryDoc(instituteId, XRAY_CATEGORY_NAME);
   if (!category) return null;
-  if (Number(category.seed_version || 0) >= 2) {
+  const canonicalXrays = Array.isArray(DEFAULT_XRAY_TYPES) ? DEFAULT_XRAY_TYPES : [];
+  const canonicalOrderMap = new Map();
+  const bodyPartOrderMap = new Map();
+  canonicalXrays.forEach((row, index) => {
+    const xrayType = trimString(row?.Xray_Type);
+    const bodyPart = trimString(row?.Body_Part);
+    const key = `${normalize(xrayType)}::${normalize(bodyPart)}`;
+    if (xrayType && bodyPart && !canonicalOrderMap.has(key)) {
+      canonicalOrderMap.set(key, index);
+    }
+    if (bodyPart && !bodyPartOrderMap.has(normalize(bodyPart))) {
+      bodyPartOrderMap.set(normalize(bodyPart), bodyPartOrderMap.size);
+    }
+  });
+  const existingXrayCount = await MasterValue.countDocuments({
+    Institute_ID: instituteId,
+    category_id: category._id,
+    "meta.kind": "xray"
+  });
+  if (Number(category.seed_version || 0) >= 3 && existingXrayCount >= canonicalXrays.length) {
     return category;
   }
 
@@ -393,7 +413,43 @@ const ensureXrayMasterValues = async (instituteId) => {
     .sort({ Body_Part: 1, Xray_Type: 1 })
     .lean();
 
-  const bodyParts = sortUniqueStrings(legacyXrays.map((row) => row?.Body_Part));
+  const mergedXrays = new Map();
+  let nextSortOrder = canonicalXrays.length;
+
+  [...canonicalXrays, ...legacyXrays].forEach((row) => {
+    const xrayType = trimString(row?.Xray_Type);
+    const bodyPart = trimString(row?.Body_Part);
+    if (!xrayType || !bodyPart) return;
+
+    const key = `${normalize(xrayType)}::${normalize(bodyPart)}`;
+    const sortOrder =
+      canonicalOrderMap.has(key) ? canonicalOrderMap.get(key) : nextSortOrder++;
+    const bodyPartSortOrder = bodyPartOrderMap.has(normalize(bodyPart))
+      ? bodyPartOrderMap.get(normalize(bodyPart))
+      : bodyPartOrderMap.size;
+    if (!bodyPartOrderMap.has(normalize(bodyPart))) {
+      bodyPartOrderMap.set(normalize(bodyPart), bodyPartSortOrder);
+    }
+
+    const existing = mergedXrays.get(key) || {};
+    mergedXrays.set(key, {
+      ...existing,
+      Xray_Type: xrayType,
+      Body_Part: bodyPart,
+      Side: trimString(row?.Side) || existing.Side || "NA",
+      View: trimString(row?.View) || existing.View || "",
+      Film_Size: trimString(row?.Film_Size) || existing.Film_Size || "",
+      category: trimString(row?.category || row?.Category) || existing.category || "",
+      subcategory: trimString(row?.subcategory || row?.Subcategory || row?.subCategory) || existing.subcategory || "",
+      status: row?.status === "Inactive" ? "Inactive" : existing.status || "Active",
+      sortOrder,
+      bodyPartSortOrder
+    });
+  });
+
+  const bodyParts = sortUniqueStrings(
+    [...canonicalXrays, ...legacyXrays].map((row) => row?.Body_Part)
+  );
 
   for (const bodyPart of bodyParts) {
     await ensureValueRecord({
@@ -404,7 +460,7 @@ const ensureXrayMasterValues = async (instituteId) => {
     });
   }
 
-  for (const row of legacyXrays) {
+  for (const row of mergedXrays.values()) {
     const xrayType = trimString(row?.Xray_Type);
     const bodyPart = trimString(row?.Body_Part);
     if (!xrayType || !bodyPart) continue;
@@ -419,13 +475,17 @@ const ensureXrayMasterValues = async (instituteId) => {
         bodyPart,
         side: trimString(row?.Side) || "NA",
         view: trimString(row?.View),
-        filmSize: trimString(row?.Film_Size)
+        filmSize: trimString(row?.Film_Size),
+        category: trimString(row?.category),
+        subcategory: trimString(row?.subcategory),
+        sortOrder: Number.isFinite(Number(row?.sortOrder)) ? Number(row.sortOrder) : 0,
+        bodyPartSortOrder: Number.isFinite(Number(row?.bodyPartSortOrder)) ? Number(row.bodyPartSortOrder) : 0
       }
     });
   }
 
-  await MasterCategory.updateOne({ _id: category._id }, { $set: { seed_version: 2 } });
-  category.seed_version = 2;
+  await MasterCategory.updateOne({ _id: category._id }, { $set: { seed_version: 3 } });
+  category.seed_version = 3;
 
   return category;
 };
@@ -445,7 +505,23 @@ const listMasterXrays = async (instituteId, { includeInactive = false } = {}) =>
     query.status = "Active";
   }
 
-  const rows = await MasterValue.find(query).sort({ value_name: 1 }).lean();
+  const rows = await MasterValue.find(query).lean();
+  rows.sort((a, b) => {
+    const orderA = Number(a?.meta?.sortOrder);
+    const orderB = Number(b?.meta?.sortOrder);
+    if (Number.isFinite(orderA) && Number.isFinite(orderB) && orderA !== orderB) {
+      return orderA - orderB;
+    }
+    if (Number.isFinite(orderA) && !Number.isFinite(orderB)) return -1;
+    if (!Number.isFinite(orderA) && Number.isFinite(orderB)) return 1;
+    const categoryCompare = String(a?.meta?.category || "").localeCompare(String(b?.meta?.category || ""));
+    if (categoryCompare !== 0) return categoryCompare;
+    const subcategoryCompare = String(a?.meta?.subcategory || "").localeCompare(String(b?.meta?.subcategory || ""));
+    if (subcategoryCompare !== 0) return subcategoryCompare;
+    const bodyPartCompare = String(a?.meta?.bodyPart || "").localeCompare(String(b?.meta?.bodyPart || ""));
+    if (bodyPartCompare !== 0) return bodyPartCompare;
+    return String(a?.value_name || "").localeCompare(String(b?.value_name || ""));
+  });
   return rows.map((row) => ({
     _id: row._id,
     Xray_Type: row.value_name,
@@ -453,6 +529,8 @@ const listMasterXrays = async (instituteId, { includeInactive = false } = {}) =>
     Side: trimString(row?.meta?.side) || "NA",
     View: trimString(row?.meta?.view),
     Film_Size: trimString(row?.meta?.filmSize),
+    category: trimString(row?.meta?.category),
+    subcategory: trimString(row?.meta?.subcategory),
     status: row.status || "Active"
   }));
 };
@@ -472,7 +550,17 @@ const listMasterXrayBodyParts = async (instituteId, { includeInactive = false } 
     query.status = "Active";
   }
 
-  const rows = await MasterValue.find(query).sort({ value_name: 1 }).lean();
+  const rows = await MasterValue.find(query).lean();
+  rows.sort((a, b) => {
+    const orderA = Number(a?.meta?.bodyPartSortOrder);
+    const orderB = Number(b?.meta?.bodyPartSortOrder);
+    if (Number.isFinite(orderA) && Number.isFinite(orderB) && orderA !== orderB) {
+      return orderA - orderB;
+    }
+    if (Number.isFinite(orderA) && !Number.isFinite(orderB)) return -1;
+    if (!Number.isFinite(orderA) && Number.isFinite(orderB)) return 1;
+    return String(a?.value_name || "").localeCompare(String(b?.value_name || ""));
+  });
   return rows.map((row) => ({
     _id: row._id,
     Body_Part: row.value_name,

@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData_clean";
+import { mergeXrayTypes } from "../../data/xrayTypes";
 import "./InstitutesTheme.css";
 
 const DoctorPrescriptionForm = () => {
@@ -33,12 +34,13 @@ const DoctorPrescriptionForm = () => {
   const [selectedDiagnosisReport, setSelectedDiagnosisReport] = useState(null);
   const [selectedXrayReport, setSelectedXrayReport] = useState(null); // { record, xray }
   const [selectedPrescriptionReport, setSelectedPrescriptionReport] = useState(null);
-  const [inventoryMedicines, setInventoryMedicines] = useState([]);
-  const [medicineStrengths, setMedicineStrengths] = useState({});
-  const notesTextareaRef = React.useRef(null);
-const [xrayMaster, setXrayMaster] = useState([]);
+const [inventoryMedicines, setInventoryMedicines] = useState([]);
+const [medicineStrengths, setMedicineStrengths] = useState({});
+const notesTextareaRef = React.useRef(null);
+  const [xrayMaster, setXrayMaster] = useState([]);
+  const [xrayBodyParts, setXrayBodyParts] = useState([]);
 const [xrayData, setXrayData] = useState({
-  Xrays: [{ Xray_ID: "", Xray_Type: "" }]
+  Xrays: [{ Body_Part: "", Xray_ID: "", Xray_Type: "" }]
 });
 
 const [diseaseSearch, setDiseaseSearch] = useState("");
@@ -220,6 +222,48 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     refreshMedicines();
   }, []);
 
+  const xrayBodyPartOptions = useMemo(() => {
+    const parts = new Set();
+    [...mergeXrayTypes(xrayMaster || []), ...(xrayBodyParts || [])].forEach((item) => {
+      const part = String(item?.Body_Part || "").trim();
+      if (part) parts.add(part);
+    });
+    return Array.from(parts).sort((a, b) => a.localeCompare(b));
+  }, [xrayMaster, xrayBodyParts]);
+
+  const getXrayOptionsByBodyPart = (bodyPart = "") => {
+    const key = String(bodyPart || "").trim().toLowerCase();
+    if (!key) return [];
+    return mergeXrayTypes(xrayMaster || [])
+      .filter((item) => String(item?.Body_Part || "").trim().toLowerCase() === key)
+      .sort((a, b) => String(a?.Xray_Type || "").localeCompare(String(b?.Xray_Type || "")));
+  };
+
+  const fetchXrayTypes = async () => {
+    try {
+      const instituteId = localStorage.getItem("instituteId") || "";
+      const [typesRes, bodyPartsRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/xray-api/types`, {
+          params: instituteId ? { instituteId } : {}
+        }),
+        axios.get(`${BACKEND_URL}/xray-api/body-parts`, {
+          params: instituteId ? { instituteId } : {}
+        }).catch(() => ({ data: [] }))
+      ]);
+
+      setXrayMaster(mergeXrayTypes(Array.isArray(typesRes.data) ? typesRes.data : []));
+      setXrayBodyParts(Array.isArray(bodyPartsRes.data) ? bodyPartsRes.data : []);
+    } catch (err) {
+      console.error("Error fetching X-ray types:", err);
+      setXrayMaster(mergeXrayTypes([]));
+      setXrayBodyParts([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchXrayTypes();
+  }, []);
+
   useEffect(() => {
     // Duplicate/merged block removed — medicines are refreshed by `refreshMedicines()` on mount
   }, []);
@@ -388,12 +432,18 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
       } catch (e) {
         // ignore
       }
+      try {
+        fetchXrayTypes();
+      } catch (e) {
+        // ignore
+      }
     };
     window.addEventListener("master-data-updated", onMasterUpdated);
     window.addEventListener("master-data-updated", onMasterUpdatedAll);
     const onStorageUpdated = (event) => {
       if (event.key === "master-data-updated-at") {
         fetchTests();
+        fetchXrayTypes();
       }
     };
     window.addEventListener("storage", onStorageUpdated);
@@ -589,8 +639,8 @@ const relevantDiseases = diseases.filter((d) => {
       Tests: [{ Category: "", Test_ID: "", Test_Name: "" }]
     });
     
-    setXrayData({
-      Xrays: [{ Xray_ID: "", Xray_Type: "" }]
+      setXrayData({
+      Xrays: [{ Body_Part: "", Xray_ID: "", Xray_Type: "" }]
     });
     
     setSelectedEmployee(null);
@@ -1063,7 +1113,7 @@ if (validTests.length === 0) {
     });
   };
 
-const handleXraySubmit = async () => {
+  const handleXraySubmit = async () => {
   if (!formData.Employee_ID) {
     alert("Please select employee first");
     return;
@@ -1098,7 +1148,7 @@ if (validXrays.length === 0) {
   alert("✅ X-ray order saved");
 
   setXrayData({
-    Xrays: [{ Xray_ID: "", Xray_Type: "" }]
+    Xrays: [{ Body_Part: "", Xray_ID: "", Xray_Type: "" }]
   });
 };
 
@@ -2452,34 +2502,70 @@ if (validXrays.length === 0) {
 
     {xrayData.Xrays.map((x, i) => (
       <div key={i} className="mb-2">
+        <div className="row g-2 align-items-end">
+          <div className="col-md-4">
+            <label className="form-label fw-semibold">Body Part</label>
+            <select
+              className="form-select"
+              value={x.Body_Part || ""}
+              onChange={(e) => {
+                const selectedBodyPart = e.target.value;
+                const copy = [...xrayData.Xrays];
+                copy[i] = {
+                  ...copy[i],
+                  Body_Part: selectedBodyPart,
+                  Xray_ID: "",
+                  Xray_Type: ""
+                };
+                setXrayData(prev => ({
+                  ...prev,
+                  Xrays: copy
+                }));
+              }}
+            >
+              <option value="">Select body part</option>
+              {xrayBodyPartOptions.map((part) => (
+                <option key={part} value={part}>
+                  {part}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <select
-          className="form-select mb-2"
-          value={x.Xray_ID}
-          onChange={(e) => {
-            const selected = xrayMaster.find(
-              xr => xr._id === e.target.value
-            );
+          <div className="col-md-8">
+            <label className="form-label fw-semibold">X-ray Selection</label>
+            <select
+              className="form-select"
+              value={x.Xray_ID}
+              onChange={(e) => {
+                const selected = xrayMaster.find(
+                  xr => xr._id === e.target.value
+                );
 
-            const copy = [...xrayData.Xrays];
-            copy[i] = {
-              Xray_ID: selected?._id || "",
-              Xray_Type: selected?.Xray_Type || ""
-            };
+                const copy = [...xrayData.Xrays];
+                copy[i] = {
+                  ...copy[i],
+                  Body_Part: selected?.Body_Part || copy[i].Body_Part || "",
+                  Xray_ID: selected?._id || "",
+                  Xray_Type: selected?.Xray_Type || ""
+                };
 
-            setXrayData(prev => ({
-              ...prev,
-              Xrays: copy
-            }));
-          }}
-        >
-          <option value="">Select X-ray</option>
-          {xrayMaster.map(xr => (
-            <option key={xr._id} value={xr._id}>
-              {xr.Xray_Type} ({xr.Body_Part})
-            </option>
-          ))}
-        </select>
+                setXrayData(prev => ({
+                  ...prev,
+                  Xrays: copy
+                }));
+              }}
+              disabled={!x.Body_Part}
+            >
+              <option value="">{x.Body_Part ? "Select X-ray test" : "Select body part first"}</option>
+              {getXrayOptionsByBodyPart(x.Body_Part).map(xr => (
+                <option key={xr._id} value={xr._id}>
+                  {xr.Xray_Type}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         {xrayData.Xrays.length > 1 && (
           <button
@@ -2509,7 +2595,7 @@ if (validXrays.length === 0) {
           ...prev,
           Xrays: [
             ...prev.Xrays,
-            { Xray_ID: "", Xray_Type: "" }
+            { Body_Part: "", Xray_ID: "", Xray_Type: "" }
           ]
         }))
       }

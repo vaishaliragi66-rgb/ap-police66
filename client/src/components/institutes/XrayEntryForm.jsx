@@ -4,6 +4,7 @@ import PatientSelector from "../institutes/PatientSelector";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 import "./InstitutesTheme.css";
+import { mergeXrayTypes } from "../../data/xrayTypes";
 
 const normalizeFilmSize = (value) => {
   const cleaned = String(value || "")
@@ -29,21 +30,22 @@ const XrayEntryForm = () => {
   const [tokenNumber, setTokenNumber] = useState(null);
   const [xrayTypes, setXrayTypes] = useState([]);
   const [xrayMaster, setXrayMaster] = useState([]);
+  const [xrayBodyParts, setXrayBodyParts] = useState([]);
   const [doctorXrays, setDoctorXrays] = useState([]);
   const [doctorXrayOrders, setDoctorXrayOrders] = useState([]);
   const [showDoctorNotes, setShowDoctorNotes] = useState({});
   const navigate = useNavigate();
 
-  const xraySource = useMemo(() => xrayMaster, [xrayMaster]);
+  const xraySource = useMemo(() => mergeXrayTypes(xrayMaster), [xrayMaster]);
 
   const bodyPartOptions = useMemo(() => {
     const parts = new Set();
-    xraySource.forEach((item) => {
+    [...xraySource, ...xrayBodyParts].forEach((item) => {
       const part = String(item?.Body_Part || "").trim();
       if (part) parts.add(part);
     });
     return Array.from(parts).sort((a, b) => a.localeCompare(b));
-  }, [xraySource]);
+  }, [xraySource, xrayBodyParts]);
 
 
 
@@ -81,6 +83,26 @@ const XrayEntryForm = () => {
         // ADD THIS
   fetchXrayTypes();
     }
+  }, []);
+
+  useEffect(() => {
+    const refreshXrayMasters = () => {
+      fetchXrayTypes();
+    };
+
+    const onStorageUpdated = (event) => {
+      if (event.key === "master-data-updated-at") {
+        fetchXrayTypes();
+      }
+    };
+
+    window.addEventListener("master-data-updated", refreshXrayMasters);
+    window.addEventListener("storage", onStorageUpdated);
+
+    return () => {
+      window.removeEventListener("master-data-updated", refreshXrayMasters);
+      window.removeEventListener("storage", onStorageUpdated);
+    };
   }, []);
 
   const fetchDoctorXrays = async (visitId) => {
@@ -123,17 +145,23 @@ const XrayEntryForm = () => {
       console.error("Error fetching institute name:", err);
     }
   };
-const fetchXrayTypes = async () => {
+  const fetchXrayTypes = async () => {
   try {
     const instituteId = localStorage.getItem("instituteId") || "";
-    const res = await axios.get(`${BACKEND_URL}/xray-api/types`, {
-      params: instituteId ? { instituteId } : {}
-    });
-    setXrayMaster(Array.isArray(res.data) ? res.data : []);
-    console.log("X-ray types fetched:", res.data?.length);
+    const [typesRes, bodyPartsRes] = await Promise.all([
+      axios.get(`${BACKEND_URL}/xray-api/types`, {
+        params: instituteId ? { instituteId } : {}
+      }),
+      axios.get(`${BACKEND_URL}/xray-api/body-parts`, {
+        params: instituteId ? { instituteId } : {}
+      }).catch(() => ({ data: [] }))
+    ]);
+    setXrayMaster(mergeXrayTypes(Array.isArray(typesRes.data) ? typesRes.data : []));
+    setXrayBodyParts(Array.isArray(bodyPartsRes.data) ? bodyPartsRes.data : []);
   } catch (err) {
     console.error("Error fetching X-ray types:", err);
-    setXrayMaster([]);
+    setXrayMaster(mergeXrayTypes([]));
+    setXrayBodyParts([]);
   }
 };
 

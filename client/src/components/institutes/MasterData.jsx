@@ -747,9 +747,14 @@ const MasterData = () => {
 
   const loadXrayTypes = async () => {
     try {
+      const instituteId = localStorage.getItem("instituteId") || "";
       const [xrayRes, bodyPartRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/xray-api/types`),
-        axios.get(`${BACKEND_URL}/xray-api/body-parts`).catch(() => ({ data: [] }))
+        axios.get(`${BACKEND_URL}/xray-api/types`, {
+          params: instituteId ? { instituteId } : {}
+        }),
+        axios.get(`${BACKEND_URL}/xray-api/body-parts`, {
+          params: instituteId ? { instituteId } : {}
+        }).catch(() => ({ data: [] }))
       ]);
       
       const rows = Array.isArray(xrayRes.data) ? xrayRes.data : [];
@@ -765,16 +770,16 @@ const MasterData = () => {
         }
       });
       setCustomBodyPartMap(bodyPartMap);
-
-      if (!selectedXrayBodyPart && merged.length > 0) {
-        setSelectedXrayBodyPart(String(merged[0]?.Body_Part || ""));
-      }
+      const nextSelected = selectedXrayBodyPart && bodyPartsData.some((bp) => String(bp?.Body_Part || "").trim() === selectedXrayBodyPart)
+        ? selectedXrayBodyPart
+        : String(rows[0]?.Body_Part || bodyPartsData[0]?.Body_Part || "");
+      setSelectedXrayBodyPart(nextSelected);
     } catch (err) {
       console.error(err);
       const fallback = mergeXrayTypes([]);
       setXrayTypes(fallback);
       setCustomBodyPartMap({});
-      setSelectedXrayBodyPart(fallback[0]?.Body_Part || "");
+      setSelectedXrayBodyPart("");
       throw err;
     }
   };
@@ -854,11 +859,47 @@ const MasterData = () => {
 
   const xrayBodyParts = useMemo(
     () =>
-      [...new Set([...xrayTypes, newXrayBodyPart, selectedXrayBodyPart].map((item) => String(item?.Body_Part || item || "").trim()).filter(Boolean))].sort((a, b) =>
+      [...new Set([
+        ...xrayTypes.map((item) => String(item?.Body_Part || "").trim()),
+        ...Object.values(customBodyPartMap || {}).map((item) => String(item?.Body_Part || "").trim()),
+        newXrayBodyPart,
+        selectedXrayBodyPart
+      ].filter(Boolean))].sort((a, b) =>
         a.localeCompare(b)
       ),
-    [xrayTypes, newXrayBodyPart, selectedXrayBodyPart]
+    [xrayTypes, customBodyPartMap, newXrayBodyPart, selectedXrayBodyPart]
   );
+
+  const bodyPartEntries = useMemo(() => {
+    const counts = new Map();
+    xrayTypes.forEach((item) => {
+      const part = String(item?.Body_Part || "").trim();
+      if (!part) return;
+      counts.set(part.toLowerCase(), (counts.get(part.toLowerCase()) || 0) + 1);
+    });
+
+    const items = xrayBodyParts.map((bodyPart) => {
+      const key = String(bodyPart || "").trim().toLowerCase();
+      const meta = customBodyPartMap[key] || null;
+      return {
+        bodyPart,
+        count: counts.get(key) || 0,
+        status: meta?.status || "Active",
+        isCustom: Boolean(meta?._id),
+        record: meta
+      };
+    });
+
+    return items;
+  }, [xrayTypes, xrayBodyParts, customBodyPartMap]);
+
+  const filteredBodyPartEntries = useMemo(() => {
+    const term = String(searchText || "").trim().toLowerCase();
+    if (!term) return bodyPartEntries;
+    return bodyPartEntries.filter((entry) =>
+      String(entry?.bodyPart || "").toLowerCase().includes(term)
+    );
+  }, [bodyPartEntries, searchText]);
 
   const filteredXrays = xrayTypes.filter((item) => {
     const partMatch = !selectedXrayBodyPart || String(item.Body_Part || "").trim() === selectedXrayBodyPart;
@@ -868,6 +909,11 @@ const MasterData = () => {
       String(item.Xray_Type || "").toLowerCase().includes(searchText.toLowerCase());
     return partMatch && searchMatch;
   });
+
+  const getNormalizedStatus = (value) => {
+    const status = String(value || "").trim().toLowerCase();
+    return status === "inactive" || status === "deactive" ? "Inactive" : "Active";
+  };
 
   const handleEditSpecialValue = async (item, reloadFn) => {
     const updated = window.prompt("Edit value", item.name || item.value_name);
@@ -2393,48 +2439,42 @@ const MasterData = () => {
 
               {selectedCategory?.category_name === "Xray Types" && (
                 <>
-                  <div className="row g-2 mb-3">
-                    <div className="col-12">
-                      <input
-                        className="form-control mb-3"
-                        placeholder="Search values"
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                      />
-
-                      <div className="alert alert-light">Manage the X-ray master list here. Add a new body part by typing a new body part name, then add X-ray tests under it.</div>
-                    </div>
-                  </div>
-
                   <div className="table-responsive mb-3">
                     <table className="table table-bordered table-striped align-middle">
                       <thead className="table-light">
                         <tr>
                           <th style={{ width: 80 }}>ID</th>
                           <th>Body Part</th>
-                          <th>X-ray Type</th>
+                          <th style={{ width: 120 }}>X-rays</th>
                           <th style={{ width: 120 }}>Status</th>
                           <th style={{ width: 240 }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {!loading && filteredXrays.length === 0 && (
+                        {!loading && filteredBodyPartEntries.length === 0 && (
                           <tr>
-                            <td colSpan={5} className="text-center py-4 text-muted">No x-rays found</td>
+                            <td colSpan={5} className="text-center py-4 text-muted">No body parts found</td>
                           </tr>
                         )}
-                        {filteredXrays.map((item, idx) => (
-                          <tr key={`${item._id || item.Xray_Type}-${idx}`}>
+                        {filteredBodyPartEntries.map((entry, idx) => (
+                          <tr
+                            key={entry.bodyPart}
+                            className={selectedXrayBodyPart === entry.bodyPart ? "table-primary" : ""}
+                            style={{ cursor: "pointer" }}
+                            onClick={() => setSelectedXrayBodyPart(entry.bodyPart)}
+                          >
                             <td>{idx + 1}</td>
-                            <td>{item.Body_Part}</td>
-                            <td>{item.Xray_Type}</td>
+                            <td>{entry.bodyPart}</td>
+                            <td>{entry.count}</td>
                             <td>
-                              <span className={`badge ${item.status === "Active" ? "bg-success" : "bg-secondary"}`}>{item.status || "Active"}</span>
+                              <span className={`badge ${entry.status === "Active" ? "bg-success" : "bg-secondary"}`}>{entry.status || "Active"}</span>
                             </td>
-                            <td className="d-flex gap-2">
-                              <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditXray(item)} disabled={!isInstituteAdmin || saving}>Edit</button>
-                              <button className="btn btn-sm btn-outline-warning" onClick={() => handleToggleXrayStatus(item)} disabled={!isInstituteAdmin || saving}>Toggle</button>
-                              <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteXray(item)} disabled={!isInstituteAdmin || saving}>Delete</button>
+                            <td className="d-flex gap-2" onClick={(e) => e.stopPropagation()}>
+                              <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditXrayBodyPart(entry.record, entry.bodyPart)} disabled={!isInstituteAdmin || saving}>Edit</button>
+                              <button className="btn btn-sm btn-outline-warning" onClick={() => handleToggleXrayBodyPartStatus(entry.record, entry.bodyPart)} disabled={!isInstituteAdmin || saving}>
+                                {entry.status === "Active" ? "Deactivate" : "Activate"}
+                              </button>
+                              <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteXrayBodyPart(entry.bodyPart)} disabled={!isInstituteAdmin || saving}>Delete</button>
                             </td>
                           </tr>
                         ))}
@@ -2481,14 +2521,7 @@ const MasterData = () => {
                         disabled={!isInstituteAdmin || saving}
                       />
                     </div>
-                    <div className="col-md-2">
-                      <select className="form-select" value={newXraySide} onChange={(e) => setNewXraySide(e.target.value)} disabled={!isInstituteAdmin || saving}>
-                        <option value="NA">NA</option>
-                        <option value="Left">Left</option>
-                        <option value="Right">Right</option>
-                      </select>
-                    </div>
-                    <div className="col-md-3">
+                    <div className="col-md-5">
                       <input className="form-control" placeholder="Film size (optional)" value={newXrayFilmSize} onChange={(e) => setNewXrayFilmSize(e.target.value)} disabled={!isInstituteAdmin || saving} />
                     </div>
                   </div>
@@ -2497,6 +2530,44 @@ const MasterData = () => {
                     <button className="btn btn-success" onClick={handleAddXray} disabled={!isInstituteAdmin || saving || !selectedXrayBodyPart || !newXrayName.trim()}>
                       Add X-ray
                     </button>
+                  </div>
+
+                  <div className="table-responsive mb-3">
+                    <table className="table table-bordered table-striped align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: 80 }}>ID</th>
+                          <th>X-ray Type</th>
+                          <th style={{ width: 120 }}>Status</th>
+                          <th style={{ width: 240 }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {!loading && filteredXrays.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="text-center py-4 text-muted">No x-rays found for this body part</td>
+                          </tr>
+                        )}
+                        {filteredXrays.map((item, idx) => (
+                          <tr key={`${item._id || item.Xray_Type}-${idx}`}>
+                            <td>{idx + 1}</td>
+                            <td>{item.Xray_Type}</td>
+                            <td>
+                              <span className={`badge ${getNormalizedStatus(item.status) === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                {getNormalizedStatus(item.status)}
+                              </span>
+                            </td>
+                            <td className="d-flex gap-2">
+                              <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditXray(item)} disabled={!isInstituteAdmin || saving}>Edit</button>
+                              <button className="btn btn-sm btn-outline-warning" onClick={() => handleToggleXrayStatus(item)} disabled={!isInstituteAdmin || saving}>
+                                {getNormalizedStatus(item.status) === "Active" ? "Deactivate" : "Activate"}
+                              </button>
+                              <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteXray(item)} disabled={!isInstituteAdmin || saving}>Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </>
               )}
