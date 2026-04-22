@@ -64,6 +64,11 @@ const DiagnosisEntryForm = () => {
     return grouped;
   }, [testsMaster]);
 
+  const testCategoryOptions = useMemo(
+    () => Array.from(new Set([...(testCategories || []), ...Object.keys(testsByCategory || {})])),
+    [testCategories, testsByCategory]
+  );
+
   const formatDateDMY = (dateValue) => {
   if (!dateValue) return "—";
 
@@ -870,7 +875,7 @@ const fetchPastRecords = async () => {
                                   onChange={e => handleTestChange(i, "Category", e.target.value)}
                                 >
                                   <option value="">Select Category</option>
-                                  {Object.keys(testsByCategory).map(cat => (
+                                  {testCategoryOptions.map(cat => (
                                     <option key={cat} value={cat}>{cat}</option>
                                   ))}
                                 </select>

@@ -48,6 +48,11 @@ const DoctorDiagnosisForm = () => {
     return grouped;
   }, [testsMaster]);
 
+  const testCategoryOptions = useMemo(
+    () => Array.from(new Set([...(testCategories || []), ...Object.keys(testsByCategory || {})])),
+    [testCategories, testsByCategory]
+  );
+
   useEffect(() => {
     const localInstituteId = localStorage.getItem("instituteId");
     if (localInstituteId) {
@@ -212,7 +217,7 @@ const DoctorDiagnosisForm = () => {
                   <label style={{ fontSize: 12, fontWeight: 600 }}>Category</label>
                   <select className="form-select" value={t.Category||""} onChange={e=>handleTestChange(i,'Category', e.target.value)}>
                     <option value="">Select Category</option>
-                    {(testCategories.length ? testCategories : Object.keys(testsByCategory)).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+                    {testCategoryOptions.map(cat => (<option key={cat} value={cat}>{cat}</option>))}
                   </select>
                 </div>
 

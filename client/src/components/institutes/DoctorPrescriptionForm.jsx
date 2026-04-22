@@ -94,6 +94,11 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     return grouped;
   }, [testsMaster]);
 
+  const testCategoryOptions = useMemo(
+    () => Array.from(new Set([...(testCategories || []), ...Object.keys(testsByCategory || {})])),
+    [testCategories, testsByCategory]
+  );
+
   const [showOtherDiseaseInput, setShowOtherDiseaseInput] = useState(false);
 
   const diseaseCategoryOptions = getMasterOptions(masterMap, "Disease Categories");
@@ -2363,7 +2368,7 @@ if (validXrays.length === 0) {
             }}
           >
             <option value="">Select Category</option>
-            {(testCategories.length ? testCategories : Object.keys(testsByCategory)).map(category => (
+            {testCategoryOptions.map(category => (
               <option key={category} value={category}>
                 {category}
               </option>

@@ -314,10 +314,16 @@ const MasterData = () => {
         Array.isArray(apiData.categories) ||
         (apiData.testsByCategory && typeof apiData.testsByCategory === "object");
       const data = hasApiPayload ? apiData : staticStructure;
+      const apiCategoryNames = Array.isArray(apiData.categories) ? apiData.categories : [];
+      const apiTestCategoryNames =
+        apiData.testsByCategory && typeof apiData.testsByCategory === "object"
+          ? Object.keys(apiData.testsByCategory)
+          : [];
       console.log("Fetched Test Categories:", apiData.categories || []);
       console.log("Fetched Tests By Category:", apiData.testsByCategory || {});
       const withMeta = {
         ...data,
+        categories: Array.from(new Set([...apiCategoryNames, ...apiTestCategoryNames])).sort((a, b) => a.localeCompare(b)),
         testsByCategory: Object.fromEntries(
           Object.entries(data.testsByCategory || {}).map(([category, rows]) => [
             category,
