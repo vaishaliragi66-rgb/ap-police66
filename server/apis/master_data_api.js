@@ -802,6 +802,7 @@ router.get("/tests-structure", async (req, res) => {
     // Allow public access when a valid instituteId is provided via query or header.
     // If none provided, fall back to token-based auth (verifyToken sets req.user when used).
     let instituteId = String(req.query?.instituteId || req.user?.instituteId || req.headers['x-institute-id'] || "").trim();
+    const includeInactive = String(req.query?.includeInactive || "").toLowerCase() === "true";
     if (!mongoose.Types.ObjectId.isValid(instituteId)) {
       return res.status(400).json({ message: "Valid instituteId is required (provide via token, ?instituteId= or x-institute-id header)" });
     }
@@ -815,7 +816,7 @@ router.get("/tests-structure", async (req, res) => {
       ? await MasterValue.find({
           Institute_ID: instituteId,
           category_id: { $in: testsCategoryIds },
-          status: "Active"
+          ...(includeInactive ? {} : { status: "Active" })
         }).lean()
       : [];
 

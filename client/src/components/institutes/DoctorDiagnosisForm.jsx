@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
+import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import "./InstitutesTheme.css";
 
 const DoctorDiagnosisForm = () => {
@@ -94,24 +95,100 @@ const DoctorDiagnosisForm = () => {
       const structRes = await axios
         .get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: instituteId ? { instituteId } : {} })
         .catch(() => ({ data: { categories: [], testsByCategory: {} } }));
+      const categoriesRes = await axios
+        .get(`${BACKEND_URL}/master-data-api/categories`)
+        .catch(() => ({ data: [] }));
+      const testsCategory = (Array.isArray(categoriesRes.data) ? categoriesRes.data : []).find(
+        (item) => String(item?.category_name || "").trim() === "Tests"
+      );
+      const testsCategoryValues = testsCategory?._id
+        ? await axios
+            .get(`${BACKEND_URL}/master-data-api/values`, {
+              params: { categoryId: testsCategory._id, includeInactive: true }
+            })
+            .catch(() => ({ data: [] }))
+        : { data: [] };
 
-      const structCategories = Array.isArray(structRes.data?.categories) ? structRes.data.categories : [];
-      const testsByCategoryMap = structRes.data?.testsByCategory && typeof structRes.data.testsByCategory === "object"
+      const staticTestsByCategory = Object.fromEntries(
+        Object.entries(diagnosticTestsByCategory || {}).map(([category, rows]) => [
+          category,
+          (Array.isArray(rows) ? rows : []).map((test, idx) => ({
+            _id: `static-${category}-${idx}`,
+            Test_Name: String(test?.name || "").trim(),
+            Group: String(category || "").trim(),
+            Reference_Range: String(test?.reference || "").trim(),
+            Units: String(test?.unit || "").trim()
+          }))
+        ])
+      );
+      const apiTestsByCategory = structRes.data?.testsByCategory && typeof structRes.data.testsByCategory === "object"
         ? structRes.data.testsByCategory
         : {};
+      const customValues = Array.isArray(testsCategoryValues.data) ? testsCategoryValues.data : [];
+      const customCategories = customValues
+        .filter((item) => item?.meta?.kind === "category")
+        .map((item) => String(item?.value_name || "").trim())
+        .filter(Boolean);
+      const customGrouped = {};
+      customValues
+        .filter((item) => item?.meta?.kind === "test")
+        .forEach((item) => {
+          const category = String(item?.meta?.category || "").trim();
+          const name = String(item?.value_name || "").trim();
+          if (!category || !name) return;
+          if (!customGrouped[category]) customGrouped[category] = [];
+          customGrouped[category].push({
+            _id: item?._id,
+            Test_Name: name,
+            Group: category,
+            Reference_Range: String(item?.meta?.reference || "").trim(),
+            Units: String(item?.meta?.unit || "").trim()
+          });
+        });
+      const mergedCategories = Array.from(
+        new Set([
+          ...Object.keys(staticTestsByCategory),
+          ...(Array.isArray(structRes.data?.categories) ? structRes.data.categories : []),
+          ...Object.keys(apiTestsByCategory),
+          ...customCategories,
+          ...Object.keys(customGrouped)
+        ])
+      );
+      const mergedTestsByCategory = {};
+      mergedCategories.forEach((category) => {
+        const staticRows = Array.isArray(staticTestsByCategory[category]) ? staticTestsByCategory[category] : [];
+        const apiRows = Array.isArray(apiTestsByCategory[category]) ? apiTestsByCategory[category] : [];
+        const customRows = Array.isArray(customGrouped[category]) ? customGrouped[category] : [];
+        const seen = new Set();
+        mergedTestsByCategory[category] = [...staticRows, ...apiRows, ...customRows]
+          .filter((test) => {
+            const key = String(test?.Test_Name || test?.name || "").trim().toLowerCase();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          .map((test, idx) => ({
+            _id: test?._id || test?.id || `master-${category}-${idx}`,
+            Test_Name: String(test?.Test_Name || test?.name || "").trim(),
+            Group: String(test?.Group || category || "").trim(),
+            Reference_Range: String(test?.Reference_Range || test?.reference || "").trim(),
+            Units: String(test?.Units || test?.unit || "").trim()
+          }))
+          .filter((test) => test.Group && test.Test_Name);
+      });
 
-      const normalizedTests = Object.entries(testsByCategoryMap).flatMap(([category, rows]) =>
+      const normalizedTests = Object.entries(mergedTestsByCategory).flatMap(([category, rows]) =>
         (Array.isArray(rows) ? rows : []).map((test, idx) => ({
-          _id: test?.id || `master-${category}-${idx}`,
-          Test_Name: String(test?.name || "").trim(),
-          Group: String(category || "").trim(),
-          Reference_Range: String(test?.reference || "").trim(),
-          Units: String(test?.unit || "").trim()
+          _id: test?._id || `master-${category}-${idx}`,
+          Test_Name: String(test?.Test_Name || test?.name || "").trim(),
+          Group: String(test?.Group || category || "").trim(),
+          Reference_Range: String(test?.Reference_Range || test?.reference || "").trim(),
+          Units: String(test?.Units || test?.unit || "").trim()
         }))
       ).filter((test) => test.Group && test.Test_Name);
 
       setTestsMaster(normalizedTests);
-      setTestCategories(structCategories);
+      setTestCategories(mergedCategories);
     } catch (err) {
       console.error(err);
     }

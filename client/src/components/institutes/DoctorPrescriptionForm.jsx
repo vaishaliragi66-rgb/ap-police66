@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData_clean";
+import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { mergeXrayTypes } from "../../data/xrayTypes";
 import "./InstitutesTheme.css";
 
@@ -279,23 +280,62 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
         .get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: instituteId ? { instituteId } : {} })
         .catch(() => ({ data: { categories: [], testsByCategory: {} } }));
 
-      const structCategories = Array.isArray(structRes.data?.categories) ? structRes.data.categories : [];
-      const testsByCategoryMap = structRes.data?.testsByCategory && typeof structRes.data.testsByCategory === "object"
+      const staticTestsByCategory = Object.fromEntries(
+        Object.entries(diagnosticTestsByCategory || {}).map(([category, rows]) => [
+          category,
+          (Array.isArray(rows) ? rows : []).map((test, idx) => ({
+            _id: `static-${category}-${idx}`,
+            Test_Name: String(test?.name || "").trim(),
+            Group: String(category || "").trim(),
+            Reference_Range: String(test?.reference || "").trim(),
+            Units: String(test?.unit || "").trim()
+          }))
+        ])
+      );
+      const apiTestsByCategory = structRes.data?.testsByCategory && typeof structRes.data.testsByCategory === "object"
         ? structRes.data.testsByCategory
         : {};
+      const mergedCategories = Array.from(
+        new Set([
+          ...Object.keys(staticTestsByCategory),
+          ...(Array.isArray(structRes.data?.categories) ? structRes.data.categories : []),
+          ...Object.keys(apiTestsByCategory)
+        ])
+      );
+      const mergedTestsByCategory = {};
+      mergedCategories.forEach((category) => {
+        const staticRows = Array.isArray(staticTestsByCategory[category]) ? staticTestsByCategory[category] : [];
+        const apiRows = Array.isArray(apiTestsByCategory[category]) ? apiTestsByCategory[category] : [];
+        const seen = new Set();
+        mergedTestsByCategory[category] = [...staticRows, ...apiRows]
+          .filter((test) => {
+            const key = String(test?.Test_Name || test?.name || "").trim().toLowerCase();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          .map((test, idx) => ({
+            _id: test?._id || test?.id || `master-${category}-${idx}`,
+            Test_Name: String(test?.Test_Name || test?.name || "").trim(),
+            Group: String(test?.Group || category || "").trim(),
+            Reference_Range: String(test?.Reference_Range || test?.reference || "").trim(),
+            Units: String(test?.Units || test?.unit || "").trim()
+          }))
+          .filter((test) => test.Group && test.Test_Name);
+      });
 
-      const normalizedTests = Object.entries(testsByCategoryMap).flatMap(([category, rows]) =>
+      const normalizedTests = Object.entries(mergedTestsByCategory).flatMap(([category, rows]) =>
         (Array.isArray(rows) ? rows : []).map((test, idx) => ({
-          _id: test?.id || `master-${category}-${idx}`,
-          Test_Name: String(test?.name || "").trim(),
-          Group: String(category || "").trim(),
-          Reference_Range: String(test?.reference || "").trim(),
-          Units: String(test?.unit || "").trim()
+          _id: test?._id || `master-${category}-${idx}`,
+          Test_Name: String(test?.Test_Name || test?.name || "").trim(),
+          Group: String(test?.Group || category || "").trim(),
+          Reference_Range: String(test?.Reference_Range || test?.reference || "").trim(),
+          Units: String(test?.Units || test?.unit || "").trim()
         }))
       ).filter((test) => test.Group && test.Test_Name);
 
       setTestsMaster(normalizedTests);
-      setTestCategories(structCategories);
+      setTestCategories(mergedCategories);
     } catch (err) {
       console.error(err);
     }

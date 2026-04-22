@@ -161,9 +161,6 @@ const ensureTestMasterValues = async (instituteId) => {
 
   const category = await ensureCategoryDoc(instituteId, TEST_CATEGORY_NAME);
   if (!category) return null;
-  if (Number(category.seed_version || 0) >= 3) {
-    return category;
-  }
 
   const legacyTests = await DiagnosisTest.find({})
     .select("Test_Name Group Reference_Range Units")
@@ -199,6 +196,25 @@ const ensureTestMasterValues = async (instituteId) => {
     ...Object.keys(diagnosticReferencePanel || {}),
     ...legacyTests.map((item) => item?.Group)
   ]);
+
+  const existingCategoryCount = await MasterValue.countDocuments({
+    Institute_ID: instituteId,
+    category_id: category._id,
+    "meta.kind": "category"
+  });
+  const existingTestCount = await MasterValue.countDocuments({
+    Institute_ID: instituteId,
+    category_id: category._id,
+    "meta.kind": "test"
+  });
+  const shouldReseed =
+    Number(category.seed_version || 0) < 3 ||
+    existingCategoryCount < categoryNames.length ||
+    existingTestCount < mergedTests.size;
+
+  if (!shouldReseed) {
+    return category;
+  }
 
   for (const categoryName of categoryNames) {
     await ensureValueRecord({

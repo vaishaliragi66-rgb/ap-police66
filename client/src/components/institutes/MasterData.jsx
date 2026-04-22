@@ -33,6 +33,17 @@ const sortUnique = (items) =>
   }, new Map()).values()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const normalizeCategoryName = (value) => String(value || "").trim();
+const normalizeCategoryKey = (value) => normalizeText(value);
+const dedupeTestsByName = (items = []) => {
+  const seen = new Set();
+  return (items || []).filter((item) => {
+    const key = normalizeText(item?.name);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
 const makePairKey = (left, right) => `${normalizeText(left)}::${normalizeText(right)}`;
 const makeMedicineKey = (medicineType, dosageForm, valueName, strength) =>
   `${normalizeText(medicineType)}::${normalizeText(dosageForm)}::${normalizeText(valueName)}::${normalizeText(strength)}`;
@@ -51,8 +62,12 @@ const notifyMasterDataUpdated = () => {
 
 const getStaticTestsStructure = () => {
   const testsByCategory = {};
+  const categoryDisplayNames = {};
   Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
-    testsByCategory[category] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
+    const key = normalizeCategoryKey(category);
+    if (!key) return;
+    if (!categoryDisplayNames[key]) categoryDisplayNames[key] = normalizeCategoryName(category);
+    testsByCategory[key] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
       id: `static-${category}-${idx}`,
       name: test.name,
       reference: test.reference || "",
@@ -62,23 +77,30 @@ const getStaticTestsStructure = () => {
   });
 
   return {
-    categories: Object.keys(testsByCategory).sort((a, b) => a.localeCompare(b)),
+    categories: Object.keys(testsByCategory)
+      .map((key) => categoryDisplayNames[key] || key)
+      .sort((a, b) => a.localeCompare(b)),
     testsByCategory
   };
 };
 
 const mergeTestsStructure = (base, incoming) => {
   const grouped = {};
+  const displayNames = {};
   const addCategory = (category) => {
-    const key = String(category || "").trim();
+    const raw = normalizeCategoryName(category);
+    const key = normalizeCategoryKey(raw);
     if (!key) return;
     if (!grouped[key]) grouped[key] = [];
+    if (!displayNames[key]) displayNames[key] = raw;
   };
   const addTest = (category, item) => {
-    const key = String(category || "").trim();
+    const raw = normalizeCategoryName(category);
+    const key = normalizeCategoryKey(raw);
     const name = String(item?.name || "").trim();
     if (!key || !name) return;
     if (!grouped[key]) grouped[key] = [];
+    if (!displayNames[key]) displayNames[key] = raw;
     grouped[key].push({
       id: item?.id,
       name,
@@ -110,9 +132,18 @@ const mergeTestsStructure = (base, incoming) => {
       .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
   });
 
+  const categories = Object.keys(grouped)
+    .map((key) => displayNames[key] || key)
+    .sort((a, b) => a.localeCompare(b));
+  const testsByCategory = {};
+  categories.forEach((category) => {
+    const key = normalizeCategoryKey(category);
+    testsByCategory[category] = grouped[key] || [];
+  });
+
   return {
-    categories: Object.keys(grouped).sort((a, b) => a.localeCompare(b)),
-    testsByCategory: grouped
+    categories,
+    testsByCategory
   };
 };
 
@@ -285,10 +316,10 @@ const MasterData = () => {
     try {
       const instituteId = localStorage.getItem("instituteId") || "";
       const res = await axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, {
-        params: instituteId ? { instituteId } : {}
+        params: instituteId ? { instituteId, includeInactive: true } : { includeInactive: true }
       });
       const valuesRes = selectedCategoryId
-        ? await axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+        ? await axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId, includeInactive: true } })
         : { data: [] };
 
       const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
@@ -313,7 +344,7 @@ const MasterData = () => {
       const hasApiPayload =
         Array.isArray(apiData.categories) ||
         (apiData.testsByCategory && typeof apiData.testsByCategory === "object");
-      const data = hasApiPayload ? apiData : staticStructure;
+      const data = hasApiPayload ? mergeTestsStructure(staticStructure, apiData) : staticStructure;
       const apiCategoryNames = Array.isArray(apiData.categories) ? apiData.categories : [];
       const apiTestCategoryNames =
         apiData.testsByCategory && typeof apiData.testsByCategory === "object"
@@ -321,9 +352,29 @@ const MasterData = () => {
           : [];
       console.log("Fetched Test Categories:", apiData.categories || []);
       console.log("Fetched Tests By Category:", apiData.testsByCategory || {});
+      const categoryDisplayMap = new Map();
+      [
+        ...(data.categories || []),
+        ...apiCategoryNames,
+        ...apiTestCategoryNames,
+        ...Object.keys(testCategoryMap || {}),
+        ...masterValues
+          .filter((item) => item?.meta?.kind === "category")
+          .map((item) => String(item?.value_name || "").trim())
+          .filter(Boolean),
+        ...masterValues
+          .filter((item) => item?.meta?.kind === "test")
+          .map((item) => String(item?.meta?.category || "").trim())
+          .filter(Boolean)
+      ].forEach((category) => {
+        const key = normalizeCategoryKey(category);
+        const value = normalizeCategoryName(category);
+        if (key && !categoryDisplayMap.has(key)) categoryDisplayMap.set(key, value);
+      });
+
       const withMeta = {
         ...data,
-        categories: Array.from(new Set([...apiCategoryNames, ...apiTestCategoryNames])).sort((a, b) => a.localeCompare(b)),
+        categories: Array.from(categoryDisplayMap.values()).sort((a, b) => a.localeCompare(b)),
         testsByCategory: Object.fromEntries(
           Object.entries(data.testsByCategory || {}).map(([category, rows]) => [
             category,
@@ -338,13 +389,31 @@ const MasterData = () => {
           ])
         )
       };
+      const extraTestCategories = masterValues
+        .filter((item) => item?.meta?.kind === "category")
+        .map((item) => String(item?.value_name || "").trim())
+        .filter(Boolean);
+      extraTestCategories.forEach((category) => {
+        const match = Object.keys(withMeta.testsByCategory || {}).find(
+          (key) => normalizeCategoryKey(key) === normalizeCategoryKey(category)
+        );
+        if (!match) {
+          withMeta.testsByCategory[category] = [];
+        }
+      });
       setTestsStructure(withMeta);
-      const preferredCategory = withMeta.categories.includes("HEMATOLOGY")
-        ? "HEMATOLOGY"
-        : withMeta.categories[0] || "";
-      const shouldKeepSelected = selectedTestCategory && withMeta.categories.includes(selectedTestCategory);
+      const preferredCategory =
+        withMeta.categories.find((category) => normalizeCategoryKey(category) === normalizeCategoryKey("HEMATOLOGY")) ||
+        withMeta.categories[0] ||
+        "";
+      const preservedCategory = withMeta.categories.find(
+        (category) => normalizeCategoryKey(category) === normalizeCategoryKey(selectedTestCategory)
+      );
+      const shouldKeepSelected =
+        selectedTestCategory &&
+        Boolean(preservedCategory);
       if (shouldKeepSelected) {
-        setSelectedTestCategory(selectedTestCategory);
+        setSelectedTestCategory(preservedCategory);
       } else if (preferredCategory) {
         setSelectedTestCategory(preferredCategory);
       } else {
@@ -439,11 +508,19 @@ const MasterData = () => {
         ])
       );
       const categories = merged.categories;
-      const preferredStatic = categories.includes("HEMATOLOGY") ? "HEMATOLOGY" : categories[0] || "";
+      const preferredStatic =
+        categories.find((category) => normalizeCategoryKey(category) === normalizeCategoryKey("HEMATOLOGY")) ||
+        categories[0] ||
+        "";
       setTestsStructure(merged);
-      const shouldKeepSelected = selectedTestCategory && categories.includes(selectedTestCategory);
+      const preservedCategory = categories.find(
+        (category) => normalizeCategoryKey(category) === normalizeCategoryKey(selectedTestCategory)
+      );
+      const shouldKeepSelected =
+        selectedTestCategory &&
+        Boolean(preservedCategory);
       if (shouldKeepSelected) {
-        setSelectedTestCategory(selectedTestCategory);
+        setSelectedTestCategory(preservedCategory);
       } else if (preferredStatic && categories.includes(preferredStatic)) {
         setSelectedTestCategory(preferredStatic);
       } else {
@@ -750,15 +827,15 @@ const MasterData = () => {
       const instituteId = localStorage.getItem("instituteId") || "";
       const [xrayRes, bodyPartRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/xray-api/types`, {
-          params: instituteId ? { instituteId } : {}
+          params: instituteId ? { instituteId, includeInactive: true } : { includeInactive: true }
         }),
         axios.get(`${BACKEND_URL}/xray-api/body-parts`, {
-          params: instituteId ? { instituteId } : {}
+          params: instituteId ? { instituteId, includeInactive: true } : { includeInactive: true }
         }).catch(() => ({ data: [] }))
       ]);
       
       const rows = Array.isArray(xrayRes.data) ? xrayRes.data : [];
-      const merged = mergeXrayTypes(rows).filter((item) => String(item?.status || "Active") === "Active");
+      const merged = mergeXrayTypes(rows);
       setXrayTypes(merged);
 
       // Build map of custom body parts
@@ -830,8 +907,10 @@ const MasterData = () => {
     item.value_name?.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const filteredTests = (testsStructure.testsByCategory?.[selectedTestCategory] || []).filter((item) =>
-    String(item.name || "").toLowerCase().includes(searchText.toLowerCase())
+  const filteredTests = dedupeTestsByName(
+    (testsStructure.testsByCategory?.[selectedTestCategory] || []).filter((item) =>
+      String(item.name || "").toLowerCase().includes(searchText.toLowerCase())
+    )
   );
 
   const filteredDiseases =
@@ -1002,7 +1081,8 @@ const MasterData = () => {
       return;
     }
 
-    const nextStatus = masterValue.status === "Active" ? "Inactive" : "Active";
+    const currentStatus = getNormalizedStatus(masterValue.status);
+    const nextStatus = currentStatus === "Active" ? "Inactive" : "Active";
 
     setSaving(true);
     setMessage("");
@@ -1036,6 +1116,17 @@ const MasterData = () => {
     if (nextNameInput === null) return;
     const nextName = nextNameInput.trim();
     if (!nextName) return;
+
+    const existingTests = testsStructure.testsByCategory?.[selectedTestCategory] || [];
+    const duplicateExists = existingTests.some(
+      (test) =>
+        normalizeText(test?.name) === normalizeText(nextName) &&
+        normalizeText(test?.name) !== normalizeText(item?.name)
+    );
+    if (duplicateExists) {
+      setError("That test already exists in this category");
+      return;
+    }
 
     const nextReferenceInput = window.prompt("Edit reference", item.reference || "");
     if (nextReferenceInput === null) return;
@@ -1345,13 +1436,20 @@ const MasterData = () => {
 
   const handleAddTest = async () => {
     if (!selectedTestCategory || !newTestName.trim()) return;
+    const nextTestName = newTestName.trim();
+    const existingTests = testsStructure.testsByCategory?.[selectedTestCategory] || [];
+    const duplicateExists = existingTests.some((test) => normalizeText(test?.name) === normalizeText(nextTestName));
+    if (duplicateExists) {
+      setError("That test already exists in this category");
+      return;
+    }
     setSaving(true);
     setMessage("");
     setError("");
     try {
       const res = await axios.post(`${BACKEND_URL}/master-data-api/tests`, {
         category: selectedTestCategory,
-        testName: newTestName.trim(),
+        testName: nextTestName,
         referenceRange: newTestReference.trim(),
         unit: newTestUnit.trim()
       });
@@ -1961,17 +2059,17 @@ const MasterData = () => {
                         {testsStructure.categories.map((item, idx) => {
                           const masterValue = customTestCategoryMap[normalizeText(item)] || null;
                           const isCustom = Boolean(masterValue?._id);
-                          const status = masterValue?.status || "Active";
+                          const status = getNormalizedStatus(masterValue?.status);
 
                           return (
                             <tr key={item}>
                               <td>{idx + 1}</td>
                               <td>{item}</td>
-                              <td>
-                                <span className={`badge ${status === "Active" ? "bg-success" : "bg-secondary"}`}>
-                                  {status}
-                                </span>
-                              </td>
+                            <td>
+                              <span className={`badge ${status === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                {status}
+                              </span>
+                            </td>
                               <td className="d-flex flex-wrap gap-2">
                                 <button
                                   className="btn btn-sm btn-outline-primary"
@@ -1980,13 +2078,13 @@ const MasterData = () => {
                                 >
                                   Edit
                                 </button>
-                                <button
-                                  className="btn btn-sm btn-outline-warning"
-                                  onClick={() => handleToggleTestCategory(item)}
-                                  disabled={!isInstituteAdmin || saving}
-                                >
-                                  {status === "Active" ? "Deactivate" : "Activate"}
-                                </button>
+                              <button
+                                className="btn btn-sm btn-outline-warning"
+                                onClick={() => handleToggleTestCategory(item)}
+                                disabled={!isInstituteAdmin || saving}
+                              >
+                                {status === "Active" ? "Deactivate" : "Activate"}
+                              </button>
                                 <button
                                   className="btn btn-sm btn-outline-danger"
                                   onClick={() => handleDeleteTestCategory(item)}
