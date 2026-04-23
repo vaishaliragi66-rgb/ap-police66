@@ -25,6 +25,7 @@ const isExpired = (dateStr) => {
 };
 
 export default function MainStore() {
+  const rowsPerPage = 50;
 
   const navigate = useNavigate();
   // Sanitize display name to remove replacement characters
@@ -35,13 +36,37 @@ export default function MainStore() {
   const [medicines, setMedicines] = useState([]);
   const [nonDeletable, setNonDeletable] = useState(new Set());
   const [loading, setLoading] = useState(true);
-const [currentPage, setCurrentPage] = useState(1);
-const rowsPerPage = 8;
-const indexOfLast = currentPage * rowsPerPage;
-const indexOfFirst = indexOfLast - rowsPerPage;
-const currentMedicines = medicines.slice(indexOfFirst, indexOfLast);
-const totalPages = Math.ceil(medicines.length / rowsPerPage);
-const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
+  const [currentPage, setCurrentPage] = useState(1);
+  const indexOfLast = currentPage * rowsPerPage;
+  const indexOfFirst = indexOfLast - rowsPerPage;
+  const currentMedicines = medicines.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.max(1, Math.ceil(medicines.length / rowsPerPage));
+  const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
+  const visibleStart = medicines.length ? indexOfFirst + 1 : 0;
+  const visibleEnd = Math.min(indexOfLast, medicines.length);
+  const visiblePageNumbers = (() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const pages = new Set([1, currentPage, totalPages]);
+    if (currentPage - 1 > 1) pages.add(currentPage - 1);
+    if (currentPage + 1 < totalPages) pages.add(currentPage + 1);
+
+    if (currentPage <= 3) {
+      pages.add(2);
+      pages.add(3);
+      pages.add(4);
+    }
+
+    if (currentPage >= totalPages - 2) {
+      pages.add(totalPages - 1);
+      pages.add(totalPages - 2);
+      pages.add(totalPages - 3);
+    }
+
+    return [...pages].filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+  })();
 
 
   // modal state
@@ -85,6 +110,12 @@ const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
   useEffect(() => {
     fetchMedicines();
   }, []);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // -------- DELETE MEDICINE ----------
   const deleteMedicine = async (id) => {
@@ -176,18 +207,18 @@ const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
                 {expiredMedicines.length > 5 ? " ..." : ""}
               </div>
             )}
-          <div className="table-responsive">
-            <table className="table table-striped mb-0">
+          <div className="table-responsive main-store-table-wrap">
+            <table className="table table-striped align-middle mb-0 main-store-table">
               <thead className="table-dark">
                 <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Strength</th>
-                  <th>Received From</th>
-                  <th>Qty</th>
-                  <th>Threshold</th>
-                  <th>Expiry</th>
-                  <th className="text-center">Actions</th>
+                  <th className="main-store-col-batch">Batch No.</th>
+                  <th className="main-store-col-name">Name</th>
+                  <th className="main-store-col-strength">Strength</th>
+                  <th className="main-store-col-source">Received From</th>
+                  <th className="main-store-col-qty text-center">Qty</th>
+                  <th className="main-store-col-threshold text-center">Threshold</th>
+                  <th className="main-store-col-expiry text-center">Expiry</th>
+                  <th className="main-store-col-actions text-center">Actions</th>
                 </tr>
               </thead>
 
@@ -195,29 +226,30 @@ const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
                 {currentMedicines.map(med => (
 
                   <tr key={med._id} className={isExpired(med.Expiry_Date) ? "table-danger" : ""}>
-                    <td className="text-uppercase">{sanitizeName(med.Medicine_Code)}</td>
+                    <td className="text-uppercase fw-semibold">{sanitizeName(med.Medicine_Code)}</td>
                     <td className="text-uppercase">{sanitizeName(med.Medicine_Name)}</td>
                     <td>{sanitizeName(med.Strength) || "-"}</td>
                     <td className="text-uppercase">{sanitizeName(med.Issued_By)}</td>
-                    <td>{med.Quantity}</td>
-                    <td>{med.Threshold_Qty}</td>
-                    <td>{formatExpiryDate(med.Expiry_Date)}</td>
+                    <td className="text-center">{med.Quantity}</td>
+                    <td className="text-center">{med.Threshold_Qty}</td>
+                    <td className="text-center">{formatExpiryDate(med.Expiry_Date)}</td>
 
                     <td className="text-center">
+                      <div className="d-flex flex-wrap justify-content-center gap-2">
+                        <button
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => openEditModal(med)}
+                        >
+                          Update
+                        </button>
 
-                      <button
-                        className="btn btn-sm btn-outline-primary me-2"
-                        onClick={() => openEditModal(med)}
-                      >
-                        Update
-                      </button>
-
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => deleteMedicine(med._id)}
-                      >
-                        Delete
-                      </button>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => deleteMedicine(med._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
 
                     </td>
                   </tr>
@@ -226,51 +258,55 @@ const expiredMedicines = medicines.filter((med) => isExpired(med.Expiry_Date));
 
             </table>
             {/* Pagination */}
-<div className="d-flex justify-content-center mt-3">
-  <nav>
-    <ul className="pagination">
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 p-3 border-top">
+              <div className="small text-muted">
+                Showing {visibleStart}-{visibleEnd} of {medicines.length} medicines
+              </div>
+              <nav aria-label="Main store pagination">
+                <ul className="pagination pagination-sm mb-0 flex-wrap justify-content-center">
+                  <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    >
+                      Previous
+                    </button>
+                  </li>
 
-      <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-        <button
-          className="page-link"
-          onClick={() => setCurrentPage(prev => prev - 1)}
-        >
-          Previous
-        </button>
-      </li>
+                  {visiblePageNumbers.map((page, index) => {
+                    const previousPage = visiblePageNumbers[index - 1];
+                    const showGap = previousPage && page - previousPage > 1;
 
-      {[...Array(totalPages)].map((_, index) => (
-        <li
-          key={index}
-          className={`page-item ${
-            currentPage === index + 1 ? "active" : ""
-          }`}
-        >
-          <button
-            className="page-link"
-            onClick={() => setCurrentPage(index + 1)}
-          >
-            {index + 1}
-          </button>
-        </li>
-      ))}
+                    return (
+                      <React.Fragment key={page}>
+                        {showGap ? (
+                          <li className="page-item disabled">
+                            <span className="page-link">...</span>
+                          </li>
+                        ) : null}
+                        <li className={`page-item ${currentPage === page ? "active" : ""}`}>
+                          <button
+                            className="page-link"
+                            onClick={() => setCurrentPage(page)}
+                          >
+                            {page}
+                          </button>
+                        </li>
+                      </React.Fragment>
+                    );
+                  })}
 
-      <li
-        className={`page-item ${
-          currentPage === totalPages ? "disabled" : ""
-        }`}
-      >
-        <button
-          className="page-link"
-          onClick={() => setCurrentPage(prev => prev + 1)}
-        >
-          Next
-        </button>
-      </li>
-
-    </ul>
-  </nav>
-</div>
+                  <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    >
+                      Next
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
 
 
 

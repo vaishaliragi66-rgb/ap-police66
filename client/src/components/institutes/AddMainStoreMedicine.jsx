@@ -378,10 +378,10 @@ const AddMainStoreMedicine = () => {
             />
           </div>
 
-          {/* Medicine Code - THIRD (auto-filled) */}
+          {/* Batch No. - THIRD (auto-filled) */}
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              Medicine Code *
+              Batch No. *
             </label>
             <input
               name="Medicine_Code"
@@ -391,7 +391,7 @@ const AddMainStoreMedicine = () => {
               required
               className="w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-sm focus:ring-2 focus:ring-black"
               style={{ textTransform: "uppercase" }}
-              placeholder="Auto-filled from selection"
+              placeholder="Enter batch number"
             />
             
           </div>

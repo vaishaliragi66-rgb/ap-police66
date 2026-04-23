@@ -87,6 +87,48 @@
   background: rgba(239, 246, 255, 0.72) !important;
 }
 
+.institutes-theme .main-store-table-wrap {
+  overflow-x: auto;
+}
+
+.institutes-theme .main-store-table {
+  table-layout: fixed;
+  min-width: 1040px;
+}
+
+.institutes-theme .main-store-table th,
+.institutes-theme .main-store-table td {
+  vertical-align: middle;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.institutes-theme .main-store-col-batch {
+  width: 12%;
+}
+
+.institutes-theme .main-store-col-name {
+  width: 22%;
+}
+
+.institutes-theme .main-store-col-strength {
+  width: 12%;
+}
+
+.institutes-theme .main-store-col-source {
+  width: 20%;
+}
+
+.institutes-theme .main-store-col-qty,
+.institutes-theme .main-store-col-threshold,
+.institutes-theme .main-store-col-expiry {
+  width: 9%;
+}
+
+.institutes-theme .main-store-col-actions {
+  width: 16%;
+}
+
 .institutes-theme .form-control,
 .institutes-theme .form-select,
 .institutes-auth-theme .form-control,
