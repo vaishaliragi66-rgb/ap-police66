@@ -31,6 +31,13 @@ const PharmacyPrescriptionForm = () => {
   const dosageFormOptions = getMasterOptions(masterMap, "Dosage Forms");
 
   const normalizeText = (value) => String(value || "").trim().toLowerCase();
+  const getInventoryMedicineType = (item) => item?.Medicine_Type || item?.Type || "";
+  const getInventoryDosageForm = (item) => item?.Dosage_Form || item?.dosageForm || "";
+  const getMedicineOptionValue = (medicine) => {
+    if (medicine?.medicineId) return `code::${medicine.medicineId}`;
+    if (medicine?.medicineName) return `name::${medicine.medicineName}`;
+    return "";
+  };
 
   const navigate = useNavigate();
 
@@ -54,9 +61,10 @@ const PharmacyPrescriptionForm = () => {
 
     const inventoryByForm = (inventory || []).filter((item) => {
       if (!typeKey) return false;
-      if (normalizeText(item?.Medicine_Type) !== typeKey) return false;
+      if (normalizeText(getInventoryMedicineType(item)) !== typeKey) return false;
       if (!formKey) return true;
-      return normalizeText(item?.Dosage_Form) === formKey || normalizeText(item?.Type) === formKey;
+      const inventoryForm = normalizeText(getInventoryDosageForm(item));
+      return !inventoryForm || inventoryForm === formKey;
     });
 
     const options = [];
@@ -293,7 +301,13 @@ const loadEmployeeReports = async () => {
       const usableInventory = (res.data || []).filter(
         (item) => Number(item?.Quantity || 0) > 0 && !isMedicineExpired(item?.Expiry_Date)
       );
-      setInventory(usableInventory);
+      setInventory(
+        usableInventory.map((item) => ({
+          ...item,
+          Medicine_Type: item?.Medicine_Type || item?.Type || "",
+          Dosage_Form: item?.Dosage_Form || item?.dosageForm || ""
+        }))
+      );
     } catch (error) {
       console.error("Error fetching inventory:", error);
       setInventory([]);
@@ -368,8 +382,9 @@ const handleMedicineChange = (index, field, value) => {
           ...updated[index],   // keep existing quantity
           medicineId: selected.Medicine_Code,
           medicineName: selected.Medicine_Name,
-          dosageForm: selected.Type || updated[index].dosageForm || "",
-          type: updated[index].medicineType || updated[index].type || updated[index].medicineType || "",
+          dosageForm: selected.Dosage_Form || updated[index].dosageForm || "",
+          medicineType: selected.Medicine_Type || updated[index].medicineType || updated[index].type || "",
+          type: selected.Medicine_Type || updated[index].medicineType || updated[index].type || "",
           strength: selected.Strength || updated[index].strength || "",
           expiryDate: selected.Expiry_Date
         };
@@ -382,6 +397,7 @@ const handleMedicineChange = (index, field, value) => {
           ...updated[index],
           medicineId: "",
           medicineName: name,
+          medicineType: updated[index].medicineType || updated[index].type || (masterEntry ? masterEntry.medicineType : ""),
           dosageForm: updated[index].dosageForm || (masterEntry ? masterEntry.dosageForm : ""),
           type: updated[index].medicineType || updated[index].type || (masterEntry ? masterEntry.medicineType : ""),
           strength: masterEntry ? masterEntry.strength || "" : "",
@@ -395,8 +411,9 @@ const handleMedicineChange = (index, field, value) => {
           ...updated[index],
           medicineId: selected.Medicine_Code,
           medicineName: selected.Medicine_Name,
-          dosageForm: selected.Type || updated[index].dosageForm || "",
-          type: updated[index].medicineType || updated[index].type || "",
+          dosageForm: selected.Dosage_Form || updated[index].dosageForm || "",
+          medicineType: selected.Medicine_Type || updated[index].medicineType || updated[index].type || "",
+          type: selected.Medicine_Type || updated[index].medicineType || updated[index].type || "",
           strength: selected.Strength || updated[index].strength || "",
           expiryDate: selected.Expiry_Date
         };
@@ -405,6 +422,7 @@ const handleMedicineChange = (index, field, value) => {
 
     if (field === "medicineType") {
       const currentMedicineCode = updated[index].medicineId;
+      const currentSelectedValue = getMedicineOptionValue(updated[index]);
       const currentSelected = inventory.find(
         (item) => item.Medicine_Code === currentMedicineCode
       );
@@ -416,7 +434,7 @@ const handleMedicineChange = (index, field, value) => {
       };
 
       const allowed = getPharmacyOptionsByTypeAndForm(value, updated[index].dosageForm || "");
-      const isStillValid = allowed.some((item) => String(item.Medicine_Code) === String(currentMedicineCode));
+      const isStillValid = allowed.some((item) => String(item.value) === String(currentSelectedValue));
 
       if (currentSelected && !isStillValid) {
         updated[index] = {
@@ -430,7 +448,7 @@ const handleMedicineChange = (index, field, value) => {
     }
 
     if (field === "dosageForm") {
-      const currentMedicineCode = updated[index].medicineId;
+      const currentSelectedValue = getMedicineOptionValue(updated[index]);
 
       updated[index] = {
         ...updated[index],
@@ -438,7 +456,7 @@ const handleMedicineChange = (index, field, value) => {
       };
 
       const allowed = getPharmacyOptionsByTypeAndForm(updated[index].medicineType || "", value);
-      const isStillValid = allowed.some((item) => String(item.Medicine_Code) === String(currentMedicineCode));
+      const isStillValid = allowed.some((item) => String(item.value) === String(currentSelectedValue));
       if (!isStillValid) {
         updated[index] = {
           ...updated[index],
@@ -511,10 +529,11 @@ const addDoctorPrescribedMedicine = (medicine) => {
   const calculatedQty = perDay * days;
   const matchedInventory = (inventory || []).find((item) => {
     const sameName = normalizeText(item.Medicine_Name) === normalizeText(baseName);
-    const sameType = !medicine.Dosage_Form || normalizeText(item.Type) === normalizeText(medicine.Dosage_Form);
+    const sameType = !medicine.Type || normalizeText(getInventoryMedicineType(item)) === normalizeText(medicine.Type);
+    const sameDosageForm = !medicine.Dosage_Form || !getInventoryDosageForm(item) || normalizeText(getInventoryDosageForm(item)) === normalizeText(medicine.Dosage_Form);
     const sameStrength =
       !medicine.Strength || normalizeText(item.Strength) === normalizeText(medicine.Strength);
-    return sameName && sameType && sameStrength;
+    return sameName && sameType && sameDosageForm && sameStrength;
   });
 
   setFormData(prev => {
@@ -532,9 +551,9 @@ const addDoctorPrescribedMedicine = (medicine) => {
         ...medicinesCopy[emptyIndex],
         medicineId: matchedInventory?.Medicine_Code || "",
         medicineName: matchedInventory?.Medicine_Name || baseName,
-        medicineType: medicine.Type || "",
-        type: medicine.Type || "",
-        dosageForm: matchedInventory?.Type || medicine.Dosage_Form || "",
+        medicineType: matchedInventory?.Medicine_Type || medicine.Type || "",
+        type: matchedInventory?.Medicine_Type || medicine.Type || "",
+        dosageForm: matchedInventory?.Dosage_Form || medicine.Dosage_Form || "",
         foodTiming: medicine.FoodTiming || "",
         strength: matchedInventory?.Strength || medicine.Strength || "",
         expiryDate: matchedInventory?.Expiry_Date || "",
@@ -545,9 +564,9 @@ const addDoctorPrescribedMedicine = (medicine) => {
       medicinesCopy.push({
         medicineId: matchedInventory?.Medicine_Code || "",
         medicineName: matchedInventory?.Medicine_Name || baseName,
-        medicineType: medicine.Type || "",
-        type: medicine.Type || "",
-        dosageForm: matchedInventory?.Type || medicine.Dosage_Form || "",
+        medicineType: matchedInventory?.Medicine_Type || medicine.Type || "",
+        type: matchedInventory?.Medicine_Type || medicine.Type || "",
+        dosageForm: matchedInventory?.Dosage_Form || medicine.Dosage_Form || "",
         foodTiming: medicine.FoodTiming || "",
         strength: matchedInventory?.Strength || medicine.Strength || "",
         expiryDate: matchedInventory?.Expiry_Date || "",
@@ -593,9 +612,9 @@ const addMedicineToForm = (inventoryItem, quantity) => {
       {
         medicineId: itemCode,
         medicineName: itemName,
-        medicineType: "",
-        type: "",
-        dosageForm: inventoryItem.Type || "",
+        medicineType: inventoryItem.Medicine_Type || "",
+        type: inventoryItem.Medicine_Type || "",
+        dosageForm: inventoryItem.Dosage_Form || "",
         strength: inventoryItem.Strength || "",
         expiryDate: inventoryItem.Expiry_Date,
         quantity: quantity || 1
@@ -1042,7 +1061,7 @@ const handleSubmit = async (e) => {
 
                       <select
                         className={`form-select ${med.medicineName ? "medicine-auto-filled" : ""}`}
-                        value={med.medicineId || med.medicineName || ""}
+                        value={getMedicineOptionValue(med)}
                         disabled={!med.medicineType}
                         onChange={(e) => handleMedicineChange(i, "medicineId", e.target.value)}
                       >

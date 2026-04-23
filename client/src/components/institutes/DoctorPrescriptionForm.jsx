@@ -35,6 +35,7 @@ const DoctorPrescriptionForm = () => {
   const [selectedDiagnosisReport, setSelectedDiagnosisReport] = useState(null);
   const [selectedXrayReport, setSelectedXrayReport] = useState(null); // { record, xray }
   const [selectedPrescriptionReport, setSelectedPrescriptionReport] = useState(null);
+  const [prescriptionSuccessMessage, setPrescriptionSuccessMessage] = useState("");
 const [inventoryMedicines, setInventoryMedicines] = useState([]);
 const [medicineStrengths, setMedicineStrengths] = useState({});
 const notesTextareaRef = React.useRef(null);
@@ -238,6 +239,12 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     return mergeXrayTypes(xrayMaster || [])
       .filter((item) => String(item?.Body_Part || "").trim().toLowerCase() === key)
       .sort((a, b) => String(a?.Xray_Type || "").localeCompare(String(b?.Xray_Type || "")));
+  };
+
+  const getXrayOptionValue = (item = {}) => {
+    const id = String(item?._id || "").trim();
+    if (id) return id;
+    return `${String(item?.Xray_Type || "").trim()}||${String(item?.Body_Part || "").trim()}`;
   };
 
   const fetchXrayTypes = async () => {
@@ -568,6 +575,7 @@ const relevantDiseases = diseases.filter((d) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setPrescriptionSuccessMessage("");
 
     if (!formData.Employee_ID) {
       alert("Please select an employee");
@@ -657,6 +665,7 @@ const relevantDiseases = diseases.filter((d) => {
 
 
     alert("✅ Prescription saved successfully");
+    setPrescriptionSuccessMessage("Doctor prescription submitted successfully.");
     
     // Reset all form fields
     setFormData({
@@ -1159,7 +1168,7 @@ if (validTests.length === 0) {
     return;
   }
 
- const validXrays = xrayData.Xrays.filter(x => x.Xray_ID);
+ const validXrays = xrayData.Xrays.filter(x => String(x?.Xray_ID || "").trim() || String(x?.Xray_Type || "").trim());
 
 if (validXrays.length === 0) {
   alert("Please select at least one X-ray");
@@ -1197,6 +1206,11 @@ if (validXrays.length === 0) {
   return (
 
     <div className="container-fluid mt-1 institutes-theme">
+      {prescriptionSuccessMessage ? (
+        <div className="alert alert-success shadow-sm mb-3" role="alert">
+          <strong>Submitted:</strong> {prescriptionSuccessMessage}
+        </div>
+      ) : null}
       {/* Back Button */}
       <button
         className="btn mb-3"
@@ -2576,10 +2590,12 @@ if (validXrays.length === 0) {
             <label className="form-label fw-semibold">X-ray Selection</label>
             <select
               className="form-select"
-              value={x.Xray_ID}
+              value={x.Xray_ID || getXrayOptionValue(x)}
               onChange={(e) => {
-                const selected = xrayMaster.find(
-                  xr => xr._id === e.target.value
+                const selected = getXrayOptionsByBodyPart(x.Body_Part).find(
+                  (xr) => getXrayOptionValue(xr) === e.target.value
+                ) || xrayMaster.find(
+                  (xr) => getXrayOptionValue(xr) === e.target.value
                 );
 
                 const copy = [...xrayData.Xrays];
@@ -2599,7 +2615,7 @@ if (validXrays.length === 0) {
             >
               <option value="">{x.Body_Part ? "Select X-ray test" : "Select body part first"}</option>
               {getXrayOptionsByBodyPart(x.Body_Part).map(xr => (
-                <option key={xr._id} value={xr._id}>
+                <option key={getXrayOptionValue(xr)} value={getXrayOptionValue(xr)}>
                   {xr.Xray_Type}
                 </option>
               ))}
