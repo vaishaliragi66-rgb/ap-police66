@@ -1,1 +1,3 @@
-Could not load parsed medicines JSON for default seeds: path is not defined
+(node:24020) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Mongo SRV DNS lookup failed. Retrying with DNS fallback...
