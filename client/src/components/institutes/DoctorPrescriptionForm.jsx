@@ -1,11 +1,14 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData_clean";
 import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { mergeXrayTypes } from "../../data/xrayTypes";
+import XrayReportPreview from "./XrayReportPreview";
 import "./InstitutesTheme.css";
 
 const DoctorPrescriptionForm = () => {
@@ -36,26 +39,127 @@ const DoctorPrescriptionForm = () => {
   const [selectedXrayReport, setSelectedXrayReport] = useState(null); // { record, xray }
   const [selectedPrescriptionReport, setSelectedPrescriptionReport] = useState(null);
   const [prescriptionSuccessMessage, setPrescriptionSuccessMessage] = useState("");
-const [inventoryMedicines, setInventoryMedicines] = useState([]);
-const [medicineStrengths, setMedicineStrengths] = useState({});
-const notesTextareaRef = React.useRef(null);
+  const [inventoryMedicines, setInventoryMedicines] = useState([]);
+  const [medicineStrengths, setMedicineStrengths] = useState({});
+  const notesTextareaRef = useRef(null);
   const [xrayMaster, setXrayMaster] = useState([]);
   const [xrayBodyParts, setXrayBodyParts] = useState([]);
-const [xrayData, setXrayData] = useState({
-  Xrays: [{ Body_Part: "", Xray_ID: "", Xray_Type: "" }]
-});
+  const [xrayData, setXrayData] = useState({
+    Xrays: [{ Body_Part: "", Xray_ID: "", Xray_Type: "" }]
+  });
+  const [downloadingXrayId, setDownloadingXrayId] = useState("");
+  const [exportXrayReport, setExportXrayReport] = useState(null);
+  const xrayExportRef = useRef(null);
 
-const [diseaseSearch, setDiseaseSearch] = useState("");
-const [filteredDiseases, setFilteredDiseases] = useState([]);
-const [showDiseaseDropdown, setShowDiseaseDropdown] = useState(false); // Track if field is focused
+  const [diseaseSearch, setDiseaseSearch] = useState("");
+  const [filteredDiseases, setFilteredDiseases] = useState([]);
+  const [showDiseaseDropdown, setShowDiseaseDropdown] = useState(false); // Track if field is focused
 
-const [diseaseMaster, setDiseaseMaster] = useState([]);
-const [cdDiseases, setCdDiseases] = useState([]);
-const [ncdDiseases, setNcdDiseases] = useState([]);
-const [masterMap, setMasterMap] = useState({});
-const [selectedType, setSelectedType] = useState("");
-const [selectedSubgroup, setSelectedSubgroup] = useState("");
-const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resetting PatientSelector
+  const [diseaseMaster, setDiseaseMaster] = useState([]);
+  const [cdDiseases, setCdDiseases] = useState([]);
+  const [ncdDiseases, setNcdDiseases] = useState([]);
+  const [masterMap, setMasterMap] = useState({});
+  const [selectedType, setSelectedType] = useState("");
+  const [selectedSubgroup, setSelectedSubgroup] = useState("");
+  const [patientSelectorKey, setPatientSelectorKey] = useState(0); // For resetting PatientSelector
+
+  const getXrayDownloadId = (report = {}) => {
+    const record = report?.record || (report?.Xrays ? report : {});
+    const xray = report?.xray || null;
+    return String(
+      record?._id ||
+        record?.visit_id ||
+        record?.visitId ||
+        xray?._id ||
+        xray?.Xray_ID ||
+        "download"
+    );
+  };
+
+  const isXrayImageFile = (file = {}) => {
+    const mime = String(file?.mimetype || file?.mimeType || "").toLowerCase();
+    if (mime.startsWith("image/")) return true;
+    const url = String(file?.url || file?.path || "");
+    return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(url);
+  };
+
+  const getXrayImageUrl = (report = {}) => {
+    const record = report?.record || (report?.Xrays ? report : {});
+    const xray = report?.xray || null;
+    const xrays = xray ? [xray] : Array.isArray(record?.Xrays) ? record.Xrays : [];
+
+    for (const item of xrays) {
+      const files = Array.isArray(item?.Reports) ? item.Reports : [];
+      for (const file of files) {
+        if (!isXrayImageFile(file)) continue;
+        const url = resolveUrl(file?.url || file?.path || "");
+        if (url) return url;
+      }
+    }
+
+    return "";
+  };
+
+  const openXrayImageView = (report) => {
+    const url = getXrayImageUrl(report);
+    if (!url) {
+      alert("No x-ray image available");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const downloadXrayReport = async (report) => {
+    const downloadId = getXrayDownloadId(report);
+
+    try {
+      setDownloadingXrayId(downloadId);
+      setExportXrayReport(report);
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const element = xrayExportRef.current;
+      if (!element) {
+        throw new Error("X-ray report preview not ready");
+      }
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+
+      const imageData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const renderWidth = pageWidth - margin * 2;
+      const renderHeight = (canvas.height * renderWidth) / canvas.width;
+      const printableHeight = pageHeight - margin * 2;
+
+      let remainingHeight = renderHeight;
+      let yOffset = margin;
+
+      pdf.addImage(imageData, "PNG", margin, yOffset, renderWidth, renderHeight, undefined, "FAST");
+      remainingHeight -= printableHeight;
+
+      while (remainingHeight > 0) {
+        pdf.addPage();
+        yOffset = margin - (renderHeight - remainingHeight);
+        pdf.addImage(imageData, "PNG", margin, yOffset, renderWidth, renderHeight, undefined, "FAST");
+        remainingHeight -= printableHeight;
+      }
+
+      pdf.save(`Xray_Report_${downloadId.slice(-6)}.pdf`);
+    } catch (err) {
+      console.error("X-ray report download failed:", err);
+      alert("Unable to download x-ray report");
+    } finally {
+      setExportXrayReport(null);
+      setDownloadingXrayId("");
+    }
+  };
 
 const normalizeMedicineText = (value) => String(value || "").trim().toLowerCase();
 const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
@@ -1492,79 +1596,31 @@ if (validXrays.length === 0) {
                     <button className="btn-close btn-close-white" onClick={() => setSelectedXrayReport(null)} />
                   </div>
 
-                  <div className="modal-body">
-                    {(() => {
-                      const { record, xray } = selectedXrayReport;
-                      const status = xray?.Findings || xray?.Impression || xray?.Remarks ? "result out" : "pending";
-
-                      return (
-                        <>
-                          <p><strong>Employee:</strong> {record?.Employee?.Name}</p>
-                          <p><strong>Report For:</strong> {record?.IsFamilyMember ? `${record?.FamilyMember?.Name} (${record?.FamilyMember?.Relationship})` : 'Self'}</p>
-                          <p><strong>Institute:</strong> {record?.Institute?.Institute_Name || ''}</p>
-                          <p><strong>Date:</strong> {formatDateDMY(xray?.Timestamp || getXrayReportDate(record))}</p>
-
-                          <hr />
-
-                          <table className="table table-bordered">
-                            <thead className="table-light">
-                              <tr>
-                                <th>Type</th>
-                                <th>Body Part</th>
-                                <th>Side</th>
-                                <th>View</th>
-                                <th>Size</th>
-                                <th>Findings</th>
-                                <th>Impression</th>
-                                <th>Remarks</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td>{xray?.Xray_Type || '-'}</td>
-                                <td>{xray?.Body_Part || '-'}</td>
-                                <td>{xray?.Side || '-'}</td>
-                                <td>{xray?.View || '-'}</td>
-                                <td>{xray?.Film_Size || '-'}</td>
-                                <td>{xray?.Findings || '-'}</td>
-                                <td>{xray?.Impression || '-'}</td>
-                                <td>{xray?.Remarks || '-'}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-
-                          <div className="mt-3">
-                            {/* Show report links only when results are out and report exists */}
-                            {status === 'result out' && xray?.Reports && xray.Reports.length > 0 ? (
-                              xray.Reports.map((r, idx) => (
-                                <div key={idx} className="mb-2 d-flex align-items-center gap-2">
-                                  <div className="flex-grow-1">{r?.originalname || r?.filename}</div>
-                                  <button className="btn btn-sm btn-outline-primary" onClick={async () => {
-                                    try {
-                                      // open report in new tab
-                                      const url = resolveUrl(r.url);
-                                      if (url) window.open(url, '_blank');
-                                      else throw new Error('No URL');
-                                    } catch (err) {
-                                      console.error(err);
-                                      alert('Unable to open report');
-                                    }
-                                  }}>View</button>
-                                  <a className="btn btn-sm btn-outline-secondary" href={resolveUrl(r.url)} download>Download</a>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="text-muted">No report file available.</div>
-                            )}
-                          </div>
-                        </>
-                      );
-                    })()}
+                  <div className="modal-body p-0">
+                    <div className="d-flex justify-content-center p-3 overflow-auto">
+                      <XrayReportPreview reportData={selectedXrayReport} resolveUrl={resolveUrl} />
+                    </div>
                   </div>
 
-                  <div className="modal-footer">
-                    <button className="btn btn-outline-primary" onClick={() => setSelectedXrayReport(null)}>Close</button>
-                  </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={() => openXrayImageView(selectedXrayReport)}
+                  disabled={!getXrayImageUrl(selectedXrayReport)}
+                >
+                  View Image
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => downloadXrayReport(selectedXrayReport)}
+                  disabled={downloadingXrayId === getXrayDownloadId(selectedXrayReport)}
+                >
+                  {downloadingXrayId === getXrayDownloadId(selectedXrayReport) ? "Preparing..." : "Download Report"}
+                </button>
+                <button className="btn btn-outline-primary" onClick={() => setSelectedXrayReport(null)}>Close</button>
+              </div>
                 </div>
               </div>
             </div>
@@ -2689,100 +2745,29 @@ if (validXrays.length === 0) {
                 />
               </div>
 
-              <div className="modal-body">
-                <p><strong>Institute:</strong> {selectedXrayReport?.Institute?.Institute_Name || instituteName || "-"}</p>
-                <p><strong>Date:</strong> {formatDateDMY(getXrayReportDate(selectedXrayReport))}</p>
-
-                <table className="table table-bordered">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Type</th>
-                      <th>Body Part</th>
-                      <th>View</th>
-                      <th>Findings</th>
-                      <th>Impression</th>
-                       <th>Reports</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(selectedXrayReport?.Xrays || []).map((xray, index) => {
-                      const status =
-                        xray?.Findings || xray?.Impression || xray?.Remarks
-                          ? "result out"
-                          : "pending";
-
-                      return (
-                        <tr key={`${xray?.Xray_ID || xray?.Xray_Type || index}`}>
-
-                          <td>{xray?.Xray_Type || "-"}</td>
-
-                          <td>{xray?.Body_Part || "-"}</td>
-
-                          <td>{xray?.View || "-"}</td>
-
-                          <td>{xray?.Findings || "-"}</td>
-
-                          <td>{xray?.Impression || "-"}</td>
-
-                          {/* REPORTS COLUMN */}
-                          <td>
-                            {xray?.Reports && xray.Reports.length > 0 ? (
-                              xray.Reports.map((r, i) => (
-                                <div key={i} className="mb-1">
-                                  <a
-                                    href={resolveUrl(r.url)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn btn-sm btn-outline-primary me-1"
-                                  >
-                                    View
-                                  </a>
-
-                                  <a
-                                    href={resolveUrl(r.url)}
-                                    download
-                                    className="btn btn-sm btn-outline-secondary"
-                                  >
-                                    Download
-                                  </a>
-                                </div>
-                              ))
-                            ) : (
-                              <span className="text-muted">No file</span>
-                            )}
-                          </td>
-
-                          <td>
-                            <span
-                              className={`badge ${
-                                status === "result out"
-                                  ? "bg-success"
-                                  : "bg-warning text-dark"
-                              }`}
-                            >
-                              {status}
-                            </span>
-                          </td>
-
-                        </tr>
-                      );
-
-                    })}
-                  </tbody>
-                </table>
-
-                {selectedXrayReport?.Xray_Notes && (
-                  <div className="mt-3">
-                    <strong>Notes:</strong>
-                    <div className="border rounded p-2 bg-light mt-1">
-                      {selectedXrayReport.Xray_Notes}
-                    </div>
-                  </div>
-                )}
+              <div className="modal-body p-0">
+                <div className="d-flex justify-content-center p-3 overflow-auto">
+                      <XrayReportPreview reportData={selectedXrayReport} resolveUrl={resolveUrl} />
+                </div>
               </div>
 
               <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={() => openXrayImageView(selectedXrayReport)}
+                  disabled={!getXrayImageUrl(selectedXrayReport)}
+                >
+                  View Image
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => downloadXrayReport(selectedXrayReport)}
+                  disabled={downloadingXrayId === getXrayDownloadId(selectedXrayReport)}
+                >
+                  {downloadingXrayId === getXrayDownloadId(selectedXrayReport) ? "Preparing..." : "Download Report"}
+                </button>
                 <button
                   type="button"
                   className="btn btn-outline-primary"
@@ -2795,6 +2780,23 @@ if (validXrays.length === 0) {
           </div>
         </div>
       )}
+
+      <div
+        style={{
+          position: "fixed",
+          left: "-10000px",
+          top: 0,
+          width: "210mm",
+          pointerEvents: "none",
+          zIndex: -1,
+        }}
+      >
+        {exportXrayReport && (
+          <div ref={xrayExportRef}>
+            <XrayReportPreview reportData={exportXrayReport} resolveUrl={resolveUrl} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
