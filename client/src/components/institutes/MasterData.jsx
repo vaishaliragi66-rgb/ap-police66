@@ -9,8 +9,8 @@ import {
   canonicalizeMedicineTypeLabel,
   getCanonicalMedicineTypeKey
 } from "../../utils/masterData_clean";
-import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import { mergeXrayTypes } from "../../data/xrayTypes";
+import diagnosticTestsByCategory from "../../data/diagnosticTests";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -35,10 +35,12 @@ const sortUnique = (items) =>
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
 const normalizeCategoryName = (value) => String(value || "").trim();
 const normalizeCategoryKey = (value) => normalizeText(value);
+const normalizeLooseKey = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+const isArchivedMasterRow = (item) => Boolean(item?.meta?.archived);
 const dedupeTestsByName = (items = []) => {
   const seen = new Set();
   return (items || []).filter((item) => {
-    const key = normalizeText(item?.name);
+    const key = normalizeLooseKey(item?.name);
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -51,6 +53,30 @@ const isPersistedId = (value) => /^[a-f\d]{24}$/i.test(String(value || "").trim(
 const getMedicineTypeLabel = (value) => canonicalizeMedicineTypeLabel(value || "Others") || "Others";
 const getMedicineTypeKey = (value) => getCanonicalMedicineTypeKey(value || "Others");
 const GLOBAL_MASTER_INSTITUTE_ID = "000000000000000000000000";
+const FIXED_TEST_CATEGORIES = Object.keys(diagnosticTestsByCategory || {});
+const KNOWN_TEST_NAME_KEYS = new Set(
+  Object.values(diagnosticTestsByCategory || {})
+    .flat()
+    .map((item) => normalizeLooseKey(item?.name))
+    .filter(Boolean)
+);
+const getOrderedTestCategories = (categories = []) => {
+  const byKey = new Map();
+  (categories || []).forEach((category) => {
+    const raw = normalizeCategoryName(category);
+    const key = normalizeCategoryKey(raw);
+    if (key && !byKey.has(key)) {
+      byKey.set(key, raw);
+    }
+  });
+
+  const fixed = FIXED_TEST_CATEGORIES.filter((category) => byKey.has(normalizeCategoryKey(category)));
+  const extras = Array.from(byKey.values())
+    .filter((category) => !FIXED_TEST_CATEGORIES.some((fixedCategory) => normalizeCategoryKey(fixedCategory) === normalizeCategoryKey(category)))
+    .sort((a, b) => a.localeCompare(b));
+
+  return [...fixed, ...extras];
+};
 const notifyMasterDataUpdated = () => {
   try {
     localStorage.setItem("master-data-updated-at", String(Date.now()));
@@ -62,24 +88,20 @@ const notifyMasterDataUpdated = () => {
 
 const getStaticTestsStructure = () => {
   const testsByCategory = {};
-  const categoryDisplayNames = {};
-  Object.keys(diagnosticTestsByCategory || {}).forEach((category) => {
-    const key = normalizeCategoryKey(category);
-    if (!key) return;
-    if (!categoryDisplayNames[key]) categoryDisplayNames[key] = normalizeCategoryName(category);
-    testsByCategory[key] = (diagnosticTestsByCategory[category] || []).map((test, idx) => ({
-      id: `static-${category}-${idx}`,
-      name: test.name,
-      reference: test.reference || "",
-      unit: test.unit || "",
-      source: "static"
+
+  FIXED_TEST_CATEGORIES.forEach((category) => {
+    testsByCategory[category] = (diagnosticTestsByCategory?.[category] || []).map((item, idx) => ({
+      id: `static-${normalizeCategoryKey(category)}-${idx + 1}`,
+      name: String(item?.name || "").trim(),
+      reference: String(item?.reference || "").trim(),
+      unit: String(item?.unit || "").trim(),
+      source: "static",
+      status: "Active"
     }));
   });
 
   return {
-    categories: Object.keys(testsByCategory)
-      .map((key) => categoryDisplayNames[key] || key)
-      .sort((a, b) => a.localeCompare(b)),
+    categories: [...FIXED_TEST_CATEGORIES],
     testsByCategory
   };
 };
@@ -132,9 +154,9 @@ const mergeTestsStructure = (base, incoming) => {
       .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
   });
 
-  const categories = Object.keys(grouped)
-    .map((key) => displayNames[key] || key)
-    .sort((a, b) => a.localeCompare(b));
+  const categories = getOrderedTestCategories(
+    Object.keys(grouped).map((key) => displayNames[key] || key)
+  );
   const testsByCategory = {};
   categories.forEach((category) => {
     const key = normalizeCategoryKey(category);
@@ -326,13 +348,13 @@ const MasterData = () => {
       const testMap = {};
       const testCategoryMap = {};
       masterValues
-        .filter((item) => item?.meta?.kind === "category")
+        .filter((item) => item?.meta?.kind === "category" && !isArchivedMasterRow(item))
         .forEach((item) => {
           const key = normalizeText(item?.value_name);
           if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
         });
       masterValues
-        .filter((item) => item?.meta?.kind === "test")
+        .filter((item) => item?.meta?.kind === "test" && !isArchivedMasterRow(item))
         .forEach((item) => {
           const key = makePairKey(item?.meta?.category, item?.value_name);
           if (key !== "::") testMap[key] = item;
@@ -345,38 +367,35 @@ const MasterData = () => {
         Array.isArray(apiData.categories) ||
         (apiData.testsByCategory && typeof apiData.testsByCategory === "object");
       const data = hasApiPayload ? mergeTestsStructure(staticStructure, apiData) : staticStructure;
-      const apiCategoryNames = Array.isArray(apiData.categories) ? apiData.categories : [];
-      const apiTestCategoryNames =
-        apiData.testsByCategory && typeof apiData.testsByCategory === "object"
-          ? Object.keys(apiData.testsByCategory)
-          : [];
       console.log("Fetched Test Categories:", apiData.categories || []);
       console.log("Fetched Tests By Category:", apiData.testsByCategory || {});
-      const categoryDisplayMap = new Map();
-      [
-        ...(data.categories || []),
-        ...apiCategoryNames,
-        ...apiTestCategoryNames,
-        ...Object.keys(testCategoryMap || {}),
-        ...masterValues
-          .filter((item) => item?.meta?.kind === "category")
-          .map((item) => String(item?.value_name || "").trim())
-          .filter(Boolean),
-        ...masterValues
-          .filter((item) => item?.meta?.kind === "test")
-          .map((item) => String(item?.meta?.category || "").trim())
+      const explicitCustomCategories = new Set(
+        masterValues
+          .filter((item) => item?.meta?.kind === "category" && !isArchivedMasterRow(item))
+          .map((item) => normalizeCategoryName(item?.value_name))
+          .filter((name) => !KNOWN_TEST_NAME_KEYS.has(normalizeLooseKey(name)))
           .filter(Boolean)
-      ].forEach((category) => {
-        const key = normalizeCategoryKey(category);
-        const value = normalizeCategoryName(category);
-        if (key && !categoryDisplayMap.has(key)) categoryDisplayMap.set(key, value);
+      );
+
+      const allowedCategories = getOrderedTestCategories([
+        ...FIXED_TEST_CATEGORIES,
+        ...Array.from(explicitCustomCategories)
+      ]);
+
+      const testsByCategory = {};
+      allowedCategories.forEach((category) => {
+        const matchedKey = Object.keys(data.testsByCategory || {}).find(
+          (key) => normalizeCategoryKey(key) === normalizeCategoryKey(category)
+        );
+        const rows = matchedKey ? data.testsByCategory[matchedKey] || [] : [];
+        testsByCategory[category] = Array.isArray(rows) ? rows : [];
       });
 
       const withMeta = {
         ...data,
-        categories: Array.from(categoryDisplayMap.values()).sort((a, b) => a.localeCompare(b)),
+        categories: allowedCategories,
         testsByCategory: Object.fromEntries(
-          Object.entries(data.testsByCategory || {}).map(([category, rows]) => [
+          Object.entries(testsByCategory || {}).map(([category, rows]) => [
             category,
             (rows || []).map((row) => {
               const masterValue = testMap[makePairKey(category, row?.name)] || null;
@@ -389,15 +408,8 @@ const MasterData = () => {
           ])
         )
       };
-      const extraTestCategories = masterValues
-        .filter((item) => item?.meta?.kind === "category")
-        .map((item) => String(item?.value_name || "").trim())
-        .filter(Boolean);
-      extraTestCategories.forEach((category) => {
-        const match = Object.keys(withMeta.testsByCategory || {}).find(
-          (key) => normalizeCategoryKey(key) === normalizeCategoryKey(category)
-        );
-        if (!match) {
+      withMeta.categories.forEach((category) => {
+        if (!Array.isArray(withMeta.testsByCategory[category])) {
           withMeta.testsByCategory[category] = [];
         }
       });
@@ -435,13 +447,13 @@ const MasterData = () => {
       const testMap = {};
       const testCategoryMap = {};
       masterValues
-        .filter((item) => item?.meta?.kind === "category")
+        .filter((item) => item?.meta?.kind === "category" && !isArchivedMasterRow(item))
         .forEach((item) => {
           const key = normalizeText(item?.value_name);
           if (key && !testCategoryMap[key]) testCategoryMap[key] = item;
         });
       masterValues
-        .filter((item) => item?.meta?.kind === "test")
+        .filter((item) => item?.meta?.kind === "test" && !isArchivedMasterRow(item))
         .forEach((item) => {
           const key = makePairKey(item?.meta?.category, item?.value_name);
           if (key !== "::") testMap[key] = item;
@@ -453,7 +465,7 @@ const MasterData = () => {
       const knownCategories = new Set(Object.keys(grouped));
 
       masterValues
-        .filter((item) => item?.meta?.kind === "category")
+        .filter((item) => item?.meta?.kind === "category" && !isArchivedMasterRow(item))
         .forEach((item) => {
           const category = String(item?.value_name || "").trim();
           if (!category) return;
@@ -462,7 +474,7 @@ const MasterData = () => {
         });
 
       masterValues
-        .filter((item) => item?.meta?.kind === "test")
+        .filter((item) => item?.meta?.kind === "test" && !isArchivedMasterRow(item))
         .forEach((item) => {
           const category = String(item?.meta?.category || "").trim();
           const name = String(item?.value_name || "").trim();
@@ -1120,8 +1132,8 @@ const MasterData = () => {
     const existingTests = testsStructure.testsByCategory?.[selectedTestCategory] || [];
     const duplicateExists = existingTests.some(
       (test) =>
-        normalizeText(test?.name) === normalizeText(nextName) &&
-        normalizeText(test?.name) !== normalizeText(item?.name)
+        normalizeLooseKey(test?.name) === normalizeLooseKey(nextName) &&
+        normalizeLooseKey(test?.name) !== normalizeLooseKey(item?.name)
     );
     if (duplicateExists) {
       setError("That test already exists in this category");
@@ -1438,7 +1450,7 @@ const MasterData = () => {
     if (!selectedTestCategory || !newTestName.trim()) return;
     const nextTestName = newTestName.trim();
     const existingTests = testsStructure.testsByCategory?.[selectedTestCategory] || [];
-    const duplicateExists = existingTests.some((test) => normalizeText(test?.name) === normalizeText(nextTestName));
+    const duplicateExists = existingTests.some((test) => normalizeLooseKey(test?.name) === normalizeLooseKey(nextTestName));
     if (duplicateExists) {
       setError("That test already exists in this category");
       return;

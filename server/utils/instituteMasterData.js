@@ -9,32 +9,23 @@ const Xray = require("../models/XraySchema");
 const diagnosticReferencePanel = require("../data/diagnosticReferencePanel");
 const { DEFAULT_XRAY_TYPES } = require("../data/xrayCatalog");
 
+const CANONICAL_TEST_CATEGORIES = Array.isArray(diagnosticReferencePanel.categories)
+  ? diagnosticReferencePanel.categories
+  : Object.keys(diagnosticReferencePanel.testsByCategory || {});
+const CANONICAL_TESTS_BY_CATEGORY = diagnosticReferencePanel.testsByCategory || {};
+const CANONICAL_TEST_CATEGORY_ALIASES = diagnosticReferencePanel.categoryAliases || {};
+const CANONICAL_TEST_ALIASES = diagnosticReferencePanel.testAliases || {};
+
 const DISEASES_FILE = path.join(__dirname, "..", "data", "diseases.json");
 
 const TEST_CATEGORY_NAME = "Tests";
 const DISEASE_CATEGORY_NAME = "Diseases";
 const XRAY_CATEGORY_NAME = "Xray Types";
 
-const DEFAULT_TEST_CATEGORIES = [
-  "HEMATOLOGY",
-  "DIABETES & GLUCOSE",
-  "LIPID PROFILE",
-  "LIVER FUNCTION TESTS (LFT)",
-  "KIDNEY FUNCTION TESTS (KFT)",
-  "THYROID PROFILE",
-  "ELECTROLYTES",
-  "URINALYSIS",
-  "CARDIAC MARKERS",
-  "VITAMINS & MINERALS",
-  "COAGULATION STUDIES",
-  "INFECTIOUS DISEASE PANEL",
-  "TUMOR MARKERS",
-  "HORMONAL PROFILE",
-  "BONE HEALTH",
-  "IMMUNOLOGY"
-];
+const DEFAULT_TEST_CATEGORIES = CANONICAL_TEST_CATEGORIES;
 
 const normalize = (value) => String(value || "").trim().toLowerCase();
+const normalizeLoose = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 const trimString = (value) => String(value || "").trim();
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(String(value || "").trim());
 
@@ -133,6 +124,7 @@ const ensureValueRecord = async ({ instituteId, categoryId, valueName, status = 
       Institute_ID: instituteId,
       category_id: categoryId,
       value_name: trimString(valueName),
+      name: trimString(valueName),
       normalized_value: normalizedValue,
       status,
       meta
@@ -147,6 +139,7 @@ const ensureValueRecord = async ({ instituteId, categoryId, valueName, status = 
 
   if (shouldUpdate) {
     existing.value_name = trimString(valueName);
+    existing.name = trimString(valueName);
     existing.normalized_value = normalizedValue;
     existing.status = status || existing.status || "Active";
     existing.meta = nextMeta;
@@ -156,96 +149,285 @@ const ensureValueRecord = async ({ instituteId, categoryId, valueName, status = 
   return existing;
 };
 
+const archiveMasterValueRow = async (row, extraMeta = {}) => {
+  if (!row?._id) return;
+  const archivedNormalizedValue = `${normalize(trimString(row?.value_name) || "archived")}__archived__${String(row._id)}`;
+
+  await MasterValue.updateOne(
+    { _id: row._id },
+    {
+      $set: {
+        normalized_value: archivedNormalizedValue,
+        status: "Inactive",
+        meta: {
+          ...(row.meta || {}),
+          ...extraMeta,
+          archived: true,
+          legacy_value_name: trimString(row?.value_name)
+        }
+      }
+    }
+  );
+};
+
+const getCanonicalTestCategoryName = (value) => {
+  const raw = trimString(value);
+  const alias = CANONICAL_TEST_CATEGORY_ALIASES[raw];
+  return trimString(alias || raw);
+};
+
+const getCanonicalTestName = (categoryName, valueName) => {
+  const rawCategory = trimString(categoryName);
+  const rawName = trimString(valueName);
+  const categoryAliases = CANONICAL_TEST_ALIASES[rawCategory] || {};
+  const alias = categoryAliases[rawName];
+  return trimString(alias || rawName);
+};
+
+const buildCanonicalTestIndex = () => {
+  const byName = new Map();
+  const byCategoryAndName = new Map();
+
+  Object.entries(CANONICAL_TESTS_BY_CATEGORY).forEach(([categoryName, rows]) => {
+    const normalizedCategory = normalizeLoose(categoryName);
+    (Array.isArray(rows) ? rows : []).forEach((row) => {
+      const testName = trimString(row?.name);
+      if (!testName) return;
+      const normalizedName = normalizeLoose(testName);
+      const entry = {
+        categoryName,
+        testName,
+        reference: trimString(row?.reference),
+        unit: trimString(row?.unit)
+      };
+      byName.set(normalizedName, entry);
+      byCategoryAndName.set(`${normalizedCategory}::${normalizedName}`, entry);
+    });
+  });
+
+  return { byName, byCategoryAndName };
+};
+
 const ensureTestMasterValues = async (instituteId) => {
   if (!isValidObjectId(instituteId)) return null;
 
   const category = await ensureCategoryDoc(instituteId, TEST_CATEGORY_NAME);
   if (!category) return null;
 
-  const legacyTests = await DiagnosisTest.find({})
-    .select("Test_Name Group Reference_Range Units")
-    .sort({ Group: 1, Test_Name: 1 })
-    .lean();
+  const canonicalCategoryNames = Array.isArray(CANONICAL_TEST_CATEGORIES) ? CANONICAL_TEST_CATEGORIES : [];
+  const canonicalIndex = buildCanonicalTestIndex();
+  // Avoid full repair scans on routine requests. Seed version 3 already has the
+  // canonical shape used by this app; forcing deep repair for v3 was causing
+  // 30-50s requests in production-like data volumes.
+  const shouldRepair = Number(category.seed_version || 0) < 3;
 
-  const referenceTests = Object.entries(diagnosticReferencePanel || {}).flatMap(([group, tests]) =>
-    (tests || []).map((test) => ({
-      Test_Name: trimString(test?.name),
-      Group: trimString(group),
-      Reference_Range: trimString(test?.reference),
-      Units: trimString(test?.unit)
-    }))
-  );
+  const categoryDocsByName = new Map();
 
-  const mergedTests = new Map();
-  [...referenceTests, ...legacyTests].forEach((test) => {
-    const testName = trimString(test?.Test_Name);
-    const group = trimString(test?.Group);
-    if (!testName || !group) return;
-    const key = `${normalize(group)}::${normalize(testName)}`;
-    const previous = mergedTests.get(key) || {};
-    mergedTests.set(key, {
-      Test_Name: testName,
-      Group: group,
-      Reference_Range: trimString(test?.Reference_Range) || previous.Reference_Range || "",
-      Units: trimString(test?.Units) || previous.Units || ""
-    });
-  });
-
-  const categoryNames = sortUniqueStrings([
-    ...DEFAULT_TEST_CATEGORIES,
-    ...Object.keys(diagnosticReferencePanel || {}),
-    ...legacyTests.map((item) => item?.Group)
-  ]);
-
-  const existingCategoryCount = await MasterValue.countDocuments({
-    Institute_ID: instituteId,
-    category_id: category._id,
-    "meta.kind": "category"
-  });
-  const existingTestCount = await MasterValue.countDocuments({
-    Institute_ID: instituteId,
-    category_id: category._id,
-    "meta.kind": "test"
-  });
-  const shouldReseed =
-    Number(category.seed_version || 0) < 3 ||
-    existingCategoryCount < categoryNames.length ||
-    existingTestCount < mergedTests.size;
-
-  if (!shouldReseed) {
-    return category;
-  }
-
-  for (const categoryName of categoryNames) {
-    await ensureValueRecord({
+  for (const categoryName of canonicalCategoryNames) {
+    const categoryDoc = await ensureValueRecord({
       instituteId,
       categoryId: category._id,
       valueName: categoryName,
-      meta: { kind: "category" }
-    });
-  }
-
-  for (const test of mergedTests.values()) {
-    const testName = trimString(test?.Test_Name);
-    const group = trimString(test?.Group);
-    if (!testName) continue;
-
-    await ensureValueRecord({
-      instituteId,
-      categoryId: category._id,
-      valueName: testName,
       meta: {
-        kind: "test",
-        category: group,
-        categoryNormalized: normalize(group),
-        reference: trimString(test?.Reference_Range),
-        unit: trimString(test?.Units)
+        kind: "category",
+        canonical: true,
+        canonicalCategoryName: categoryName
       }
     });
+    if (categoryDoc) {
+      categoryDocsByName.set(categoryName, categoryDoc);
+    }
   }
 
-  await MasterCategory.updateOne({ _id: category._id }, { $set: { seed_version: 3 } });
-  category.seed_version = 3;
+  if (!shouldRepair) {
+    return category;
+  }
+
+  const allRows = await MasterValue.find({
+    Institute_ID: instituteId,
+    category_id: category._id
+  }).select("_id value_name normalized_value status meta name").lean();
+
+  const exactCanonicalCategorySet = new Set(canonicalCategoryNames.map((value) => normalizeLoose(value)));
+  const occupiedCategoryNames = new Set(
+    allRows
+      .filter((row) => trimString(row?.meta?.kind) === "category" && exactCanonicalCategorySet.has(normalizeLoose(row?.value_name)))
+      .map((row) => normalizeLoose(row.value_name))
+  );
+  const testRowResolutionsByKey = new Map();
+
+  for (const row of allRows) {
+    const rowKind = trimString(row?.meta?.kind);
+    const rowName = trimString(row?.value_name);
+    const rowNameKey = normalizeLoose(rowName);
+
+    if (rowKind === "category") {
+      const canonicalCategoryName = getCanonicalTestCategoryName(rowName);
+      const canonicalCategoryKey = normalizeLoose(canonicalCategoryName);
+      const canonicalExists = exactCanonicalCategorySet.has(canonicalCategoryKey);
+
+      if (occupiedCategoryNames.has(canonicalCategoryKey) && normalizeLoose(rowName) !== canonicalCategoryKey) {
+        await archiveMasterValueRow(row, { kind: "category" });
+        continue;
+      }
+
+      if (!canonicalExists) {
+        await archiveMasterValueRow(row, { kind: "category" });
+        continue;
+      }
+
+      if (canonicalCategoryName !== rowName && !canonicalCategoryNames.includes(rowName)) {
+        const exactConflict = allRows.some(
+          (item) =>
+            String(item._id) !== String(row._id) &&
+            trimString(item?.meta?.kind) === "category" &&
+            normalizeLoose(item?.value_name) === canonicalCategoryKey
+        );
+
+        if (exactConflict) {
+          await archiveMasterValueRow(row, { kind: "category" });
+          continue;
+        }
+      }
+
+      await MasterValue.updateOne(
+        { _id: row._id },
+        {
+          $set: {
+            value_name: canonicalCategoryName,
+            name: canonicalCategoryName,
+            normalized_value: normalize(canonicalCategoryName),
+            status: "Active",
+            meta: {
+              ...(row.meta || {}),
+              kind: "category",
+              canonical: true,
+              canonicalCategoryName
+            }
+          }
+        }
+      );
+      occupiedCategoryNames.add(canonicalCategoryKey);
+      continue;
+    }
+
+    if (rowKind !== "test") {
+      continue;
+    }
+
+    const categoryFromAlias = trimString(row?.meta?.category || "");
+    const canonicalCategoryName = getCanonicalTestCategoryName(categoryFromAlias);
+    const canonicalCategoryNameFromTest = canonicalIndex.byName.get(rowNameKey)?.categoryName || "";
+    const resolvedCategoryName = canonicalCategoryNameFromTest || canonicalCategoryName;
+    const canonicalEntry = canonicalIndex.byName.get(rowNameKey) || canonicalIndex.byCategoryAndName.get(`${normalizeLoose(resolvedCategoryName)}::${rowNameKey}`);
+    const aliasName = getCanonicalTestName(resolvedCategoryName, rowName);
+    const resolvedTestName = canonicalEntry?.testName || aliasName || rowName;
+
+    if (!canonicalEntry) {
+      await archiveMasterValueRow(row, { kind: "test" });
+      continue;
+    }
+
+    const canonicalKey = normalizeLoose(resolvedTestName);
+    const entries = testRowResolutionsByKey.get(canonicalKey) || [];
+    entries.push({
+      row,
+      resolvedCategoryName: canonicalEntry?.categoryName || resolvedCategoryName,
+      resolvedTestName,
+      resolvedCategoryDoc: categoryDocsByName.get(canonicalEntry?.categoryName || resolvedCategoryName),
+      canonicalEntry,
+      canonicalKey
+    });
+    testRowResolutionsByKey.set(canonicalKey, entries);
+  }
+
+  for (const entries of testRowResolutionsByKey.values()) {
+    if (!entries.length) continue;
+
+    const representative = entries[0];
+    const resolvedTestName = representative.resolvedTestName;
+    const resolvedCategoryName = representative.resolvedCategoryName;
+    const resolvedCategoryDoc = representative.resolvedCategoryDoc;
+    const canonicalEntry = representative.canonicalEntry;
+    const keeper =
+      entries.find((entry) => trimString(entry.row?.value_name) === resolvedTestName) ||
+      entries.find((entry) => String(entry.row?.status || "Active") === "Active") ||
+      entries[0];
+
+    for (const entry of entries) {
+      if (String(entry.row?._id) === String(keeper.row?._id)) continue;
+      await archiveMasterValueRow(entry.row, {
+        kind: "test",
+        category: resolvedCategoryName,
+        categoryNormalized: normalize(resolvedCategoryName),
+        category_id: resolvedCategoryDoc?._id || entry.row?.meta?.category_id || null
+      });
+    }
+
+    await MasterValue.updateOne(
+      { _id: keeper.row._id },
+      {
+        $set: {
+          value_name: resolvedTestName,
+          name: resolvedTestName,
+          normalized_value: normalize(resolvedTestName),
+          status: "Active",
+          meta: {
+            ...(keeper.row.meta || {}),
+            kind: "test",
+            category: resolvedCategoryName,
+            categoryNormalized: normalize(resolvedCategoryName),
+            category_id: resolvedCategoryDoc?._id || keeper.row?.meta?.category_id || null,
+            reference: canonicalEntry.reference || trimString(keeper.row?.meta?.reference),
+            unit: canonicalEntry.unit || trimString(keeper.row?.meta?.unit),
+            canonical: true,
+            canonicalName: resolvedTestName
+          }
+        }
+      }
+    );
+  }
+
+  for (const [categoryName, tests] of Object.entries(CANONICAL_TESTS_BY_CATEGORY)) {
+    const categoryDoc = categoryDocsByName.get(categoryName);
+    if (!categoryDoc) continue;
+
+    for (const test of tests || []) {
+      const testName = trimString(test?.name);
+      if (!testName) continue;
+
+      const exactMatch = await MasterValue.findOne({
+        Institute_ID: instituteId,
+        category_id: category._id,
+        "meta.kind": "test",
+        normalized_value: normalize(testName)
+      });
+
+      if (exactMatch) {
+        continue;
+      }
+
+      await ensureValueRecord({
+        instituteId,
+        categoryId: category._id,
+        valueName: testName,
+        status: "Active",
+        meta: {
+          kind: "test",
+          category: categoryName,
+          categoryNormalized: normalize(categoryName),
+          category_id: categoryDoc._id,
+          reference: trimString(test?.reference),
+          unit: trimString(test?.unit),
+          canonical: true,
+          canonicalName: testName
+        }
+      });
+    }
+  }
+
+  await MasterCategory.updateOne({ _id: category._id }, { $set: { seed_version: 4 } });
+  category.seed_version = 4;
 
   return category;
 };
@@ -268,8 +450,10 @@ const listMasterTests = async (instituteId, { includeInactive = false } = {}) =>
   const rows = await MasterValue.find(query).sort({ value_name: 1 }).lean();
   return rows.map((row) => ({
     _id: row._id,
+    name: row.value_name,
     Test_Name: row.value_name,
     Group: trimString(row?.meta?.category),
+    category_id: row?.meta?.category_id || null,
     Reference_Range: trimString(row?.meta?.reference),
     Units: trimString(row?.meta?.unit),
     Display_Name: row.value_name,

@@ -1,109 +1,109 @@
 {
-  "hash": "5e5814b3",
-  "configHash": "6904bc43",
+  "hash": "84b897c6",
+  "configHash": "056493c0",
   "lockfileHash": "5d641361",
-  "browserHash": "efbe0129",
+  "browserHash": "e52ee774",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "ade3c6f4",
+      "fileHash": "b85ac07f",
       "needsInterop": true
     },
     "react-dom": {
       "src": "../../node_modules/react-dom/index.js",
       "file": "react-dom.js",
-      "fileHash": "b8e27d9d",
+      "fileHash": "3b4f124d",
       "needsInterop": true
     },
     "react/jsx-dev-runtime": {
       "src": "../../node_modules/react/jsx-dev-runtime.js",
       "file": "react_jsx-dev-runtime.js",
-      "fileHash": "206fbd87",
+      "fileHash": "3350d458",
       "needsInterop": true
     },
     "react/jsx-runtime": {
       "src": "../../node_modules/react/jsx-runtime.js",
       "file": "react_jsx-runtime.js",
-      "fileHash": "55747228",
+      "fileHash": "3e2de409",
       "needsInterop": true
     },
     "axios": {
       "src": "../../node_modules/axios/index.js",
       "file": "axios.js",
-      "fileHash": "594d2e64",
+      "fileHash": "1eaa17f1",
       "needsInterop": false
     },
     "bootstrap/dist/js/bootstrap.bundle.min.js": {
       "src": "../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",
       "file": "bootstrap_dist_js_bootstrap__bundle__min__js.js",
-      "fileHash": "afdf7e8d",
+      "fileHash": "a6e51a0d",
       "needsInterop": true
     },
     "chart.js": {
       "src": "../../node_modules/chart.js/dist/chart.js",
       "file": "chart__js.js",
-      "fileHash": "d8523449",
+      "fileHash": "668b1261",
       "needsInterop": false
     },
     "file-saver": {
       "src": "../../node_modules/file-saver/dist/FileSaver.min.js",
       "file": "file-saver.js",
-      "fileHash": "5c324474",
+      "fileHash": "65d3d152",
       "needsInterop": true
     },
     "html2canvas": {
       "src": "../../node_modules/html2canvas/dist/html2canvas.esm.js",
       "file": "html2canvas.js",
-      "fileHash": "d3e3909d",
+      "fileHash": "bff127df",
       "needsInterop": false
     },
     "jspdf": {
       "src": "../../node_modules/jspdf/dist/jspdf.es.min.js",
       "file": "jspdf.js",
-      "fileHash": "349cb905",
+      "fileHash": "862892ab",
       "needsInterop": false
     },
     "jspdf-autotable": {
       "src": "../../node_modules/jspdf-autotable/dist/jspdf.plugin.autotable.mjs",
       "file": "jspdf-autotable.js",
-      "fileHash": "5b631378",
+      "fileHash": "8c32aead",
       "needsInterop": false
     },
     "react-chartjs-2": {
       "src": "../../node_modules/react-chartjs-2/dist/index.js",
       "file": "react-chartjs-2.js",
-      "fileHash": "01b916bf",
+      "fileHash": "79fd6397",
       "needsInterop": false
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "9610d518",
+      "fileHash": "fffab50e",
       "needsInterop": true
     },
     "react-icons/fa": {
       "src": "../../node_modules/react-icons/fa/index.mjs",
       "file": "react-icons_fa.js",
-      "fileHash": "2812c69c",
+      "fileHash": "4ec83c7b",
       "needsInterop": false
     },
     "react-router-dom": {
       "src": "../../node_modules/react-router-dom/dist/index.mjs",
       "file": "react-router-dom.js",
-      "fileHash": "7c6d2afe",
+      "fileHash": "b0931400",
       "needsInterop": false
     },
     "recharts": {
       "src": "../../node_modules/recharts/es6/index.js",
       "file": "recharts.js",
-      "fileHash": "4385e97c",
+      "fileHash": "2a0d6f1f",
       "needsInterop": false
     },
     "xlsx": {
       "src": "../../node_modules/xlsx/xlsx.mjs",
       "file": "xlsx.js",
-      "fileHash": "9bef86ac",
+      "fileHash": "2411dd1d",
       "needsInterop": false
     }
   },

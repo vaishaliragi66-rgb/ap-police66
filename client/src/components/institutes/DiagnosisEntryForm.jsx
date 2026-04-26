@@ -2,7 +2,6 @@
 import axios from "axios";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
-import diagnosticTestsByCategory from "../../data/diagnosticTests";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./InstitutesTheme.css";
 
@@ -137,7 +136,7 @@ const fetchDoctorDiagnosis = async (visitId) => {
 
 
 
-const fetchTests = async () => {
+  const fetchTests = async () => {
   try {
     const instituteId = localStorage.getItem("instituteId") || "";
     const structRes = await axios
@@ -157,20 +156,6 @@ const fetchTests = async () => {
           .catch(() => ({ data: [] }))
       : { data: [] };
 
-    const staticTestsByCategory = Object.fromEntries(
-      Object.entries(diagnosticTestsByCategory || {}).map(([category, rows]) => [
-        category,
-        (Array.isArray(rows) ? rows : []).map((test, idx) => ({
-          _id: `static-${category}-${idx}`,
-          Test_Name: String(test?.name || "").trim(),
-          Group: String(category || "").trim(),
-          Reference_Range: String(test?.reference || "").trim(),
-          Units: String(test?.unit || "").trim(),
-          Display_Name: String(test?.name || "").trim(),
-          Raw_Test_Name: String(test?.name || "").trim()
-        }))
-      ])
-    );
     const apiTestsByCategory = structRes.data?.testsByCategory && typeof structRes.data.testsByCategory === "object"
       ? structRes.data.testsByCategory
       : {};
@@ -199,7 +184,6 @@ const fetchTests = async () => {
       });
     const mergedCategories = Array.from(
       new Set([
-        ...Object.keys(staticTestsByCategory),
         ...(Array.isArray(structRes.data?.categories) ? structRes.data.categories : []),
         ...Object.keys(apiTestsByCategory),
         ...customCategories,
@@ -208,11 +192,10 @@ const fetchTests = async () => {
     );
     const mergedTestsByCategory = {};
     mergedCategories.forEach((category) => {
-      const staticRows = Array.isArray(staticTestsByCategory[category]) ? staticTestsByCategory[category] : [];
       const apiRows = Array.isArray(apiTestsByCategory[category]) ? apiTestsByCategory[category] : [];
       const customRows = Array.isArray(customGrouped[category]) ? customGrouped[category] : [];
       const seen = new Set();
-      mergedTestsByCategory[category] = [...staticRows, ...apiRows, ...customRows]
+      mergedTestsByCategory[category] = [...apiRows, ...customRows]
         .filter((test) => {
           const key = String(test?.Test_Name || test?.name || "").trim().toLowerCase();
           if (!key || seen.has(key)) return false;
@@ -979,8 +962,8 @@ const fetchPastRecords = async () => {
                                   return (
                                 <select
                                   className="form-select"
-                                  value={t.Test_Name || ""}
-                                  onChange={e => handleTestChange(i, "Test_Name", e.target.value)}
+                                  value={t.Test_ID || t.Test_Name || ""}
+                                  onChange={e => handleTestChange(i, "Test_ID", e.target.value)}
                                   disabled={!t.Category && !t.Test_Name}
                                 >
                                   <option value="">Select Test</option>
@@ -990,7 +973,7 @@ const fetchPastRecords = async () => {
                                   {(
                                     categoryOptions
                                   ).map(testObj => (
-                                    <option key={testObj.name} value={testObj.name}>{testObj.name}</option>
+                                    <option key={testObj._id || testObj.name} value={testObj._id || testObj.name}>{testObj.name}</option>
                                   ))}
                                 </select>
                                   );
