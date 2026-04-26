@@ -1121,22 +1121,25 @@ router.post("/tests/category", verifyToken, requireInstituteAdmin, async (req, r
       return res.status(404).json({ message: "Tests category not found" });
     }
 
+    const normalizedCategoryName = normalize(categoryName);
     const existing = await MasterValue.findOne({
       Institute_ID: instituteId,
       category_id: testsCategory._id,
-      normalized_value: normalize(categoryName),
-      "meta.kind": "category"
+      normalized_value: normalizedCategoryName
     });
 
     if (existing) {
-      return res.status(200).json(existing);
+      if (String(existing.meta?.kind || "") === "category") {
+        return res.status(200).json(existing);
+      }
+      return res.status(409).json({ message: "A test already uses that name" });
     }
 
     const created = await MasterValue.create({
       Institute_ID: instituteId,
       category_id: testsCategory._id,
       value_name: categoryName,
-      normalized_value: normalize(categoryName),
+      normalized_value: normalizedCategoryName,
       status: "Active",
       meta: { kind: "category" }
     });
@@ -1145,6 +1148,9 @@ router.post("/tests/category", verifyToken, requireInstituteAdmin, async (req, r
     res.status(201).json(created);
   } catch (err) {
     console.error("POST /master-data-api/tests/category error", err);
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: "A test or test category with that name already exists" });
+    }
     res.status(500).json({ message: "Failed to create test category", error: err.message });
   }
 });
@@ -1242,11 +1248,10 @@ router.put("/tests/category/:id", verifyToken, requireInstituteAdmin, async (req
         _id: { $ne: id },
         Institute_ID: instituteId,
         category_id: testsCategory._id,
-        normalized_value: normalize(nextCategoryName),
-        "meta.kind": "category"
+        normalized_value: normalize(nextCategoryName)
       });
       if (duplicate) {
-        return res.status(409).json({ message: "Test category already exists" });
+        return res.status(409).json({ message: "A test or test category with that name already exists" });
       }
 
       categoryValue.value_name = nextCategoryName;
@@ -1295,6 +1300,9 @@ router.put("/tests/category/:id", verifyToken, requireInstituteAdmin, async (req
     res.json(categoryValue);
   } catch (err) {
     console.error("PUT /master-data-api/tests/category/:id error", err);
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: "A test or test category with that name already exists" });
+    }
     res.status(500).json({ message: "Failed to update test category", error: err.message });
   }
 });
@@ -1322,19 +1330,25 @@ router.post("/tests", verifyToken, requireInstituteAdmin, async (req, res) => {
       return res.status(404).json({ message: "Tests category not found" });
     }
 
-    const categoryExists = await MasterValue.findOne({
+    const normalizedCategory = normalize(category);
+    const normalizedTestName = normalize(testName);
+
+    const categoryConflict = await MasterValue.findOne({
       Institute_ID: instituteId,
       category_id: testsCategory._id,
-      normalized_value: normalize(category),
-      "meta.kind": "category"
+      normalized_value: normalizedCategory
     });
 
-    if (!categoryExists) {
+    if (categoryConflict && String(categoryConflict.meta?.kind || "") !== "category") {
+      return res.status(409).json({ message: "A test or test category with that name already exists" });
+    }
+
+    if (!categoryConflict) {
       await MasterValue.create({
         Institute_ID: instituteId,
         category_id: testsCategory._id,
         value_name: category,
-        normalized_value: normalize(category),
+        normalized_value: normalizedCategory,
         status: "Active",
         meta: { kind: "category" }
       });
@@ -1343,35 +1357,44 @@ router.post("/tests", verifyToken, requireInstituteAdmin, async (req, res) => {
     const duplicateMasterTest = await MasterValue.findOne({
       Institute_ID: instituteId,
       category_id: testsCategory._id,
-      normalized_value: normalize(testName),
-      "meta.kind": "test",
-      "meta.categoryNormalized": normalize(category)
+      normalized_value: normalizedTestName
     });
 
-    let created = false;
-    let createdDoc = null;
-    if (!duplicateMasterTest) {
-      createdDoc = await MasterValue.create({
-        Institute_ID: instituteId,
-        category_id: testsCategory._id,
-        value_name: testName,
-        normalized_value: normalize(testName),
-        status: "Active",
-        meta: {
-          kind: "test",
-          category,
-          categoryNormalized: normalize(category),
-          reference: referenceRange,
-          unit
-        }
-      });
-      created = true;
+    if (duplicateMasterTest) {
+      if (String(duplicateMasterTest.meta?.kind || "") === "test" && normalize(duplicateMasterTest?.meta?.category || "") === normalizedCategory) {
+        invalidateMasterDataCache(instituteId);
+        return res.status(200).json({
+          message: "Test add processed",
+          created: false,
+          test: { _id: duplicateMasterTest._id, Test_Name: duplicateMasterTest.value_name }
+        });
+      }
+      return res.status(409).json({ message: "A test with that name already exists" });
     }
+
+    const createdDoc = await MasterValue.create({
+      Institute_ID: instituteId,
+      category_id: testsCategory._id,
+      value_name: testName,
+      normalized_value: normalizedTestName,
+      status: "Active",
+      meta: {
+        kind: "test",
+        category,
+        categoryNormalized: normalizedCategory,
+        reference: referenceRange,
+        unit
+      }
+    });
+    const created = true;
 
     invalidateMasterDataCache(instituteId);
     res.status(201).json({ message: "Test add processed", created, test: createdDoc ? { _id: createdDoc._id, Test_Name: createdDoc.value_name } : null });
   } catch (err) {
     console.error("POST /master-data-api/tests error", err);
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: "A test with that name already exists" });
+    }
     res.status(500).json({ message: "Failed to add test", error: err.message });
   }
 });

@@ -1,0 +1,1308 @@
+[
+  {
+    "_id": "69d4de3a3a6364745eb36bbe",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "bhavs",
+    "normalized_value": "bhavs__archived__69d4de3a3a6364745eb36bbe",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "ELECTROLYTES",
+      "reference": "",
+      "unit": "",
+      "categoryNormalized": "electrolytes",
+      "archived": true,
+      "legacy_value_name": "bhavs"
+    },
+    "createdAt": "2026-04-07T10:36:42.920Z",
+    "updatedAt": "2026-04-25T19:04:38.389Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5e67c592599744a4a7",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Neutrophils (DLC)",
+    "normalized_value": "neutrophils (dlc)__archived__69de8a5e67c592599744a4a7",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "50-70",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Neutrophils (DLC)"
+    },
+    "createdAt": "2026-04-14T18:41:34.720Z",
+    "updatedAt": "2026-04-25T19:04:43.812Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5e67c592599744a4aa",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Lymphocytes (DLC)",
+    "normalized_value": "lymphocytes (dlc)__archived__69de8a5e67c592599744a4aa",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "20-40",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Lymphocytes (DLC)"
+    },
+    "createdAt": "2026-04-14T18:41:34.925Z",
+    "updatedAt": "2026-04-25T19:04:43.304Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5f67c592599744a4ad",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Eosinophils (DLC)",
+    "normalized_value": "eosinophils (dlc)__archived__69de8a5f67c592599744a4ad",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "1-6",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Eosinophils (DLC)"
+    },
+    "createdAt": "2026-04-14T18:41:35.130Z",
+    "updatedAt": "2026-04-25T19:04:41.396Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5f67c592599744a4b0",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Monocytes (DLC)",
+    "normalized_value": "monocytes (dlc)__archived__69de8a5f67c592599744a4b0",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "2-8",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Monocytes (DLC)"
+    },
+    "createdAt": "2026-04-14T18:41:35.334Z",
+    "updatedAt": "2026-04-25T19:04:43.604Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a5f67c592599744a4b6",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "RDW (Red Cell Distrib. Width)",
+    "normalized_value": "rdw (red cell distrib. width)__archived__69de8a5f67c592599744a4b6",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "11.5-14.5",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "RDW (Red Cell Distrib. Width)"
+    },
+    "createdAt": "2026-04-14T18:41:35.610Z",
+    "updatedAt": "2026-04-25T19:04:44.383Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6067c592599744a4c8",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "C-Peptide (Fasting)",
+    "normalized_value": "c-peptide (fasting)__archived__69de8a6067c592599744a4c8",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "DIABETES & GLUCOSE",
+      "categoryNormalized": "diabetes & glucose",
+      "reference": "1.1-4.4",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "C-Peptide (Fasting)"
+    },
+    "createdAt": "2026-04-14T18:41:36.665Z",
+    "updatedAt": "2026-04-25T19:04:40.336Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6967c592599744a561",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "BNP (B-type Natriuretic Peptide)",
+    "normalized_value": "bnp (b-type natriuretic peptide)__archived__69de8a6967c592599744a561",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<100",
+      "unit": "pg/mL",
+      "archived": true,
+      "legacy_value_name": "BNP (B-type Natriuretic Peptide)"
+    },
+    "createdAt": "2026-04-14T18:41:45.369Z",
+    "updatedAt": "2026-04-25T19:04:39.822Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6967c592599744a56a",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Lipoprotein(a) [Lp(a)]",
+    "normalized_value": "lipoprotein(a) [lp(a)]__archived__69de8a6967c592599744a56a",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<30",
+      "unit": "mg/dL",
+      "archived": true,
+      "legacy_value_name": "Lipoprotein(a) [Lp(a)]"
+    },
+    "createdAt": "2026-04-14T18:41:45.904Z",
+    "updatedAt": "2026-04-25T19:04:42.970Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6a67c592599744a573",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Folate (Folic Acid)",
+    "normalized_value": "folate (folic acid)__archived__69de8a6a67c592599744a573",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "2.0-20.0",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "Folate (Folic Acid)"
+    },
+    "createdAt": "2026-04-14T18:41:46.393Z",
+    "updatedAt": "2026-04-25T19:04:41.665Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6b67c592599744a57c",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "TIBC (Total Iron Binding Capacity)",
+    "normalized_value": "tibc (total iron binding capacity)__archived__69de8a6b67c592599744a57c",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "250-370",
+      "unit": "ug/dL",
+      "archived": true,
+      "legacy_value_name": "TIBC (Total Iron Binding Capacity)"
+    },
+    "createdAt": "2026-04-14T18:41:47.008Z",
+    "updatedAt": "2026-04-25T19:04:45.131Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6b67c592599744a582",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Vitamin B1 (Thiamine)",
+    "normalized_value": "vitamin b1 (thiamine)__archived__69de8a6b67c592599744a582",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "2.5-7.5",
+      "unit": "ug/dL",
+      "archived": true,
+      "legacy_value_name": "Vitamin B1 (Thiamine)"
+    },
+    "createdAt": "2026-04-14T18:41:47.315Z",
+    "updatedAt": "2026-04-25T19:04:45.755Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6c67c592599744a594",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Bleeding Time (BT)",
+    "normalized_value": "bleeding time (bt)__archived__69de8a6c67c592599744a594",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "COAGULATION STUDIES",
+      "categoryNormalized": "coagulation studies",
+      "reference": "2-7",
+      "unit": "min",
+      "archived": true,
+      "legacy_value_name": "Bleeding Time (BT)"
+    },
+    "createdAt": "2026-04-14T18:41:48.441Z",
+    "updatedAt": "2026-04-25T19:04:39.618Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6d67c592599744a5ac",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "PSA (Prostate Specific Antigen)",
+    "normalized_value": "psa (prostate specific antigen)__archived__69de8a6d67c592599744a5ac",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<4.0",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "PSA (Prostate Specific Antigen)"
+    },
+    "createdAt": "2026-04-14T18:41:49.568Z",
+    "updatedAt": "2026-04-25T19:04:44.008Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6d67c592599744a5af",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "CEA (Carcinoembryonic Ag)",
+    "normalized_value": "cea (carcinoembryonic ag)__archived__69de8a6d67c592599744a5af",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<3 (non-smoker), <5 (smoker)",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "CEA (Carcinoembryonic Ag)"
+    },
+    "createdAt": "2026-04-14T18:41:49.773Z",
+    "updatedAt": "2026-04-25T19:04:40.677Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6d67c592599744a5b2",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "AFP (Alpha-Fetoprotein)",
+    "normalized_value": "afp (alpha-fetoprotein)__archived__69de8a6d67c592599744a5b2",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<10",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "AFP (Alpha-Fetoprotein)"
+    },
+    "createdAt": "2026-04-14T18:41:49.941Z",
+    "updatedAt": "2026-04-25T19:04:36.031Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a6f67c592599744a5c7",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Cortisol (Morning)",
+    "normalized_value": "cortisol (morning)__archived__69de8a6f67c592599744a5c7",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "6.2-19.4",
+      "unit": "ug/dL",
+      "archived": true,
+      "legacy_value_name": "Cortisol (Morning)"
+    },
+    "createdAt": "2026-04-14T18:41:51.309Z",
+    "updatedAt": "2026-04-25T19:04:40.841Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a7067c592599744a5d3",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "PTH (Parathyroid Hormone)",
+    "normalized_value": "pth (parathyroid hormone)__archived__69de8a7067c592599744a5d3",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "BONE HEALTH",
+      "categoryNormalized": "bone health",
+      "reference": "10-65",
+      "unit": "pg/mL",
+      "archived": true,
+      "legacy_value_name": "PTH (Parathyroid Hormone)"
+    },
+    "createdAt": "2026-04-14T18:41:52.010Z",
+    "updatedAt": "2026-04-25T19:04:44.120Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a7067c592599744a5d9",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "IgE (Total)",
+    "normalized_value": "ige (total)__archived__69de8a7067c592599744a5d9",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "<100 (adults)",
+      "unit": "IU/mL",
+      "archived": true,
+      "legacy_value_name": "IgE (Total)"
+    },
+    "createdAt": "2026-04-14T18:41:52.333Z",
+    "updatedAt": "2026-04-25T19:04:42.212Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a7067c592599744a5dc",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "ANA (Antinuclear Antibody)",
+    "normalized_value": "ana (antinuclear antibody)__archived__69de8a7067c592599744a5dc",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "Negative (<1:40)",
+      "unit": "Titer",
+      "archived": true,
+      "legacy_value_name": "ANA (Antinuclear Antibody)"
+    },
+    "createdAt": "2026-04-14T18:41:52.537Z",
+    "updatedAt": "2026-04-25T19:04:37.160Z",
+    "__v": 0
+  },
+  {
+    "_id": "69de8a7067c592599744a5e2",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "CRP (C-Reactive Protein)",
+    "normalized_value": "crp (c-reactive protein)__archived__69de8a7067c592599744a5e2",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "<6.0",
+      "unit": "mg/L",
+      "archived": true,
+      "legacy_value_name": "CRP (C-Reactive Protein)"
+    },
+    "createdAt": "2026-04-14T18:41:52.946Z",
+    "updatedAt": "2026-04-25T19:04:41.168Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e8e9e7aa8556f88d491f8c",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Testosterone (Total) - M",
+    "normalized_value": "testosterone (total) - m__archived__69e8e9e7aa8556f88d491f8c",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "270-1070",
+      "unit": "ng/dL",
+      "archived": true,
+      "legacy_value_name": "Testosterone (Total) - M"
+    },
+    "createdAt": "2026-04-22T15:31:51.689Z",
+    "updatedAt": "2026-04-25T19:04:44.823Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed016eaa00bdd7f02db893",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "AFP (Alpha-Fetoprotein)",
+    "normalized_value": "afp (alpha-fetoprotein)__archived__69ed016eaa00bdd7f02db893",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<10",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "AFP (Alpha-Fetoprotein)"
+    },
+    "createdAt": "2026-04-25T18:01:18.359Z",
+    "updatedAt": "2026-04-25T19:04:36.065Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed016eaa00bdd7f02db89e",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "ANA (Antinuclear Antibody)",
+    "normalized_value": "ana (antinuclear antibody)__archived__69ed016eaa00bdd7f02db89e",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "Negative (<1:40)",
+      "unit": "Titer",
+      "archived": true,
+      "legacy_value_name": "ANA (Antinuclear Antibody)"
+    },
+    "createdAt": "2026-04-25T18:01:18.859Z",
+    "updatedAt": "2026-04-25T19:04:37.263Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed016faa00bdd7f02db8a9",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Basophils (DLC)",
+    "normalized_value": "basophils (dlc)__archived__69ed016faa00bdd7f02db8a9",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "0-1",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Basophils (DLC)"
+    },
+    "createdAt": "2026-04-25T18:01:19.466Z",
+    "updatedAt": "2026-04-25T19:04:38.185Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0170aa00bdd7f02db8b4",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Bleeding Time (BT)",
+    "normalized_value": "bleeding time (bt)__archived__69ed0170aa00bdd7f02db8b4",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "COAGULATION STUDIES",
+      "categoryNormalized": "coagulation studies",
+      "reference": "2-7",
+      "unit": "min",
+      "archived": true,
+      "legacy_value_name": "Bleeding Time (BT)"
+    },
+    "createdAt": "2026-04-25T18:01:20.162Z",
+    "updatedAt": "2026-04-25T19:04:39.677Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0170aa00bdd7f02db8b9",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "BNP (B-type Natriuretic Peptide)",
+    "normalized_value": "bnp (b-type natriuretic peptide)__archived__69ed0170aa00bdd7f02db8b9",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<100",
+      "unit": "pg/mL",
+      "archived": true,
+      "legacy_value_name": "BNP (B-type Natriuretic Peptide)"
+    },
+    "createdAt": "2026-04-25T18:01:20.360Z",
+    "updatedAt": "2026-04-25T19:04:39.924Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0170aa00bdd7f02db8bf",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "C-Peptide (Fasting)",
+    "normalized_value": "c-peptide (fasting)__archived__69ed0170aa00bdd7f02db8bf",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "DIABETES & GLUCOSE",
+      "categoryNormalized": "diabetes & glucose",
+      "reference": "1.1-4.4",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "C-Peptide (Fasting)"
+    },
+    "createdAt": "2026-04-25T18:01:20.918Z",
+    "updatedAt": "2026-04-25T19:04:40.439Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0172aa00bdd7f02db8cb",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "CEA (Carcinoembryonic Ag)",
+    "normalized_value": "cea (carcinoembryonic ag)__archived__69ed0172aa00bdd7f02db8cb",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<3 (non-smoker), <5 (smoker)",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "CEA (Carcinoembryonic Ag)"
+    },
+    "createdAt": "2026-04-25T18:01:22.044Z",
+    "updatedAt": "2026-04-25T19:04:40.728Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0172aa00bdd7f02db8d3",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Cortisol (Morning)",
+    "normalized_value": "cortisol (morning)__archived__69ed0172aa00bdd7f02db8d3",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "6.2-19.4",
+      "unit": "ug/dL",
+      "archived": true,
+      "legacy_value_name": "Cortisol (Morning)"
+    },
+    "createdAt": "2026-04-25T18:01:22.759Z",
+    "updatedAt": "2026-04-25T19:04:40.948Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0172aa00bdd7f02db8d6",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "CRP (C-Reactive Protein)",
+    "normalized_value": "crp (c-reactive protein)__archived__69ed0172aa00bdd7f02db8d6",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "<6.0",
+      "unit": "mg/L",
+      "archived": true,
+      "legacy_value_name": "CRP (C-Reactive Protein)"
+    },
+    "createdAt": "2026-04-25T18:01:22.965Z",
+    "updatedAt": "2026-04-25T19:04:41.207Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0173aa00bdd7f02db8e5",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Eosinophils (DLC)",
+    "normalized_value": "eosinophils (dlc)__archived__69ed0173aa00bdd7f02db8e5",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "1-6",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Eosinophils (DLC)"
+    },
+    "createdAt": "2026-04-25T18:01:23.886Z",
+    "updatedAt": "2026-04-25T19:04:41.448Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0174aa00bdd7f02db8f0",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Folate (Folic Acid)",
+    "normalized_value": "folate (folic acid)__archived__69ed0174aa00bdd7f02db8f0",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "2.0-20.0",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "Folate (Folic Acid)"
+    },
+    "createdAt": "2026-04-25T18:01:24.806Z",
+    "updatedAt": "2026-04-25T19:04:41.705Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0177aa00bdd7f02db910",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "IgE (Total)",
+    "normalized_value": "ige (total)__archived__69ed0177aa00bdd7f02db910",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "<100 (adults)",
+      "unit": "IU/mL",
+      "archived": true,
+      "legacy_value_name": "IgE (Total)"
+    },
+    "createdAt": "2026-04-25T18:01:27.571Z",
+    "updatedAt": "2026-04-25T19:04:42.265Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0179aa00bdd7f02db923",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Lipoprotein(a) [Lp(a)]",
+    "normalized_value": "lipoprotein(a) [lp(a)]__archived__69ed0179aa00bdd7f02db923",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<30",
+      "unit": "mg/dL",
+      "archived": true,
+      "legacy_value_name": "Lipoprotein(a) [Lp(a)]"
+    },
+    "createdAt": "2026-04-25T18:01:29.146Z",
+    "updatedAt": "2026-04-25T19:04:43.015Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0179aa00bdd7f02db928",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Lymphocytes (DLC)",
+    "normalized_value": "lymphocytes (dlc)__archived__69ed0179aa00bdd7f02db928",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "20-40",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Lymphocytes (DLC)"
+    },
+    "createdAt": "2026-04-25T18:01:29.363Z",
+    "updatedAt": "2026-04-25T19:04:43.368Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed017aaa00bdd7f02db937",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Monocytes (DLC)",
+    "normalized_value": "monocytes (dlc)__archived__69ed017aaa00bdd7f02db937",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "2-8",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Monocytes (DLC)"
+    },
+    "createdAt": "2026-04-25T18:01:30.090Z",
+    "updatedAt": "2026-04-25T19:04:43.685Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed017aaa00bdd7f02db93a",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Neutrophils (DLC)",
+    "normalized_value": "neutrophils (dlc)__archived__69ed017aaa00bdd7f02db93a",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "50-70",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Neutrophils (DLC)"
+    },
+    "createdAt": "2026-04-25T18:01:30.266Z",
+    "updatedAt": "2026-04-25T19:04:43.916Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed017baa00bdd7f02db94d",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "PSA (Prostate Specific Antigen)",
+    "normalized_value": "psa (prostate specific antigen)__archived__69ed017baa00bdd7f02db94d",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<4.0",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "PSA (Prostate Specific Antigen)"
+    },
+    "createdAt": "2026-04-25T18:01:31.485Z",
+    "updatedAt": "2026-04-25T19:04:44.047Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed017baa00bdd7f02db950",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "PTH (Parathyroid Hormone)",
+    "normalized_value": "pth (parathyroid hormone)__archived__69ed017baa00bdd7f02db950",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "BONE HEALTH",
+      "categoryNormalized": "bone health",
+      "reference": "10-65",
+      "unit": "pg/mL",
+      "archived": true,
+      "legacy_value_name": "PTH (Parathyroid Hormone)"
+    },
+    "createdAt": "2026-04-25T18:01:31.672Z",
+    "updatedAt": "2026-04-25T19:04:44.243Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed017daa00bdd7f02db966",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "TIBC (Total Iron Binding Capacity)",
+    "normalized_value": "tibc (total iron binding capacity)__archived__69ed017daa00bdd7f02db966",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "250-370",
+      "unit": "ug/dL",
+      "archived": true,
+      "legacy_value_name": "TIBC (Total Iron Binding Capacity)"
+    },
+    "createdAt": "2026-04-25T18:01:33.103Z",
+    "updatedAt": "2026-04-25T19:04:45.264Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0180aa00bdd7f02db992",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Vitamin B1 (Thiamine)",
+    "normalized_value": "vitamin b1 (thiamine)__archived__69ed0180aa00bdd7f02db992",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "2.5-7.5",
+      "unit": "ug/dL",
+      "archived": true,
+      "legacy_value_name": "Vitamin B1 (Thiamine)"
+    },
+    "createdAt": "2026-04-25T18:01:36.297Z",
+    "updatedAt": "2026-04-25T19:04:45.893Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed018eaa00bdd7f02dba7a",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Testosterone (Total) - M",
+    "normalized_value": "testosterone (total) - m__archived__69ed018eaa00bdd7f02dba7a",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "270-1070",
+      "unit": "ng/dL",
+      "archived": true,
+      "legacy_value_name": "Testosterone (Total) - M"
+    },
+    "createdAt": "2026-04-25T18:01:50.262Z",
+    "updatedAt": "2026-04-25T19:04:44.944Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0197aa00bdd7f02dbafb",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "bhavs",
+    "normalized_value": "bhavs__archived__69ed0197aa00bdd7f02dbafb",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "",
+      "unit": "",
+      "archived": true,
+      "legacy_value_name": "bhavs"
+    },
+    "createdAt": "2026-04-25T18:01:59.085Z",
+    "updatedAt": "2026-04-25T19:04:38.490Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0b44aa00bdd7f02dec50",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "RDW (Red Cell Distrib. Width)",
+    "normalized_value": "rdw (red cell distrib. width)__archived__69ed0b44aa00bdd7f02dec50",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "11.5-14.5",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "RDW (Red Cell Distrib. Width)"
+    },
+    "createdAt": "2026-04-25T18:43:16.054Z",
+    "updatedAt": "2026-04-25T19:04:44.416Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0dd7aa00bdd7f02dee4c",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "CEA (Carcinoembryonic Ag)",
+    "normalized_value": "cea (carcinoembryonic ag)__archived__69ed0dd7aa00bdd7f02dee4c",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<3 (non-smoker), <5 (smoker)",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "CEA (Carcinoembryonic Ag)"
+    },
+    "createdAt": "2026-04-25T18:54:15.887Z",
+    "updatedAt": "2026-04-25T19:04:40.640Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0dd8aa00bdd7f02dee54",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Cortisol (Morning)",
+    "normalized_value": "cortisol (morning)__archived__69ed0dd8aa00bdd7f02dee54",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "6.2-19.4",
+      "unit": "ug/dL",
+      "archived": true,
+      "legacy_value_name": "Cortisol (Morning)"
+    },
+    "createdAt": "2026-04-25T18:54:16.325Z",
+    "updatedAt": "2026-04-25T19:04:40.799Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0dd8aa00bdd7f02dee57",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "CRP (C-Reactive Protein)",
+    "normalized_value": "crp (c-reactive protein)__archived__69ed0dd8aa00bdd7f02dee57",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "<6.0",
+      "unit": "mg/L",
+      "archived": true,
+      "legacy_value_name": "CRP (C-Reactive Protein)"
+    },
+    "createdAt": "2026-04-25T18:54:16.505Z",
+    "updatedAt": "2026-04-25T19:04:41.050Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0dd9aa00bdd7f02dee66",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Eosinophils (DLC)",
+    "normalized_value": "eosinophils (dlc)__archived__69ed0dd9aa00bdd7f02dee66",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "1-6",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Eosinophils (DLC)"
+    },
+    "createdAt": "2026-04-25T18:54:17.867Z",
+    "updatedAt": "2026-04-25T19:04:41.357Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0ddaaa00bdd7f02dee71",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Folate (Folic Acid)",
+    "normalized_value": "folate (folic acid)__archived__69ed0ddaaa00bdd7f02dee71",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "2.0-20.0",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "Folate (Folic Acid)"
+    },
+    "createdAt": "2026-04-25T18:54:18.714Z",
+    "updatedAt": "2026-04-25T19:04:41.563Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0dddaa00bdd7f02dee91",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "IgE (Total)",
+    "normalized_value": "ige (total)__archived__69ed0dddaa00bdd7f02dee91",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "IMMUNOLOGY",
+      "categoryNormalized": "immunology",
+      "reference": "<100 (adults)",
+      "unit": "IU/mL",
+      "archived": true,
+      "legacy_value_name": "IgE (Total)"
+    },
+    "createdAt": "2026-04-25T18:54:21.022Z",
+    "updatedAt": "2026-04-25T19:04:42.177Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0ddeaa00bdd7f02deea4",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Lipoprotein(a) [Lp(a)]",
+    "normalized_value": "lipoprotein(a) [lp(a)]__archived__69ed0ddeaa00bdd7f02deea4",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "CARDIAC MARKERS",
+      "categoryNormalized": "cardiac markers",
+      "reference": "<30",
+      "unit": "mg/dL",
+      "archived": true,
+      "legacy_value_name": "Lipoprotein(a) [Lp(a)]"
+    },
+    "createdAt": "2026-04-25T18:54:22.097Z",
+    "updatedAt": "2026-04-25T19:04:42.895Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0ddeaa00bdd7f02deea9",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Lymphocytes (DLC)",
+    "normalized_value": "lymphocytes (dlc)__archived__69ed0ddeaa00bdd7f02deea9",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "20-40",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Lymphocytes (DLC)"
+    },
+    "createdAt": "2026-04-25T18:54:22.467Z",
+    "updatedAt": "2026-04-25T19:04:43.200Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0ddfaa00bdd7f02deeb8",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Monocytes (DLC)",
+    "normalized_value": "monocytes (dlc)__archived__69ed0ddfaa00bdd7f02deeb8",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "2-8",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Monocytes (DLC)"
+    },
+    "createdAt": "2026-04-25T18:54:23.874Z",
+    "updatedAt": "2026-04-25T19:04:43.507Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0de0aa00bdd7f02deebb",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Neutrophils (DLC)",
+    "normalized_value": "neutrophils (dlc)__archived__69ed0de0aa00bdd7f02deebb",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "50-70",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "Neutrophils (DLC)"
+    },
+    "createdAt": "2026-04-25T18:54:24.081Z",
+    "updatedAt": "2026-04-25T19:04:43.745Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0de1aa00bdd7f02deece",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "PSA (Prostate Specific Antigen)",
+    "normalized_value": "psa (prostate specific antigen)__archived__69ed0de1aa00bdd7f02deece",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "TUMOR MARKERS",
+      "categoryNormalized": "tumor markers",
+      "reference": "<4.0",
+      "unit": "ng/mL",
+      "archived": true,
+      "legacy_value_name": "PSA (Prostate Specific Antigen)"
+    },
+    "createdAt": "2026-04-25T18:54:25.823Z",
+    "updatedAt": "2026-04-25T19:04:43.959Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0de1aa00bdd7f02deed1",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "PTH (Parathyroid Hormone)",
+    "normalized_value": "pth (parathyroid hormone)__archived__69ed0de1aa00bdd7f02deed1",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "BONE HEALTH",
+      "categoryNormalized": "bone health",
+      "reference": "10-65",
+      "unit": "pg/mL",
+      "archived": true,
+      "legacy_value_name": "PTH (Parathyroid Hormone)"
+    },
+    "createdAt": "2026-04-25T18:54:25.970Z",
+    "updatedAt": "2026-04-25T19:04:44.084Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0de2aa00bdd7f02deed8",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "RDW (Red Cell Distrib. Width)",
+    "normalized_value": "rdw (red cell distrib. width)__archived__69ed0de2aa00bdd7f02deed8",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HEMATOLOGY",
+      "categoryNormalized": "hematology",
+      "reference": "11.5-14.5",
+      "unit": "%",
+      "archived": true,
+      "legacy_value_name": "RDW (Red Cell Distrib. Width)"
+    },
+    "createdAt": "2026-04-25T18:54:26.538Z",
+    "updatedAt": "2026-04-25T19:04:44.274Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0de3aa00bdd7f02deee7",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "TIBC (Total Iron Binding Capacity)",
+    "normalized_value": "tibc (total iron binding capacity)__archived__69ed0de3aa00bdd7f02deee7",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "250-370",
+      "unit": "ug/dL",
+      "archived": true,
+      "legacy_value_name": "TIBC (Total Iron Binding Capacity)"
+    },
+    "createdAt": "2026-04-25T18:54:27.632Z",
+    "updatedAt": "2026-04-25T19:04:45.101Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0de6aa00bdd7f02def13",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Vitamin B1 (Thiamine)",
+    "normalized_value": "vitamin b1 (thiamine)__archived__69ed0de6aa00bdd7f02def13",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "VITAMINS & MINERALS",
+      "categoryNormalized": "vitamins & minerals",
+      "reference": "2.5-7.5",
+      "unit": "ug/dL",
+      "archived": true,
+      "legacy_value_name": "Vitamin B1 (Thiamine)"
+    },
+    "createdAt": "2026-04-25T18:54:30.989Z",
+    "updatedAt": "2026-04-25T19:04:45.722Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0df8aa00bdd7f02deff0",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Testosterone (Total) - M",
+    "normalized_value": "testosterone (total) - m__archived__69ed0df8aa00bdd7f02deff0",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "HORMONAL PROFILE",
+      "categoryNormalized": "hormonal profile",
+      "reference": "270-1070",
+      "unit": "ng/dL",
+      "archived": true,
+      "legacy_value_name": "Testosterone (Total) - M"
+    },
+    "createdAt": "2026-04-25T18:54:48.446Z",
+    "updatedAt": "2026-04-25T19:04:44.523Z",
+    "__v": 0
+  },
+  {
+    "_id": "69ed0e00aa00bdd7f02df070",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "bhavs",
+    "normalized_value": "bhavs__archived__69ed0e00aa00bdd7f02df070",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "ELECTROLYTES",
+      "categoryNormalized": "electrolytes",
+      "reference": "",
+      "unit": "",
+      "archived": true,
+      "legacy_value_name": "bhavs"
+    },
+    "createdAt": "2026-04-25T18:54:56.356Z",
+    "updatedAt": "2026-04-25T19:04:38.286Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e8e9e3aa8556f88d491efa",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Bilirubin ? Direct",
+    "normalized_value": "bilirubin ? direct__archived__69e8e9e3aa8556f88d491efa",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "LIVER FUNCTION TESTS",
+      "categoryNormalized": "liver function tests",
+      "reference": "0.0-0.3",
+      "unit": "mg/dL",
+      "category_id": "69ecf5cb407ddd073f2819f2",
+      "archived": true,
+      "legacy_value_name": "Bilirubin ? Direct"
+    },
+    "createdAt": "2026-04-22T15:31:47.353Z",
+    "updatedAt": "2026-04-25T19:04:46.264Z",
+    "__v": 0,
+    "name": "Bilirubin ? Direct"
+  },
+  {
+    "_id": "69e8e9e3aa8556f88d491efd",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Bilirubin ? Indirect",
+    "normalized_value": "bilirubin ? indirect__archived__69e8e9e3aa8556f88d491efd",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "LIVER FUNCTION TESTS",
+      "categoryNormalized": "liver function tests",
+      "reference": "0.1-1.0",
+      "unit": "mg/dL",
+      "category_id": "69ecf5cb407ddd073f2819f2",
+      "archived": true,
+      "legacy_value_name": "Bilirubin ? Indirect"
+    },
+    "createdAt": "2026-04-22T15:31:47.417Z",
+    "updatedAt": "2026-04-25T19:04:46.421Z",
+    "__v": 0,
+    "name": "Bilirubin ? Indirect"
+  },
+  {
+    "_id": "69e8e9e3aa8556f88d491ef7",
+    "Institute_ID": "69982a0c26d4c4f00d2240f3",
+    "category_id": "69d4d0443a6364745eb365e0",
+    "value_name": "Bilirubin ? Total",
+    "normalized_value": "bilirubin ? total__archived__69e8e9e3aa8556f88d491ef7",
+    "status": "Inactive",
+    "meta": {
+      "kind": "test",
+      "category": "LIVER FUNCTION TESTS",
+      "categoryNormalized": "liver function tests",
+      "reference": "0.3-1.2",
+      "unit": "mg/dL",
+      "category_id": "69ecf5cb407ddd073f2819f2",
+      "archived": true,
+      "legacy_value_name": "Bilirubin ? Total"
+    },
+    "createdAt": "2026-04-22T15:31:47.292Z",
+    "updatedAt": "2026-04-25T19:04:46.663Z",
+    "__v": 0,
+    "name": "Bilirubin ? Total"
+  }
+]

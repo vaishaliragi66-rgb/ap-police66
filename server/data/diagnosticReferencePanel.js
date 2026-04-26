@@ -63,8 +63,7 @@ const testsByCategory = {
     { name: "Total Protein", reference: "6.0-8.3", unit: "g/dL" },
     { name: "Albumin", reference: "3.5-5.0", unit: "g/dL" },
     { name: "Globulin", reference: "2.0-3.5", unit: "g/dL" },
-    { name: "A/G Ratio", reference: "1.0-2.2", unit: "Ratio" }
-  ],
+    { name: "A/G Ratio", reference: "1.0-2.2", unit: "Ratio" }  ],
   "KIDNEY FUNCTION TESTS": [
     { name: "Serum Creatinine", reference: "M: 0.6-1.2 | F: 0.5-1.1", unit: "mg/dL" },
     { name: "Blood Urea Nitrogen (BUN)", reference: "10-20", unit: "mg/dL" },

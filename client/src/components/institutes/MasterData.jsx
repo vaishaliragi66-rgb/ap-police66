@@ -86,6 +86,11 @@ const notifyMasterDataUpdated = () => {
   window.dispatchEvent(new Event("master-data-updated"));
 };
 
+const getInstituteAuthConfig = () => {
+  const token = localStorage.getItem("instituteToken") || localStorage.getItem("token");
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+};
+
 const getStaticTestsStructure = () => {
   const testsByCategory = {};
 
@@ -338,10 +343,10 @@ const MasterData = () => {
     try {
       const instituteId = localStorage.getItem("instituteId") || "";
       const res = await axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, {
-        params: instituteId ? { instituteId, includeInactive: true } : { includeInactive: true }
+        params: instituteId ? { instituteId } : {}
       });
       const valuesRes = selectedCategoryId
-        ? await axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId, includeInactive: true } })
+        ? await axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
         : { data: [] };
 
       const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
@@ -363,10 +368,11 @@ const MasterData = () => {
       setCustomTestMap(testMap);
 
       const apiData = res.data && typeof res.data === "object" ? res.data : { categories: [], testsByCategory: {} };
-      const hasApiPayload =
-        Array.isArray(apiData.categories) ||
-        (apiData.testsByCategory && typeof apiData.testsByCategory === "object");
-      const data = hasApiPayload ? mergeTestsStructure(staticStructure, apiData) : staticStructure;
+      const hasApiPayload = Array.isArray(apiData.categories) || (apiData.testsByCategory && typeof apiData.testsByCategory === "object");
+
+      // Always merge static canonical tests with live institute data so missing seeded rows
+      // still appear, while live rows continue to override by name/category.
+      const data = mergeTestsStructure(staticStructure, apiData);
       console.log("Fetched Test Categories:", apiData.categories || []);
       console.log("Fetched Tests By Category:", apiData.testsByCategory || {});
       const explicitCustomCategories = new Set(
@@ -1017,10 +1023,14 @@ const MasterData = () => {
     setError("");
     try {
       if (item?.masterValue?._id) {
-        await axios.put(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, {
-          value_name: valueName,
-          meta: item.masterValue.meta || {}
-        });
+        await axios.put(
+          `${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`,
+          {
+            value_name: valueName,
+            meta: item.masterValue.meta || {}
+          },
+          getInstituteAuthConfig()
+        );
         setMessage("Value updated successfully");
       } else {
         // Allow editing built-in Tests (create a persisted master value)
@@ -1036,7 +1046,7 @@ const MasterData = () => {
               unit: item?.unit || ""
             }
           };
-          await axios.post(`${BACKEND_URL}/master-data-api/values`, payload);
+          await axios.post(`${BACKEND_URL}/master-data-api/values`, payload, getInstituteAuthConfig());
           setMessage("Built-in test persisted and updated");
         } else {
           setMessage("Built-in items cannot be edited");
@@ -1069,9 +1079,13 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.put(`${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`, {
-        categoryName: nextName
-      });
+      await axios.put(
+        `${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`,
+        {
+          categoryName: nextName
+        },
+        getInstituteAuthConfig()
+      );
       setSelectedTestCategory((current) => (current === categoryName ? nextName : current));
       setMessage("Test category updated successfully");
       await loadTestsStructure();
@@ -1100,9 +1114,13 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.put(`${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`, {
-        status: nextStatus
-      });
+      await axios.put(
+        `${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`,
+        {
+          status: nextStatus
+        },
+        getInstituteAuthConfig()
+      );
       if (nextStatus === "Inactive" && selectedTestCategory === categoryName) {
         setSelectedTestCategory("");
       }
@@ -1149,17 +1167,21 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.put(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, {
-        value_name: nextName,
-        meta: {
-          ...(item.masterValue.meta || {}),
-          kind: "test",
-          category: selectedTestCategory || item?.masterValue?.meta?.category || "",
-          categoryNormalized: normalizeText(selectedTestCategory || item?.masterValue?.meta?.category || ""),
-          reference: nextReferenceInput.trim(),
-          unit: nextUnitInput.trim()
-        }
-      });
+      await axios.put(
+        `${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`,
+        {
+          value_name: nextName,
+          meta: {
+            ...(item.masterValue.meta || {}),
+            kind: "test",
+            category: selectedTestCategory || item?.masterValue?.meta?.category || "",
+            categoryNormalized: normalizeText(selectedTestCategory || item?.masterValue?.meta?.category || ""),
+            reference: nextReferenceInput.trim(),
+            unit: nextUnitInput.trim()
+          }
+        },
+        getInstituteAuthConfig()
+      );
       setMessage("Test updated successfully");
       await loadTestsStructure();
       invalidateMasterDataCache();
@@ -1178,9 +1200,13 @@ const MasterData = () => {
     setError("");
     try {
       if (item?.masterValue?._id) {
-        await axios.put(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, {
-          status: item.status === "Active" ? "Inactive" : "Active"
-        });
+        await axios.put(
+          `${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`,
+          {
+            status: item.status === "Active" ? "Inactive" : "Active"
+          },
+          getInstituteAuthConfig()
+        );
         setMessage("Value status updated");
       } else {
         // For built-in Tests, create a persisted master value with requested status
@@ -1197,7 +1223,7 @@ const MasterData = () => {
               unit: item?.unit || ""
             }
           };
-          await axios.post(`${BACKEND_URL}/master-data-api/values`, payload);
+          await axios.post(`${BACKEND_URL}/master-data-api/values`, payload, getInstituteAuthConfig());
           setMessage("Built-in test persisted with new status");
         } else {
           setMessage("Built-in items cannot be deactivated");
@@ -1223,7 +1249,7 @@ const MasterData = () => {
     setError("");
     try {
       if (item?.masterValue?._id) {
-        await axios.delete(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`);
+        await axios.delete(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, getInstituteAuthConfig());
         setMessage("Value deleted successfully");
       } else {
         // For built-in Tests, create an inactive persisted master-value to override the built-in
@@ -1239,7 +1265,7 @@ const MasterData = () => {
               unit: item?.unit || ""
             }
           };
-          await axios.post(`${BACKEND_URL}/master-data-api/values`, payload);
+          await axios.post(`${BACKEND_URL}/master-data-api/values`, payload, getInstituteAuthConfig());
           setMessage("Built-in test marked inactive (persisted)");
         } else {
           setMessage("Built-in items cannot be deleted directly");
@@ -1269,12 +1295,16 @@ const MasterData = () => {
       // For built-in categories: persist an inactive category and persist inactive markers for each built-in test
       try {
         // create category master-value as Inactive
-        await axios.post(`${BACKEND_URL}/master-data-api/values`, {
-          category_id: selectedCategoryId,
-          value_name: categoryName,
-          status: "Inactive",
-          meta: { kind: "category" }
-        });
+        await axios.post(
+          `${BACKEND_URL}/master-data-api/values`,
+          {
+            category_id: selectedCategoryId,
+            value_name: categoryName,
+            status: "Inactive",
+            meta: { kind: "category" }
+          },
+          getInstituteAuthConfig()
+        );
 
         // persist inactive master-values for built-in tests under this category
         const rows = testsStructure.testsByCategory?.[categoryName] || [];
@@ -1282,12 +1312,16 @@ const MasterData = () => {
           rows.map(async (row) => {
             if (row?.masterValue?._id) return; // skip already persisted
             try {
-              await axios.post(`${BACKEND_URL}/master-data-api/values`, {
-                category_id: selectedCategoryId,
-                value_name: row.name,
-                status: "Inactive",
-                meta: { kind: "test", category: categoryName, reference: row.reference || "", unit: row.unit || "" }
-              });
+              await axios.post(
+                `${BACKEND_URL}/master-data-api/values`,
+                {
+                  category_id: selectedCategoryId,
+                  value_name: row.name,
+                  status: "Inactive",
+                  meta: { kind: "test", category: categoryName, reference: row.reference || "", unit: row.unit || "" }
+                },
+                getInstituteAuthConfig()
+              );
             } catch (e) {
               // ignore duplicates/errors per-row
             }
@@ -1312,7 +1346,7 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.delete(`${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`);
+      await axios.delete(`${BACKEND_URL}/master-data-api/tests/category/${masterValue._id}`, getInstituteAuthConfig());
       setMessage("Test category deleted successfully");
       await loadTestsStructure();
       invalidateMasterDataCache();
@@ -1332,10 +1366,14 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      await axios.post(`${BACKEND_URL}/master-data-api/values`, {
-        category_id: selectedCategoryId,
-        value_name: newValueName.trim()
-      });
+      await axios.post(
+        `${BACKEND_URL}/master-data-api/values`,
+        {
+          category_id: selectedCategoryId,
+          value_name: newValueName.trim()
+        },
+        getInstituteAuthConfig()
+      );
       setNewValueName("");
       setMessage("Value added successfully");
       await loadValues(selectedCategoryId);
@@ -1362,9 +1400,13 @@ const MasterData = () => {
         setMessage("Built-in values cannot be renamed directly");
         return;
       }
-      await axios.put(`${BACKEND_URL}/master-data-api/values/${item._id}`, {
-        value_name: valueName
-      });
+      await axios.put(
+        `${BACKEND_URL}/master-data-api/values/${item._id}`,
+        {
+          value_name: valueName
+        },
+        getInstituteAuthConfig()
+      );
       setMessage("Value updated successfully");
       await loadValues(selectedCategoryId);
       invalidateMasterDataCache();
@@ -1385,9 +1427,13 @@ const MasterData = () => {
         setMessage("Built-in values cannot be deactivated directly");
         return;
       }
-      await axios.put(`${BACKEND_URL}/master-data-api/values/${item._id}`, {
-        status: item.status === "Active" ? "Inactive" : "Active"
-      });
+      await axios.put(
+        `${BACKEND_URL}/master-data-api/values/${item._id}`,
+        {
+          status: item.status === "Active" ? "Inactive" : "Active"
+        },
+        getInstituteAuthConfig()
+      );
       setMessage("Value status updated");
       await loadValues(selectedCategoryId);
       invalidateMasterDataCache();
@@ -1411,7 +1457,7 @@ const MasterData = () => {
         setMessage("Built-in values cannot be deleted directly");
         return;
       }
-      await axios.delete(`${BACKEND_URL}/master-data-api/values/${item._id}`);
+      await axios.delete(`${BACKEND_URL}/master-data-api/values/${item._id}`, getInstituteAuthConfig());
       setMessage("Value deleted successfully");
       await loadValues(selectedCategoryId);
       invalidateMasterDataCache();
@@ -1429,10 +1475,13 @@ const MasterData = () => {
     setMessage("");
     setError("");
     try {
-      // Use the primary endpoint which handles Tests category internally
-      await axios.post(`${BACKEND_URL}/master-data-api/tests/category`, {
-        categoryName: newTestCategoryName.trim()
-      });
+      await axios.post(
+        `${BACKEND_URL}/master-data-api/tests/category`,
+        {
+          categoryName: newTestCategoryName.trim()
+        },
+        getInstituteAuthConfig()
+      );
       setNewTestCategoryName("");
       setMessage("Test category added successfully");
       await loadTestsStructure();
@@ -1449,22 +1498,61 @@ const MasterData = () => {
   const handleAddTest = async () => {
     if (!selectedTestCategory || !newTestName.trim()) return;
     const nextTestName = newTestName.trim();
-    const existingTests = testsStructure.testsByCategory?.[selectedTestCategory] || [];
-    const duplicateExists = existingTests.some((test) => normalizeLooseKey(test?.name) === normalizeLooseKey(nextTestName));
-    if (duplicateExists) {
-      setError("That test already exists in this category");
+    const allExistingTests = Object.values(testsStructure.testsByCategory || {})
+      .flat()
+      .map((test) => String(test?.name || "").trim())
+      .filter(Boolean);
+    if (allExistingTests.some((name) => normalizeLooseKey(name) === normalizeLooseKey(nextTestName))) {
+      setError("That test already exists in the Tests list");
       return;
     }
     setSaving(true);
     setMessage("");
     setError("");
     try {
-      const res = await axios.post(`${BACKEND_URL}/master-data-api/tests`, {
+      const payload = {
         category: selectedTestCategory,
         testName: nextTestName,
         referenceRange: newTestReference.trim(),
         unit: newTestUnit.trim()
-      });
+      };
+      let res;
+      try {
+        res = await axios.post(
+          `${BACKEND_URL}/master-data-api/tests`,
+          payload,
+          getInstituteAuthConfig()
+        );
+      } catch (err) {
+        if (err?.response?.status && err.response.status < 500) {
+          throw err;
+        }
+
+        const fallbackRes = await axios.post(
+          `${BACKEND_URL}/master-data-api/values`,
+          {
+            category_id: selectedCategoryId,
+            value_name: nextTestName,
+            status: "Active",
+            meta: {
+              kind: "test",
+              category: selectedTestCategory,
+              categoryNormalized: normalizeText(selectedTestCategory),
+              reference: newTestReference.trim(),
+              unit: newTestUnit.trim()
+            }
+          },
+          getInstituteAuthConfig()
+        );
+
+        res = {
+          data: {
+            message: "Test add processed",
+            created: true,
+            test: fallbackRes?.data ? { _id: fallbackRes.data._id, Test_Name: fallbackRes.data.value_name } : null
+          }
+        };
+      }
       setNewTestName("");
       setNewTestReference("");
       setNewTestUnit("");
