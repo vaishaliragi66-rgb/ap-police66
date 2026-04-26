@@ -4,10 +4,8 @@ import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./InstitutesTheme.css";
-import { fetchDiagnosticPanels } from "../../utils/masterData_clean";
 
 const DiagnosisEntryForm = () => {
-  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
   const [testsMaster, setTestsMaster] = useState([]);
   const [testCategories, setTestCategories] = useState([]);
   const [doctorDiagnosis, setDoctorDiagnosis] = useState([]);
@@ -16,8 +14,6 @@ const DiagnosisEntryForm = () => {
   const [loading, setLoading] = useState(false);
   const [visitId, setVisitId] = useState(null);
   const [familyMembers, setFamilyMembers] = useState([]);
-  const [diagnosticPanels, setDiagnosticPanels] = useState([]);
-  const [selectedPanelId, setSelectedPanelId] = useState("");
   const navigate = useNavigate();
   const [selectedFamilyMember, setSelectedFamilyMember] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -42,12 +38,6 @@ const DiagnosisEntryForm = () => {
     if (/^https?:\/\//i.test(url)) return url;
     const base = String(BACKEND_URL || "").replace(/\/$/, "");
     return `${base}/${String(url).replace(/^\/+/, "")}`;
-  };
-  const resolveProfileImageUrl = (photoPath) => {
-    if (!photoPath) return FALLBACK_PROFILE_IMAGE;
-    if (/^https?:\/\//i.test(photoPath)) return photoPath;
-    const base = String(BACKEND_URL || "").replace(/\/$/, "");
-    return `${base}/${String(photoPath).replace(/^\/+/, "")}`;
   };
 
   const testsByCategory = useMemo(() => {
@@ -80,35 +70,9 @@ const DiagnosisEntryForm = () => {
     return grouped;
   }, [testsMaster]);
 
-  const knownTestNameKeys = useMemo(
-    () =>
-      new Set(
-        (testsMaster || [])
-          .map((test) => String(test?.Test_Name || test?.Display_Name || "").trim().toLowerCase())
-          .filter(Boolean)
-      ),
-    [testsMaster]
-  );
-
-  const blockedTestCategoryKeys = useMemo(
-    () =>
-      new Set(
-        ["Bilirubin - Direct", "Bilirubin - Indirect", "Bilirubin - Total"]
-          .map((name) => String(name || "").trim().toLowerCase())
-          .filter(Boolean)
-      ),
-    []
-  );
-
   const testCategoryOptions = useMemo(
-    () =>
-      Array.from(new Set([...(testCategories || []), ...Object.keys(testsByCategory || {})])).filter(
-        (category) => {
-          const key = String(category || "").trim().toLowerCase();
-          return !knownTestNameKeys.has(key) && !blockedTestCategoryKeys.has(key);
-        }
-      ),
-    [blockedTestCategoryKeys, knownTestNameKeys, testCategories, testsByCategory]
+    () => Array.from(new Set([...(testCategories || []), ...Object.keys(testsByCategory || {})])),
+    [testCategories, testsByCategory]
   );
 
   const formatDateDMY = (dateValue) => {
@@ -144,7 +108,6 @@ const fetchDoctorDiagnosis = async (visitId) => {
       setFormData((s) => ({ ...s, Institute_ID: localInstituteId }));
       fetchInstituteName(localInstituteId);
       fetchTests();
-      loadDiagnosticPanels();
     } else {
       console.warn("No instituteId in localStorage");
     }
@@ -154,13 +117,11 @@ const fetchDoctorDiagnosis = async (visitId) => {
   useEffect(() => {
     const onMasterUpdated = () => {
       fetchTests();
-      loadDiagnosticPanels();
     };
     window.addEventListener("master-data-updated", onMasterUpdated);
     const onStorageUpdated = (event) => {
       if (event.key === "master-data-updated-at") {
         fetchTests();
-        loadDiagnosticPanels();
       }
     };
     window.addEventListener("storage", onStorageUpdated);
@@ -178,9 +139,15 @@ const fetchDoctorDiagnosis = async (visitId) => {
       console.error("Error fetching institute name:", err);
     }
   };
+
+
+
   const fetchTests = async () => {
   try {
     const instituteId = localStorage.getItem("instituteId") || "";
+    const structRes = await axios
+      .get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: instituteId ? { instituteId } : {} })
+      .catch(() => ({ data: { categories: [], testsByCategory: {} } }));
     const categoriesRes = await axios
       .get(`${BACKEND_URL}/master-data-api/categories`)
       .catch(() => ({ data: [] }));
@@ -190,53 +157,51 @@ const fetchDoctorDiagnosis = async (visitId) => {
     const testsCategoryValues = testsCategory?._id
       ? await axios
           .get(`${BACKEND_URL}/master-data-api/values`, {
-            params: { categoryId: testsCategory._id, includeArchived: "false" }
+            params: { categoryId: testsCategory._id, includeInactive: true }
           })
           .catch(() => ({ data: [] }))
       : { data: [] };
 
-    const masterValues = Array.isArray(testsCategoryValues.data) ? testsCategoryValues.data : [];
-    const categoryNames = new Map();
-    const testsByCategoryMap = {};
-
-    masterValues.forEach((item) => {
-      const kind = String(item?.meta?.kind || "").trim();
-      const valueName = String(item?.value_name || item?.name || "").trim();
-      if (!valueName) return;
-
-      if (kind === "category") {
-        categoryNames.set(valueName.toLowerCase(), valueName);
-        if (!testsByCategoryMap[valueName]) testsByCategoryMap[valueName] = [];
-        return;
-      }
-
-      if (kind !== "test") return;
-      const category = String(item?.meta?.category || "").trim();
-      if (!category) return;
-      if (!testsByCategoryMap[category]) testsByCategoryMap[category] = [];
-      testsByCategoryMap[category].push({
-        _id: item?._id,
-        Test_Name: valueName,
-        Group: category,
-        Reference_Range: String(item?.meta?.reference || "").trim(),
-        Units: String(item?.meta?.unit || "").trim(),
-        Display_Name: valueName,
-        Raw_Test_Name: valueName,
-        meta: item?.meta || {}
+    const apiTestsByCategory = structRes.data?.testsByCategory && typeof structRes.data.testsByCategory === "object"
+      ? structRes.data.testsByCategory
+      : {};
+    const customValues = Array.isArray(testsCategoryValues.data) ? testsCategoryValues.data : [];
+    const customCategories = customValues
+      .filter((item) => item?.meta?.kind === "category")
+      .map((item) => String(item?.value_name || "").trim())
+      .filter(Boolean);
+    const customGrouped = {};
+    customValues
+      .filter((item) => item?.meta?.kind === "test")
+      .forEach((item) => {
+        const category = String(item?.meta?.category || "").trim();
+        const name = String(item?.value_name || "").trim();
+        if (!category || !name) return;
+        if (!customGrouped[category]) customGrouped[category] = [];
+        customGrouped[category].push({
+          _id: item?._id,
+          Test_Name: name,
+          Group: category,
+          Reference_Range: String(item?.meta?.reference || "").trim(),
+          Units: String(item?.meta?.unit || "").trim(),
+          Display_Name: name,
+          Raw_Test_Name: name
+        });
       });
-    });
-
     const mergedCategories = Array.from(
       new Set([
-        ...Array.from(categoryNames.values()),
-        ...Object.keys(testsByCategoryMap)
+        ...(Array.isArray(structRes.data?.categories) ? structRes.data.categories : []),
+        ...Object.keys(apiTestsByCategory),
+        ...customCategories,
+        ...Object.keys(customGrouped)
       ])
     );
     const mergedTestsByCategory = {};
     mergedCategories.forEach((category) => {
-      const rows = Array.isArray(testsByCategoryMap[category]) ? testsByCategoryMap[category] : [];
+      const apiRows = Array.isArray(apiTestsByCategory[category]) ? apiTestsByCategory[category] : [];
+      const customRows = Array.isArray(customGrouped[category]) ? customGrouped[category] : [];
       const seen = new Set();
-      mergedTestsByCategory[category] = rows
+      mergedTestsByCategory[category] = [...apiRows, ...customRows]
         .filter((test) => {
           const key = String(test?.Test_Name || test?.name || "").trim().toLowerCase();
           if (!key || seen.has(key)) return false;
@@ -250,8 +215,7 @@ const fetchDoctorDiagnosis = async (visitId) => {
           Reference_Range: String(test?.Reference_Range || test?.reference || "").trim(),
           Units: String(test?.Units || test?.unit || "").trim(),
           Display_Name: String(test?.Display_Name || test?.name || test?.Test_Name || "").trim(),
-          Raw_Test_Name: String(test?.Raw_Test_Name || test?.name || test?.Test_Name || "").trim(),
-          meta: test?.meta || {}
+          Raw_Test_Name: String(test?.Raw_Test_Name || test?.name || test?.Test_Name || "").trim()
         }))
         .filter((test) => test.Group && test.Test_Name);
     });
@@ -265,8 +229,7 @@ const fetchDoctorDiagnosis = async (visitId) => {
           Reference_Range: String(test?.Reference_Range || test?.reference || "").trim(),
           Units: String(test?.Units || test?.unit || "").trim(),
           Display_Name: String(test?.Display_Name || test?.name || test?.Test_Name || "").trim(),
-          Raw_Test_Name: String(test?.Raw_Test_Name || test?.name || test?.Test_Name || "").trim(),
-          meta: test?.meta || {}
+          Raw_Test_Name: String(test?.Raw_Test_Name || test?.name || test?.Test_Name || "").trim()
         }))
       )
       .filter((test) => test.Group && test.Test_Name);
@@ -279,48 +242,11 @@ const fetchDoctorDiagnosis = async (visitId) => {
   }
 };
 
-const loadDiagnosticPanels = async () => {
-  try {
-    const panels = await fetchDiagnosticPanels({ force: true, includeInactive: false });
-    setDiagnosticPanels(Array.isArray(panels) ? panels : []);
-  } catch (err) {
-    console.error("Error fetching diagnostic panels:", err);
-    setDiagnosticPanels([]);
-  }
-};
-
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
-const normalizeLooseText = (value) =>
-  normalizeText(value).replace(/[^a-z0-9]+/g, "");
-const getMasterAliases = (master = {}) => {
-  const aliases = Array.isArray(master?.meta?.aliases) ? master.meta.aliases : [];
-  return aliases.map((alias) => String(alias || "").trim()).filter(Boolean);
-};
 const normalizedEquals = (left, right) => {
   const a = normalizeText(left);
   const b = normalizeText(right);
   return Boolean(a) && Boolean(b) && a === b;
-};
-const normalizedLooseEquals = (left, right) => {
-  const a = normalizeLooseText(left);
-  const b = normalizeLooseText(right);
-  return Boolean(a) && Boolean(b) && a === b;
-};
-const masterMatchesText = (master = {}, value) => {
-  if (!value) return false;
-
-  const candidates = [
-    master?.Display_Name,
-    master?.Raw_Test_Name,
-    master?.Group,
-    master?.Test_Name,
-    ...getMasterAliases(master)
-  ].filter(Boolean);
-
-  return candidates.some(
-    (candidate) =>
-      normalizedEquals(candidate, value) || normalizedLooseEquals(candidate, value)
-  );
 };
 
 const findMasterTest = (test = {}) =>
@@ -337,8 +263,14 @@ const findMasterTest = (test = {}) =>
       candidateIds.length > 0 && candidateIds.includes(String(master._id));
 
     const matchesName =
-      masterMatchesText(master, test?.Test_Name) ||
-      masterMatchesText(master, test?.Group);
+      normalizedEquals(master.Display_Name, test?.Test_Name) ||
+      normalizedEquals(master.Display_Name, test?.Group) ||
+      normalizedEquals(master.Raw_Test_Name, test?.Test_Name) ||
+      normalizedEquals(master.Raw_Test_Name, test?.Group) ||
+      normalizedEquals(master.Group, test?.Test_Name) ||
+      normalizedEquals(master.Group, test?.Group) ||
+      normalizedEquals(master.Test_Name, test?.Test_Name) ||
+      normalizedEquals(master.Test_Name, test?.Group);
 
     return matchesId || matchesName;
   }) || null;
@@ -347,7 +279,7 @@ const getCategoryForTestName = (testName) => {
   if (!testName) return "";
 
   const match = (testsMaster || []).find((item) =>
-    masterMatchesText(item, testName)
+    normalizeText(item?.Test_Name || item?.Display_Name) === normalizeText(testName)
   );
 
   return match?.Group || "";
@@ -506,65 +438,6 @@ const createEmptyTest = () => ({
   ReportFile: null
 });
 
-const mapPanelTestToFormRow = (panelTest = {}, panel = {}) => ({
-  Category: String(panel?.category_name || panelTest?.category_name || panelTest?.Group || "").trim(),
-  Test_ID: String(panelTest?.test_id || panelTest?._id || "").trim(),
-  Test_Name: String(panelTest?.test_name || panelTest?.name || "").trim(),
-  Result_Value: "",
-  Reference_Range: String(panelTest?.reference || "").trim(),
-  Units: String(panelTest?.unit || "").trim(),
-  ReportFile: null
-});
-
-const buildPanelTestSignature = (panelTest = {}) => {
-  const testId = String(panelTest?.test_id || panelTest?._id || "").trim().toLowerCase();
-  const testName = String(panelTest?.test_name || panelTest?.name || "").trim().toLowerCase();
-  return testId || testName;
-};
-
-const isDoctorDiagnosisPanel = (order = {}) => {
-  const tests = Array.isArray(order?.tests) ? order.tests : [];
-  if (!tests.length || !diagnosticPanels.length) return false;
-
-  const orderSignatures = new Set(
-    tests
-      .map((test) => buildPanelTestSignature(test))
-      .filter(Boolean)
-  );
-
-  if (!orderSignatures.size) return false;
-
-  return diagnosticPanels.some((panel) => {
-    const panelSignatures = (panel?.tests || [])
-      .map((panelTest) => buildPanelTestSignature(panelTest))
-      .filter(Boolean);
-
-    if (!panelSignatures.length) return false;
-    if (panelSignatures.length !== orderSignatures.size) return false;
-
-    return panelSignatures.every((signature) => orderSignatures.has(signature));
-  });
-};
-
-const expandSelectedPanel = (panelId) => {
-  const panel = (diagnosticPanels || []).find((item) => String(item?._id || item?.id || "") === String(panelId || ""));
-
-  if (!panel) {
-    setSelectedPanelId("");
-    setFormData((prev) => ({
-      ...prev,
-      Tests: [createEmptyTest()]
-    }));
-    return;
-  }
-
-  setSelectedPanelId(String(panel._id || panel.id || ""));
-  setFormData((prev) => ({
-    ...prev,
-    Tests: (panel.tests || []).map((panelTest) => mapPanelTestToFormRow(panelTest, panel))
-  }));
-};
-
 const handleTestChange = (index, field, value) => {
   setFormData(prev => {
 
@@ -650,16 +523,6 @@ const addTest = () =>
 
   e.preventDefault();
 
-  if (!formData.Employee_ID) {
-    alert("Please select a patient first");
-    return;
-  }
-
-  if (formData.IsFamilyMember && !formData.FamilyMember_ID) {
-    alert("Please select a family member");
-    return;
-  }
-
   const fd = new FormData();
 
   fd.append("Institute_ID", formData.Institute_ID);
@@ -669,13 +532,7 @@ const addTest = () =>
   fd.append("Diagnosis_Notes", formData.Diagnosis_Notes || "");
   fd.append("visit_id", visitId || "");
 
-  const normalizedTests = formData.Tests.map((test) => ({
-    ...test,
-    test_id: test?.test_id || test?.Test_ID || "",
-    test_name: test?.test_name || test?.Test_Name || ""
-  }));
-
-  fd.append("Tests", JSON.stringify(normalizedTests));
+  fd.append("Tests", JSON.stringify(formData.Tests));
 
   formData.Tests.forEach((t) => {
 
@@ -931,11 +788,9 @@ const fetchPastRecords = async () => {
                         FamilyMember_ID: visit?.IsFamilyMember
                           ? visit.FamilyMember?._id
                           : "",
-                        Panel_ID: "",
                         Tests: [],
                         Diagnosis_Notes: ""
                       }));
-                      setSelectedPanelId("");
 
                       // 🔥 THIS IS THE IMPORTANT PART
                       if (vId) {
@@ -947,35 +802,10 @@ const fetchPastRecords = async () => {
                   />
                 </div>
 
-                {/* Selected Patient Info
+                {/* Selected Patient Info */}
                 {selectedEmployee && (
                   <div className="alert alert-info mb-4">
-                    <div className="d-flex gap-3 align-items-start">
-                      <img
-                        src={resolveProfileImageUrl(
-                          formData.IsFamilyMember
-                            ? selectedFamilyMember?.Photo
-                            : selectedEmployee?.Photo
-                        )}
-                        alt="Patient"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
-                        }}
-                        style={{
-                          width: "120px",
-                          height: "120px",
-                          borderRadius: "12px",
-                          objectFit: "cover",
-                          objectPosition: "center",
-                          border: "1px solid rgba(191,219,254,0.9)",
-                          boxShadow: "0 8px 18px rgba(15,23,42,0.12)",
-                          background: "rgba(255,255,255,0.92)",
-                          flexShrink: 0
-                        }}
-                      />
-                      <div className="w-100">
-                        <div className="row">
+                    <div className="row">
                       <div className="col-md-6">
                         <strong>👨 Employee:</strong> {selectedEmployee.Name}
                       </div>
@@ -998,8 +828,6 @@ const fetchPastRecords = async () => {
                         </div>
                       </div>
                     )}
-                        </div>
-                      </div>
                     <div className="mt-3">
                       <button
                         type="button"
@@ -1010,137 +838,23 @@ const fetchPastRecords = async () => {
                       </button>
                     </div>
                   </div>
-                )} */}
-                {selectedEmployee && (
-  <div
-    className="mb-4 p-3"
-    style={{
-      borderRadius: "16px",
-      background: "linear-gradient(135deg, #e0f2fe, #f8fafc)",
-      border: "1px solid #bfdbfe",
-      boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-    }}
-  >
-    <div className="d-flex gap-4 align-items-center">
-      
-      {/* Profile Image */}
-      <img
-        src={resolveProfileImageUrl(
-          formData.IsFamilyMember
-            ? selectedFamilyMember?.Photo
-            : selectedEmployee?.Photo
-        )}
-        alt="Patient"
-        onError={(e) => {
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
-        }}
-        style={{
-          width: "110px",
-          height: "110px",
-          borderRadius: "14px",
-          objectFit: "cover",
-          border: "2px solid #93c5fd",
-          boxShadow: "0 6px 14px rgba(0,0,0,0.1)",
-        }}
-      />
-
-      {/* Info Section */}
-      <div className="flex-grow-1">
-        
-        {/* Top Row */}
-        <div className="d-flex justify-content-between align-items-center mb-2">
-          <h5 className="mb-0 fw-semibold">
-            {selectedEmployee.Name}
-          </h5>
-
-          {tokenNumber && (
-            <span
-              style={{
-                background: "#2563eb",
-                color: "white",
-                padding: "4px 10px",
-                borderRadius: "999px",
-                fontSize: "0.85rem",
-                fontWeight: "500",
-              }}
-            >
-              Token : {tokenNumber}
-            </span>
-          )}
-        </div>
-
-        {/* Details */}
-        <div className="text-muted small mb-2">
-          <span className="me-3">
-            <strong>ID:</strong> {selectedEmployee.ABS_NO}
-          </span>
-        </div>
-
-        {/* Family Member */}
-        {formData.IsFamilyMember && selectedFamilyMember && (
-          <div
-            style={{
-              background: "#f1f5f9",
-              padding: "8px 12px",
-              borderRadius: "10px",
-              fontSize: "0.9rem",
-              marginTop: "6px",
-            }}
-          >
-            👨‍👩‍👧 <strong>{selectedFamilyMember.Name}</strong>  
-            <span className="ms-2 text-muted">
-              ({selectedFamilyMember.Relationship})
-            </span>
-          </div>
-        )}
-
-        {/* Button */}
-        <div className="mt-3">
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={fetchPastRecords}
-            style={{
-              background: "#2563eb",
-              color: "white",
-              borderRadius: "8px",
-              padding: "6px 14px",
-              fontWeight: "500",
-            }}
-          >
-            📄 View History
-          </button>
-        </div>
-
-      </div>
-    </div>
-  </div>
-)}
+                )}
 
                 {/* Doctor Diagnosis Reference */}
                 {filteredDoctorDiagnosis.length > 0 && (
                   <div className="alert alert-warning mb-4">
                     <h6 className="alert-heading">👨‍⚕️ Doctor Diagnosis (Reference)</h6>
-                    {(() => {
-                      const bulkLabel = filteredDoctorDiagnosis.some(isDoctorDiagnosisPanel)
-                        ? "➕ Add Panel Below"
-                        : "➕ Add All Prescribed Tests Below";
-
-                      return (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary mb-3"
-                          onClick={() =>
-                            mergeDoctorTestsIntoForm(
-                              filteredDoctorDiagnosis.flatMap((order) => order.tests || [])
-                            )
-                          }
-                        >
-                          {bulkLabel}
-                        </button>
-                      );
-                    })()}
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary mb-3"
+                      onClick={() =>
+                        mergeDoctorTestsIntoForm(
+                          filteredDoctorDiagnosis.flatMap((order) => order.tests || [])
+                        )
+                      }
+                    >
+                      ➕ Add All Prescribed Tests Below
+                    </button>
 
                     {filteredDoctorDiagnosis.map((d, i) => (
                       <div key={i} className="mt-2">
@@ -1191,46 +905,6 @@ const fetchPastRecords = async () => {
                     🧪 Tests
                   </h6>
 
-                  <div className="row g-2 mb-3">
-                    <div className="col-md-12">
-                      <label className="form-label fw-semibold">Select Panel</label>
-                      <select
-                        className="form-select"
-                        value={selectedPanelId}
-                        onChange={(e) => {
-                          const nextPanelId = e.target.value;
-                          if (!nextPanelId) {
-                            setSelectedPanelId("");
-                            setFormData((prev) => ({
-                              ...prev,
-                              Tests: [createEmptyTest()]
-                            }));
-                            return;
-                          }
-                          expandSelectedPanel(nextPanelId);
-                        }}
-                      >
-                        <option value="">No panel selected</option>
-                        {(diagnosticPanels || []).map((panel) => (
-                          <option key={panel._id || panel.id} value={panel._id || panel.id}>
-                            {panel.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {selectedPanelId ? (
-                    <div className="border rounded p-3 bg-light mb-3">
-                      <div className="fw-semibold mb-2">Panel tests will be stored as individual tests</div>
-                      {(formData.Tests || []).map((test, index) => (
-                        <div key={`${test.Test_ID || test.Test_Name || index}`} className="small py-1">
-                          {index + 1}. {test.Test_Name}
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-
                   {testsMaster.length === 0 ? (
                     <div className="alert alert-warning">
                       <strong>⚠️ No tests available</strong>
@@ -1253,7 +927,7 @@ const fetchPastRecords = async () => {
                         >
                           <div className="d-flex justify-content-between align-items-center mb-3">
                             <h6 className="mb-0">Test #{i + 1}</h6>
-                            {formData.Tests.length > 1 && !selectedPanelId && (
+                            {formData.Tests.length > 1 && (
                               <button
                                 type="button"
                                 className="btn btn-outline-danger btn-sm"
@@ -1270,7 +944,6 @@ const fetchPastRecords = async () => {
                                 <select
                                   className="form-select"
                                   value={t.Category || ""}
-                                  disabled={Boolean(selectedPanelId)}
                                   onChange={e => handleTestChange(i, "Category", e.target.value)}
                                 >
                                   <option value="">Select Category</option>
@@ -1297,7 +970,7 @@ const fetchPastRecords = async () => {
                                   className="form-select"
                                   value={t.Test_ID || t.Test_Name || ""}
                                   onChange={e => handleTestChange(i, "Test_ID", e.target.value)}
-                                  disabled={Boolean(selectedPanelId) || (!t.Category && !t.Test_Name)}
+                                  disabled={!t.Category && !t.Test_Name}
                                 >
                                   <option value="">Select Test</option>
                                   {t.Test_Name && !hasSelectedOption && (
@@ -1377,7 +1050,6 @@ const fetchPastRecords = async () => {
                         type="button"
                         className="btn btn-outline-success me-2"
                         onClick={addTest}
-                        disabled={Boolean(selectedPanelId)}
                       >
                         ➕ Add Another Test
                       </button>

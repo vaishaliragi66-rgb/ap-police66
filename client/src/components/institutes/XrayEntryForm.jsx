@@ -21,7 +21,6 @@ const normalizeFilmSize = (value) => {
 const isValidFilmSize = (value) => /^\d+X\d+$/.test(String(value || "").trim());
 
 const XrayEntryForm = () => {
-  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
   const [instituteName, setInstituteName] = useState("");
   const [visitId, setVisitId] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -56,12 +55,6 @@ const XrayEntryForm = () => {
     if (/^https?:\/\//i.test(url)) return url;
     const base = String(BACKEND_URL || "").replace(/\/$/, "");
     return `${base}/${String(url).replace(/^\/+/, "")}`;
-  };
-  const resolveProfileImageUrl = (photoPath) => {
-    if (!photoPath) return FALLBACK_PROFILE_IMAGE;
-    if (/^https?:\/\//i.test(photoPath)) return photoPath;
-    const base = String(BACKEND_URL || "").replace(/\/$/, "");
-    return `${base}/${String(photoPath).replace(/^\/+/, "")}`;
   };
 
   const [formData, setFormData] = useState({
@@ -573,99 +566,38 @@ alert("✅ Xray saved");
 
                 {/* Selected Patient Info */}
                 {selectedEmployee && (
-                  <div
-                    className="mb-4 p-3"
-                    style={{
-                      borderRadius: "16px",
-                      background: "linear-gradient(135deg, #e0f2fe, #f8fafc)",
-                      border: "1px solid #bfdbfe",
-                      boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-                    }}
-                  >
-                    <div className="d-flex gap-4 align-items-center">
-                      <img
-                        src={resolveProfileImageUrl(
-                          formData.IsFamilyMember
-                            ? selectedFamilyMember?.Photo
-                            : selectedEmployee?.Photo
-                        )}
-                        alt="Patient"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
-                        }}
-                        style={{
-                          width: "110px",
-                          height: "110px",
-                          borderRadius: "14px",
-                          objectFit: "cover",
-                          border: "2px solid #93c5fd",
-                          boxShadow: "0 6px 14px rgba(0,0,0,0.1)",
-                        }}
-                      />
-
-                      <div className="flex-grow-1">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <h5 className="mb-0 fw-semibold">
-                            {selectedEmployee.Name}
-                          </h5>
-
-                          {tokenNumber && (
-                            <span
-                              style={{
-                                background: "#2563eb",
-                                color: "white",
-                                padding: "4px 10px",
-                                borderRadius: "999px",
-                                fontSize: "0.85rem",
-                                fontWeight: "500",
-                              }}
-                            >
-                              Token : {tokenNumber}
-                            </span>
-                          )}
+                  <div className="alert alert-info mb-4">
+                    <div className="row">
+                      <div className="col-md-6">
+                        <strong>👨 Employee:</strong> {selectedEmployee.Name}
+                      </div>
+                      <div className="col-md-3">
+                        <strong>ID:</strong> {selectedEmployee.ABS_NO}
+                      </div>
+                      {tokenNumber && (
+                        <div className="col-md-3">
+                          <strong>🎫 Token:</strong> {tokenNumber}
                         </div>
-
-                        <div className="text-muted small mb-2">
-                          <span className="me-3">
-                            <strong>ID:</strong> {selectedEmployee.ABS_NO}
-                          </span>
+                      )}
+                    </div>
+                    {formData.IsFamilyMember && selectedFamilyMember && (
+                      <div className="row mt-2">
+                        <div className="col-md-6">
+                          <strong>👨‍👩‍👧 Family Member:</strong> {selectedFamilyMember.Name}
                         </div>
-
-                        {formData.IsFamilyMember && selectedFamilyMember && (
-                          <div
-                            style={{
-                              background: "#f1f5f9",
-                              padding: "8px 12px",
-                              borderRadius: "10px",
-                              fontSize: "0.9rem",
-                              marginTop: "6px",
-                            }}
-                          >
-                            👨‍👩‍👧 <strong>{selectedFamilyMember.Name}</strong>
-                            <span className="ms-2 text-muted">
-                              ({selectedFamilyMember.Relationship})
-                            </span>
-                          </div>
-                        )}
-
-                        <div className="mt-3">
-                          <button
-                            type="button"
-                            className="btn btn-sm"
-                            onClick={fetchPastRecords}
-                            style={{
-                              background: "#2563eb",
-                              color: "white",
-                              borderRadius: "8px",
-                              padding: "6px 14px",
-                              fontWeight: "500",
-                            }}
-                          >
-                            📄 View History
-                          </button>
+                        <div className="col-md-6">
+                          <strong>Relation:</strong> {selectedFamilyMember.Relationship}
                         </div>
                       </div>
+                    )}
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={fetchPastRecords}
+                      >
+                        📄 View History
+                      </button>
                     </div>
                   </div>
                 )}
