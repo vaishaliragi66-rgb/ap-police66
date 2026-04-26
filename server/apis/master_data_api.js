@@ -737,6 +737,8 @@ router.post("/values", verifyToken, requireInstituteAdmin, async (req, res) => {
     const instituteId = req.user.instituteId;
     const categoryId = String(req.body.category_id || "").trim();
     const valueName = String(req.body.value_name || "").trim();
+    const meta = req.body.meta && typeof req.body.meta === "object" ? req.body.meta : {};
+    const isArchivedRequest = Boolean(meta.archived);
 
     if (!mongoose.Types.ObjectId.isValid(categoryId)) {
       return res.status(400).json({ message: "Valid category_id is required" });
@@ -756,23 +758,28 @@ router.post("/values", verifyToken, requireInstituteAdmin, async (req, res) => {
 
     const normalizedValue = normalize(valueName);
 
-    const duplicate = await MasterValue.findOne({
-      Institute_ID: instituteId,
-      category_id: categoryId,
-      normalized_value: normalizedValue
-    });
+    if (!isArchivedRequest) {
+      const duplicate = await MasterValue.findOne({
+        Institute_ID: instituteId,
+        category_id: categoryId,
+        normalized_value: normalizedValue,
+        "meta.archived": { $ne: true }
+      });
 
-    if (duplicate) {
-      return res.status(409).json({ message: "Value already exists in this category" });
+      if (duplicate) {
+        return res.status(409).json({ message: "Value already exists in this category" });
+      }
     }
 
     const created = await MasterValue.create({
       Institute_ID: instituteId,
       category_id: categoryId,
       value_name: valueName,
-      normalized_value: normalizedValue,
+      normalized_value: isArchivedRequest
+        ? `${normalizedValue}__archived__${new mongoose.Types.ObjectId().toString()}`
+        : normalizedValue,
       status: req.body.status === "Inactive" ? "Inactive" : "Active",
-      meta: req.body.meta || {}
+      meta
     });
 
     const populated = await MasterValue.findById(created._id).populate("category_id", "category_name");
@@ -802,7 +809,8 @@ router.put("/values/:id", verifyToken, requireInstituteAdmin, async (req, res) =
         _id: { $ne: id },
         Institute_ID: instituteId,
         category_id: valueDoc.category_id,
-        normalized_value: normalizedValue
+        normalized_value: normalizedValue,
+        "meta.archived": { $ne: true }
       });
       if (duplicate) {
         return res.status(409).json({ message: "Value already exists in this category" });

@@ -400,7 +400,8 @@ const ensureTestMasterValues = async (instituteId) => {
         Institute_ID: instituteId,
         category_id: category._id,
         "meta.kind": "test",
-        normalized_value: normalize(testName)
+        normalized_value: normalize(testName),
+        "meta.archived": { $ne: true }
       });
 
       if (exactMatch) {
@@ -441,7 +442,8 @@ const listMasterTests = async (instituteId, { includeInactive = false } = {}) =>
   const query = {
     Institute_ID: instituteId,
     category_id: category._id,
-    "meta.kind": "test"
+    "meta.kind": "test",
+    "meta.archived": { $ne: true }
   };
   if (!includeInactive) {
     query.status = "Active";
@@ -471,7 +473,8 @@ const findMasterTests = async (instituteId, { ids = [], names = [], includeInact
   const query = {
     Institute_ID: instituteId,
     category_id: category._id,
-    "meta.kind": "test"
+    "meta.kind": "test",
+    "meta.archived": { $ne: true }
   };
 
   if (!includeInactive) {
@@ -507,6 +510,7 @@ const findMasterTestByLooseName = async (instituteId, testName) => {
     Institute_ID: instituteId,
     category_id: category._id,
     "meta.kind": "test",
+    "meta.archived": { $ne: true },
     normalized_value: { $regex: safeName, $options: "i" }
   })
     .limit(2)

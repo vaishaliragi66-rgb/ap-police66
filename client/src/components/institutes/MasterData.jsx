@@ -342,16 +342,27 @@ const MasterData = () => {
     const staticStructure = getStaticTestsStructure();
     try {
       const instituteId = localStorage.getItem("instituteId") || "";
+      const testsCategoryId =
+        categories.find((item) => normalizeCategoryName(item?.category_name) === "Tests")?._id || selectedCategoryId || "";
       const res = await axios.get(`${BACKEND_URL}/master-data-api/tests-structure`, {
         params: instituteId ? { instituteId } : {}
       });
-      const valuesRes = selectedCategoryId
-        ? await axios.get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+      const valuesRes = testsCategoryId
+        ? await axios.get(`${BACKEND_URL}/master-data-api/values`, {
+            params: { categoryId: testsCategoryId, includeArchived: "true" }
+          })
         : { data: [] };
 
       const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
       const testMap = {};
       const testCategoryMap = {};
+      const archivedTestKeys = new Set();
+      masterValues
+        .filter((item) => item?.meta?.kind === "test" && isArchivedMasterRow(item))
+        .forEach((item) => {
+          const key = makePairKey(item?.meta?.category, item?.value_name);
+          if (key !== "::") archivedTestKeys.add(key);
+        });
       masterValues
         .filter((item) => item?.meta?.kind === "category" && !isArchivedMasterRow(item))
         .forEach((item) => {
@@ -394,7 +405,9 @@ const MasterData = () => {
           (key) => normalizeCategoryKey(key) === normalizeCategoryKey(category)
         );
         const rows = matchedKey ? data.testsByCategory[matchedKey] || [] : [];
-        testsByCategory[category] = Array.isArray(rows) ? rows : [];
+        testsByCategory[category] = Array.isArray(rows)
+          ? rows.filter((row) => !archivedTestKeys.has(makePairKey(category, row?.name)))
+          : [];
       });
 
       const withMeta = {
@@ -443,15 +456,26 @@ const MasterData = () => {
         throw err;
       }
 
-      const valuesRes = selectedCategoryId
+      const testsCategoryId =
+        categories.find((item) => normalizeCategoryName(item?.category_name) === "Tests")?._id || selectedCategoryId || "";
+      const valuesRes = testsCategoryId
         ? await axios
-            .get(`${BACKEND_URL}/master-data-api/values`, { params: { categoryId: selectedCategoryId } })
+            .get(`${BACKEND_URL}/master-data-api/values`, {
+              params: { categoryId: testsCategoryId, includeArchived: "true" }
+            })
             .catch(() => ({ data: [] }))
         : { data: [] };
 
       const masterValues = Array.isArray(valuesRes.data) ? valuesRes.data : [];
       const testMap = {};
       const testCategoryMap = {};
+      const archivedTestKeys = new Set();
+      masterValues
+        .filter((item) => item?.meta?.kind === "test" && isArchivedMasterRow(item))
+        .forEach((item) => {
+          const key = makePairKey(item?.meta?.category, item?.value_name);
+          if (key !== "::") archivedTestKeys.add(key);
+        });
       masterValues
         .filter((item) => item?.meta?.kind === "category" && !isArchivedMasterRow(item))
         .forEach((item) => {
@@ -503,6 +527,7 @@ const MasterData = () => {
             const key = String(item?.name || "").trim().toLowerCase();
             if (!key || seen.has(key)) return false;
             seen.add(key);
+            if (archivedTestKeys.has(makePairKey(category, item?.name))) return false;
             return true;
           })
           .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
@@ -1252,7 +1277,7 @@ const MasterData = () => {
         await axios.delete(`${BACKEND_URL}/master-data-api/values/${item.masterValue._id}`, getInstituteAuthConfig());
         setMessage("Value deleted successfully");
       } else {
-        // For built-in Tests, create an inactive persisted master-value to override the built-in
+        // For built-in Tests, persist an archived tombstone so the static row stays hidden.
         if (selectedCategory?.category_name === "Tests") {
           const payload = {
             category_id: selectedCategoryId,
@@ -1262,11 +1287,12 @@ const MasterData = () => {
               kind: "test",
               category: selectedTestCategory || item?.category || "",
               reference: item?.reference || "",
-              unit: item?.unit || ""
+              unit: item?.unit || "",
+              archived: true
             }
           };
           await axios.post(`${BACKEND_URL}/master-data-api/values`, payload, getInstituteAuthConfig());
-          setMessage("Built-in test marked inactive (persisted)");
+          setMessage("Built-in test deleted");
         } else {
           setMessage("Built-in items cannot be deleted directly");
         }
