@@ -39,6 +39,15 @@ const upload = multer({
   },
 });
 
+const profilePhotoUploadSingle = (req, res, next) => {
+  upload.single("Photo")(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+};
+
 const normalizeAbhaNumber = (value) => String(value || "").trim();
 const isValidAbhaNumber = (value) => !value || /^\d{14}$/.test(value);
 
@@ -168,14 +177,16 @@ FamilyApp.post(
 // GET FAMILY MEMBERS FOR AN EMPLOYEE
 FamilyApp.get("/family/:employeeId", async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.employeeId)
-      .populate("FamilyMembers");
+    const { employeeId } = req.params;
+    const employee = await Employee.findById(employeeId).select("_id");
 
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    res.json(employee.FamilyMembers); // ✅ matched by _id
+    // Query by Employee reference to avoid misses when Employee.FamilyMembers is stale.
+    const members = await FamilyMember.find({ Employee: employeeId }).sort({ createdAt: -1, _id: -1 });
+    res.json(members);
   } catch (err) {
     res.status(500).json({
       message: "Server error",
@@ -255,5 +266,51 @@ FamilyApp.put("/update/:id", expressAsyncHandler(async (req, res) => {
     });
   }
 }));
+
+FamilyApp.put(
+  "/upload-photo/:id",
+  profilePhotoUploadSingle,
+  expressAsyncHandler(async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!req.file) {
+        return res.status(400).json({ message: "Family member photo is required" });
+      }
+
+      const member = await FamilyMember.findById(id);
+      if (!member) {
+        if (req.file && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(404).json({ message: "Family member not found" });
+      }
+
+      if (member.Photo) {
+        const safeRelPath = member.Photo.replace(/^[\\/]/, "");
+        const oldPath = path.join(__dirname, "..", safeRelPath);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+
+      member.Photo = `/uploads/family-pics/${req.file.filename}`;
+      await member.save();
+
+      res.status(200).json({
+        message: "Family member photo uploaded successfully",
+        member
+      });
+    } catch (err) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({
+        message: "Failed to upload family member photo",
+        error: err.message
+      });
+    }
+  })
+);
 
 module.exports = FamilyApp;

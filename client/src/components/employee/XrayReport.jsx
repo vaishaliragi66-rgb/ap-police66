@@ -8,6 +8,7 @@ import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
 import DateRangeFilter from "../common/DateRangeFilter";
 import PDFDownloadButton from "../common/PDFDownloadButton";
+import XrayReportPreview from "../institutes/XrayReportPreview";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const XrayReport = () => {
@@ -106,6 +107,35 @@ const XrayReport = () => {
     });
 
     return rows.sort((a, b) => new Date(b.Xrays[0].Timestamp) - new Date(a.Xrays[0].Timestamp));
+  };
+
+  const isXrayImageFile = (file = {}) => {
+    const mime = String(file?.mimetype || file?.mimeType || "").toLowerCase();
+    if (mime.startsWith("image/")) return true;
+    const url = String(file?.url || file?.path || "");
+    return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(url);
+  };
+
+  const getXrayImageUrl = (report = {}) => {
+    const xrays = Array.isArray(report?.Xrays) ? report.Xrays : [];
+    for (const item of xrays) {
+      const files = Array.isArray(item?.Reports) ? item.Reports : [];
+      for (const file of files) {
+        if (!isXrayImageFile(file)) continue;
+        const url = resolveUrl(file?.url || file?.path || "");
+        if (url) return url;
+      }
+    }
+    return "";
+  };
+
+  const openXrayImageView = (report) => {
+    const url = getXrayImageUrl(report);
+    if (!url) {
+      alert("No x-ray image available");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const downloadXrayReport = (report) => {
@@ -340,9 +370,9 @@ const XrayReport = () => {
       </div>
 
       {showModal && selectedReport && (
-        <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div className="modal-content border-0">
+        <div className="modal fade show d-block" style={{ background: "rgba(15,23,42,0.28)" }}>
+          <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content">
               <div
                 className="modal-header text-white"
                 style={{ background: "linear-gradient(135deg, #2563EB, #38BDF8)", borderBottom: "none", borderRadius: "24px 24px 0 0" }}
@@ -351,103 +381,22 @@ const XrayReport = () => {
                 <button className="btn-close btn-close-white" onClick={() => setShowModal(false)} />
               </div>
 
-              <div className="modal-body">
-                <p><strong>Employee:</strong> {selectedReport.Employee?.Name}</p>
-                <p><strong>Report For:</strong> {selectedReport.IsFamilyMember ? `${selectedReport.FamilyMember?.Name} (${selectedReport.FamilyMember?.Relationship})` : 'Self'}</p>
-                <p><strong>Institute:</strong> {selectedReport.Institute?.Institute_Name}</p>
-                <p><strong>Test Date:</strong> {formatDate(selectedReport)}</p>
-
-                <hr />
-
-                <table className="table table-bordered">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Type</th>
-                      <th>Body Part</th>
-                      <th>Side</th>
-                      <th>View</th>
-                      <th>Size</th>
-                      <th>Findings</th>
-                      <th>Impression</th>
-                      <th>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedReport.Xrays.map((x, i) => (
-                      <tr key={i}>
-                        <td>{x.Xray_Type || '-'}</td>
-                        <td>{x.Body_Part || '-'}</td>
-                        <td>{x.Side || '-'}</td>
-                        <td>{x.View || '-'}</td>
-                        <td>{x.Film_Size || '-'}</td>
-                        <td>{x.Findings || '-'}</td>
-                        <td>{x.Impression || '-'}</td>
-                        <td>{x.Remarks || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Per-Xray reports grouped under the table */}
-                {selectedReport.Xrays && selectedReport.Xrays.some(x => x?.Reports && x.Reports.length > 0) && (
-                  <div className="mt-3">
-                    <strong>Uploaded Reports:</strong>
-                    {selectedReport.Xrays.map((x, idx) => (
-                      x?.Reports && x.Reports.length > 0 ? (
-                        <div key={idx} className="mt-2">
-                          <div className="fw-semibold">X‑ray #{idx + 1}: {x.Xray_Type || x.Body_Part || 'X‑ray'}</div>
-                          <ul className="list-unstyled mt-1 mb-0">
-                            {x.Reports.map((r, j) => {
-                              const url = resolveUrl(r?.url);
-                              return (
-                                <li key={j} className="mb-1">
-                                  {url ? (
-                                    <>
-                                      <a href={url} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
-                                      <a href={url} download className="btn btn-sm btn-outline-secondary">Download</a>
-                                    </>
-                                  ) : (
-                                    <span className="text-muted">{r?.originalname || r?.filename}</span>
-                                  )}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      ) : null
-                    ))}
-                  </div>
-                )}
-
-                {/* Record-level fallback reports */}
-                {selectedReport?.Reports && selectedReport.Reports.length > 0 && (
-                  <div className="mt-3">
-                    <strong>Uploaded Reports (record-level):</strong>
-                    <ul className="list-unstyled mt-2 mb-0">
-                      {selectedReport.Reports.map((r, idx) => {
-                        const url = resolveUrl(r?.url);
-                        return (
-                          <li key={idx} className="mb-1">
-                            {url ? (
-                              <>
-                                <a href={url} target="_blank" rel="noreferrer" className="me-2">{r?.originalname || r?.filename}</a>
-                                <a href={url} download className="btn btn-sm btn-outline-secondary">Download</a>
-                              </>
-                            ) : (
-                              <span className="text-muted">{r?.originalname || r?.filename}</span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
-
+              <div className="modal-body p-0">
+                <div className="d-flex justify-content-center p-3 overflow-auto">
+                  <XrayReportPreview reportData={selectedReport} resolveUrl={resolveUrl} />
+                </div>
               </div>
 
               <div className="modal-footer">
-                <button className="btn" onClick={() => setShowModal(false)} style={{ borderRadius: "14px", padding: "10px 16px", background: "rgba(255,255,255,0.84)", border: "1px solid rgba(191,219,254,0.82)", color: "#2563EB", fontWeight: 600 }}>Close</button>
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={() => openXrayImageView(selectedReport)}
+                  disabled={!getXrayImageUrl(selectedReport)}
+                >
+                  View Image
+                </button>
                 <button className="btn" onClick={() => downloadXrayReport(selectedReport)} style={{ borderRadius: "14px", padding: "10px 16px", background: "linear-gradient(135deg, #2563EB, #38BDF8)", border: "none", color: "#fff", fontWeight: 600, boxShadow: "0 14px 24px rgba(96,165,250,0.22)" }}>Download PDF</button>
+                <button className="btn" onClick={() => setShowModal(false)} style={{ borderRadius: "14px", padding: "10px 16px", background: "rgba(255,255,255,0.84)", border: "1px solid rgba(191,219,254,0.82)", color: "#2563EB", fontWeight: 600 }}>Close</button>
               </div>
             </div>
           </div>

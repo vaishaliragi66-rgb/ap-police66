@@ -6,8 +6,9 @@ import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_cle
 
 const EmployeeProfile = () => {
   const navigate = useNavigate();
-  const employeeId = localStorage.getItem("employeeId");
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const employeeObjectId = localStorage.getItem("employeeObjectId");
+  const employeeId = employeeObjectId || localStorage.getItem("employeeId");
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
 
   const [employee, setEmployee] = useState(null);
   const [family, setFamily] = useState([]);
@@ -19,8 +20,12 @@ const EmployeeProfile = () => {
   const [profilePhotoFile, setProfilePhotoFile] = useState(null);
   const [profilePhotoUploading, setProfilePhotoUploading] = useState(false);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState("");
+  const [familyPhotoFiles, setFamilyPhotoFiles] = useState({});
+  const [familyPhotoPreviews, setFamilyPhotoPreviews] = useState({});
+  const [familyPhotoUploadingId, setFamilyPhotoUploadingId] = useState("");
   const [masterMap, setMasterMap] = useState({});
   const profilePhotoInputRef = useRef(null);
+  const familyPhotoInputRefs = useRef({});
 
   const designationOptions = getMasterOptions(masterMap, "Designations");
   const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
@@ -33,11 +38,15 @@ const EmployeeProfile = () => {
       .then((res) => {
         setEmployee(res.data);
         setEditData(res.data);
+      })
+      .catch(() => {
+        setEmployee(null);
       });
 
     axios
       .get(`${BACKEND_URL}/family-api/family/${employeeId}`)
-      .then((res) => setFamily(res.data || []));
+      .then((res) => setFamily(res.data || []))
+      .catch(() => setFamily([]));
   }, [employeeId, BACKEND_URL]);
 
   useEffect(() => {
@@ -80,6 +89,13 @@ const EmployeeProfile = () => {
         setEmployee(res.data.employee);
         setProfilePhotoFile(null);
         setProfilePhotoPreview("");
+        setFamilyPhotoFiles({});
+        setFamilyPhotoPreviews((prev) => {
+          Object.values(prev).forEach((url) => {
+            if (url) URL.revokeObjectURL(url);
+          });
+          return {};
+        });
         setIsEditing(false);
         alert("Profile updated successfully");
       })
@@ -158,6 +174,13 @@ const EmployeeProfile = () => {
     setEditData(employee);
     setProfilePhotoFile(null);
     setProfilePhotoPreview("");
+    setFamilyPhotoFiles({});
+    setFamilyPhotoPreviews((prev) => {
+      Object.values(prev).forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
+      return {};
+    });
     setIsEditing(false);
   };
 
@@ -170,6 +193,95 @@ const EmployeeProfile = () => {
 
     setProfilePhotoFile(file);
     setProfilePhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleFamilyPhotoFileChange = (memberId, file) => {
+    if (!memberId) return;
+
+    if (!file) {
+      setFamilyPhotoFiles((prev) => {
+        const next = { ...prev };
+        delete next[memberId];
+        return next;
+      });
+      setFamilyPhotoPreviews((prev) => {
+        const next = { ...prev };
+        if (next[memberId]) URL.revokeObjectURL(next[memberId]);
+        delete next[memberId];
+        return next;
+      });
+      return;
+    }
+
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(String(file.type || "").toLowerCase())) {
+      alert("Only JPEG, PNG, WebP, or GIF images are allowed.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be smaller than 5 MB.");
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setFamilyPhotoFiles((prev) => ({ ...prev, [memberId]: file }));
+    setFamilyPhotoPreviews((prev) => {
+      const next = { ...prev };
+      if (next[memberId]) URL.revokeObjectURL(next[memberId]);
+      next[memberId] = previewUrl;
+      return next;
+    });
+  };
+
+  const handleFamilyPhotoUpload = (memberId) => {
+    const file = familyPhotoFiles[memberId];
+    if (!file) {
+      alert("Please choose a family member photo first.");
+      return;
+    }
+
+    setFamilyPhotoUploadingId(memberId);
+    const formData = new FormData();
+    formData.append("Photo", file);
+
+    axios
+      .put(`${BACKEND_URL}/family-api/upload-photo/${memberId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      })
+      .then((res) => {
+        const updatedMember = res?.data?.member;
+        if (updatedMember?._id) {
+          setFamily((prev) =>
+            (Array.isArray(prev) ? prev : []).map((member) =>
+              String(member?._id) === String(updatedMember._id) ? updatedMember : member
+            )
+          );
+        }
+
+        setFamilyPhotoFiles((prev) => {
+          const next = { ...prev };
+          delete next[memberId];
+          return next;
+        });
+        setFamilyPhotoPreviews((prev) => {
+          const next = { ...prev };
+          if (next[memberId]) URL.revokeObjectURL(next[memberId]);
+          delete next[memberId];
+          return next;
+        });
+
+        alert("Family member photo uploaded successfully");
+      })
+      .catch((err) => {
+        const resp = err?.response?.data;
+        const msg =
+          resp?.message ||
+          (typeof resp === "string" ? resp : "") ||
+          err?.message ||
+          "Failed to upload family member photo";
+        alert(msg);
+      })
+      .finally(() => setFamilyPhotoUploadingId(""));
   };
 
   const handleProfilePhotoUpload = () => {
@@ -211,8 +323,11 @@ const EmployeeProfile = () => {
       if (profilePhotoPreview) {
         URL.revokeObjectURL(profilePhotoPreview);
       }
+      Object.values(familyPhotoPreviews).forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
     };
-  }, [profilePhotoPreview]);
+  }, [profilePhotoPreview, familyPhotoPreviews]);
 
   if (!employee)
     return <div className="text-center mt-5">Loading profile...</div>;
@@ -230,6 +345,11 @@ const EmployeeProfile = () => {
     : employee.Photo
     ? `${BACKEND_URL}${employee.Photo}`
     : "/default-avatar.png";
+  const resolveImageUrl = (photoPath) => {
+    if (!photoPath) return "/default-avatar.png";
+    if (/^https?:\/\//i.test(photoPath)) return photoPath;
+    return `${BACKEND_URL}${photoPath}`;
+  };
 
     return (
       <div
@@ -776,6 +896,56 @@ const EmployeeProfile = () => {
           }}
           onClick={() => navigate(`/employee/family/${f._id}`)}
         >
+          <div className="d-flex justify-content-center mb-2">
+            <img
+              src={familyPhotoPreviews[f._id] || resolveImageUrl(f.Photo)}
+              alt={f.Name || "Family member"}
+              style={{
+                width: "72px",
+                height: "72px",
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: "2px solid rgba(96,165,250,0.55)"
+              }}
+            />
+          </div>
+          <div
+            className="d-flex justify-content-center gap-2 mb-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              ref={(el) => {
+                familyPhotoInputRefs.current[f._id] = el;
+              }}
+              type="file"
+              className="d-none"
+              accept="image/*"
+              onChange={(e) => handleFamilyPhotoFileChange(f._id, e.target.files?.[0] || null)}
+            />
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary"
+              style={{ borderRadius: "10px" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                familyPhotoInputRefs.current[f._id]?.click();
+              }}
+            >
+              Edit Photo
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              style={{ borderRadius: "10px" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFamilyPhotoUpload(f._id);
+              }}
+              disabled={familyPhotoUploadingId === f._id || !familyPhotoFiles[f._id]}
+            >
+              {familyPhotoUploadingId === f._id ? "Uploading..." : "Upload"}
+            </button>
+          </div>
           <h6 style={{ fontWeight: 600, color: "#1F2933", marginBottom: "4px" }}>
             {f.Name}
           </h6>

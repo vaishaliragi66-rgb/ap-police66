@@ -1,10 +1,10 @@
-﻿  import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 
 const VisitRegister = () => {
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
   const navigate = useNavigate();
 
   const [employees, setEmployees] = useState([]);
@@ -41,6 +41,12 @@ const VisitRegister = () => {
     if (!height || !weight || height <= 0 || weight <= 0) return "";
     const heightM = height / 100;
     return (weight / (heightM * heightM)).toFixed(2);
+  };
+
+  const resolveImageUrl = (photoPath) => {
+    if (!photoPath) return "/default-avatar.png";
+    if (/^https?:\/\//i.test(photoPath)) return photoPath;
+    return `${BACKEND_URL}${photoPath}`;
   };
 
   /* ================= FETCH EMPLOYEES ================= */
@@ -517,7 +523,7 @@ const VisitRegister = () => {
       {
       <div className="d-flex justify-content-center mb-3">
       <img
-        src={`${BACKEND_URL}${selectedEmployee.Photo}`}
+        src={resolveImageUrl(selectedEmployee.Photo)}
         alt="Employee"
         style={{
           width: "120px",
@@ -562,18 +568,19 @@ const VisitRegister = () => {
     </div>
 
     <div className="card-body">
-      {/* ===== PHOTO (enable later) ===== */}
-      {/*
-      <div className="text-center mb-3">
+      <div className="d-flex justify-content-center mb-3">
         <img
-          src={`${BACKEND_URL}${selectedFamily.Photo}`}
+          src={resolveImageUrl(selectedFamily.Photo)}
           alt="Family Member"
-          className="rounded-circle"
-          width="120"
-          height="120"
+          style={{
+            width: "120px",
+            height: "120px",
+            borderRadius: "50%",
+            objectFit: "cover",
+            border: "2px solid #2563EB"
+          }}
         />
       </div>
-      */}
 
       <div className="row">
         {/* LEFT COLUMN */}

@@ -5,8 +5,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 
 const FamilyMemberRegistration = () => {
-  const employeeId = localStorage.getItem("employeeId");
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const employeeObjectId = localStorage.getItem("employeeObjectId");
+  const employeeId = employeeObjectId || localStorage.getItem("employeeId");
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
 
   const [formData, setFormData] = useState({
     Name: "",
@@ -106,10 +107,17 @@ const FamilyMemberRegistration = () => {
   };
 
   const handleRemovePhoto = () => {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhotoFile(null);
     setPhotoPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
 
   const handleSameAsEmployeePhone = () => {
     if (!employeeProfile?.Phone_No) {

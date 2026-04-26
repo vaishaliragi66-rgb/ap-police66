@@ -7,7 +7,7 @@ import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_cle
 const FamilyMemberProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
 
   const [member, setMember] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -81,6 +81,12 @@ const FamilyMemberProfile = () => {
   if (!member) {
     return <div className="text-center mt-5">Loading...</div>;
   }
+
+  const memberPhotoUrl = member?.Photo
+    ? /^https?:\/\//i.test(member.Photo)
+      ? member.Photo
+      : `${BACKEND_URL}${member.Photo}`
+    : "/default-avatar.png";
 
   return (
     <div
@@ -175,6 +181,19 @@ const FamilyMemberProfile = () => {
           backdropFilter: "blur(18px)",
         }}
       >
+        <div className="d-flex justify-content-center mb-3">
+          <img
+            src={memberPhotoUrl}
+            alt={member?.Name || "Family member"}
+            style={{
+              width: "96px",
+              height: "96px",
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "2px solid rgba(96,165,250,0.6)"
+            }}
+          />
+        </div>
         <h4 className="mb-3">
           {isEditing ? (
             <input
