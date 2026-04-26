@@ -1,13 +1,13 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
+import html2canvas from "html2canvas";
 import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
 import DateRangeFilter from "../common/DateRangeFilter";
 import PDFDownloadButton from "../common/PDFDownloadButton";
+import DiagnosisReportPreview from "../institutes/DiagnosisReportPreview";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const DiagnosisReport = () => {
@@ -21,9 +21,48 @@ const DiagnosisReport = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [downloadingId, setDownloadingId] = useState("");
+  const [exportReport, setExportReport] = useState(null);
+  const exportRef = useRef(null);
   const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeId);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+
+  const resolveUrl = (u) => {
+    if (!u) return null;
+    if (/^https?:\/\//i.test(u)) return u;
+    const base = (BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(u).replace(/^\/+/, "")}`;
+  };
+
+  const isImageFile = (file = {}) => {
+    const mime = String(file?.mimetype || file?.mimeType || "").toLowerCase();
+    if (mime.startsWith("image/")) return true;
+    const url = String(file?.url || file?.path || "");
+    return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(url);
+  };
+
+  const getDiagnosisImageUrl = (report = {}) => {
+    const tests = Array.isArray(report?.Tests) ? report.Tests : [];
+    for (const test of tests) {
+      const files = Array.isArray(test?.Reports) ? test.Reports : [];
+      for (const file of files) {
+        if (!isImageFile(file)) continue;
+        const url = resolveUrl(file?.url || file?.path || "");
+        if (url) return url;
+      }
+    }
+    return "";
+  };
+
+  const openDiagnosisImageView = (report) => {
+    const url = getDiagnosisImageUrl(report);
+    if (!url) {
+      alert("No diagnosis image available");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
 const getFamilyMemberId = (row) => {
   if (!row) return "";
@@ -183,82 +222,53 @@ useEffect(() => {
   };
 
 
-  /* ================= LAB REPORT PDF ================= */
-  const downloadLabReport = (report) => {
-    const doc = new jsPDF("p", "mm", "a4");
+  const getDiagnosisDownloadId = (report = {}) =>
+    String(report?._id || report?.Visit?._id || report?.createdAt || "download");
 
-    // Margins
-    const left = 15;
-    const right = 195;
+  const downloadLabReport = async (report) => {
+    const downloadId = getDiagnosisDownloadId(report);
 
-    const instituteName = getReportInstitutionName(report.Institute?.Institute_Name);
+    try {
+      setDownloadingId(downloadId);
+      setExportReport(report);
 
-    const reportDate = formatDate(report);
-    const downloadedAt = formatReportTimestamp();
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-    const patientName = report.Employee?.Name || "Employee";
-    const employeeIdText = report.Employee?.ABS_NO
-      ? `(${report.Employee.ABS_NO})`
-      : "";
+      const element = exportRef.current;
+      if (!element) throw new Error("Diagnosis report preview not ready");
 
-    const issuedTo = report.IsFamilyMember
-      ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})`
-      : "Self";
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
 
-    /* ---------- HEADER ---------- */
-    addCenteredReportHeader(doc, {
-      centerX: 105,
-      left,
-      right,
-      institutionName: instituteName,
-      title: "DIAGNOSTIC LABORATORY REPORT",
-      lineY: 32
-    });
-    addDownloadTimestamp(doc, { x: right, y: 12, align: "right", timestamp: downloadedAt });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
 
-    /* ---------- PATIENT DETAILS ---------- */
-    doc.setFontSize(10);
-    doc.text(`Employee Name: ${patientName} ${employeeIdText}`, left, 42);
-    doc.text(`Report For: ${issuedTo}`, left, 48);
-    doc.text(`Test Date: ${reportDate}`, left, 54);
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pageHeight;
 
-    /* ---------- TEST TABLE ---------- */
-    const tableData = report.Tests.map((t) => {
-      const category = getCategoryForTest(t);
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
 
-      return [
-        category,
-        t.Test_Name,
-        `${t.Result_Value} ${t.Units || ""}`,
-        t.Test_ID?.Reference_Range || t.Reference_Range || "-",
-        getStatus(t.Result_Value, t.Test_ID?.Reference_Range || t.Reference_Range, report.Employee?.Gender)
-      ];
-    });
-
-    autoTable(doc, {
-      startY: 62,
-      head: [["Category", "Test Name", "Result", "Reference Range", "Status"]],
-      body: tableData,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [40, 40, 40] },
-      didParseCell: (data) => {
-        if (data.section === "body" && data.row.raw?.[4] === "Risk" && data.column.index === 2) {
-          data.cell.styles.fontStyle = "bold";
-        }
-      },
-      margin: { left, right: 15 }
-    });
-
-    /* ---------- FOOTER ---------- */
-    doc.setFontSize(9);
-    doc.text(
-      "This is a system-generated diagnostic laboratory report.",
-      105,
-      doc.lastAutoTable.finalY + 15,
-      { align: "center" }
-    );
-
-    doc.save(`Lab_Report_${report._id.slice(-6)}.pdf`);
+      pdf.save(`diagnosis-report-${downloadId}.pdf`);
+    } catch (error) {
+      console.error("Diagnosis report download failed:", error);
+      alert("Unable to download diagnosis report");
+    } finally {
+      setExportReport(null);
+      setDownloadingId("");
+    }
   };
 
   const splitReportsByDate = (records) => {
@@ -525,8 +535,9 @@ return (
                               fontWeight: 500,
                             }}
                             onClick={() => downloadLabReport(report)}
+                            disabled={downloadingId === getDiagnosisDownloadId(report)}
                           >
-                            Download
+                            {downloadingId === getDiagnosisDownloadId(report) ? "Preparing..." : "Download"}
                           </button>
 
                         </div>
@@ -558,98 +569,28 @@ return (
           />
         </div>
 
-        <div className="modal-body">
-
-          <p><strong>Employee:</strong> {selectedReport.Employee?.Name}</p>
-          <p>
-            <strong>Report For:</strong>{" "}
-            {selectedReport.IsFamilyMember
-              ? `${selectedReport.FamilyMember?.Name} (${selectedReport.FamilyMember?.Relationship})`
-              : "Self"}
-          </p>
-          <p><strong>Institute:</strong> {selectedReport.Institute?.Institute_Name}</p>
-          <p><strong>Test Date:</strong> {formatDate(selectedReport)}</p>
-
-          <hr />
-
-          <table className="table table-bordered">
-            <thead className="table-light">
-              <tr>
-                <th>Category</th>
-                <th>Test Name</th>
-                <th>Result</th>
-                <th>Reference</th>
-                <th>Status</th>
-                <th>Report</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedReport.Tests.map((t, i) => {
-
-                const reports = t.Reports || [];
-
-                const category = getCategoryForTest(t);
-
-                return (
-                  <tr key={i}>
-                    <td>{category}</td>
-                    <td>{t.Test_Name}</td>
-
-                    <td>{t.Result_Value} {t.Units}</td>
-
-                    <td>{t.Test_ID?.Reference_Range || t.Reference_Range}</td>
-
-                    <td>
-                      <span className={`badge ${
-                        getStatus(
-                          t.Result_Value,
-                          t.Test_ID?.Reference_Range || t.Reference_Range,
-                          selectedReport.Employee?.Gender
-                        ) === "Normal"
-                          ? "bg-success"
-                          : "bg-danger"
-                      }`}>
-                        {getStatus(
-                          t.Result_Value,
-                          t.Test_ID?.Reference_Range || t.Reference_Range,
-                          selectedReport.Employee?.Gender
-                        )}
-                      </span>
-                    </td>
-
-                    {/* REPORT BUTTON COLUMN */}
-                    <td>
-                      {reports.length > 0 ? (
-                        reports.map((r, ri) => (
-                          <a
-                            key={ri}
-                            href={`${BACKEND_URL}${r.url}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="btn btn-sm btn-outline-primary me-1"
-                          >
-                            View
-                          </a>
-                        ))
-                      ) : (
-                        <button
-                          className="btn btn-sm btn-outline-secondary"
-                          disabled
-                        >
-                          No Report
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-
-              })}
-            </tbody>
-          </table>
-
+        <div className="modal-body p-0">
+          <div className="d-flex justify-content-center p-3 overflow-auto">
+            <DiagnosisReportPreview reportData={selectedReport} resolveUrl={resolveUrl} />
+          </div>
         </div>
 
         <div className="modal-footer">
+          <button
+            className="btn"
+            onClick={() => openDiagnosisImageView(selectedReport)}
+            disabled={!getDiagnosisImageUrl(selectedReport)}
+            style={{
+              borderRadius: "14px",
+              padding: "10px 16px",
+              background: "rgba(255,255,255,0.84)",
+              border: "1px solid rgba(191,219,254,0.82)",
+              color: "#2563EB",
+              fontWeight: 600,
+            }}
+          >
+            View Image
+          </button>
           <button
             className="btn"
             onClick={() => setShowModal(false)}
@@ -668,6 +609,7 @@ return (
           <button
             className="btn"
             onClick={() => downloadLabReport(selectedReport)}
+            disabled={downloadingId === getDiagnosisDownloadId(selectedReport)}
             style={{
               borderRadius: "14px",
               padding: "10px 16px",
@@ -678,7 +620,7 @@ return (
               boxShadow: "0 14px 24px rgba(96,165,250,0.22)",
             }}
           >
-            Download PDF
+            {downloadingId === getDiagnosisDownloadId(selectedReport) ? "Preparing..." : "Download PDF"}
           </button>
         </div>
 
@@ -687,6 +629,22 @@ return (
   </div>
 )}
 
+      <div
+        style={{
+          position: "fixed",
+          left: "-10000px",
+          top: 0,
+          width: "210mm",
+          pointerEvents: "none",
+          zIndex: -1,
+        }}
+      >
+        {exportReport && (
+          <div ref={exportRef}>
+            <DiagnosisReportPreview reportData={exportReport} resolveUrl={resolveUrl} />
+          </div>
+        )}
+      </div>
   </div>
 );
 

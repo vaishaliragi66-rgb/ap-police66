@@ -1,9 +1,8 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { addCenteredReportHeader, addDownloadTimestamp, formatReportTimestamp, getReportInstitutionName } from "../../utils/reportPdf";
+import html2canvas from "html2canvas";
 import PersonFilterDropdown from "../common/PersonFilterDropdown";
 import { usePersonFilter } from "../../context/PersonFilterContext";
 import DateRangeFilter from "../common/DateRangeFilter";
@@ -29,6 +28,9 @@ const XrayReport = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [downloadingId, setDownloadingId] = useState("");
+  const [exportReport, setExportReport] = useState(null);
+  const exportRef = useRef(null);
   const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeObjectId || employeeId);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -138,57 +140,53 @@ const XrayReport = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const downloadXrayReport = (report) => {
-    const doc = new jsPDF("l", "mm", "a4");
+  const getXrayDownloadId = (report = {}) =>
+    String(report?._id || report?.Visit?._id || report?.createdAt || "download");
 
-    const left = 15;
-    const right = 282;
-    const instituteName = getReportInstitutionName(report.Institute?.Institute_Name);
-    const reportDate = formatDate(report);
-    const downloadedAt = formatReportTimestamp();
-    const patientName = report.Employee?.Name || "Employee";
-    const employeeIdText = report.Employee?.ABS_NO ? `(${report.Employee.ABS_NO})` : "";
-    const issuedTo = report.IsFamilyMember ? `${report.FamilyMember?.Name} (${report.FamilyMember?.Relationship})` : "Self";
+  const downloadXrayReport = async (report) => {
+    const downloadId = getXrayDownloadId(report);
 
-    addCenteredReportHeader(doc, {
-      centerX: 148.5,
-      left,
-      right,
-      institutionName: instituteName,
-      title: "X-RAY REPORT",
-      lineY: 30
-    });
-    addDownloadTimestamp(doc, { x: right, y: 12, align: "right", timestamp: downloadedAt });
+    try {
+      setDownloadingId(downloadId);
+      setExportReport(report);
 
-    doc.setFontSize(10);
-    doc.text(`Employee Name: ${patientName} ${employeeIdText}`, left, 40);
-    doc.text(`Report For: ${issuedTo}`, left, 46);
-    doc.text(`Test Date: ${reportDate}`, left, 52);
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-    const tableData = report.Xrays.map((x) => [
-      x.Xray_Type || "-",
-      x.Body_Part || "-",
-      x.Side || "-",
-      x.View || "-",
-      x.Film_Size || "-",
-      x.Findings || "-",
-      x.Impression || "-",
-      x.Remarks || "-"
-    ]);
+      const element = exportRef.current;
+      if (!element) throw new Error("X-ray report preview not ready");
 
-    autoTable(doc, {
-      startY: 60,
-      head: [["Type", "Body Part", "Side", "View", "Size", "Findings", "Impression", "Remarks"]],
-      body: tableData,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [40, 40, 40] },
-      margin: { left, right: 15 }
-    });
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
 
-    doc.setFontSize(9);
-    doc.text("This is a system-generated X-ray report.", 148.5, doc.lastAutoTable.finalY + 12, { align: "center" });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
 
-    doc.save(`Xray_Report_${report._id.slice(-6)}.pdf`);
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`xray-report-${downloadId}.pdf`);
+    } catch (error) {
+      console.error("X-ray report download failed:", error);
+      alert("Unable to download x-ray report");
+    } finally {
+      setExportReport(null);
+      setDownloadingId("");
+    }
   };
 
   // derive filtered list
@@ -356,7 +354,14 @@ const XrayReport = () => {
                         <td>
                           <div className="d-flex gap-2">
                             <button className="btn btn-sm" style={{ borderRadius: "999px", border: "1px solid #4A70A9", backgroundColor: "#4A70A9", color: "#FFFFFF", fontWeight: 500 }} onClick={() => { setSelectedReport(report); setShowModal(true); }}>View</button>
-                            <button className="btn btn-sm" style={{ borderRadius: "999px", border: "1px solid #4A70A9", backgroundColor: "#FFFFFF", color: "#4A70A9", fontWeight: 500 }} onClick={() => downloadXrayReport(report)}>Download</button>
+                            <button
+                              className="btn btn-sm"
+                              style={{ borderRadius: "999px", border: "1px solid #4A70A9", backgroundColor: "#FFFFFF", color: "#4A70A9", fontWeight: 500 }}
+                              onClick={() => downloadXrayReport(report)}
+                              disabled={downloadingId === getXrayDownloadId(report)}
+                            >
+                              {downloadingId === getXrayDownloadId(report) ? "Preparing..." : "Download"}
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -395,13 +400,37 @@ const XrayReport = () => {
                 >
                   View Image
                 </button>
-                <button className="btn" onClick={() => downloadXrayReport(selectedReport)} style={{ borderRadius: "14px", padding: "10px 16px", background: "linear-gradient(135deg, #2563EB, #38BDF8)", border: "none", color: "#fff", fontWeight: 600, boxShadow: "0 14px 24px rgba(96,165,250,0.22)" }}>Download PDF</button>
+                <button
+                  className="btn"
+                  onClick={() => downloadXrayReport(selectedReport)}
+                  disabled={downloadingId === getXrayDownloadId(selectedReport)}
+                  style={{ borderRadius: "14px", padding: "10px 16px", background: "linear-gradient(135deg, #2563EB, #38BDF8)", border: "none", color: "#fff", fontWeight: 600, boxShadow: "0 14px 24px rgba(96,165,250,0.22)" }}
+                >
+                  {downloadingId === getXrayDownloadId(selectedReport) ? "Preparing..." : "Download PDF"}
+                </button>
                 <button className="btn" onClick={() => setShowModal(false)} style={{ borderRadius: "14px", padding: "10px 16px", background: "rgba(255,255,255,0.84)", border: "1px solid rgba(191,219,254,0.82)", color: "#2563EB", fontWeight: 600 }}>Close</button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      <div
+        style={{
+          position: "fixed",
+          left: "-10000px",
+          top: 0,
+          width: "210mm",
+          pointerEvents: "none",
+          zIndex: -1,
+        }}
+      >
+        {exportReport && (
+          <div ref={exportRef}>
+            <XrayReportPreview reportData={exportReport} resolveUrl={resolveUrl} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

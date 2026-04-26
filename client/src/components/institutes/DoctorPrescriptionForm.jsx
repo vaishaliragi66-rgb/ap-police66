@@ -8,6 +8,8 @@ import { useNavigate } from "react-router-dom";
 import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData_clean";
 import { mergeXrayTypes } from "../../data/xrayTypes";
 import XrayReportPreview from "./XrayReportPreview";
+import DiagnosisReportPreview from "./DiagnosisReportPreview";
+import SARCPLPrescriptionReport from "./SARCPLPrescriptionReport";
 import "./InstitutesTheme.css";
 
 const DoctorPrescriptionForm = () => {
@@ -50,6 +52,12 @@ const DoctorPrescriptionForm = () => {
   const [downloadingXrayId, setDownloadingXrayId] = useState("");
   const [exportXrayReport, setExportXrayReport] = useState(null);
   const xrayExportRef = useRef(null);
+  const [downloadingDiagnosisId, setDownloadingDiagnosisId] = useState("");
+  const [exportDiagnosisReport, setExportDiagnosisReport] = useState(null);
+  const diagnosisExportRef = useRef(null);
+  const [downloadingPrescriptionId, setDownloadingPrescriptionId] = useState("");
+  const [exportPrescriptionReport, setExportPrescriptionReport] = useState(null);
+  const prescriptionExportRef = useRef(null);
 
   const [diseaseSearch, setDiseaseSearch] = useState("");
   const [filteredDiseases, setFilteredDiseases] = useState([]);
@@ -76,6 +84,23 @@ const DoctorPrescriptionForm = () => {
     );
   };
 
+  const getDiagnosisDownloadId = (report = {}) => {
+    const record = report?.record || (report?.Tests ? report : {});
+    const test = report?.test || null;
+    return String(
+      test?._id ||
+        test?.Test_ID?._id ||
+        test?.Test_ID ||
+        record?._id ||
+        record?.visit_id ||
+        record?.visitId ||
+        "download"
+    );
+  };
+
+  const getPrescriptionDownloadId = (record = {}) =>
+    String(record?._id || record?.visit_id || record?.visitId || "download");
+
   const isXrayImageFile = (file = {}) => {
     const mime = String(file?.mimetype || file?.mimeType || "").toLowerCase();
     if (mime.startsWith("image/")) return true;
@@ -98,6 +123,199 @@ const DoctorPrescriptionForm = () => {
     }
 
     return "";
+  };
+
+  const isDiagnosisImageFile = (file = {}) => {
+    const mime = String(file?.mimetype || file?.mimeType || "").toLowerCase();
+    if (mime.startsWith("image/")) return true;
+    const url = String(file?.url || file?.path || "");
+    return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(url);
+  };
+
+  const getDiagnosisImageUrl = (report = {}) => {
+    const record = report?.record || (report?.Tests ? report : {});
+    const test = report?.test || null;
+    const tests = test ? [test] : Array.isArray(record?.Tests) ? record.Tests : [];
+
+    for (const item of tests) {
+      const files = Array.isArray(item?.Reports) ? item.Reports : [];
+      for (const file of files) {
+        if (!isDiagnosisImageFile(file)) continue;
+        const url = resolveUrl(file?.url || file?.path || "");
+        if (url) return url;
+      }
+    }
+
+    return "";
+  };
+
+  const openDiagnosisImageView = (report) => {
+    const url = getDiagnosisImageUrl(report);
+    if (!url) {
+      alert("No diagnosis image available");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+
+  const downloadDiagnosisReport = async (report) => {
+    const downloadId = getDiagnosisDownloadId(report);
+
+    try {
+      setDownloadingDiagnosisId(downloadId);
+      setExportDiagnosisReport(report);
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const element = diagnosisExportRef.current;
+      if (!element) throw new Error("Unable to generate diagnosis report preview");
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const filename = `diagnosis-report-${downloadId}.pdf`;
+      pdf.save(filename);
+    } catch (error) {
+      console.error("Diagnosis report download failed", error);
+      alert("Failed to download diagnosis report");
+    } finally {
+      setDownloadingDiagnosisId("");
+      setExportDiagnosisReport(null);
+    }
+  };
+
+  const buildPrescriptionPreviewData = (record = {}) => {
+    const height = getMetricValue(record, "Height");
+    const weight = getMetricValue(record, "Weight");
+    const bmi = getMetricValue(record, "BMI");
+
+    return {
+      hospital: {
+        name: record?.instituteDisplayName || record?.Institute?.Institute_Name || instituteName || "SARCPL",
+        address: "",
+        contact: "",
+        email: "",
+        logo: "",
+      },
+      patient: {
+        name: getPrescriptionReportForLabel(record),
+        age: "",
+        gender: record?.Employee?.Gender || "",
+        absNo: selectedEmployee?.ABS_NO || employeeProfile?.ABS_NO || "",
+        mrn: record?.Employee?._id || "",
+        bloodGroup: record?.Employee?.Blood_Group || "",
+      },
+      encounter: {
+        doctor: record?.Doctor?.Name || record?.created_by || "",
+        department: "",
+        date: getPrescriptionTimestamp(record),
+        visitType: "",
+        prescriptionId: record?.visit_id || record?._id || "",
+      },
+      vitals: {
+        bp: getMetricValue(record, "Blood_Pressure"),
+        pulse: getMetricValue(record, "Pulse"),
+        temperature: getMetricValue(record, "Temperature"),
+        spo2: getMetricValue(record, "Oxygen") || getMetricValue(record, "SpO2"),
+        height,
+        weight,
+        bmi,
+      },
+      investigations: {
+        tests: (record?.relatedTests || [])
+          .map((test) => test?.Test_Name || test?.Test_ID?.Test_Name || "")
+          .filter(Boolean),
+        xrays: (record?.relatedXrays || [])
+          .map((xray) => xray?.Xray_Type || xray?.Xray_ID || "")
+          .filter(Boolean),
+        notes: "",
+      },
+      diagnosis: {
+        primary: record?.doctorNotes || record?.data?.notes || "",
+        icd: "",
+        notes: record?.doctorNotes || record?.data?.notes || "",
+      },
+      prescriptions: getPrescriptionMedicines(record).map((medicine) => ({
+        name: medicine?.Medicine_Name || "",
+        dosage: medicine?.Strength || medicine?.dosage || "",
+        frequency: [
+          medicine?.Morning ? "Morning" : null,
+          medicine?.Afternoon ? "Afternoon" : null,
+          medicine?.Night ? "Night" : null,
+        ].filter(Boolean).join("/") || (medicine?.Frequency || medicine?.Type || ""),
+        duration: medicine?.Duration || "",
+        instructions: medicine?.Remarks || medicine?.FoodTiming || "",
+      })),
+      qrUrl: null,
+    };
+  };
+
+  const downloadPrescriptionReport = async (record) => {
+    const downloadId = getPrescriptionDownloadId(record);
+
+    try {
+      setDownloadingPrescriptionId(downloadId);
+      setExportPrescriptionReport(record);
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const element = prescriptionExportRef.current;
+      if (!element) throw new Error("Unable to generate prescription report preview");
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`prescription-report-${downloadId}.pdf`);
+    } catch (error) {
+      console.error("Prescription report download failed", error);
+      alert("Failed to download prescription report");
+    } finally {
+      setDownloadingPrescriptionId("");
+      setExportPrescriptionReport(null);
+    }
   };
 
   const openXrayImageView = (report) => {
@@ -1472,20 +1690,13 @@ if (validXrays.length === 0) {
           )}
 
           {test?.Reports && test.Reports.length > 0 ? (
-            test.Reports.map((r, ri) => {
-              const url = resolveUrl(r.url);
-              return (
-                <a
-                  key={ri}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn-sm btn-outline-primary mt-2 me-2 view-action"
-                >
-                  View Report
-                </a>
-              );
-            })
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary mt-2 me-2 view-action"
+              onClick={() => setSelectedDiagnosisReport({ record, test })}
+            >
+              View Report
+            </button>
           ) : (
             <button
               className="btn btn-sm btn-outline-secondary mt-2"
@@ -1558,17 +1769,7 @@ if (validXrays.length === 0) {
             type="button"
             className="btn btn-sm btn-outline-primary mt-2 view-action"
             disabled={status !== "result out"}
-            onClick={() => {
-              // remove any other modal elements from the DOM so they don't appear behind
-              try {
-                document.querySelectorAll('.modal').forEach(el => {
-                  el.remove();
-                });
-              } catch (e) {
-                // ignore
-              }
-              setSelectedXrayReport({ record, xray });
-            }}
+            onClick={() => setSelectedXrayReport({ record, xray })}
           >
             View
           </button>
@@ -1698,235 +1899,21 @@ if (validXrays.length === 0) {
                     />
                   </div>
 
-                  <div className="modal-body">
-                    {(() => {
-                        const medicines = getPrescriptionMedicines(selectedPrescriptionReport);
-                        const tests = selectedPrescriptionReport?.relatedTests || [];
-                        const xrays = selectedPrescriptionReport?.relatedXrays || [];
-                        const pharmacyNotes = selectedPrescriptionReport?.pharmacyNotes || [];
-                        const height = getMetricValue(selectedPrescriptionReport, "Height");
-                        const weight = getMetricValue(selectedPrescriptionReport, "Weight");
-                        const bmi = getMetricValue(selectedPrescriptionReport, "BMI");
-
-                        return (
-                          <>
-                            <div className="row g-3 mb-3">
-                              <div className="col-md-6">
-                                <strong>Patient:</strong> {getPrescriptionReportForLabel(selectedPrescriptionReport)}
-                              </div>
-                              <div className="col-md-6 text-md-end">
-                                <strong>Date:</strong> {formatDateTime(getPrescriptionTimestamp(selectedPrescriptionReport))}
-                              </div>
-                              <div className="col-md-6">
-                                <strong>Institute:</strong> {selectedPrescriptionReport?.instituteDisplayName || instituteName || "-"}
-                              </div>
-                              <div className="col-md-6 text-md-end">
-                                <strong>ABS No:</strong> {selectedEmployee?.ABS_NO || employeeProfile?.ABS_NO || "-"}
-                              </div>
-                              <div className="col-md-4">
-                                <strong>Height:</strong> {height ? `${height} cm` : "-"}
-                              </div>
-                              <div className="col-md-4">
-                                <strong>Weight:</strong> {weight ? `${weight} kg` : "-"}
-                              </div>
-                              <div className="col-md-4">
-                                <strong>BMI:</strong> {bmi || "-"}
-                              </div>
-                            </div>
-
-                            <div className="table-responsive">
-                              <table className="table table-bordered align-middle">
-                                <thead className="table-light">
-                                  <tr>
-                                    <th>#</th>
-                                    <th>Medicine</th>
-                                    <th>Source</th>
-                                    <th>Type</th>
-                                    <th>Food Timing</th>
-                                    <th>Strength</th>
-                                    <th>Morning</th>
-                                    <th>Afternoon</th>
-                                    <th>Night</th>
-                                    <th>Duration</th>
-                                    <th>Quantity</th>
-                                    <th>Remarks</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {medicines.length > 0 ? (
-                                    medicines.map((medicine, index) => (
-                                      <tr key={`${medicine?.Medicine_Name || "medicine"}-${index}`}>
-                                        <td>{index + 1}</td>
-                                        <td>{medicine?.Medicine_Name || "-"}</td>
-                                        <td>
-                                          <span className={`badge ${medicine?._source === "Pharmacy" ? "bg-info text-dark" : "bg-secondary"}`}>
-                                            {medicine?._source || "Doctor"}
-                                          </span>
-                                        </td>
-                                        <td>{medicine?.Type || "-"}</td>
-                                        <td>{medicine?.FoodTiming || "-"}</td>
-                                        <td>{medicine?.Strength || "-"}</td>
-                                        <td>{formatDoseCell(medicine?.Morning)}</td>
-                                        <td>{formatDoseCell(medicine?.Afternoon)}</td>
-                                        <td>{formatDoseCell(medicine?.Night)}</td>
-                                        <td>{medicine?.Duration || "-"}</td>
-                                        <td>{medicine?.Quantity || "-"}</td>
-                                        <td>{medicine?.Remarks || "-"}</td>
-                                      </tr>
-                                    ))
-                                  ) : (
-                                    <tr>
-                                      <td colSpan="12" className="text-center text-muted">
-                                        No medicine details available
-                                      </td>
-                                    </tr>
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
-
-                            <div className="row g-3 mt-1">
-                              <div className="col-md-6">
-                                <div className="border rounded h-100 p-3 bg-light">
-                                  <div className="fw-semibold mb-2">Tests Prescribed</div>
-                                  {tests.length > 0 ? (
-                                    <div className="table-responsive">
-                                      <table className="table table-sm align-middle mb-0">
-                                        <thead>
-                                          <tr>
-                                            <th>Test</th>
-                                            <th>Status</th>
-                                            <th className="text-end">Report</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {tests.map((test, index) => {
-                                            const result = test?.matchedResult;
-                                            const canView =
-                                              isTestResultOut(result) &&
-                                              Array.isArray(result?.Reports) &&
-                                              result.Reports.length > 0;
-
-                                            return (
-                                              <tr key={`${test?.Test_ID || test?.Test_Name || "test"}-${index}`}>
-                                                <td>{test?.Test_Name || test?.Test_ID?.Test_Name || "Test"}</td>
-                                                <td>
-                                                  <span className={`badge ${isTestResultOut(result) ? "bg-success" : "bg-warning text-dark"}`}>
-                                                    {isTestResultOut(result) ? "result out" : "pending"}
-                                                  </span>
-                                                </td>
-                                                <td className="text-end">
-                                                  {canView ? (
-                                                    <button
-                                                      type="button"
-                                                      className="btn btn-sm btn-outline-primary"
-                                                      onClick={() => {
-                                                        const url = resolveUrl(result?.Reports?.[0]?.url);
-                                                        if (url) {
-                                                          window.open(url, "_blank");
-                                                        }
-                                                      }}
-                                                    >
-                                                      View
-                                                    </button>
-                                                  ) : (
-                                                    <span className="text-muted small">Not available</span>
-                                                  )}
-                                                </td>
-                                              </tr>
-                                            );
-                                          })}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  ) : (
-                                    <div className="text-muted small">No tests prescribed</div>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="col-md-6">
-                                <div className="border rounded h-100 p-3 bg-light">
-                                  <div className="fw-semibold mb-2">X-rays Prescribed</div>
-                                  {xrays.length > 0 ? (
-                                    <div className="table-responsive">
-                                      <table className="table table-sm align-middle mb-0">
-                                        <thead>
-                                          <tr>
-                                            <th>X-ray</th>
-                                            <th>Status</th>
-                                            <th className="text-end">Report</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {xrays.map((xray, index) => {
-                                            const result = xray?.matchedResult;
-                                            const canView =
-                                              isXrayResultOut(result) &&
-                                              Array.isArray(result?.Reports) &&
-                                              result.Reports.length > 0;
-
-                                            return (
-                                              <tr key={`${xray?.Xray_ID || xray?.Xray_Type || "xray"}-${index}`}>
-                                                <td>
-                                                  {xray?.Xray_Type || "X-ray"}
-                                                  {xray?.Body_Part ? ` (${xray.Body_Part})` : ""}
-                                                </td>
-                                                <td>
-                                                  <span className={`badge ${isXrayResultOut(result) ? "bg-success" : "bg-warning text-dark"}`}>
-                                                    {isXrayResultOut(result) ? "result out" : "pending"}
-                                                  </span>
-                                                </td>
-                                                <td className="text-end">
-                                                  {canView ? (
-                                                    <button
-                                                      type="button"
-                                                      className="btn btn-sm btn-outline-primary"
-                                                      onClick={() => {
-                                                        const url = resolveUrl(result?.Reports?.[0]?.url);
-                                                        if (url) {
-                                                          window.open(url, "_blank");
-                                                        }
-                                                      }}
-                                                    >
-                                                      View
-                                                    </button>
-                                                  ) : (
-                                                    <span className="text-muted small">Not available</span>
-                                                  )}
-                                                </td>
-                                              </tr>
-                                            );
-                                          })}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  ) : (
-                                    <div className="text-muted small">No X-rays prescribed</div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="mt-3">
-                              <strong>Doctor Notes</strong>
-                              <div className="border rounded p-3 bg-light mt-2" style={{ whiteSpace: "pre-wrap" }}>
-                                {selectedPrescriptionReport?.doctorNotes || selectedPrescriptionReport?.data?.notes || "No notes added"}
-                              </div>
-                            </div>
-
-                            <div className="mt-3">
-                              <strong>Pharmacy Notes</strong>
-                              <div className="border rounded p-3 bg-light mt-2" style={{ whiteSpace: "pre-wrap" }}>
-                                {pharmacyNotes.length > 0 ? pharmacyNotes.join("\n\n") : "No pharmacy notes added"}
-                              </div>
-                            </div>
-                          </>
-                        );
-                      })()}
+                  <div className="modal-body p-0">
+                    <div className="d-flex justify-content-center p-3 overflow-auto">
+                      <SARCPLPrescriptionReport reportData={buildPrescriptionPreviewData(selectedPrescriptionReport)} />
+                    </div>
                   </div>
 
                   <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => downloadPrescriptionReport(selectedPrescriptionReport)}
+                      disabled={downloadingPrescriptionId === getPrescriptionDownloadId(selectedPrescriptionReport)}
+                    >
+                      {downloadingPrescriptionId === getPrescriptionDownloadId(selectedPrescriptionReport) ? "Preparing..." : "Download Report"}
+                    </button>
                     <button
                       type="button"
                       className="btn btn-outline-primary"
@@ -2785,6 +2772,58 @@ if (validXrays.length === 0) {
 </div>
 
       </div>
+      {selectedDiagnosisReport && (
+        <div
+          className="modal fade show d-block"
+          style={{ background: "rgba(15,23,42,0.28)" }}
+        >
+          <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title">Diagnosis Report</h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setSelectedDiagnosisReport(null)}
+                />
+              </div>
+
+              <div className="modal-body p-0">
+                <div className="d-flex justify-content-center p-3 overflow-auto">
+                  <DiagnosisReportPreview reportData={selectedDiagnosisReport} resolveUrl={resolveUrl} />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={() => openDiagnosisImageView(selectedDiagnosisReport)}
+                  disabled={!getDiagnosisImageUrl(selectedDiagnosisReport)}
+                >
+                  View Image
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => downloadDiagnosisReport(selectedDiagnosisReport)}
+                  disabled={downloadingDiagnosisId === getDiagnosisDownloadId(selectedDiagnosisReport)}
+                >
+                  {downloadingDiagnosisId === getDiagnosisDownloadId(selectedDiagnosisReport) ? "Preparing..." : "Download Report"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={() => setSelectedDiagnosisReport(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedXrayReport && (
         <div
           className="modal fade show d-block"
@@ -2850,6 +2889,16 @@ if (validXrays.length === 0) {
         {exportXrayReport && (
           <div ref={xrayExportRef}>
             <XrayReportPreview reportData={exportXrayReport} resolveUrl={resolveUrl} />
+          </div>
+        )}
+        {exportDiagnosisReport && (
+          <div ref={diagnosisExportRef}>
+            <DiagnosisReportPreview reportData={exportDiagnosisReport} resolveUrl={resolveUrl} />
+          </div>
+        )}
+        {exportPrescriptionReport && (
+          <div ref={prescriptionExportRef}>
+            <SARCPLPrescriptionReport reportData={buildPrescriptionPreviewData(exportPrescriptionReport)} />
           </div>
         )}
       </div>
