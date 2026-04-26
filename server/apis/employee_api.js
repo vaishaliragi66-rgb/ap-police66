@@ -93,6 +93,15 @@ const absCardUploadSingle = (req, res, next) => {
   });
 };
 
+const profilePhotoUploadSingle = (req, res, next) => {
+  upload.single("Photo")(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+};
+
 const normalizeAbhaNumber = (value) => String(value || "").trim();
 const isValidAbhaNumber = (value) => !value || /^\d{14}$/.test(value);
 
@@ -628,6 +637,56 @@ employeeApp.put("/update-profile/:id", expressAsyncHandler(async (req, res) => {
     });
   }
 }));
+
+employeeApp.put(
+  "/upload-photo/:id",
+  profilePhotoUploadSingle,
+  expressAsyncHandler(async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!req.file) {
+        return res.status(400).json({ message: "Profile image file is required" });
+      }
+
+      const employee = await Employee.findById(id);
+      if (!employee) {
+        if (req.file && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      // Remove old profile photo if present
+      if (employee.Photo) {
+        const safeRelPath = employee.Photo.replace(/^[\\/]/, "");
+        const oldPath = path.join(__dirname, "..", safeRelPath);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+
+      employee.Photo = `/uploads/profile-pics/${req.file.filename}`;
+      await employee.save();
+
+      const responseData = employee.toObject();
+      delete responseData.Password;
+
+      res.status(200).json({
+        message: "Profile image uploaded successfully",
+        employee: responseData
+      });
+    } catch (err) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({
+        message: err.message || "Failed to upload profile image",
+        error: err.message
+      });
+    }
+  })
+);
 
 employeeApp.put(
   "/upload-abs-card/:id",

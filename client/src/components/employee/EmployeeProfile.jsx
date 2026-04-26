@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -16,7 +16,11 @@ const EmployeeProfile = () => {
   const [absCardFile, setAbsCardFile] = useState(null);
   const [absCardUploading, setAbsCardUploading] = useState(false);
   const [absCardDeleting, setAbsCardDeleting] = useState(false);
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
+  const [profilePhotoUploading, setProfilePhotoUploading] = useState(false);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState("");
   const [masterMap, setMasterMap] = useState({});
+  const profilePhotoInputRef = useRef(null);
 
   const designationOptions = getMasterOptions(masterMap, "Designations");
   const bloodGroupOptions = getMasterOptions(masterMap, "Blood Groups");
@@ -74,6 +78,8 @@ const EmployeeProfile = () => {
     axios.put(`${BACKEND_URL}/employee-api/update-profile/${employeeId}`, editData)
       .then((res) => {
         setEmployee(res.data.employee);
+        setProfilePhotoFile(null);
+        setProfilePhotoPreview("");
         setIsEditing(false);
         alert("Profile updated successfully");
       })
@@ -150,18 +156,80 @@ const EmployeeProfile = () => {
 
   const handleCancel = () => {
     setEditData(employee);
+    setProfilePhotoFile(null);
+    setProfilePhotoPreview("");
     setIsEditing(false);
   };
+
+  const handleProfilePhotoFileChange = (file) => {
+    if (!file) {
+      setProfilePhotoFile(null);
+      setProfilePhotoPreview("");
+      return;
+    }
+
+    setProfilePhotoFile(file);
+    setProfilePhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleProfilePhotoUpload = () => {
+    if (!profilePhotoFile) {
+      alert("Please choose a profile image first.");
+      return;
+    }
+
+    setProfilePhotoUploading(true);
+    const formData = new FormData();
+    formData.append("Photo", profilePhotoFile);
+
+    axios
+      .put(`${BACKEND_URL}/employee-api/upload-photo/${employeeId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      })
+      .then((res) => {
+        setEmployee(res.data.employee);
+        setEditData(res.data.employee);
+        setProfilePhotoFile(null);
+        setProfilePhotoPreview("");
+        alert("Profile image uploaded successfully");
+      })
+      .catch((err) => {
+        const resp = err?.response?.data;
+        const msg =
+          resp?.message ||
+          (typeof resp === "string" ? resp : "") ||
+          err?.message ||
+          "Failed to upload profile image";
+        alert(msg);
+        console.error(err);
+      })
+      .finally(() => setProfilePhotoUploading(false));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (profilePhotoPreview) {
+        URL.revokeObjectURL(profilePhotoPreview);
+      }
+    };
+  }, [profilePhotoPreview]);
 
   if (!employee)
     return <div className="text-center mt-5">Loading profile...</div>;
 
-    const absCardUrl = employee?.ABS_Card
-      ? `${BACKEND_URL}${employee.ABS_Card}`
-      : null;
-    const isAbsCardImage = employee?.ABS_Card
-      ? /\.(png|jpe?g|gif)$/i.test(employee.ABS_Card)
-      : false;
+  const absCardUrl = employee?.ABS_Card
+    ? `${BACKEND_URL}${employee.ABS_Card}`
+    : null;
+  const isAbsCardImage = employee?.ABS_Card
+    ? /\.(png|jpe?g|gif)$/i.test(employee.ABS_Card)
+    : false;
+  const profileImageSrc = isEditing && profilePhotoPreview
+    ? profilePhotoPreview
+    : employee.Profile_Pic
+    ? `${BACKEND_URL}${employee.Profile_Pic}`
+    : employee.Photo
+    ? `${BACKEND_URL}${employee.Photo}`
+    : "/default-avatar.png";
 
     return (
       <div
@@ -305,14 +373,8 @@ const EmployeeProfile = () => {
               }}
             >
               <img
-                src={
-                  employee.Profile_Pic
-                    ? `${BACKEND_URL}${employee.Profile_Pic}`
-                    : employee.Photo
-                    ? `${BACKEND_URL}${employee.Photo}`
-                    : "/default-avatar.png"
-                }
-                
+                src={profileImageSrc}
+                 
                 className="rounded-circle"
                 style={{
                   width: "120px",
@@ -322,6 +384,34 @@ const EmployeeProfile = () => {
                 }}
               />
             </div>
+            {isEditing && (
+              <div className="mt-2">
+                <input
+                  ref={profilePhotoInputRef}
+                  type="file"
+                  className="d-none"
+                  accept="image/*"
+                  onChange={(e) => handleProfilePhotoFileChange(e.target.files?.[0] || null)}
+                />
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  style={{ borderRadius: "10px" }}
+                  onClick={() => profilePhotoInputRef.current?.click()}
+                >
+                  Edit Profile Image
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary ms-2"
+                  style={{ borderRadius: "10px" }}
+                  onClick={handleProfilePhotoUpload}
+                  disabled={profilePhotoUploading || !profilePhotoFile}
+                >
+                  {profilePhotoUploading ? "Uploading..." : "Upload"}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Name + Meta */}

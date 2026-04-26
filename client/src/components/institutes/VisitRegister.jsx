@@ -196,25 +196,50 @@ const VisitRegister = () => {
 
   /* ================= UI ================= */
   return (
-   
-       <div className="container-fluid mt-2">
-      {/* Back Button */}
-      <button
-        className="btn mb-3"
-        onClick={() => navigate(-1)}
-        style={{
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #D6E0F0",
-          borderRadius: "8px",
+    <div
+      className="min-vh-100 institutes-theme"
+      style={{
+        fontFamily: "Inter, sans-serif",
+        background: "transparent",
+        padding: "24px 0"
+      }}
+    >
+      <div className="container-fluid" style={{ maxWidth: "1200px" }}>
+        <div
+          style={{
+            background: "rgba(255,255,255,0.78)",
+            border: "1px solid rgba(255,255,255,0.88)",
+            borderRadius: "24px",
+            padding: "16px 20px",
+            marginBottom: "16px",
+            boxShadow: "0 24px 44px rgba(148,184,255,0.16)",
+            backdropFilter: "blur(18px)"
+          }}
+        >
+          <h4 style={{ margin: 0, color: "#1F2933", fontWeight: 600 }}>Visit Register</h4>
+          <p style={{ margin: "4px 0 0", color: "#6B7280", fontSize: "14px" }}>
+            Register employee and family member visits with vitals
+          </p>
+        </div>
+
+       {/* Back Button */}
+       <button
+         className="btn mb-3"
+         onClick={() => navigate(-1)}
+         style={{
+          backgroundColor: "rgba(255,255,255,0.82)",
+          border: "1px solid rgba(191,219,254,0.82)",
+          borderRadius: "14px",
           padding: "6px 14px",
           fontSize: "14px",
           color: "#1F2933",
-        }}
-      >
-        ← Back
-      </button>
-      <div className="col-md-6 mx-auto">
-        <div className="card shadow">
+          boxShadow: "0 12px 20px rgba(191,219,254,0.14)"
+         }}
+       >
+         ← Back
+       </button>
+       <div className="col-md-6 mx-auto">
+         <div className="card border-0 glass-card">
         <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
 
           {/* LEFT - TOKEN */}
@@ -471,19 +496,19 @@ const VisitRegister = () => {
   </div>
 
             {/* SUBMIT */}
-            <button
-              className="btn btn-dark w-100 mt-4"
-              onClick={registerVisit}
-              disabled={loading}
-            >
+             <button
+               className="btn btn-primary w-100 mt-4"
+               onClick={registerVisit}
+               disabled={loading}
+             >
               {loading ? "Registering..." : "Register"}
             </button>
           </div>
         </div>
         {/* ================= PATIENT INFO CARD ================= */}
-        {selectedEmployee && !isFamily && (
-  <div className="card mt-3 border-success">
-    <div className="card-header bg-success text-white">
+{selectedEmployee && !isFamily && (
+  <div className="card border-0 glass-card mt-3">
+    <div className="card-header" style={{ fontWeight: 600, color: "#1F2933" }}>
       Employee Details
     </div>
 
@@ -531,8 +556,8 @@ const VisitRegister = () => {
 
 
 {isFamily && selectedFamily && (
-  <div className="card mt-3 border-primary">
-    <div className="card-header bg-primary text-white">
+  <div className="card border-0 glass-card mt-3">
+    <div className="card-header" style={{ fontWeight: 600, color: "#1F2933" }}>
       Family Member Details
     </div>
 
@@ -573,7 +598,8 @@ const VisitRegister = () => {
 )}
 
 
-      </div>
+       </div>
+     </div>
     </div>
   );
 };
