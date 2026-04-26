@@ -5,6 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 
 const EmployeeProfile = () => {
+  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
   const navigate = useNavigate();
   const employeeObjectId = localStorage.getItem("employeeObjectId");
   const employeeId = employeeObjectId || localStorage.getItem("employeeId");
@@ -341,14 +342,15 @@ const EmployeeProfile = () => {
   const profileImageSrc = isEditing && profilePhotoPreview
     ? profilePhotoPreview
     : employee.Profile_Pic
-    ? `${BACKEND_URL}${employee.Profile_Pic}`
+    ? `${String(BACKEND_URL || "").replace(/\/$/, "")}/${String(employee.Profile_Pic).replace(/^\/+/, "")}`
     : employee.Photo
-    ? `${BACKEND_URL}${employee.Photo}`
-    : "/default-avatar.png";
+    ? `${String(BACKEND_URL || "").replace(/\/$/, "")}/${String(employee.Photo).replace(/^\/+/, "")}`
+    : FALLBACK_PROFILE_IMAGE;
   const resolveImageUrl = (photoPath) => {
-    if (!photoPath) return "/default-avatar.png";
+    if (!photoPath) return FALLBACK_PROFILE_IMAGE;
     if (/^https?:\/\//i.test(photoPath)) return photoPath;
-    return `${BACKEND_URL}${photoPath}`;
+    const base = String(BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(photoPath).replace(/^\/+/, "")}`;
   };
 
     return (
@@ -494,13 +496,19 @@ const EmployeeProfile = () => {
             >
               <img
                 src={profileImageSrc}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
+                }}
                  
                 className="rounded-circle"
                 style={{
                   width: "120px",
                   height: "120px",
                   objectFit: "cover",
-                  border: "3px solid #60A5FA",
+                  border: "1px solid rgba(191,219,254,0.82)",
+                  boxShadow: "0 12px 24px rgba(148,184,255,0.18)",
+                  background: "rgba(255,255,255,0.86)",
                 }}
               />
             </div>
@@ -900,12 +908,18 @@ const EmployeeProfile = () => {
             <img
               src={familyPhotoPreviews[f._id] || resolveImageUrl(f.Photo)}
               alt={f.Name || "Family member"}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
+              }}
               style={{
                 width: "72px",
                 height: "72px",
                 borderRadius: "50%",
                 objectFit: "cover",
-                border: "2px solid rgba(96,165,250,0.55)"
+                border: "1px solid rgba(191,219,254,0.82)",
+                boxShadow: "0 10px 18px rgba(148,184,255,0.16)",
+                background: "rgba(255,255,255,0.86)"
               }}
             />
           </div>

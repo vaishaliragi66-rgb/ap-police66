@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 
 const VisitRegister = () => {
+  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
   const navigate = useNavigate();
 
@@ -44,9 +45,10 @@ const VisitRegister = () => {
   };
 
   const resolveImageUrl = (photoPath) => {
-    if (!photoPath) return "/default-avatar.png";
+    if (!photoPath) return FALLBACK_PROFILE_IMAGE;
     if (/^https?:\/\//i.test(photoPath)) return photoPath;
-    return `${BACKEND_URL}${photoPath}`;
+    const base = String(BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(photoPath).replace(/^\/+/, "")}`;
   };
 
   /* ================= FETCH EMPLOYEES ================= */
@@ -525,12 +527,18 @@ const VisitRegister = () => {
       <img
         src={resolveImageUrl(selectedEmployee.Photo)}
         alt="Employee"
+        onError={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
+        }}
         style={{
           width: "120px",
           height: "120px",
           borderRadius: "50%",
           objectFit: "cover",
-          border: "2px solid #198754"
+          border: "1px solid rgba(191,219,254,0.82)",
+          boxShadow: "0 12px 24px rgba(148,184,255,0.18)",
+          background: "rgba(255,255,255,0.86)"
         }}
       />
     </div>
@@ -572,12 +580,18 @@ const VisitRegister = () => {
         <img
           src={resolveImageUrl(selectedFamily.Photo)}
           alt="Family Member"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
+          }}
           style={{
             width: "120px",
             height: "120px",
             borderRadius: "50%",
             objectFit: "cover",
-            border: "2px solid #2563EB"
+            border: "1px solid rgba(191,219,254,0.82)",
+            boxShadow: "0 12px 24px rgba(148,184,255,0.18)",
+            background: "rgba(255,255,255,0.86)"
           }}
         />
       </div>

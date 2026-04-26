@@ -1,10 +1,11 @@
 ﻿import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { FaCamera, FaUser } from "react-icons/fa";
+import { FaCamera } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 
 const FamilyMemberRegistration = () => {
+  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
   const employeeObjectId = localStorage.getItem("employeeObjectId");
   const employeeId = employeeObjectId || localStorage.getItem("employeeId");
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
@@ -285,18 +286,11 @@ const FamilyMemberRegistration = () => {
                 position: "relative",
               }}
             >
-              {photoPreview ? (
-                <img
-                  src={photoPreview}
-                  alt="Preview"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                <div className="text-center" style={{ color: "#4A70A9" }}>
-                  <FaUser size={32} style={{ marginBottom: "4px" }} />
-                  <div style={{ fontSize: "11px", fontWeight: 500 }}>Add Photo</div>
-                </div>
-              )}
+              <img
+                src={photoPreview || FALLBACK_PROFILE_IMAGE}
+                alt="Family photo preview"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
 
               {/* Camera badge */}
               <div

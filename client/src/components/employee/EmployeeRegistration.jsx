@@ -1,11 +1,12 @@
 ﻿import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { FaUserPlus, FaCamera, FaUser } from "react-icons/fa";
+import { FaUserPlus, FaCamera } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 import "./EmployeeRegister.css"
 const EmployeeRegister = () => {
+  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   
@@ -441,18 +442,11 @@ if (validationErrors.length > 0) {
       position: "relative",
     }}
   >
-    {profilePreview ? (
-      <img
-        src={profilePreview}
-        alt="Preview"
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-      />
-    ) : (
-      <div className="text-center" style={{ color: "#4A70A9" }}>
-        <FaUser size={32} style={{ marginBottom: "4px" }} />
-        <div style={{ fontSize: "11px", fontWeight: 500 }}>Add Photo</div>
-      </div>
-    )}
+    <img
+      src={profilePreview || FALLBACK_PROFILE_IMAGE}
+      alt="Profile preview"
+      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+    />
 
     <div
       style={{

@@ -5,6 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
 
 const FamilyMemberProfile = () => {
+  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
   const { id } = useParams();
   const navigate = useNavigate();
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
@@ -85,8 +86,8 @@ const FamilyMemberProfile = () => {
   const memberPhotoUrl = member?.Photo
     ? /^https?:\/\//i.test(member.Photo)
       ? member.Photo
-      : `${BACKEND_URL}${member.Photo}`
-    : "/default-avatar.png";
+      : `${String(BACKEND_URL || "").replace(/\/$/, "")}/${String(member.Photo).replace(/^\/+/, "")}`
+    : FALLBACK_PROFILE_IMAGE;
 
   return (
     <div
@@ -185,12 +186,18 @@ const FamilyMemberProfile = () => {
           <img
             src={memberPhotoUrl}
             alt={member?.Name || "Family member"}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
+            }}
             style={{
               width: "96px",
               height: "96px",
               borderRadius: "50%",
               objectFit: "cover",
-              border: "2px solid rgba(96,165,250,0.6)"
+              border: "1px solid rgba(191,219,254,0.82)",
+              boxShadow: "0 10px 20px rgba(148,184,255,0.16)",
+              background: "rgba(255,255,255,0.86)"
             }}
           />
         </div>
