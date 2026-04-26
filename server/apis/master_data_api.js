@@ -936,6 +936,7 @@ router.get("/tests-structure", async (req, res) => {
     const categoryIdByName = new Map();
     const categoryNameById = new Map();
     const categoryNameByNormalized = new Map();
+    const testNameKeys = new Set();
     const normalizeCategoryLookup = (value) => {
       const base = trimString(value)
         .replace(/\([^)]*\)/g, " ")
@@ -947,25 +948,35 @@ router.get("/tests-structure", async (req, res) => {
     const testsByCategory = {};
 
     rows.forEach((row) => {
-      if (trimString(row?.meta?.kind) === "category") {
-        const categoryName = trimString(row?.value_name);
-        if (!categoryName) return;
-        if (!categoriesByName.has(categoryName)) {
-          categoriesByName.set(categoryName, {
-            id: row._id,
-            name: categoryName,
-            status: row.status || "Active"
-          });
-          categoryIdByName.set(categoryName, String(row._id || ""));
-          categoryNameById.set(String(row._id), categoryName);
-          const normalizedCategory = normalizeCategoryLookup(categoryName);
-          if (normalizedCategory && !categoryNameByNormalized.has(normalizedCategory)) {
-            categoryNameByNormalized.set(normalizedCategory, categoryName);
-          }
+      if (trimString(row?.meta?.kind) === "test") {
+        const testName = trimString(row?.name || row?.value_name);
+        const normalizedTestName = normalizeLoose(testName);
+        if (normalizedTestName) {
+          testNameKeys.add(normalizedTestName);
         }
-        if (!testsByCategory[categoryName]) {
-          testsByCategory[categoryName] = [];
+      }
+    });
+
+    rows.forEach((row) => {
+      if (trimString(row?.meta?.kind) !== "category") return;
+      const categoryName = trimString(row?.value_name);
+      if (!categoryName) return;
+      if (testNameKeys.has(normalizeLoose(categoryName))) return;
+      if (!categoriesByName.has(categoryName)) {
+        categoriesByName.set(categoryName, {
+          id: row._id,
+          name: categoryName,
+          status: row.status || "Active"
+        });
+        categoryIdByName.set(categoryName, String(row._id || ""));
+        categoryNameById.set(String(row._id), categoryName);
+        const normalizedCategory = normalizeCategoryLookup(categoryName);
+        if (normalizedCategory && !categoryNameByNormalized.has(normalizedCategory)) {
+          categoryNameByNormalized.set(normalizedCategory, categoryName);
         }
+      }
+      if (!testsByCategory[categoryName]) {
+        testsByCategory[categoryName] = [];
       }
     });
 

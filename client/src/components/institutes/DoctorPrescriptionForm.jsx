@@ -427,9 +427,35 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     return grouped;
   }, [testsMaster]);
 
+  const knownTestNameKeys = useMemo(
+    () =>
+      new Set(
+        (testsMaster || [])
+          .map((test) => String(test?.Test_Name || test?.Display_Name || "").trim().toLowerCase())
+          .filter(Boolean)
+      ),
+    [testsMaster]
+  );
+
+  const blockedTestCategoryKeys = useMemo(
+    () =>
+      new Set(
+        ["Bilirubin - Direct", "Bilirubin - Indirect", "Bilirubin - Total"]
+          .map((name) => String(name || "").trim().toLowerCase())
+          .filter(Boolean)
+      ),
+    []
+  );
+
   const testCategoryOptions = useMemo(
-    () => Array.from(new Set((testCategories || []).map((item) => String(item || "").trim()).filter(Boolean))),
-    [testCategories]
+    () =>
+      Array.from(new Set((testCategories || []).map((item) => String(item || "").trim()).filter(Boolean))).filter(
+        (category) => {
+          const key = String(category || "").trim().toLowerCase();
+          return !knownTestNameKeys.has(key) && !blockedTestCategoryKeys.has(key);
+        }
+      ),
+    [blockedTestCategoryKeys, knownTestNameKeys, testCategories]
   );
 
   const [showOtherDiseaseInput, setShowOtherDiseaseInput] = useState(false);
@@ -613,6 +639,71 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     setTestsLoading(true);
     try {
       const instituteId = localStorage.getItem("instituteId") || "";
+      const categoriesRes = await axios
+        .get(`${BACKEND_URL}/master-data-api/categories`)
+        .catch(() => ({ data: [] }));
+      const testsCategory = (Array.isArray(categoriesRes.data) ? categoriesRes.data : []).find(
+        (item) => String(item?.category_name || "").trim() === "Tests"
+      );
+      const testsCategoryValues = testsCategory?._id
+        ? await axios
+            .get(`${BACKEND_URL}/master-data-api/values`, {
+              params: { categoryId: testsCategory._id, includeArchived: "false" }
+            })
+            .catch(() => ({ data: [] }))
+        : { data: [] };
+
+      const masterValues = Array.isArray(testsCategoryValues.data) ? testsCategoryValues.data : [];
+      const categoryByName = new Map();
+      const testsByCategory = {};
+
+      masterValues.forEach((item) => {
+        const kind = String(item?.meta?.kind || "").trim();
+        const valueName = String(item?.value_name || item?.name || "").trim();
+        if (!valueName) return;
+
+        if (kind === "category") {
+          categoryByName.set(valueName.toLowerCase(), valueName);
+          if (!testsByCategory[valueName]) testsByCategory[valueName] = [];
+          return;
+        }
+
+        if (kind !== "test") return;
+        const category = String(item?.meta?.category || "").trim();
+        if (!category) return;
+        if (!testsByCategory[category]) testsByCategory[category] = [];
+        testsByCategory[category].push({
+          _id: item?._id,
+          Test_Name: valueName,
+          Group: category,
+          Reference_Range: String(item?.meta?.reference || "").trim(),
+          Units: String(item?.meta?.unit || "").trim(),
+          Display_Name: valueName,
+          Raw_Test_Name: valueName
+        });
+      });
+
+      const mergedCategories = Array.from(
+        new Set([...Array.from(categoryByName.values()), ...Object.keys(testsByCategory)])
+      ).sort((a, b) => a.localeCompare(b));
+
+      const normalizedTests = Object.entries(testsByCategory).flatMap(([category, rows]) =>
+        (Array.isArray(rows) ? rows : []).map((test, idx) => ({
+          _id: test?._id || `master-${category}-${idx}`,
+          Test_Name: String(test?.Test_Name || test?.name || "").trim(),
+          Group: String(test?.Group || category || "").trim(),
+          Reference_Range: String(test?.Reference_Range || test?.reference || "").trim(),
+          Units: String(test?.Units || test?.unit || "").trim(),
+          Display_Name: String(test?.Display_Name || test?.name || test?.Test_Name || "").trim(),
+          Raw_Test_Name: String(test?.Raw_Test_Name || test?.name || test?.Test_Name || "").trim()
+        }))
+      ).filter((test) => test.Group && test.Test_Name);
+
+      setTestsMaster(normalizedTests);
+      setTestCategories(mergedCategories);
+      setTestsLoading(false);
+      return;
+      if (false) {
       const normalizeLoose = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
       const normalizeCategoryKey = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
       const isActive = (status) => String(status || "active").trim().toLowerCase() === "active";
@@ -697,6 +788,7 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
 
       setTestsMaster(normalizedTests);
       setTestCategories(finalCategories);
+      }
     } catch (err) {
       console.error(err);
       setTestsMaster([]);

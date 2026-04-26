@@ -70,9 +70,35 @@ const DiagnosisEntryForm = () => {
     return grouped;
   }, [testsMaster]);
 
+  const knownTestNameKeys = useMemo(
+    () =>
+      new Set(
+        (testsMaster || [])
+          .map((test) => String(test?.Test_Name || test?.Display_Name || "").trim().toLowerCase())
+          .filter(Boolean)
+      ),
+    [testsMaster]
+  );
+
+  const blockedTestCategoryKeys = useMemo(
+    () =>
+      new Set(
+        ["Bilirubin - Direct", "Bilirubin - Indirect", "Bilirubin - Total"]
+          .map((name) => String(name || "").trim().toLowerCase())
+          .filter(Boolean)
+      ),
+    []
+  );
+
   const testCategoryOptions = useMemo(
-    () => Array.from(new Set([...(testCategories || []), ...Object.keys(testsByCategory || {})])),
-    [testCategories, testsByCategory]
+    () =>
+      Array.from(new Set([...(testCategories || []), ...Object.keys(testsByCategory || {})])).filter(
+        (category) => {
+          const key = String(category || "").trim().toLowerCase();
+          return !knownTestNameKeys.has(key) && !blockedTestCategoryKeys.has(key);
+        }
+      ),
+    [blockedTestCategoryKeys, knownTestNameKeys, testCategories, testsByCategory]
   );
 
   const formatDateDMY = (dateValue) => {
@@ -139,15 +165,9 @@ const fetchDoctorDiagnosis = async (visitId) => {
       console.error("Error fetching institute name:", err);
     }
   };
-
-
-
   const fetchTests = async () => {
   try {
     const instituteId = localStorage.getItem("instituteId") || "";
-    const structRes = await axios
-      .get(`${BACKEND_URL}/master-data-api/tests-structure`, { params: instituteId ? { instituteId } : {} })
-      .catch(() => ({ data: { categories: [], testsByCategory: {} } }));
     const categoriesRes = await axios
       .get(`${BACKEND_URL}/master-data-api/categories`)
       .catch(() => ({ data: [] }));
@@ -157,51 +177,52 @@ const fetchDoctorDiagnosis = async (visitId) => {
     const testsCategoryValues = testsCategory?._id
       ? await axios
           .get(`${BACKEND_URL}/master-data-api/values`, {
-            params: { categoryId: testsCategory._id, includeInactive: true }
+            params: { categoryId: testsCategory._id, includeArchived: "false" }
           })
           .catch(() => ({ data: [] }))
       : { data: [] };
 
-    const apiTestsByCategory = structRes.data?.testsByCategory && typeof structRes.data.testsByCategory === "object"
-      ? structRes.data.testsByCategory
-      : {};
-    const customValues = Array.isArray(testsCategoryValues.data) ? testsCategoryValues.data : [];
-    const customCategories = customValues
-      .filter((item) => item?.meta?.kind === "category")
-      .map((item) => String(item?.value_name || "").trim())
-      .filter(Boolean);
-    const customGrouped = {};
-    customValues
-      .filter((item) => item?.meta?.kind === "test")
-      .forEach((item) => {
-        const category = String(item?.meta?.category || "").trim();
-        const name = String(item?.value_name || "").trim();
-        if (!category || !name) return;
-        if (!customGrouped[category]) customGrouped[category] = [];
-        customGrouped[category].push({
-          _id: item?._id,
-          Test_Name: name,
-          Group: category,
-          Reference_Range: String(item?.meta?.reference || "").trim(),
-          Units: String(item?.meta?.unit || "").trim(),
-          Display_Name: name,
-          Raw_Test_Name: name
-        });
+    const masterValues = Array.isArray(testsCategoryValues.data) ? testsCategoryValues.data : [];
+    const categoryNames = new Map();
+    const testsByCategoryMap = {};
+
+    masterValues.forEach((item) => {
+      const kind = String(item?.meta?.kind || "").trim();
+      const valueName = String(item?.value_name || item?.name || "").trim();
+      if (!valueName) return;
+
+      if (kind === "category") {
+        categoryNames.set(valueName.toLowerCase(), valueName);
+        if (!testsByCategoryMap[valueName]) testsByCategoryMap[valueName] = [];
+        return;
+      }
+
+      if (kind !== "test") return;
+      const category = String(item?.meta?.category || "").trim();
+      if (!category) return;
+      if (!testsByCategoryMap[category]) testsByCategoryMap[category] = [];
+      testsByCategoryMap[category].push({
+        _id: item?._id,
+        Test_Name: valueName,
+        Group: category,
+        Reference_Range: String(item?.meta?.reference || "").trim(),
+        Units: String(item?.meta?.unit || "").trim(),
+        Display_Name: valueName,
+        Raw_Test_Name: valueName
       });
+    });
+
     const mergedCategories = Array.from(
       new Set([
-        ...(Array.isArray(structRes.data?.categories) ? structRes.data.categories : []),
-        ...Object.keys(apiTestsByCategory),
-        ...customCategories,
-        ...Object.keys(customGrouped)
+        ...Array.from(categoryNames.values()),
+        ...Object.keys(testsByCategoryMap)
       ])
     );
     const mergedTestsByCategory = {};
     mergedCategories.forEach((category) => {
-      const apiRows = Array.isArray(apiTestsByCategory[category]) ? apiTestsByCategory[category] : [];
-      const customRows = Array.isArray(customGrouped[category]) ? customGrouped[category] : [];
+      const rows = Array.isArray(testsByCategoryMap[category]) ? testsByCategoryMap[category] : [];
       const seen = new Set();
-      mergedTestsByCategory[category] = [...apiRows, ...customRows]
+      mergedTestsByCategory[category] = rows
         .filter((test) => {
           const key = String(test?.Test_Name || test?.name || "").trim().toLowerCase();
           if (!key || seen.has(key)) return false;
