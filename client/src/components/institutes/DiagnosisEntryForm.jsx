@@ -33,6 +33,12 @@ const DiagnosisEntryForm = () => {
   });
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const resolveReportUrl = (url) => {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+    const base = String(BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(url).replace(/^\/+/, "")}`;
+  };
 
   const testsByCategory = useMemo(() => {
     const grouped = {};
@@ -699,7 +705,7 @@ const fetchPastRecords = async () => {
                                   {reports.map((r, ri) => (
                                     <a
                                       key={ri}
-                                      href={`${BACKEND_URL}${r.url}`}
+                                      href={resolveReportUrl(r?.url)}
                                       target="_blank"
                                       rel="noreferrer"
                                       className="btn btn-sm btn-outline-primary me-2"

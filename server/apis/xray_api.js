@@ -10,9 +10,8 @@ const FamilyMember = require("../models/family_member");
 const MedicalAction = require("../models/medical_action");
 const DailyVisit = require("../models/daily_visit");
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const MasterValue = require("../models/master_value");
+const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 const {
   trimString,
   normalize,
@@ -200,23 +199,7 @@ xrayApp.get("/tests", async (req, res) => {
   }
 });
 
-// ---------- Upload X-ray report endpoint ----------
-// Stores uploaded files under uploads/xray_reports and records metadata in XrayRecord.Reports
-const xrayReportsDir = path.join(__dirname, '..', 'uploads', 'xray_reports');
-if (!fs.existsSync(xrayReportsDir)) fs.mkdirSync(xrayReportsDir, { recursive: true });
-
-const xrayStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, xrayReportsDir);
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname) || '';
-    const name = 'xray-' + Date.now() + '-' + Math.round(Math.random() * 1e9) + ext;
-    cb(null, name);
-  }
-});
-
-const xrayUpload = multer({ storage: xrayStorage, limits: { fileSize: 20 * 1024 * 1024 } });
+const xrayUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 const requireInstituteAdmin = (req, res, next) => {
   if (req.user?.role !== "institute") {
@@ -231,15 +214,18 @@ xrayApp.post('/upload-debug', xrayUpload.single('report'), async (req, res) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ message: 'No file uploaded' });
+    const uploaded = await uploadBufferToCloudinary(file.buffer, {
+      folder: "xray_reports"
+    });
 
     const fileMeta = {
-      filename: file.filename,
+      filename: file.originalname,
       originalname: file.originalname,
-      url: `/uploads/xray_reports/${file.filename}`,
+      url: uploaded.secure_url,
       uploadedAt: new Date()
     };
 
-    return res.status(201).json({ message: 'Debug upload saved', file: fileMeta });
+    return res.status(201).json({ message: 'Debug upload saved', url: uploaded.secure_url, file: fileMeta });
   } catch (err) {
     console.error('X-ray debug upload error:', err);
     return res.status(500).json({ message: 'Debug upload failed', error: err.message });
@@ -578,25 +564,22 @@ xrays = xrays.map((item) => {
 
 const files = req.files || [];
 
-xrays.forEach((xray,index)=>{
-
-const file = files[index];
-
-if(file){
-
-xray.Reports = [
-{
-filename:file.filename,
-originalname:file.originalname,
-url:`/uploads/xray_reports/${file.filename}`,
-uploadedBy:req.user?.id || "system",
-uploadedAt:new Date()
+for (let index = 0; index < xrays.length; index += 1) {
+  const file = files[index];
+  if (!file?.buffer) continue;
+  const uploaded = await uploadBufferToCloudinary(file.buffer, {
+    folder: "xray_reports"
+  });
+  xrays[index].Reports = [
+    {
+      filename: file.originalname,
+      originalname: file.originalname,
+      url: uploaded.secure_url,
+      uploadedBy: req.user?.id || "system",
+      uploadedAt: new Date()
+    }
+  ];
 }
-];
-
-}
-
-});
 
 
 /* ---------------- HANDLE FAMILY MEMBER CORRECTLY ---------------- */

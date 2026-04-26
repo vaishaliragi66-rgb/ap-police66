@@ -333,25 +333,25 @@ const EmployeeProfile = () => {
   if (!employee)
     return <div className="text-center mt-5">Loading profile...</div>;
 
-  const absCardUrl = employee?.ABS_Card
-    ? `${BACKEND_URL}${employee.ABS_Card}`
-    : null;
-  const isAbsCardImage = employee?.ABS_Card
-    ? /\.(png|jpe?g|gif)$/i.test(employee.ABS_Card)
-    : false;
-  const profileImageSrc = isEditing && profilePhotoPreview
-    ? profilePhotoPreview
-    : employee.Profile_Pic
-    ? `${String(BACKEND_URL || "").replace(/\/$/, "")}/${String(employee.Profile_Pic).replace(/^\/+/, "")}`
-    : employee.Photo
-    ? `${String(BACKEND_URL || "").replace(/\/$/, "")}/${String(employee.Photo).replace(/^\/+/, "")}`
-    : FALLBACK_PROFILE_IMAGE;
   const resolveImageUrl = (photoPath) => {
     if (!photoPath) return FALLBACK_PROFILE_IMAGE;
     if (/^https?:\/\//i.test(photoPath)) return photoPath;
     const base = String(BACKEND_URL || "").replace(/\/$/, "");
     return `${base}/${String(photoPath).replace(/^\/+/, "")}`;
   };
+  const resolveFileUrl = (filePath) => {
+    if (!filePath) return null;
+    if (/^https?:\/\//i.test(filePath)) return filePath;
+    const base = String(BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(filePath).replace(/^\/+/, "")}`;
+  };
+  const absCardUrl = resolveFileUrl(employee?.ABS_Card);
+  const isAbsCardImage = employee?.ABS_Card
+    ? /\.(png|jpe?g|gif|webp)$/i.test(String(employee.ABS_Card).split("?")[0])
+    : false;
+  const profileImageSrc = isEditing && profilePhotoPreview
+    ? profilePhotoPreview
+    : resolveImageUrl(employee?.Profile_Pic || employee?.Photo);
 
     return (
       <div

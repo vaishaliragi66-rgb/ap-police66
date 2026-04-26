@@ -2,32 +2,18 @@ const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
 const FamilyMember = require("../models/family_member");
 const Employee = require("../models/employee");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
+const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 const {
   normalizePatientMetrics,
   validateRequiredPatientMetrics
 } = require("../utils/healthMetrics");
 const FamilyApp = express.Router();
 
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, "..", "uploads", "family-pics");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `family_${Date.now()}${ext}`);
-  },
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|webp/;
@@ -99,7 +85,6 @@ FamilyApp.post(
     } = req.body;
 
     if (!Name || !Gender || !Relationship || !EmployeeId) {
-      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({
         message: "Name, Gender, Relationship, and EmployeeId are required",
       });
@@ -107,20 +92,17 @@ FamilyApp.post(
 
     const metricError = validateRequiredPatientMetrics({ Height, Weight });
     if (metricError) {
-      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ message: metricError });
     }
 
     // Check Employee Exists
     const employee = await Employee.findById(EmployeeId);
     if (!employee) {
-      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(404).json({ message: "Employee not found" });
     }
 
     const normalizedAbhaNumber = normalizeAbhaNumber(ABHA_Number);
     if (!isValidAbhaNumber(normalizedAbhaNumber)) {
-      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({
         message: "ABHA number must be exactly 14 digits"
       });
@@ -128,7 +110,6 @@ FamilyApp.post(
 
     const existingAbhaOwner = await findExistingAbhaOwner(normalizedAbhaNumber);
     if (existingAbhaOwner) {
-      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(409).json({
         message: `ABHA number already exists for ${existingAbhaOwner}`
       });
@@ -158,8 +139,11 @@ FamilyApp.post(
       Medical_History,
     };
 
-    if (req.file) {
-      memberData.Photo = `/uploads/family-pics/${req.file.filename}`;
+    if (req.file?.buffer) {
+      const uploaded = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: "family-pics"
+      });
+      memberData.Photo = uploaded.secure_url;
     }
 
     const member = new FamilyMember(memberData);
@@ -280,21 +264,13 @@ FamilyApp.put(
 
       const member = await FamilyMember.findById(id);
       if (!member) {
-        if (req.file && fs.existsSync(req.file.path)) {
-          fs.unlinkSync(req.file.path);
-        }
         return res.status(404).json({ message: "Family member not found" });
       }
 
-      if (member.Photo) {
-        const safeRelPath = member.Photo.replace(/^[\\/]/, "");
-        const oldPath = path.join(__dirname, "..", safeRelPath);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
-      }
-
-      member.Photo = `/uploads/family-pics/${req.file.filename}`;
+      const uploaded = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: "family-pics"
+      });
+      member.Photo = uploaded.secure_url;
       await member.save();
 
       res.status(200).json({
@@ -302,9 +278,6 @@ FamilyApp.put(
         member
       });
     } catch (err) {
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
       res.status(500).json({
         message: "Failed to upload family member photo",
         error: err.message

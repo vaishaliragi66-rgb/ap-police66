@@ -26,13 +26,6 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// ✅ Serve uploads folder statically
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "uploads"))
-);
-
-
 // import your router here (adjust the path as needed)
 const instituteApp = require('./apis/institute_api');
 const medicineApp = require("./apis/medicines_api");
@@ -75,7 +68,6 @@ app.use("/prescription-api", prescriptionApp);
 app.use("/diagnosis-api",diagnosisApp);
 app.use("/disease-api", require("./apis/disease-api"));
 app.use("/disease-api",diseaseApp)
-app.use("/uploads", express.static("uploads"));
 app.use("/ledger-api", ledgerApp);
 app.use("/indent-api", indentApp);
 app.use("/medicine-limit-api", require("./apis/medicine_limit_api"));

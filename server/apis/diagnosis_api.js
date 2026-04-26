@@ -3,8 +3,6 @@ const mongoose = require("mongoose");
 const diagnosisApp = express.Router();
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const DiagnosisRecord = require("../models/diagnostics_record");
 const Institute = require("../models/master_institute");
 const Employee = require("../models/employee");
@@ -21,6 +19,7 @@ const {
   findMasterTests,
   findMasterTestByLooseName
 } = require("../utils/instituteMasterData");
+const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 
 const parseDateInput = (value, endOfDay = false) => {
   if (!value) return null;
@@ -156,19 +155,8 @@ const formatPdfDateTime = (value) => {
   }).format(date);
 };
 
-const reportStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, reportsDir);
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname) || '';
-    const name = 'diag-' + Date.now() + '-' + Math.round(Math.random() * 1e9) + ext;
-    cb(null, name);
-  }
-});
-
 const reportUpload = multer({
-  storage: reportStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
@@ -438,27 +426,25 @@ diagnosisApp.post(
       ------------------------- */
 
       const files = req.files || [];
-let fileIndex = 0;
+      let fileIndex = 0;
 
-Tests.forEach((test) => {
-
-  if (files[fileIndex]) {
-
-    test.Reports = [
-      {
-        filename: files[fileIndex].filename,
-        originalname: files[fileIndex].originalname,
-        url: `/uploads/diagnosis_reports/${files[fileIndex].filename}`,
-        uploadedBy: req.user?.id || "system",
-        uploadedAt: new Date()
+      for (const test of Tests) {
+        const file = files[fileIndex];
+        if (!file?.buffer) continue;
+        const uploaded = await uploadBufferToCloudinary(file.buffer, {
+          folder: "diagnosis_reports"
+        });
+        test.Reports = [
+          {
+            filename: file.originalname,
+            originalname: file.originalname,
+            url: uploaded.secure_url,
+            uploadedBy: req.user?.id || "system",
+            uploadedAt: new Date()
+          }
+        ];
+        fileIndex += 1;
       }
-    ];
-
-    fileIndex++;
-
-  }
-
-});
 
       /* -------------------------
          Create query for record
@@ -711,14 +697,6 @@ diagnosisApp.get("/records/:employeeId", async (req, res) => {
   }
 
 });
-
-// ---------- Upload report endpoint ----------
-// Stores uploaded report files under uploads/diagnosis_reports and records metadata in DiagnosisRecord.Reports
-const reportsDir = path.join(__dirname, '..', 'uploads', 'diagnosis_reports');
-if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
-
-
-
 
 // --------- Upload diagnosis report endpoint ----------
 // Note: placed after module.exports to avoid hoisting issues in some setups

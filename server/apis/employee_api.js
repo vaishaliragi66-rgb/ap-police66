@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Employee = require("../models/employee");
 const Disease = require("../models/disease");
@@ -16,34 +15,14 @@ const {
   normalizePatientMetrics,
   validateRequiredPatientMetrics
 } = require("../utils/healthMetrics");
+const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 
 const employeeApp = express.Router();
 
 /* ================= MULTER CONFIG ================= */
 
-// Create uploads directories if they don't exist
-const uploadDir = path.join(__dirname, '..', 'uploads', 'profile-pics');
-const absCardDir = path.join(__dirname, '..', 'uploads', 'abs-cards');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-if (!fs.existsSync(absCardDir)) {
-  fs.mkdirSync(absCardDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'employee-' + uniqueSuffix + ext);
-  }
-});
-
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif/;
@@ -58,19 +37,8 @@ const upload = multer({
   }
 });
 
-const absCardStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, absCardDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'abs-card-' + uniqueSuffix + ext);
-  }
-});
-
 const absCardUpload = multer({
-  storage: absCardStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const allowedExt = /jpeg|jpg|png|gif|pdf/;
@@ -231,10 +199,6 @@ employeeApp.post(
       const missingFields = requiredFields.filter(field => !data[field] || data[field].trim() === "");
       
       if (missingFields.length > 0) {
-        // Clean up uploaded file if validation fails
-        if (req.file) {
-          fs.unlinkSync(req.file.path);
-        }
         return res.status(400).json({ 
           message: `Missing required fields: ${missingFields.join(", ")}` 
         });
@@ -242,9 +206,6 @@ employeeApp.post(
 
       const metricError = validateRequiredPatientMetrics(data);
       if (metricError) {
-        if (req.file) {
-          fs.unlinkSync(req.file.path);
-        }
         return res.status(400).json({ message: metricError });
       }
 
@@ -274,22 +235,22 @@ employeeApp.post(
       };
 
       if (!isValidAbhaNumber(employeeData.ABHA_Number)) {
-        if (req.file) fs.unlinkSync(req.file.path);
         return res.status(400).json({
           message: "ABHA number must be exactly 14 digits"
         });
       }
 
       // Handle profile photo
-      if (req.file) {
-        // Store relative path
-        employeeData.Photo = `/uploads/profile-pics/${req.file.filename}`;
+      if (req.file?.buffer) {
+        const uploaded = await uploadBufferToCloudinary(req.file.buffer, {
+          folder: "profile-pics"
+        });
+        employeeData.Photo = uploaded.secure_url;
       }
 
       // Check for duplicate email
       const existingEmail = await Employee.findOne({ Email: employeeData.Email });
       if (existingEmail) {
-        if (req.file) fs.unlinkSync(req.file.path);
         return res.status(409).json({ 
           message: "Employee already registered with this email" 
         });
@@ -298,7 +259,6 @@ employeeApp.post(
       // Check for duplicate ABS_NO
       const existingABS = await Employee.findOne({ ABS_NO: employeeData.ABS_NO });
       if (existingABS) {
-        if (req.file) fs.unlinkSync(req.file.path);
         return res.status(409).json({ 
           message: "Employee already registered with this ABS Number" 
         });
@@ -306,7 +266,6 @@ employeeApp.post(
 
       const existingAbhaOwner = await findExistingAbhaOwner(employeeData.ABHA_Number);
       if (existingAbhaOwner) {
-        if (req.file) fs.unlinkSync(req.file.path);
         return res.status(409).json({
           message: `ABHA number already exists for ${existingAbhaOwner}`
         });
@@ -328,11 +287,6 @@ employeeApp.post(
     } catch (err) {
       console.error("Registration error:", err);
       
-      // Clean up uploaded file if error occurs
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-
       // Handle duplicate key errors
       if (err.code === 11000) {
         const field = err.keyPattern?.Email ? "Email" : "ABS_NO";
@@ -651,22 +605,13 @@ employeeApp.put(
 
       const employee = await Employee.findById(id);
       if (!employee) {
-        if (req.file && fs.existsSync(req.file.path)) {
-          fs.unlinkSync(req.file.path);
-        }
         return res.status(404).json({ message: "Employee not found" });
       }
 
-      // Remove old profile photo if present
-      if (employee.Photo) {
-        const safeRelPath = employee.Photo.replace(/^[\\/]/, "");
-        const oldPath = path.join(__dirname, "..", safeRelPath);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
-      }
-
-      employee.Photo = `/uploads/profile-pics/${req.file.filename}`;
+      const uploaded = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: "profile-pics"
+      });
+      employee.Photo = uploaded.secure_url;
       await employee.save();
 
       const responseData = employee.toObject();
@@ -677,9 +622,6 @@ employeeApp.put(
         employee: responseData
       });
     } catch (err) {
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
       res.status(500).json({
         message: err.message || "Failed to upload profile image",
         error: err.message
@@ -701,22 +643,13 @@ employeeApp.put(
 
       const employee = await Employee.findById(id);
       if (!employee) {
-        if (req.file && fs.existsSync(req.file.path)) {
-          fs.unlinkSync(req.file.path);
-        }
         return res.status(404).json({ message: "Employee not found" });
       }
 
-      // Remove old ABS card file if present
-      if (employee.ABS_Card) {
-        const safeRelPath = employee.ABS_Card.replace(/^[\\/]/, "");
-        const oldPath = path.join(__dirname, "..", safeRelPath);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
-      }
-
-      employee.ABS_Card = `/uploads/abs-cards/${req.file.filename}`;
+      const uploaded = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: "abs-cards"
+      });
+      employee.ABS_Card = uploaded.secure_url;
       await employee.save();
 
       const responseData = employee.toObject();
@@ -727,9 +660,6 @@ employeeApp.put(
         employee: responseData
       });
     } catch (err) {
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
       res.status(500).json({
         message: err.message || "Failed to upload ABS card",
         error: err.message
@@ -747,14 +677,6 @@ employeeApp.delete(
       const employee = await Employee.findById(id);
       if (!employee) {
         return res.status(404).json({ message: "Employee not found" });
-      }
-
-      if (employee.ABS_Card) {
-        const safeRelPath = employee.ABS_Card.replace(/^[\\/]/, "");
-        const absPath = path.join(__dirname, "..", safeRelPath);
-        if (fs.existsSync(absPath)) {
-          fs.unlinkSync(absPath);
-        }
       }
 
       employee.ABS_Card = "";

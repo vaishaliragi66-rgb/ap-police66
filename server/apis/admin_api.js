@@ -3,8 +3,6 @@ const expressAsyncHandler = require("express-async-handler");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
 let ExcelJS;
 try {
   ExcelJS = require("exceljs");
@@ -16,18 +14,11 @@ const Admin = require("../models/admin");
 const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
 const Institute = require("../models/master_institute");
+const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 const adminApp = express.Router();
 
-const uploadTempDir = path.join(__dirname, '..', 'uploads', 'temp');
-const profilePicDir = path.join(__dirname, '..', 'uploads', 'profile-pics');
-if (!fs.existsSync(uploadTempDir)) fs.mkdirSync(uploadTempDir, { recursive: true });
-if (!fs.existsSync(profilePicDir)) fs.mkdirSync(profilePicDir, { recursive: true });
-
 const bulkUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadTempDir),
-    filename: (req, file, cb) => cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname}`)
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === "excelFile") {
@@ -66,10 +57,11 @@ const normalizeRow = (row) => {
 };
 
 const writePhoto = async (data, filename) => {
-  const target = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(filename) || ".jpg"}`;
-  const destPath = path.join(profilePicDir, target);
-  await fs.promises.writeFile(destPath, data);
-  return `/uploads/profile-pics/${target}`;
+  const uploaded = await uploadBufferToCloudinary(data, {
+    folder: "profile-pics",
+    public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}`
+  });
+  return uploaded.secure_url;
 };
 
 const getExcelCellValue = (value) => {
@@ -96,9 +88,9 @@ const getExcelCellValue = (value) => {
   return value;
 };
 
-const readExcelUpload = async (excelPath) => {
+const readExcelUpload = async (excelBuffer) => {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(excelPath);
+  await workbook.xlsx.load(excelBuffer);
   const worksheet = workbook.worksheets[0];
   const photoMap = new Map();
   const rawRows = [];
@@ -324,9 +316,7 @@ adminApp.post(
     }
 
     try {
-      const { rawRows, photoMap } = await readExcelUpload(excelFile.path);
-
-      fs.unlinkSync(excelFile.path);
+      const { rawRows, photoMap } = await readExcelUpload(excelFile.buffer);
 
       if (!Array.isArray(rawRows) || rawRows.length === 0) {
         return res.status(400).json({ success: false, message: "Excel file is empty or invalid." });

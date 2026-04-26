@@ -5,6 +5,12 @@ import "./InstitutesTheme.css";
 const InstituteReports = () => {
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const resolveReportUrl = (url) => {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+    const base = String(BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(url).replace(/^\/+/, "")}`;
+  };
 
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -414,8 +420,8 @@ const InstituteReports = () => {
                     <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
                       {allReports.map((rep, idx) => (
                         <li key={idx} style={{ marginBottom: 8 }}>
-                          <a href={`${BACKEND_URL}/${rep.url?.replace(/^\//, '')}`} target="_blank" rel="noreferrer" className="me-2">{rep.originalname || rep.filename}</a>
-                          <a href={`${BACKEND_URL}/${rep.url?.replace(/^\//, '')}`} download className="btn btn-sm btn-outline-secondary">Download</a>
+                          <a href={resolveReportUrl(rep?.url)} target="_blank" rel="noreferrer" className="me-2">{rep.originalname || rep.filename}</a>
+                          <a href={resolveReportUrl(rep?.url)} download className="btn btn-sm btn-outline-secondary">Download</a>
                         </li>
                       ))}
                     </ul>
@@ -462,8 +468,7 @@ const InstituteReports = () => {
                           <h6>Uploaded Reports</h6>
                           <ul className="list-unstyled">
                             {selectedDiagnosisRec.Reports.map((r, i) => {
-                              const urlPath = r.url ? r.url.replace(/^\/+/, '') : '';
-                              const href = `${BACKEND_URL}/${urlPath}`;
+                              const href = resolveReportUrl(r?.url);
                               return (
                                 <li key={i} className="mb-2">
                                   <a href={href} target="_blank" rel="noreferrer" className="me-2">{r.originalname || r.filename}</a>
