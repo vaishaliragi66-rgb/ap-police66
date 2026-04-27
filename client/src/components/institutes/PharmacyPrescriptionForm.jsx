@@ -11,6 +11,7 @@ const { useMemo } = React;
 
 const PharmacyPrescriptionForm = () => {                       
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [visitId, setVisitId] = useState(null);
   const [inventory, setInventory] = useState([]);
@@ -26,6 +27,13 @@ const PharmacyPrescriptionForm = () => {
   const [showReports, setShowReports] = useState(false);
   const [masterMap, setMasterMap] = useState({});
   const [showDoctorNotes, setShowDoctorNotes] = useState({});
+
+  const resolveProfileImageUrl = (photoPath) => {
+    if (!photoPath) return FALLBACK_PROFILE_IMAGE;
+    if (/^https?:\/\//i.test(photoPath)) return photoPath;
+    const base = String(BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(photoPath).replace(/^\/+/, "")}`;
+  };
 
   const medicineTypeOptions = getMasterOptions(masterMap, "Medicine Types");
   const dosageFormOptions = getMasterOptions(masterMap, "Dosage Forms");
@@ -231,6 +239,19 @@ const loadEmployeeReports = async () => {
     return `${mm}-${yyyy}`;
   };
 
+  const calculateAge = (dob) => {
+    if (!dob) return "";
+    const birth = new Date(dob);
+    if (isNaN(birth.getTime())) return "";
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age -= 1;
+    }
+    return age;
+  };
+
   const isMedicineExpired = (value) => {
     if (!value) return false;
 
@@ -341,6 +362,19 @@ const loadEmployeeReports = async () => {
       d.Category === "Communicable" &&
       new Date(d.createdAt) >= twoMonthsAgo
   );
+  const selectedPatientProfile = selectedVisit?.IsFamilyMember
+    ? selectedVisit?.FamilyMember || null
+    : selectedEmployee || selectedVisit?.employee_id || null;
+  const selectedPatientName = selectedVisit?.IsFamilyMember
+    ? selectedVisit?.FamilyMember?.Name || "Family Member"
+    : selectedEmployee?.Name || selectedVisit?.employee_id?.Name || "Patient";
+  const selectedPatientAge = selectedPatientProfile?.Age || calculateAge(selectedPatientProfile?.DOB) || "—";
+  const selectedPatientAbsNo = selectedEmployee?.ABS_NO || selectedVisit?.employee_id?.ABS_NO || "—";
+  const selectedPatientBloodGroup = selectedPatientProfile?.Blood_Group || "—";
+  const selectedPatientGender = selectedPatientProfile?.Gender || "—";
+  const selectedPatientLastVisit = lastTwoVisits?.[0]?.Timestamp
+    ? formatDateDMY(lastTwoVisits[0].Timestamp)
+    : "—";
 
   /* ================= MEDICINE VALIDATION ================= */
   const validateMedicineQuantity = async (index, medicineName, quantity) => {
@@ -1154,6 +1188,51 @@ const handleSubmit = async (e) => {
 
 
           <div className="col-lg-3">
+            {(selectedEmployee || selectedVisit) && (
+              <div className="card shadow border-0 mb-3">
+                <div className="card-header bg-secondary text-white">
+                  <strong>Patient Profile</strong>
+                </div>
+                <div className="card-body py-3 px-3">
+                  <div className="d-flex gap-3 align-items-start">
+                    <img
+                      src={resolveProfileImageUrl(
+                        selectedVisit?.IsFamilyMember
+                          ? selectedVisit?.FamilyMember?.Photo
+                          : selectedEmployee?.Photo || selectedVisit?.employee_id?.Photo
+                      )}
+                      alt="Patient"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
+                      }}
+                      style={{
+                        width: "140px",
+                        height: "140px",
+                        borderRadius: "14px",
+                        objectFit: "cover",
+                        objectPosition: "center",
+                        border: "1px solid rgba(191,219,254,0.9)",
+                        boxShadow: "0 10px 24px rgba(15,23,42,0.12)",
+                        background: "rgba(255,255,255,0.92)",
+                        flexShrink: 0,
+                        marginRight: "20px"
+                      }}
+                    />
+                    <div className="small" style={{ color: "#1F2933", minWidth: 0 }}>
+                      <div className="fw-semibold mb-2" style={{ fontSize: "14px", wordBreak: "break-word" }}>
+                        {selectedPatientName}
+                      </div>
+                      <div className="mb-1"><strong>ABS No:</strong> {selectedPatientAbsNo}</div>
+                      <div className="mb-1"><strong>Blood Group:</strong> {selectedPatientBloodGroup}</div>
+                      <div className="mb-1"><strong>Gender:</strong> {selectedPatientGender}</div>
+                      <div className="mb-1"><strong>Age:</strong> {selectedPatientAge}</div>
+                      <div><strong>Last Visit:</strong> {selectedPatientLastVisit}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {lastTwoVisits.length > 0 && (
               <div className="card shadow border-0 mb-3">
                 <div className="card-header bg-secondary text-white">

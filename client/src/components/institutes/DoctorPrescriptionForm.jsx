@@ -14,12 +14,19 @@ import "./InstitutesTheme.css";
 
 const DoctorPrescriptionForm = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 5200}`;
+  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
 
   const resolveUrl = (u) => {
     if (!u) return null;
     if (/^https?:\/\//i.test(u)) return u;
     const base = (BACKEND_URL || '').replace(/\/$/, '');
     return `${base}/${String(u).replace(/^\/+/, '')}`;
+  };
+  const resolveProfileImageUrl = (photoPath) => {
+    if (!photoPath) return FALLBACK_PROFILE_IMAGE;
+    if (/^https?:\/\//i.test(photoPath)) return photoPath;
+    const base = (BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(photoPath).replace(/^\/+/, "")}`;
   };
   const navigate = useNavigate();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -1240,8 +1247,35 @@ const relevantDiseases = diseases.filter((d) => {
     return parsed.toLocaleString("en-GB");
   };
 
+  const calculateAge = (dob) => {
+    if (!dob) return "";
+    const birth = new Date(dob);
+    if (Number.isNaN(birth.getTime())) return "";
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age -= 1;
+    }
+    return age;
+  };
+
   const getPrescriptionTimestamp = (record) =>
     record?.Timestamp || record?.created_at || record?.createdAt || null;
+
+  const selectedPatientProfile = selectedVisit?.IsFamilyMember
+    ? selectedVisit?.FamilyMember || null
+    : selectedEmployee || selectedVisit?.employee_id || null;
+  const selectedPatientName = selectedVisit?.IsFamilyMember
+    ? selectedVisit?.FamilyMember?.Name || "Family Member"
+    : selectedEmployee?.Name || selectedVisit?.employee_id?.Name || "Patient";
+  const selectedPatientAge = selectedPatientProfile?.Age || calculateAge(selectedPatientProfile?.DOB) || "—";
+  const selectedPatientAbsNo = selectedEmployee?.ABS_NO || selectedVisit?.employee_id?.ABS_NO || "—";
+  const selectedPatientBloodGroup = selectedPatientProfile?.Blood_Group || "—";
+  const selectedPatientGender = selectedPatientProfile?.Gender || "—";
+  const selectedPatientLastVisit = lastTwoVisits?.[0]?.Timestamp
+    ? formatDateDMY(lastTwoVisits[0].Timestamp)
+    : "—";
 
   const getDiagnosisReportDate = (record) =>
     record?.Tests?.[0]?.Timestamp || record?.Timestamp || record?.updatedAt || record?.createdAt || null;
@@ -2616,6 +2650,51 @@ if (validXrays.length === 0) {
           </div>
         </div>
         <div className="col-lg-3">
+  {(selectedEmployee || selectedVisit) && (
+    <div className="card shadow border-0 mb-3">
+      <div className="card-header bg-secondary text-white">
+        <strong>Patient Profile</strong>
+      </div>
+      <div className="card-body py-3 px-3">
+        <div className="d-flex gap-3 align-items-start">
+          <img
+            src={resolveProfileImageUrl(
+              selectedVisit?.IsFamilyMember
+                ? selectedVisit?.FamilyMember?.Photo
+                : selectedEmployee?.Photo || selectedVisit?.employee_id?.Photo
+            )}
+            alt="Patient"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
+            }}
+            style={{
+              width: "140px",
+              height: "140px",
+              borderRadius: "14px",
+              objectFit: "cover",
+              objectPosition: "center",
+              border: "1px solid rgba(191,219,254,0.9)",
+              boxShadow: "0 10px 24px rgba(15,23,42,0.12)",
+              background: "rgba(255,255,255,0.92)",
+              flexShrink: 0,
+              marginRight: "14px"
+            }}
+          />
+          <div className="small" style={{ color: "#1F2933", minWidth: 0 }}>
+            <div className="fw-semibold mb-2" style={{ fontSize: "14px", wordBreak: "break-word" }}>
+              {selectedPatientName}
+            </div>
+            <div className="mb-1"><strong>ABS No:</strong> {selectedPatientAbsNo}</div>
+            <div className="mb-1"><strong>Blood Group:</strong> {selectedPatientBloodGroup}</div>
+            <div className="mb-1"><strong>Gender:</strong> {selectedPatientGender}</div>
+            <div className="mb-1"><strong>Age:</strong> {selectedPatientAge}</div>
+            <div><strong>Last Visit:</strong> {selectedPatientLastVisit}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
 
   {/* Previous 2 Prescriptions */}
   {lastTwoVisits.length > 0 && (

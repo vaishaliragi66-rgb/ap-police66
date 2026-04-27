@@ -280,6 +280,7 @@ const getEnrichedPrescriptionHistory = (
 };
 
 const PrescriptionReport = () => {
+  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
   const [prescriptions, setPrescriptions] = useState([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -295,6 +296,13 @@ const PrescriptionReport = () => {
   const employeeObjectId = localStorage.getItem("employeeObjectId");
   const employeeId = localStorage.getItem("employeeId") || employeeObjectId;
   const { selectedPersonId, setSelectedPersonId, options, loadingFamily } = usePersonFilter(employeeObjectId || employeeId);
+
+  const resolveProfileImageUrl = (photoPath) => {
+    if (!photoPath) return FALLBACK_PROFILE_IMAGE;
+    if (/^https?:\/\//i.test(photoPath)) return photoPath;
+    const base = String(BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(photoPath).replace(/^\/+/, "")}`;
+  };
 
 
   useEffect(() => {
@@ -404,6 +412,23 @@ const PrescriptionReport = () => {
     () => (selectedPrescription ? buildSarcplReportData(selectedPrescription) : null),
     [selectedPrescription, employeeProfile, familyMembers]
   );
+
+  const activeFamilyProfile = useMemo(() => {
+    if (!selectedPersonId || selectedPersonId === "self" || selectedPersonId === "all") return null;
+    return familyMembers.find((member) => String(member?._id) === String(selectedPersonId)) || null;
+  }, [familyMembers, selectedPersonId]);
+
+  const activePersonProfile = activeFamilyProfile || employeeProfile || null;
+  const activePersonLabel = activeFamilyProfile
+    ? `${activeFamilyProfile?.Name || "Family Member"}${activeFamilyProfile?.Relationship ? ` (${activeFamilyProfile.Relationship})` : ""}`
+    : employeeProfile?.Name || "Employee";
+  const activePersonAbsNo = employeeProfile?.ABS_NO || "—";
+  const activePersonBloodGroup = activePersonProfile?.Blood_Group || employeeProfile?.Blood_Group || "—";
+  const activePersonGender = activePersonProfile?.Gender || "—";
+  const activePersonAge = activePersonProfile?.Age || calculateAgeFromDob(activePersonProfile?.DOB) || "—";
+  const activePersonLastVisit = prescriptions.length > 0
+    ? formatDate(getPrescriptionTimestamp(prescriptions[0]))
+    : "—";
 
   const exportReportData = useMemo(
     () => (exportPrescription ? buildSarcplReportData(exportPrescription) : null),
@@ -621,6 +646,48 @@ const PrescriptionReport = () => {
             </div>
           </div>
         </div>
+
+        {activePersonProfile && (
+          <div
+            className="card border-0 health-card mb-4"
+            style={{ borderRadius: "20px" }}
+          >
+            <div className="card-body py-3 px-3">
+              <div className="d-flex gap-3 align-items-start">
+                <img
+                  src={resolveProfileImageUrl(activePersonProfile?.Photo)}
+                  alt={activePersonLabel}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
+                  }}
+                  style={{
+                    width: "140px",
+                    height: "140px",
+                    borderRadius: "14px",
+                    objectFit: "cover",
+                    objectPosition: "center",
+                    border: "1px solid rgba(191,219,254,0.9)",
+                    boxShadow: "0 10px 24px rgba(15,23,42,0.12)",
+                    background: "rgba(255,255,255,0.92)",
+                    flexShrink: 0,
+                    marginRight: "12px",
+                  }}
+                />
+                <div className="small" style={{ color: "#1F2933", minWidth: 0 }}>
+                  <div className="fw-semibold mb-2" style={{ fontSize: "14px", wordBreak: "break-word" }}>
+                    {activePersonLabel}
+                  </div>
+                  <div className="mb-1"><strong>ABS No:</strong> {activePersonAbsNo}</div>
+                  <div className="mb-1"><strong>Blood Group:</strong> {activePersonBloodGroup}</div>
+                  <div className="mb-1"><strong>Gender:</strong> {activePersonGender}</div>
+                  <div className="mb-1"><strong>Age:</strong> {activePersonAge}</div>
+                  <div><strong>Last Visit:</strong> {activePersonLastVisit}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="d-flex gap-3 mb-4 flex-wrap">
           <div

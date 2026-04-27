@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
   FaUserFriends,
@@ -12,8 +13,32 @@ import {
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const EmployeeHome = () => {
+  const FALLBACK_PROFILE_IMAGE = "/profile-fallback.png";
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
   const navigate = useNavigate();
   const employeeName = localStorage.getItem("employeeName") || "Employee";
+  const employeeObjectId = localStorage.getItem("employeeObjectId") || localStorage.getItem("employeeId");
+  const [employeePhoto, setEmployeePhoto] = useState("");
+
+  const resolveImageUrl = (photoPath) => {
+    if (!photoPath) return FALLBACK_PROFILE_IMAGE;
+    if (/^https?:\/\//i.test(photoPath)) return photoPath;
+    const base = String(BACKEND_URL || "").replace(/\/$/, "");
+    return `${base}/${String(photoPath).replace(/^\/+/, "")}`;
+  };
+
+  useEffect(() => {
+    if (!employeeObjectId) return;
+
+    axios
+      .get(`${BACKEND_URL}/employee-api/profile/${employeeObjectId}`)
+      .then((res) => {
+        setEmployeePhoto(res?.data?.Profile_Pic || res?.data?.Photo || "");
+      })
+      .catch(() => {
+        setEmployeePhoto("");
+      });
+  }, [BACKEND_URL, employeeObjectId]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -127,10 +152,8 @@ const EmployeeHome = () => {
   <div
     style={{
       cursor: "pointer",
-      fontSize: "1.2rem",
-      color: "#2563EB",
-      width: "48px",
-      height: "48px",
+      width: "70px",
+      height: "70px",
       borderRadius: "16px",
       background: "linear-gradient(135deg, #DBEAFE, #FFFFFF)",
       display: "flex",
@@ -141,7 +164,21 @@ const EmployeeHome = () => {
     title="Profile"
     onClick={() => navigate("/employee/profile")}
   >
-    👤
+    <img
+      src={resolveImageUrl(employeePhoto)}
+      alt="Profile"
+      onError={(e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = FALLBACK_PROFILE_IMAGE;
+      }}
+      style={{
+        width: "100%",
+        height: "100%",
+        borderRadius: "16px",
+        objectFit: "cover",
+        border: "1px solid rgba(191,219,254,0.9)",
+      }}
+    />
   </div>
 </header>
 

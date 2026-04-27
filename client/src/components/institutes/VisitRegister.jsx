@@ -36,6 +36,12 @@ const VisitRegister = () => {
     Weight: ""
   });
 
+  const getEntityId = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    return String(value?._id || "");
+  };
+
   const calculateBMI = (heightCm, weightKg) => {
     const height = Number(heightCm);
     const weight = Number(weightKg);
@@ -138,6 +144,32 @@ const VisitRegister = () => {
     setLoading(true);
   
     try {
+      const targetEmployeeId = String(selectedEmployee?._id || "");
+      const targetFamilyId = isFamily ? String(selectedFamily?._id || "") : "";
+
+      const visitsRes = await axios.get(`${BACKEND_URL}/api/visits/today/${instituteId}`);
+      const todayVisits = Array.isArray(visitsRes?.data) ? visitsRes.data : [];
+
+      const duplicateVisit = todayVisits.find((visit) => {
+        const visitEmployeeId = getEntityId(visit?.employee_id);
+        const visitFamilyId = getEntityId(visit?.FamilyMember);
+        const visitIsFamily = Boolean(visit?.IsFamilyMember);
+
+        if (isFamily) {
+          return visitIsFamily && visitEmployeeId === targetEmployeeId && visitFamilyId === targetFamilyId;
+        }
+
+        return !visitIsFamily && visitEmployeeId === targetEmployeeId;
+      });
+
+      if (duplicateVisit) {
+        alert(
+          `This patient is already registered in this session with Token ${duplicateVisit.token_no}.`
+        );
+        setLoading(false);
+        return;
+      }
+
       const vitalsCopy = { ...vitals };
       if (vitalsCopy.Temperature) {
         const tempValue = Number(vitalsCopy.Temperature);

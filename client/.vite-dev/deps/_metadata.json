@@ -1,109 +1,109 @@
 {
-  "hash": "0d3ad06a",
-  "configHash": "6904bc43",
-  "lockfileHash": "d83ec225",
-  "browserHash": "5283585a",
+  "hash": "4c012240",
+  "configHash": "8610e3c8",
+  "lockfileHash": "102ef7aa",
+  "browserHash": "aa8e50f6",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "3d4533aa",
+      "fileHash": "4a2037f1",
       "needsInterop": true
     },
     "react-dom": {
       "src": "../../node_modules/react-dom/index.js",
       "file": "react-dom.js",
-      "fileHash": "93c08c4b",
+      "fileHash": "0a920fab",
       "needsInterop": true
     },
     "react/jsx-dev-runtime": {
       "src": "../../node_modules/react/jsx-dev-runtime.js",
       "file": "react_jsx-dev-runtime.js",
-      "fileHash": "31dc2a72",
+      "fileHash": "7612af30",
       "needsInterop": true
     },
     "react/jsx-runtime": {
       "src": "../../node_modules/react/jsx-runtime.js",
       "file": "react_jsx-runtime.js",
-      "fileHash": "6dea367c",
+      "fileHash": "6b4b1f4f",
       "needsInterop": true
     },
     "axios": {
       "src": "../../node_modules/axios/index.js",
       "file": "axios.js",
-      "fileHash": "b57fca64",
+      "fileHash": "4c06b794",
       "needsInterop": false
     },
     "bootstrap/dist/js/bootstrap.bundle.min.js": {
       "src": "../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",
       "file": "bootstrap_dist_js_bootstrap__bundle__min__js.js",
-      "fileHash": "9bfecf88",
+      "fileHash": "3abd4617",
       "needsInterop": true
     },
     "chart.js": {
       "src": "../../node_modules/chart.js/dist/chart.js",
       "file": "chart__js.js",
-      "fileHash": "caa6b853",
+      "fileHash": "50319673",
       "needsInterop": false
     },
     "file-saver": {
       "src": "../../node_modules/file-saver/dist/FileSaver.min.js",
       "file": "file-saver.js",
-      "fileHash": "9af6ef20",
+      "fileHash": "4a5c2eb6",
       "needsInterop": true
     },
     "html2canvas": {
       "src": "../../node_modules/html2canvas/dist/html2canvas.esm.js",
       "file": "html2canvas.js",
-      "fileHash": "c9a796fc",
+      "fileHash": "738e2a31",
       "needsInterop": false
     },
     "jspdf": {
       "src": "../../node_modules/jspdf/dist/jspdf.es.min.js",
       "file": "jspdf.js",
-      "fileHash": "d11ec8f8",
+      "fileHash": "4aa91868",
       "needsInterop": false
     },
     "jspdf-autotable": {
       "src": "../../node_modules/jspdf-autotable/dist/jspdf.plugin.autotable.mjs",
       "file": "jspdf-autotable.js",
-      "fileHash": "17a952f4",
+      "fileHash": "17a90b0a",
       "needsInterop": false
     },
     "react-chartjs-2": {
       "src": "../../node_modules/react-chartjs-2/dist/index.js",
       "file": "react-chartjs-2.js",
-      "fileHash": "bcf17f71",
+      "fileHash": "b2089519",
       "needsInterop": false
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "c3fb27d2",
+      "fileHash": "c5b3115f",
       "needsInterop": true
     },
     "react-icons/fa": {
       "src": "../../node_modules/react-icons/fa/index.mjs",
       "file": "react-icons_fa.js",
-      "fileHash": "190f0b8c",
+      "fileHash": "733ecddd",
       "needsInterop": false
     },
     "react-router-dom": {
       "src": "../../node_modules/react-router-dom/dist/index.mjs",
       "file": "react-router-dom.js",
-      "fileHash": "a42d5bcf",
+      "fileHash": "0e878df2",
       "needsInterop": false
     },
     "recharts": {
       "src": "../../node_modules/recharts/es6/index.js",
       "file": "recharts.js",
-      "fileHash": "554d9c16",
+      "fileHash": "57b57fb8",
       "needsInterop": false
     },
     "xlsx": {
       "src": "../../node_modules/xlsx/xlsx.mjs",
       "file": "xlsx.js",
-      "fileHash": "1fc01834",
+      "fileHash": "ae7ca641",
       "needsInterop": false
     }
   },
@@ -120,14 +120,14 @@
     "chunk-7SRSSUGM": {
       "file": "chunk-7SRSSUGM.js"
     },
+    "chunk-NUNIQJC7": {
+      "file": "chunk-NUNIQJC7.js"
+    },
     "chunk-JPU5VIWL": {
       "file": "chunk-JPU5VIWL.js"
     },
     "chunk-RTMGKO7Z": {
       "file": "chunk-RTMGKO7Z.js"
-    },
-    "chunk-NUNIQJC7": {
-      "file": "chunk-NUNIQJC7.js"
     },
     "chunk-DC5AMYBS": {
       "file": "chunk-DC5AMYBS.js"
