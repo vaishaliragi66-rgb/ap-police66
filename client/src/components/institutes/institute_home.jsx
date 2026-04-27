@@ -64,41 +64,41 @@ const Institute_home = () => {
     return cardAccess[role]?.includes(card);
   };
 
-  const dashboardTitle = "Front Desk";
-  const welcomeMessage = role === "front_desk" ? "Welcome back, Front Desk" : `Welcome back, ${institute?.Institute_Name}`;
+  const roleLabels = {
+    institute: "Institute",
+    doctor: "Doctor",
+    pharmacist: "Pharmacy",
+    diagnosis: "Diagnosis",
+    xray: "X-Ray",
+    front_desk: "Front Desk"
+  };
+  const roleLabel = roleLabels[role] || "Institute";
+  const dashboardTitle = `${roleLabel} Dashboard`;
+  const welcomeMessage = `Welcome back, ${institute?.Institute_Name || roleLabel}`;
+  const dashboardSubtitle = "Access your modules, records, and workflows from one place.";
 
   const QuickCard = ({ icon, title, desc, onClick }) => (
-    <div className="col-lg-4 col-md-6">
+    <div className="col-12 col-md-6 col-lg-3">
       <div
-        className="card h-100 text-center border-0 shadow-sm quick-dashboard-card"
-        style={{
-          borderRadius: "24px",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
-          background: "linear-gradient(145deg, rgba(255,255,255,0.88), rgba(239,246,255,0.74))",
-          border: "1px solid rgba(255,255,255,0.88)",
-          boxShadow: "0 24px 44px rgba(148,184,255,0.18)",
-          backdropFilter: "blur(18px)",
-          overflow: "hidden"
-        }}
+        className="quick-dashboard-card h-100"
         onClick={onClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onClick();
+          }
+        }}
+        aria-label={title}
       >
-        <div className="card-body p-5 position-relative">
-          <div
-            className="mx-auto mb-4 d-flex align-items-center justify-content-center"
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 24,
-              color: "#2563EB",
-              background: "linear-gradient(145deg, rgba(219,234,254,0.95), rgba(255,255,255,0.92))",
-              boxShadow: "0 16px 28px rgba(147,197,253,0.22)"
-            }}
-          >
+        <div className="quick-dashboard-card__accent" />
+        <div className="quick-dashboard-card__body">
+          <div className="quick-dashboard-card__icon-wrap" aria-hidden="true">
             {icon}
           </div>
-          <h5 className="fw-semibold mt-2" style={{ color: "#0F172A", letterSpacing: "-0.02em" }}>{title}</h5>
-          <p className="text-muted mb-0">{desc}</p>
+          <h5 className="quick-dashboard-card__title">{title}</h5>
+          <p className="quick-dashboard-card__desc mb-0">{desc}</p>
         </div>
       </div>
     </div>
@@ -114,10 +114,128 @@ const Institute_home = () => {
     >
       <style>
         {`
-          .quick-dashboard-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 28px 48px rgba(96, 165, 250, 0.22) !important;
-            border-color: rgba(147, 197, 253, 0.95) !important;
+          .institute-dashboard-section {
+            background:
+              radial-gradient(circle at top left, rgba(191,219,254,0.58), transparent 26%),
+              radial-gradient(circle at right center, rgba(224,242,254,0.72), transparent 32%),
+              linear-gradient(180deg, #F7FBFF 0%, #EEF6FF 100%);
+            padding: 30px 24px 38px;
+          }
+
+          .institute-dashboard-intro {
+            text-align: center;
+            margin: 0 auto 26px;
+            max-width: 760px;
+          }
+
+          .institute-dashboard-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.74);
+            border: 1px solid rgba(255,255,255,0.86);
+            color: #2563EB;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            margin-bottom: 14px;
+            box-shadow: 0 12px 26px rgba(147,197,253,0.18);
+          }
+
+          .institute-dashboard-title {
+            font-weight: 700;
+            color: #1F2933;
+            font-size: 2rem;
+            margin-bottom: 6px;
+          }
+
+          .institute-dashboard-subtitle {
+            color: #6B7280;
+            font-size: 1rem;
+          }
+
+          .quick-dashboard-card {
+            height: 100%;
+            border-radius: 20px;
+            border: 1px solid rgba(219, 234, 254, 0.95);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 12px 28px rgba(59, 130, 246, 0.1);
+            cursor: pointer;
+            transition: transform 0.26s ease, box-shadow 0.26s ease, border-color 0.26s ease;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .quick-dashboard-card__accent {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #2563EB, #38BDF8);
+          }
+
+          .quick-dashboard-card__body {
+            padding: 28px 24px 24px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 11px;
+            min-height: 242px;
+          }
+
+          .quick-dashboard-card__icon-wrap {
+            width: 62px;
+            height: 62px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #DBEAFE, #FFFFFF);
+            color: #2563EB;
+            box-shadow: 0 12px 24px rgba(191,219,254,0.16);
+            transition: transform 0.26s ease;
+          }
+
+          .quick-dashboard-card__title {
+            margin: 4px 0 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.01em;
+          }
+
+          .quick-dashboard-card__desc {
+            font-size: 0.92rem;
+            line-height: 1.45;
+            color: #64748b;
+          }
+
+          .quick-dashboard-card:hover,
+          .quick-dashboard-card:focus-visible {
+            transform: translateY(-10px) scale(1.015);
+            box-shadow: 0 20px 40px rgba(74,112,169,0.22);
+            border-color: rgba(147, 197, 253, 1);
+          }
+
+          .quick-dashboard-card:hover .quick-dashboard-card__icon-wrap,
+          .quick-dashboard-card:focus-visible .quick-dashboard-card__icon-wrap {
+            transform: scale(1.08) rotate(-3deg);
+          }
+
+          @media (max-width: 991.98px) {
+            .institute-dashboard-section {
+              padding: 24px 16px 28px;
+            }
+
+            .institute-dashboard-title {
+              font-size: 1.65rem;
+            }
           }
         `}
       </style>
@@ -182,8 +300,18 @@ const Institute_home = () => {
 
 
       {/* DASHBOARD */}
-      <div className="container-fluid p-4" style={{ position: "relative", zIndex: 1 }}>
-        <div className="row g-4">
+      <div className="container-fluid institute-dashboard-section" style={{ position: "relative", zIndex: 1 }}>
+        {/* <div className="institute-dashboard-intro">
+          <div className="institute-dashboard-pill">{roleLabel} Workspace</div>
+          <h2 className="institute-dashboard-title">
+            {welcomeMessage}
+          </h2>
+          <p className="institute-dashboard-subtitle mb-0">
+            {dashboardTitle} • {dashboardSubtitle}
+          </p>
+        </div> */}
+
+        <div className="row g-4 mx-auto" style={{ maxWidth: "1320px" }}>
 
           {hasAccess("doctorCard") && (
             <QuickCard
