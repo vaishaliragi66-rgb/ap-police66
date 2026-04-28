@@ -489,7 +489,12 @@ const findMasterTests = async (instituteId, { ids = [], names = [], includeInact
 
   const normalizedNames = sortUniqueStrings(names).map((name) => normalize(name)).filter(Boolean);
   if (normalizedNames.length) {
-    or.push({ normalized_value: { $in: normalizedNames } });
+    or.push({
+      $or: [
+        { normalized_value: { $in: normalizedNames } },
+        { "meta.aliases": { $in: sortUniqueStrings(names) } }
+      ]
+    });
   }
 
   if (or.length) {
@@ -511,12 +516,25 @@ const findMasterTestByLooseName = async (instituteId, testName) => {
     category_id: category._id,
     "meta.kind": "test",
     "meta.archived": { $ne: true },
-    normalized_value: { $regex: safeName, $options: "i" }
+    $or: [
+      { normalized_value: { $regex: safeName, $options: "i" } },
+      { "meta.aliases": { $elemMatch: { $regex: safeName, $options: "i" } } }
+    ]
   })
-    .limit(2)
+    .select("_id value_name normalized_value status meta name")
     .lean();
 
-  return matches.length === 1 ? matches[0] : null;
+  if (matches.length === 1) return matches[0];
+
+  const targetLoose = normalizeLoose(testName);
+  const looseMatches = matches.filter((row) => {
+    const currentName = trimString(row?.value_name || row?.name);
+    if (normalizeLoose(currentName) === targetLoose) return true;
+    const aliases = Array.isArray(row?.meta?.aliases) ? row.meta.aliases : [];
+    return aliases.some((alias) => normalizeLoose(alias) === targetLoose);
+  });
+
+  return looseMatches.length === 1 ? looseMatches[0] : null;
 };
 
 const ensureDiseaseMasterValues = async (instituteId) => {

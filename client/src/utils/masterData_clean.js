@@ -321,11 +321,15 @@ export const DEFAULT_MASTER_OPTIONS = {
 
 let cache = null;
 let cacheTime = 0;
+let panelCache = null;
+let panelCacheTime = 0;
 const TTL_MS = 5 * 60 * 1000;
 
 export const invalidateMasterDataCache = () => {
   cache = null;
   cacheTime = 0;
+  panelCache = null;
+  panelCacheTime = 0;
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem("master-data-updated-at", String(Date.now()));
@@ -334,6 +338,45 @@ export const invalidateMasterDataCache = () => {
     }
     window.dispatchEvent(new Event("master-data-updated"));
   }
+};
+
+export const fetchDiagnosticPanels = async ({ force = false, includeInactive = false } = {}) => {
+  const now = Date.now();
+  if (!force && panelCache && now - panelCacheTime < TTL_MS) {
+    return panelCache;
+  }
+
+  let instituteId = localStorage.getItem("instituteId") || "";
+  const token = localStorage.getItem("instituteToken");
+
+  if (!instituteId && token) {
+    const employeeId = localStorage.getItem("employeeId");
+    if (employeeId) {
+      try {
+        const profileRes = await axios.get(`${BACKEND_URL}/employee-api/profile/${employeeId}`);
+        instituteId = String(profileRes.data?.Institute_ID || "");
+      } catch {
+        instituteId = "";
+      }
+    }
+  }
+
+  if (!instituteId) {
+    panelCache = [];
+    panelCacheTime = now;
+    return panelCache;
+  }
+
+  const res = await axios.get(`${BACKEND_URL}/master-data-api/panels`, {
+    params: {
+      instituteId,
+      includeInactive: includeInactive ? "true" : "false"
+    }
+  });
+
+  panelCache = Array.isArray(res.data) ? res.data : [];
+  panelCacheTime = now;
+  return panelCache;
 };
 
 export const fetchMasterDataMap = async ({ force = false } = {}) => {
@@ -475,6 +518,7 @@ export default {
   canonicalizeMedicineTypeLabel,
   invalidateMasterDataCache,
   fetchMasterDataMap,
+  fetchDiagnosticPanels,
   getMasterOptions,
   getMasterMedicineEntries,
   getMasterMedicinesByType,

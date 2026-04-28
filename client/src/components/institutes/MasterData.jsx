@@ -213,6 +213,12 @@ const MasterData = () => {
   const [saving, setSaving] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [newValueName, setNewValueName] = useState("");
+  const [panels, setPanels] = useState([]);
+  const [panelName, setPanelName] = useState("");
+  const [panelCategory, setPanelCategory] = useState("");
+  const [panelTestIds, setPanelTestIds] = useState([]);
+  const [panelStatus, setPanelStatus] = useState("Active");
+  const [editingPanelId, setEditingPanelId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -450,6 +456,12 @@ const MasterData = () => {
       } else {
         setSelectedTestCategory(withMeta.categories[0] || "");
       }
+      setPanelCategory((current) =>
+        current && withMeta.categories.includes(current)
+          ? current
+          : preferredCategory || withMeta.categories[0] || ""
+      );
+      await loadPanels();
     } catch (err) {
       const status = err?.response?.status;
       if (status && status !== 404) {
@@ -569,6 +581,20 @@ const MasterData = () => {
       } else {
         setSelectedTestCategory(categories[0] || "");
       }
+    }
+  };
+
+  const loadPanels = async () => {
+    try {
+      const res = await axios.get(`${BACKEND_URL}/master-data-api/panels`, {
+        params: {
+          includeInactive: "true"
+        }
+      });
+      setPanels(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Error loading panels:", err);
+      setPanels([]);
     }
   };
 
@@ -909,6 +935,7 @@ const MasterData = () => {
     setError("");
     try {
       await loadCategories();
+      await loadPanels();
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to load master data categories");
@@ -1594,6 +1621,121 @@ const MasterData = () => {
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to add test");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetPanelForm = () => {
+    const fallbackCategory =
+      panelCategory && testsStructure.categories.includes(panelCategory)
+        ? panelCategory
+        : selectedTestCategory || testsStructure.categories[0] || "";
+    setPanelName("");
+    setPanelCategory(fallbackCategory);
+    setPanelTestIds([]);
+    setPanelStatus("Active");
+    setEditingPanelId("");
+  };
+
+  const handlePanelSelectionChange = (nextCategory) => {
+    setPanelCategory(nextCategory);
+    setPanelTestIds([]);
+  };
+
+  const togglePanelTestId = (testId) => {
+    const nextId = String(testId || "").trim();
+    if (!nextId) return;
+    setPanelTestIds((prev) =>
+      prev.includes(nextId) ? prev.filter((id) => id !== nextId) : [...prev, nextId]
+    );
+  };
+
+  const handleSavePanel = async () => {
+    if (!panelName.trim() || !panelCategory.trim() || panelTestIds.length === 0) {
+      setError("Please provide a panel name, category and at least one test");
+      return;
+    }
+
+    const categoryValue = customTestCategoryMap[normalizeText(panelCategory)] || null;
+    const categoryId = categoryValue?._id || categoryValue?.id || "";
+    if (!categoryId) {
+      setError("Please choose a valid test category");
+      return;
+    }
+
+    const availableTests = testsStructure.testsByCategory?.[panelCategory] || [];
+    const selectedTests = availableTests.filter((test) => {
+      const testId = String(test?._id || test?.id || "").trim();
+      const testName = String(test?.name || "").trim();
+      return panelTestIds.includes(testId) || panelTestIds.includes(testName);
+    });
+    const testIds = selectedTests.map((test) => String(test?._id || test?.id || "").trim()).filter(Boolean);
+    const testNames = selectedTests.map((test) => String(test?.name || "").trim()).filter(Boolean);
+    if (selectedTests.length === 0) {
+      setError("Please choose at least one test for the panel");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      const payload = {
+        name: panelName.trim(),
+        category_id: categoryId,
+        status: panelStatus,
+        testIds,
+        testNames
+      };
+
+      if (editingPanelId) {
+        await axios.put(`${BACKEND_URL}/master-data-api/panels/${editingPanelId}`, payload, getInstituteAuthConfig());
+        setMessage("Panel updated successfully");
+      } else {
+        await axios.post(`${BACKEND_URL}/master-data-api/panels`, payload, getInstituteAuthConfig());
+        setMessage("Panel added successfully");
+      }
+
+      resetPanelForm();
+      await loadPanels();
+      invalidateMasterDataCache();
+      notifyMasterDataUpdated();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to save panel");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditPanel = (panel) => {
+    setEditingPanelId(panel?._id || panel?.id || "");
+    setPanelName(panel?.name || "");
+    setPanelCategory(panel?.category_name || panelCategory || selectedTestCategory || "");
+    setPanelStatus(panel?.status || "Active");
+    setPanelTestIds((panel?.tests || []).map((test) => String(test?.test_id || test?._id || "").trim()).filter(Boolean));
+  };
+
+  const handleDeletePanel = async (panel) => {
+    const ok = window.confirm(`Delete panel '${panel?.name || "Panel"}'?`);
+    if (!ok) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      await axios.delete(`${BACKEND_URL}/master-data-api/panels/${panel._id || panel.id}`, getInstituteAuthConfig());
+      setMessage("Panel deleted successfully");
+      if (editingPanelId && String(editingPanelId) === String(panel._id || panel.id)) {
+        resetPanelForm();
+      }
+      await loadPanels();
+      invalidateMasterDataCache();
+      notifyMasterDataUpdated();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to delete panel");
     } finally {
       setSaving(false);
     }
@@ -2359,6 +2501,189 @@ const MasterData = () => {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  <div className="border rounded p-3 mb-3 bg-light">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h6 className="mb-0">Panels</h6>
+                      {editingPanelId ? (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={resetPanelForm}
+                          disabled={saving}
+                        >
+                          Cancel Edit
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <div className="row g-2 mb-3">
+                      <div className="col-md-5">
+                        <input
+                          className="form-control"
+                          placeholder="Panel name"
+                          value={panelName}
+                          onChange={(e) => setPanelName(e.target.value)}
+                          disabled={!isInstituteAdmin || saving}
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <select
+                          className="form-select"
+                          value={panelCategory}
+                          onChange={(e) => handlePanelSelectionChange(e.target.value)}
+                          disabled={!isInstituteAdmin || saving}
+                        >
+                          <option value="">Select category</option>
+                          {testsStructure.categories.map((item) => (
+                            <option key={item} value={item}>{item}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="col-md-2">
+                        <select
+                          className="form-select"
+                          value={panelStatus}
+                          onChange={(e) => setPanelStatus(e.target.value)}
+                          disabled={!isInstituteAdmin || saving}
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                        </select>
+                      </div>
+                      <div className="col-md-2">
+                        <button
+                          type="button"
+                          className="btn btn-primary w-100"
+                          onClick={handleSavePanel}
+                          disabled={!isInstituteAdmin || saving || !panelName.trim() || !panelCategory.trim() || panelTestIds.length === 0}
+                        >
+                          {editingPanelId ? "Save Panel" : "Add Panel"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="row g-2 mb-3">
+                      <div className="col-md-12">
+                        <div className="border rounded p-3 bg-white">
+                          <div className="d-flex justify-content-between align-items-center mb-3">
+                            <div className="fw-semibold">Select tests for this panel</div>
+                            <div className="d-flex gap-2">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() =>
+                                  setPanelTestIds(
+                                    (testsStructure.testsByCategory?.[panelCategory] || [])
+                                      .map((test) => String(test._id || test.name).trim())
+                                      .filter(Boolean)
+                                  )
+                                }
+                                disabled={!isInstituteAdmin || saving || !panelCategory.trim()}
+                              >
+                                Select All
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => setPanelTestIds([])}
+                                disabled={!isInstituteAdmin || saving || !panelCategory.trim()}
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          </div>
+
+                          {!panelCategory.trim() ? (
+                            <div className="text-muted small">Choose a category to see the tests.</div>
+                          ) : (testsStructure.testsByCategory?.[panelCategory] || []).length > 0 ? (
+                            <div className="row g-2">
+                              {(testsStructure.testsByCategory?.[panelCategory] || []).map((test) => {
+                                const testId = String(test._id || test.name).trim();
+                                const checked = panelTestIds.includes(testId);
+                                return (
+                                  <div key={testId} className="col-md-6 col-lg-4">
+                                    <label className="d-flex align-items-start gap-2 border rounded p-2 h-100 mb-0">
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input mt-1"
+                                        checked={checked}
+                                        onChange={() => togglePanelTestId(testId)}
+                                        disabled={!isInstituteAdmin || saving}
+                                      />
+                                      <span className="small">
+                                        <span className="d-block fw-semibold">{test.name}</span>
+                                        {(test.reference || test.unit) && (
+                                          <span className="text-muted">
+                                            {[test.reference, test.unit].filter(Boolean).join(" | ")}
+                                          </span>
+                                        )}
+                                      </span>
+                                    </label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="text-muted small">No tests found for this category.</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-striped align-middle">
+                        <thead className="table-light">
+                          <tr>
+                            <th style={{ width: 80 }}>ID</th>
+                            <th>Panel Name</th>
+                            <th style={{ width: 180 }}>Category</th>
+                            <th style={{ width: 120 }}>Tests</th>
+                            <th style={{ width: 120 }}>Status</th>
+                            <th style={{ width: 240 }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {panels.map((panel, idx) => (
+                            <tr key={panel._id || panel.id || `${panel.name}-${idx}`}>
+                              <td>{idx + 1}</td>
+                              <td>{panel.name}</td>
+                              <td>{panel.category_name || "-"}</td>
+                              <td>{panel.test_count || panel.tests?.length || 0}</td>
+                              <td>
+                                <span className={`badge ${panel.status === "Active" ? "bg-success" : "bg-secondary"}`}>
+                                  {panel.status || "Active"}
+                                </span>
+                              </td>
+                              <td className="d-flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() => handleEditPanel(panel)}
+                                  disabled={!isInstituteAdmin || saving}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDeletePanel(panel)}
+                                  disabled={!isInstituteAdmin || saving}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {panels.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="text-center py-4 text-muted">No panels found</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </>
               )}

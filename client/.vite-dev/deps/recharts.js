@@ -1,9 +1,9 @@
 import {
   require_react_dom
-} from "./chunk-7SRSSUGM.js";
+} from "./chunk-DSVB3YYR.js";
 import {
   require_react
-} from "./chunk-RTMGKO7Z.js";
+} from "./chunk-YKHBUGD6.js";
 import {
   __commonJS,
   __export,
@@ -261,7 +261,7 @@ var require_uniqBy = __commonJS({
       const map4 = /* @__PURE__ */ new Map();
       for (let i = 0; i < arr.length; i++) {
         const item = arr[i];
-        const key = mapper(item, i, arr);
+        const key = mapper(item);
         if (!map4.has(key)) {
           map4.set(key, item);
         }
@@ -269,20 +269,6 @@ var require_uniqBy = __commonJS({
       return Array.from(map4.values());
     }
     exports.uniqBy = uniqBy2;
-  }
-});
-
-// node_modules/es-toolkit/dist/function/ary.js
-var require_ary = __commonJS({
-  "node_modules/es-toolkit/dist/function/ary.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-    function ary(func, n) {
-      return function(...args) {
-        return func.apply(this, args.slice(0, n));
-      };
-    }
-    exports.ary = ary;
   }
 });
 
@@ -388,15 +374,15 @@ var require_isPrimitive = __commonJS({
   }
 });
 
-// node_modules/es-toolkit/dist/_internal/isEqualsSameValueZero.js
-var require_isEqualsSameValueZero = __commonJS({
-  "node_modules/es-toolkit/dist/_internal/isEqualsSameValueZero.js"(exports) {
+// node_modules/es-toolkit/dist/compat/util/eq.js
+var require_eq = __commonJS({
+  "node_modules/es-toolkit/dist/compat/util/eq.js"(exports) {
     "use strict";
     Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-    function isEqualsSameValueZero(value, other) {
+    function eq(value, other) {
       return value === other || Number.isNaN(value) && Number.isNaN(other);
     }
-    exports.isEqualsSameValueZero = isEqualsSameValueZero;
+    exports.eq = eq;
   }
 });
 
@@ -407,7 +393,7 @@ var require_isMatchWith = __commonJS({
     Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
     var isObject = require_isObject();
     var isPrimitive = require_isPrimitive();
-    var isEqualsSameValueZero = require_isEqualsSameValueZero();
+    var eq = require_eq();
     function isMatchWith(target, source, compare) {
       if (typeof compare !== "function") {
         return isMatchWith(target, source, () => void 0);
@@ -433,11 +419,11 @@ var require_isMatchWith = __commonJS({
           if (sourceKeys.length > 0) {
             return isMatchWithInternal(target, { ...source }, compare, stack);
           }
-          return isEqualsSameValueZero.isEqualsSameValueZero(target, source);
+          return eq.eq(target, source);
         }
         default: {
           if (!isObject.isObject(target)) {
-            return isEqualsSameValueZero.isEqualsSameValueZero(target, source);
+            return eq.eq(target, source);
           }
           if (typeof source === "string") {
             return source === "";
@@ -655,31 +641,6 @@ var require_tags = __commonJS({
   }
 });
 
-// node_modules/es-toolkit/dist/_internal/globalThis.js
-var require_globalThis = __commonJS({
-  "node_modules/es-toolkit/dist/_internal/globalThis.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-    var globalThis_ = typeof globalThis === "object" && globalThis || typeof window === "object" && window || typeof self === "object" && self || typeof global === "object" && global || /* @__PURE__ */ (function() {
-      return this;
-    })() || Function("return this")();
-    exports.globalThis = globalThis_;
-  }
-});
-
-// node_modules/es-toolkit/dist/predicate/isBuffer.js
-var require_isBuffer = __commonJS({
-  "node_modules/es-toolkit/dist/predicate/isBuffer.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-    var globalThis2 = require_globalThis();
-    function isBuffer(x2) {
-      return typeof globalThis2.globalThis.Buffer !== "undefined" && globalThis2.globalThis.Buffer.isBuffer(x2);
-    }
-    exports.isBuffer = isBuffer;
-  }
-});
-
 // node_modules/es-toolkit/dist/predicate/isTypedArray.js
 var require_isTypedArray = __commonJS({
   "node_modules/es-toolkit/dist/predicate/isTypedArray.js"(exports) {
@@ -700,7 +661,6 @@ var require_cloneDeepWith = __commonJS({
     var getSymbols = require_getSymbols();
     var getTag = require_getTag();
     var tags = require_tags();
-    var isBuffer = require_isBuffer();
     var isPrimitive = require_isPrimitive();
     var isTypedArray = require_isTypedArray();
     function cloneDeepWith(obj, cloneValue) {
@@ -755,7 +715,7 @@ var require_cloneDeepWith = __commonJS({
         }
         return result;
       }
-      if (isBuffer.isBuffer(valueToClone)) {
+      if (typeof Buffer !== "undefined" && Buffer.isBuffer(valueToClone)) {
         return valueToClone.subarray();
       }
       if (isTypedArray.isTypedArray(valueToClone)) {
@@ -790,13 +750,12 @@ var require_cloneDeepWith = __commonJS({
         return result;
       }
       if (valueToClone instanceof Error) {
-        const result = structuredClone(valueToClone);
+        const result = new valueToClone.constructor();
         stack.set(valueToClone, result);
         result.message = valueToClone.message;
         result.name = valueToClone.name;
         result.stack = valueToClone.stack;
         result.cause = valueToClone.cause;
-        result.constructor = valueToClone.constructor;
         copyProperties(result, valueToClone, objectToClone, stack, cloneValue);
         return result;
       }
@@ -909,7 +868,6 @@ var require_cloneDeepWith2 = __commonJS({
     "use strict";
     Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
     var cloneDeepWith$1 = require_cloneDeepWith();
-    var getTag = require_getTag();
     var tags = require_tags();
     function cloneDeepWith(obj, customizer) {
       return cloneDeepWith$1.cloneDeepWith(obj, (value, key, object, stack) => {
@@ -919,12 +877,6 @@ var require_cloneDeepWith2 = __commonJS({
         }
         if (typeof obj !== "object") {
           return void 0;
-        }
-        if (getTag.getTag(obj) === tags.objectTag && typeof obj.constructor !== "function") {
-          const result = {};
-          stack.set(obj, result);
-          cloneDeepWith$1.copyProperties(result, obj, object, stack);
-          return result;
         }
         switch (Object.prototype.toString.call(obj)) {
           case tags.numberTag:
@@ -1117,7 +1069,6 @@ var require_uniqBy2 = __commonJS({
     "use strict";
     Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
     var uniqBy$1 = require_uniqBy();
-    var ary = require_ary();
     var identity5 = require_identity();
     var isArrayLikeObject = require_isArrayLikeObject();
     var iteratee = require_iteratee();
@@ -1125,7 +1076,7 @@ var require_uniqBy2 = __commonJS({
       if (!isArrayLikeObject.isArrayLikeObject(array2)) {
         return [];
       }
-      return uniqBy$1.uniqBy(Array.from(array2), ary.ary(iteratee.iteratee(iteratee$1), 1));
+      return uniqBy$1.uniqBy(Array.from(array2), iteratee.iteratee(iteratee$1));
     }
     exports.uniqBy = uniqBy2;
   }
@@ -1223,9 +1174,9 @@ var require_with_selector_development = __commonJS({
         return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
       }
       "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-      var React79 = require_react(), shim = require_shim(), objectIs = "function" === typeof Object.is ? Object.is : is4, useSyncExternalStore2 = shim.useSyncExternalStore, useRef28 = React79.useRef, useEffect29 = React79.useEffect, useMemo20 = React79.useMemo, useDebugValue2 = React79.useDebugValue;
+      var React79 = require_react(), shim = require_shim(), objectIs = "function" === typeof Object.is ? Object.is : is4, useSyncExternalStore2 = shim.useSyncExternalStore, useRef27 = React79.useRef, useEffect29 = React79.useEffect, useMemo20 = React79.useMemo, useDebugValue2 = React79.useDebugValue;
       exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
-        var instRef = useRef28(null);
+        var instRef = useRef27(null);
         if (null === instRef.current) {
           var inst = { hasValue: false, value: null };
           instRef.current = inst;
@@ -1480,13 +1431,13 @@ var require_isIterateeCall = __commonJS({
     var isIndex = require_isIndex();
     var isArrayLike = require_isArrayLike();
     var isObject = require_isObject();
-    var isEqualsSameValueZero = require_isEqualsSameValueZero();
+    var eq = require_eq();
     function isIterateeCall(value, index2, object) {
       if (!isObject.isObject(object)) {
         return false;
       }
       if (typeof index2 === "number" && isArrayLike.isArrayLike(object) && isIndex.isIndex(index2) && index2 < object.length || typeof index2 === "string" && index2 in object) {
-        return isEqualsSameValueZero.isEqualsSameValueZero(object[index2], value);
+        return eq.eq(object[index2], value);
       }
       return false;
     }
@@ -1677,9 +1628,9 @@ var require_use_sync_external_store_with_selector_development = __commonJS({
         return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
       }
       "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-      var React79 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is4, useSyncExternalStore2 = React79.useSyncExternalStore, useRef28 = React79.useRef, useEffect29 = React79.useEffect, useMemo20 = React79.useMemo, useDebugValue2 = React79.useDebugValue;
+      var React79 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is4, useSyncExternalStore2 = React79.useSyncExternalStore, useRef27 = React79.useRef, useEffect29 = React79.useEffect, useMemo20 = React79.useMemo, useDebugValue2 = React79.useDebugValue;
       exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
-        var instRef = useRef28(null);
+        var instRef = useRef27(null);
         if (null === instRef.current) {
           var inst = { hasValue: false, value: null };
           instRef.current = inst;
@@ -1994,10 +1945,10 @@ var require_maxBy = __commonJS({
         return void 0;
       }
       let maxElement = items[0];
-      let max3 = getValue2(maxElement, 0, items);
+      let max3 = getValue2(maxElement);
       for (let i = 1; i < items.length; i++) {
         const element = items[i];
-        const value = getValue2(element, i, items);
+        const value = getValue2(element);
         if (value > max3) {
           max3 = value;
           maxElement = element;
@@ -2044,10 +1995,10 @@ var require_minBy = __commonJS({
         return void 0;
       }
       let minElement = items[0];
-      let min3 = getValue2(minElement, 0, items);
+      let min3 = getValue2(minElement);
       for (let i = 1; i < items.length; i++) {
         const element = items[i];
-        const value = getValue2(element, i, items);
+        const value = getValue2(element);
         if (value < min3) {
           min3 = value;
           minElement = element;
@@ -2279,6 +2230,18 @@ var require_last2 = __commonJS({
 var require_last3 = __commonJS({
   "node_modules/es-toolkit/compat/last.js"(exports, module) {
     module.exports = require_last2().last;
+  }
+});
+
+// node_modules/es-toolkit/dist/predicate/isBuffer.js
+var require_isBuffer = __commonJS({
+  "node_modules/es-toolkit/dist/predicate/isBuffer.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
+    function isBuffer(x2) {
+      return typeof Buffer !== "undefined" && Buffer.isBuffer(x2);
+    }
+    exports.isBuffer = isBuffer;
   }
 });
 
@@ -5186,7 +5149,7 @@ function Items(props) {
       height: iconSize,
       viewBox,
       style: svgStyle,
-      "aria-label": "".concat(entry.value, " legend icon")
+      "aria-label": "".concat(finalValue, " legend icon")
     }, React4.createElement(Icon, {
       data: entry,
       iconType,
@@ -6618,9 +6581,9 @@ var Immer2 = class {
       if (isFunction(base) && !isFunction(recipe)) {
         const defaultBase = recipe;
         recipe = base;
-        const self2 = this;
+        const self = this;
         return function curriedProduce(base2 = defaultBase, ...args) {
-          return self2.produce(base2, (draft) => recipe.call(this, draft, ...args));
+          return self.produce(base2, (draft) => recipe.call(this, draft, ...args));
         };
       }
       if (!isFunction(recipe))
@@ -10083,9 +10046,9 @@ var Immer22 = class {
       if (typeof base === "function" && typeof recipe !== "function") {
         const defaultBase = recipe;
         recipe = base;
-        const self2 = this;
+        const self = this;
         return function curriedProduce(base2 = defaultBase, ...args) {
-          return self2.produce(base2, (draft) => recipe.call(this, draft, ...args));
+          return self.produce(base2, (draft) => recipe.call(this, draft, ...args));
         };
       }
       if (typeof recipe !== "function")
@@ -11102,7 +11065,7 @@ var DefaultTooltipContent = (props) => {
       };
       var sortedPayload = lodashLikeSortBy(payload, itemSorter);
       var items = sortedPayload.map((entry, i) => {
-        if (!entry || entry.type === "none") {
+        if (entry.type === "none") {
           return null;
         }
         var finalFormatter = entry.formatter || formatter || defaultFormatter;
@@ -12974,30 +12937,6 @@ var selectChartDataWithIndexesIfNotInPanoramaPosition3 = (state, _unused1, isPan
   }
   return selectChartDataWithIndexes(state);
 };
-var selectChartDataSliceIfNotInPanorama = createSelector([selectChartDataWithIndexesIfNotInPanoramaPosition4], (_ref2) => {
-  var {
-    chartData,
-    dataStartIndex,
-    dataEndIndex
-  } = _ref2;
-  return chartData != null ? chartData.slice(dataStartIndex, dataEndIndex + 1) : [];
-});
-var selectChartDataSliceIgnoringIndexes = createSelector([selectChartDataAndAlwaysIgnoreIndexes], (_ref2) => {
-  var {
-    chartData,
-    dataStartIndex,
-    dataEndIndex
-  } = _ref2;
-  return chartData != null ? chartData.slice(dataStartIndex, dataEndIndex + 1) : [];
-});
-var selectChartDataSliceWithIndexes = createSelector([selectChartDataWithIndexes], (_ref3) => {
-  var {
-    chartData,
-    dataStartIndex,
-    dataEndIndex
-  } = _ref3;
-  return chartData != null ? chartData.slice(dataStartIndex, dataEndIndex + 1) : [];
-});
 
 // node_modules/recharts/es6/util/isDomainSpecifiedByUser.js
 function isWellFormedNumberDomain(v) {
@@ -18118,13 +18057,12 @@ function divergingSqrt() {
 
 // node_modules/recharts/es6/state/selectors/combiners/combineConfiguredScale.js
 function getD3ScaleFromType(realScaleType) {
-  var scales = d3_scale_exports;
-  if (realScaleType in scales && typeof scales[realScaleType] === "function") {
-    return scales[realScaleType]();
+  if (realScaleType in d3_scale_exports) {
+    return d3_scale_exports[realScaleType]();
   }
   var name = "scale".concat(upperFirst(realScaleType));
-  if (name in scales && typeof scales[name] === "function") {
-    return scales[name]();
+  if (name in d3_scale_exports) {
+    return d3_scale_exports[name]();
   }
   return void 0;
 }
@@ -18469,7 +18407,6 @@ var selectStackedCartesianItemsSettings = createSelector([selectCartesianItemsSe
 var filterGraphicalNotStackedItems = (cartesianItems) => cartesianItems.filter((item) => !("stackId" in item) || item.stackId === void 0);
 var selectCartesianItemsSettingsExceptStacked = createSelector([selectCartesianItemsSettings], filterGraphicalNotStackedItems);
 var combineGraphicalItemsData = (cartesianItems) => cartesianItems.map((item) => item.data).filter(Boolean).flat(1);
-var selectAnyCartesianItemsUsesChartData = createSelector([selectCartesianItemsSettings], (items) => items.some((item) => !item.data));
 var selectCartesianGraphicalItemsData = createSelector([selectCartesianItemsSettings], combineGraphicalItemsData, {
   memoizeOptions: {
     resultEqualityCheck: emptyArraysAreEqualCheck
@@ -18502,23 +18439,7 @@ var combineAppliedValues = (data, axisSettings, items) => {
     value: entry
   }));
 };
-var combineAllAppliedValues = (displayedData, axisSettings, items, _ref2, anyItemUsesChartData, graphicalItemsData) => {
-  var {
-    chartData = [],
-    dataStartIndex,
-    dataEndIndex
-  } = _ref2;
-  var appliedValues = combineAppliedValues(displayedData, axisSettings, items);
-  if (anyItemUsesChartData && (axisSettings === null || axisSettings === void 0 ? void 0 : axisSettings.dataKey) != null && graphicalItemsData.length > 0) {
-    var chartDataSlice2 = chartData.slice(dataStartIndex, dataEndIndex + 1);
-    var chartAppliedValues = chartDataSlice2.map((item) => ({
-      value: getValueByDataKey(item, axisSettings.dataKey)
-    })).filter((av) => av.value != null);
-    return [...chartAppliedValues, ...appliedValues];
-  }
-  return appliedValues;
-};
-var selectAllAppliedValues = createSelector([selectDisplayedData, selectBaseAxis, selectCartesianItemsSettings, selectChartDataWithIndexesIfNotInPanoramaPosition4, selectAnyCartesianItemsUsesChartData, selectCartesianGraphicalItemsData], combineAllAppliedValues);
+var selectAllAppliedValues = createSelector([selectDisplayedData, selectBaseAxis, selectCartesianItemsSettings], combineAppliedValues);
 function makeNumber(val) {
   if (isNumOrStr(val) || val instanceof Date) {
     var n = Number(val);
@@ -18573,22 +18494,10 @@ function isErrorBarRelevantForAxisType(axisType, errorBar) {
   }
 }
 function getErrorDomainByDataKey(entry, appliedValue, relevantErrorBars) {
-  if (!relevantErrorBars) {
+  if (!relevantErrorBars || typeof appliedValue !== "number" || isNan(appliedValue)) {
     return [];
   }
   if (!relevantErrorBars.length) {
-    return [];
-  }
-  var appliedNumericValue;
-  if (typeof appliedValue === "number" && !isNan(appliedValue)) {
-    appliedNumericValue = appliedValue;
-  } else if (Array.isArray(appliedValue)) {
-    var numericRangeValues = onlyAllowNumbers(appliedValue);
-    if (numericRangeValues.length > 0) {
-      appliedNumericValue = Math.max(...numericRangeValues);
-    }
-  }
-  if (appliedNumericValue == null) {
     return [];
   }
   return onlyAllowNumbers(relevantErrorBars.flatMap((eb) => {
@@ -18602,7 +18511,7 @@ function getErrorDomainByDataKey(entry, appliedValue, relevantErrorBars) {
     if (!isWellBehavedNumber(lowBound) || !isWellBehavedNumber(highBound)) {
       return void 0;
     }
-    return [appliedNumericValue - lowBound, appliedNumericValue + highBound];
+    return [appliedValue - lowBound, appliedValue + highBound];
   }));
 }
 var selectTooltipAxis = (state) => {
@@ -18626,8 +18535,8 @@ var combineStackGroups = (displayedData, items, stackOffsetType, reverseStackOrd
     acc[item.stackId] = stack;
     return acc;
   }, initialItemsGroups);
-  return Object.fromEntries(Object.entries(itemsGroup).map((_ref3) => {
-    var [stackId, graphicalItems] = _ref3;
+  return Object.fromEntries(Object.entries(itemsGroup).map((_ref2) => {
+    var [stackId, graphicalItems] = _ref2;
     var orderedGraphicalItems = reverseStackOrder ? [...graphicalItems].reverse() : graphicalItems;
     var dataKeys = orderedGraphicalItems.map(getStackSeriesIdentifier);
     return [stackId, {
@@ -18638,11 +18547,11 @@ var combineStackGroups = (displayedData, items, stackOffsetType, reverseStackOrd
   }));
 };
 var selectStackGroups = createSelector([selectDisplayedStackedData, selectStackedCartesianItemsSettings, selectStackOffsetType, selectReverseStackOrder], combineStackGroups);
-var combineDomainOfStackGroups = (stackGroups, _ref4, axisType, domainFromUserPreference) => {
+var combineDomainOfStackGroups = (stackGroups, _ref3, axisType, domainFromUserPreference) => {
   var {
     dataStartIndex,
     dataEndIndex
-  } = _ref4;
+  } = _ref3;
   if (domainFromUserPreference != null) {
     return void 0;
   }
@@ -18703,16 +18612,13 @@ var mergeDomains = function mergeDomains2() {
   var max3 = Math.max(...allValues);
   return [min3, max3];
 };
-var combineDomainOfAllAppliedNumericalValuesIncludingErrorValues = function combineDomainOfAllAppliedNumericalValuesIncludingErrorValues2(displayedData, axisSettings, items, errorBars, axisType) {
-  var chartDataSlice2 = arguments.length > 5 && arguments[5] !== void 0 ? arguments[5] : [];
+var combineDomainOfAllAppliedNumericalValuesIncludingErrorValues = (data, axisSettings, items, errorBars, axisType) => {
   var lowerEnd, upperEnd;
   if (items.length > 0) {
-    items.forEach((item) => {
-      var _errorBars$item$id;
-      var itemData = item.data != null ? [...item.data] : chartDataSlice2;
-      var relevantErrorBars = (_errorBars$item$id = errorBars[item.id]) === null || _errorBars$item$id === void 0 ? void 0 : _errorBars$item$id.filter((errorBar) => isErrorBarRelevantForAxisType(axisType, errorBar));
-      itemData.forEach((entry) => {
-        var _axisSettings$dataKey;
+    data.forEach((entry) => {
+      items.forEach((item) => {
+        var _errorBars$item$id, _axisSettings$dataKey;
+        var relevantErrorBars = (_errorBars$item$id = errorBars[item.id]) === null || _errorBars$item$id === void 0 ? void 0 : _errorBars$item$id.filter((errorBar) => isErrorBarRelevantForAxisType(axisType, errorBar));
         var valueByDataKey = getValueByDataKey(entry, (_axisSettings$dataKey = axisSettings.dataKey) !== null && _axisSettings$dataKey !== void 0 ? _axisSettings$dataKey : item.dataKey);
         var errorDomain = getErrorDomainByDataKey(entry, valueByDataKey, relevantErrorBars);
         if (errorDomain.length >= 2) {
@@ -18733,8 +18639,8 @@ var combineDomainOfAllAppliedNumericalValuesIncludingErrorValues = function comb
       });
     });
   }
-  if ((axisSettings === null || axisSettings === void 0 ? void 0 : axisSettings.dataKey) != null && items.length === 0) {
-    displayedData.forEach((item) => {
+  if ((axisSettings === null || axisSettings === void 0 ? void 0 : axisSettings.dataKey) != null) {
+    data.forEach((item) => {
       var dataValueDomain = makeDomain(getValueByDataKey(item, axisSettings.dataKey));
       if (dataValueDomain != null) {
         lowerEnd = lowerEnd == null ? dataValueDomain[0] : Math.min(lowerEnd, dataValueDomain[0]);
@@ -18747,7 +18653,7 @@ var combineDomainOfAllAppliedNumericalValuesIncludingErrorValues = function comb
   }
   return void 0;
 };
-var selectDomainOfAllAppliedNumericalValuesIncludingErrorValues = createSelector([selectDisplayedData, selectBaseAxis, selectCartesianItemsSettingsExceptStacked, selectAllErrorBarSettings, pickAxisType, selectChartDataSliceIfNotInPanorama], combineDomainOfAllAppliedNumericalValuesIncludingErrorValues, {
+var selectDomainOfAllAppliedNumericalValuesIncludingErrorValues = createSelector([selectDisplayedData, selectBaseAxis, selectCartesianItemsSettingsExceptStacked, selectAllErrorBarSettings, pickAxisType], combineDomainOfAllAppliedNumericalValuesIncludingErrorValues, {
   memoizeOptions: {
     resultEqualityCheck: numberDomainEqualityCheck
   }
@@ -18873,7 +18779,7 @@ var combineAxisDomain = (axisSettings, layout, displayedData, allAppliedValues, 
   if (type === "category") {
     return computeDomainOfTypeCategory(allAppliedValues, axisSettings, isCategorical);
   }
-  if (stackOffsetType === "expand" && !isCategorical) {
+  if (stackOffsetType === "expand") {
     return expandDomain;
   }
   return numericalDomain;
@@ -19027,19 +18933,19 @@ var selectYAxisPadding = createSelector(selectYAxisSettings, selectCalculatedYAx
     bottom: ((_padding$bottom = padding.bottom) !== null && _padding$bottom !== void 0 ? _padding$bottom : 0) + calculated
   };
 });
-var selectXAxisRange = createSelector([selectChartOffsetInternal, selectXAxisPadding, selectBrushDimensions, selectBrushSettings, (_state, _axisId, isPanorama) => isPanorama], (offset, padding, brushDimensions, _ref5, isPanorama) => {
+var selectXAxisRange = createSelector([selectChartOffsetInternal, selectXAxisPadding, selectBrushDimensions, selectBrushSettings, (_state, _axisId, isPanorama) => isPanorama], (offset, padding, brushDimensions, _ref4, isPanorama) => {
   var {
     padding: brushPadding
-  } = _ref5;
+  } = _ref4;
   if (isPanorama) {
     return [brushPadding.left, brushDimensions.width - brushPadding.right];
   }
   return [offset.left + padding.left, offset.left + offset.width - padding.right];
 });
-var selectYAxisRange = createSelector([selectChartOffsetInternal, selectChartLayout, selectYAxisPadding, selectBrushDimensions, selectBrushSettings, (_state, _axisId, isPanorama) => isPanorama], (offset, layout, padding, brushDimensions, _ref6, isPanorama) => {
+var selectYAxisRange = createSelector([selectChartOffsetInternal, selectChartLayout, selectYAxisPadding, selectBrushDimensions, selectBrushSettings, (_state, _axisId, isPanorama) => isPanorama], (offset, layout, padding, brushDimensions, _ref5, isPanorama) => {
   var {
     padding: brushPadding
-  } = _ref6;
+  } = _ref5;
   if (isPanorama) {
     return [brushDimensions.height - brushPadding.bottom, brushPadding.top];
   }
@@ -19239,8 +19145,7 @@ var combineDuplicateDomain = (chartLayout, appliedValues, axis, axisType) => {
   } = axis;
   var isCategorical = isCategoricalAxis(chartLayout, axisType);
   var allData = appliedValues.map((av) => av.value);
-  var validData = allData.filter((v) => v != null);
-  if (dataKey && isCategorical && type === "category" && allowDuplicatedCategory && hasDuplicate(validData)) {
+  if (dataKey && isCategorical && type === "category" && allowDuplicatedCategory && hasDuplicate(allData)) {
     return allData;
   }
   return void 0;
@@ -19568,7 +19473,6 @@ var tooltipSlice = createSlice({
     },
     setActiveMouseOverItemIndex(state, action) {
       state.syncInteraction.active = false;
-      state.syncInteraction.sourceViewBox = void 0;
       state.keyboardInteraction.active = false;
       state.itemInteraction.hover.active = true;
       state.itemInteraction.hover.index = action.payload.activeIndex;
@@ -19585,7 +19489,6 @@ var tooltipSlice = createSlice({
     },
     setActiveClickItemIndex(state, action) {
       state.syncInteraction.active = false;
-      state.syncInteraction.sourceViewBox = void 0;
       state.itemInteraction.click.active = true;
       state.keyboardInteraction.active = false;
       state.itemInteraction.click.index = action.payload.activeIndex;
@@ -19595,7 +19498,6 @@ var tooltipSlice = createSlice({
     },
     setMouseOverAxisIndex(state, action) {
       state.syncInteraction.active = false;
-      state.syncInteraction.sourceViewBox = void 0;
       state.axisInteraction.hover.active = true;
       state.keyboardInteraction.active = false;
       state.axisInteraction.hover.index = action.payload.activeIndex;
@@ -19604,7 +19506,6 @@ var tooltipSlice = createSlice({
     },
     setMouseClickAxisIndex(state, action) {
       state.syncInteraction.active = false;
-      state.syncInteraction.sourceViewBox = void 0;
       state.keyboardInteraction.active = false;
       state.axisInteraction.click.active = true;
       state.axisInteraction.click.index = action.payload.activeIndex;
@@ -19837,7 +19738,7 @@ var combineTooltipPayloadConfigurations = (tooltipState, tooltipEventType, trigg
   if (tooltipState.syncInteraction.active && filterByGraphicalItemId == null) {
     return tooltipState.tooltipItemPayloads;
   }
-  if (filterByGraphicalItemId == null && (defaultIndex != null || tooltipState.keyboardInteraction.active)) {
+  if (filterByGraphicalItemId == null && defaultIndex != null) {
     var firstItemPayload = tooltipState.tooltipItemPayloads[0];
     if (firstItemPayload != null) {
       return [firstItemPayload];
@@ -20048,10 +19949,9 @@ var selectTooltipGraphicalItemsData = createSelector([selectAllGraphicalItemsSet
     resultEqualityCheck: emptyArraysAreEqualCheck
   }
 });
-var selectAnyTooltipItemUsesChartData = createSelector([selectAllGraphicalItemsSettings], (items) => items.some((item) => !item.data));
 var selectTooltipDisplayedData = createSelector([selectTooltipGraphicalItemsData, selectChartDataWithIndexes], combineDisplayedData);
 var selectTooltipStackedData = createSelector([selectAllStackedGraphicalItemsSettings, selectChartDataWithIndexes, selectTooltipAxis], combineDisplayedStackedData);
-var selectAllTooltipAppliedValues = createSelector([selectTooltipDisplayedData, selectTooltipAxis, selectAllGraphicalItemsSettings, selectChartDataWithIndexes, selectAnyTooltipItemUsesChartData, selectTooltipGraphicalItemsData], combineAllAppliedValues);
+var selectAllTooltipAppliedValues = createSelector([selectTooltipDisplayedData, selectTooltipAxis, selectAllGraphicalItemsSettings], combineAppliedValues);
 var selectTooltipAxisDomainDefinition = createSelector([selectTooltipAxis], getDomainDefinition);
 var selectTooltipDataOverflow = createSelector([selectTooltipAxis], (axisSettings) => axisSettings.allowDataOverflow);
 var selectTooltipDomainFromUserPreferences = createSelector([selectTooltipAxisDomainDefinition, selectTooltipDataOverflow], numericalDomainSpecifiedWithoutRequiringData);
@@ -20059,7 +19959,7 @@ var selectAllStackedGraphicalItems = createSelector([selectAllGraphicalItemsSett
 var selectTooltipStackGroups = createSelector([selectTooltipStackedData, selectAllStackedGraphicalItems, selectStackOffsetType, selectReverseStackOrder], combineStackGroups);
 var selectTooltipDomainOfStackGroups = createSelector([selectTooltipStackGroups, selectChartDataWithIndexes, selectTooltipAxisType, selectTooltipDomainFromUserPreferences], combineDomainOfStackGroups);
 var selectTooltipItemsSettingsExceptStacked = createSelector([selectAllGraphicalItemsSettings], filterGraphicalNotStackedItems);
-var selectDomainOfAllAppliedNumericalValuesIncludingErrorValues2 = createSelector([selectTooltipDisplayedData, selectTooltipAxis, selectTooltipItemsSettingsExceptStacked, selectAllErrorBarSettings, selectTooltipAxisType, selectChartDataSliceWithIndexes], combineDomainOfAllAppliedNumericalValuesIncludingErrorValues, {
+var selectDomainOfAllAppliedNumericalValuesIncludingErrorValues2 = createSelector([selectTooltipDisplayedData, selectTooltipAxis, selectTooltipItemsSettingsExceptStacked, selectAllErrorBarSettings, selectTooltipAxisType], combineDomainOfAllAppliedNumericalValuesIncludingErrorValues, {
   memoizeOptions: {
     resultEqualityCheck: numberDomainEqualityCheck
   }
@@ -20645,60 +20545,28 @@ function ZIndexLayer(_ref2) {
   var isInChartContext = useIsInChartContext();
   var shouldRenderInPortal = isInChartContext && zIndex !== void 0 && zIndex !== 0;
   var isPanorama = useIsPanorama();
-  var lastPortalElementRef = (0, import_react18.useRef)(void 0);
-  var registeredZIndexesRef = (0, import_react18.useRef)(/* @__PURE__ */ new Set());
   var dispatch = useAppDispatch();
-  var portalElement = useAppSelector((state) => selectZIndexPortalElement(state, zIndex, isPanorama));
   (0, import_react18.useLayoutEffect)(() => {
     if (!shouldRenderInPortal) {
-      var registered = registeredZIndexesRef.current;
-      registered.forEach((z) => {
-        dispatch(unregisterZIndexPortal({
-          zIndex: z
-        }));
-      });
-      registered.clear();
-      lastPortalElementRef.current = void 0;
-      return;
+      return noop;
     }
-    if (!registeredZIndexesRef.current.has(zIndex)) {
-      dispatch(registerZIndexPortal({
+    dispatch(registerZIndexPortal({
+      zIndex
+    }));
+    return () => {
+      dispatch(unregisterZIndexPortal({
         zIndex
       }));
-      registeredZIndexesRef.current.add(zIndex);
-    }
-    if (portalElement) {
-      lastPortalElementRef.current = portalElement;
-      var _registered = registeredZIndexesRef.current;
-      _registered.forEach((z) => {
-        if (z !== zIndex) {
-          dispatch(unregisterZIndexPortal({
-            zIndex: z
-          }));
-          _registered.delete(z);
-        }
-      });
-    }
-  }, [dispatch, zIndex, shouldRenderInPortal, portalElement]);
-  (0, import_react18.useLayoutEffect)(() => {
-    var registered = registeredZIndexesRef.current;
-    return () => {
-      registered.forEach((z) => {
-        dispatch(unregisterZIndexPortal({
-          zIndex: z
-        }));
-      });
-      registered.clear();
     };
-  }, [dispatch]);
+  }, [dispatch, zIndex, shouldRenderInPortal]);
+  var portalElement = useAppSelector((state) => selectZIndexPortalElement(state, zIndex, isPanorama));
   if (!shouldRenderInPortal) {
     return children;
   }
-  var targetElement = portalElement !== null && portalElement !== void 0 ? portalElement : lastPortalElementRef.current;
-  if (!targetElement) {
+  if (!portalElement) {
     return null;
   }
-  return (0, import_react_dom2.createPortal)(children, targetElement);
+  return (0, import_react_dom2.createPortal)(children, portalElement);
 }
 
 // node_modules/recharts/es6/component/Cursor.js
@@ -21024,18 +20892,6 @@ function useTooltipSyncEventsListener() {
       if (mySyncId !== incomingSyncId) {
         return;
       }
-      if (action.payload.active === false) {
-        dispatch(setSyncInteraction({
-          active: false,
-          coordinate: void 0,
-          dataKey: void 0,
-          index: null,
-          label: void 0,
-          sourceViewBox: void 0,
-          graphicalItemId: void 0
-        }));
-        return;
-      }
       if (syncMethod === "index") {
         var _action$payload;
         if (viewBox && action !== null && action !== void 0 && (_action$payload = action.payload) !== null && _action$payload !== void 0 && _action$payload.coordinate && action.payload.sourceViewBox) {
@@ -21084,7 +20940,7 @@ function useTooltipSyncEventsListener() {
       var {
         coordinate
       } = action.payload;
-      if (coordinate == null || viewBox == null) {
+      if (activeTick == null || action.payload.active === false || coordinate == null || viewBox == null) {
         dispatch(setSyncInteraction({
           active: false,
           coordinate: void 0,
@@ -21092,18 +20948,6 @@ function useTooltipSyncEventsListener() {
           index: null,
           label: void 0,
           sourceViewBox: void 0,
-          graphicalItemId: void 0
-        }));
-        return;
-      }
-      if (activeTick == null) {
-        dispatch(setSyncInteraction({
-          active: false,
-          coordinate: void 0,
-          dataKey: void 0,
-          index: null,
-          label: void 0,
-          sourceViewBox: action.payload.sourceViewBox,
           graphicalItemId: void 0
         }));
         return;
@@ -21172,7 +21016,7 @@ function useTooltipChartSynchronisation(tooltipEventType, trigger, activeCoordin
   var syncId = useAppSelector(selectSyncId);
   var syncMethod = useAppSelector(selectSyncMethod);
   var tooltipState = useAppSelector(selectSynchronisedTooltipState);
-  var isReceivingSynchronisation = (tooltipState === null || tooltipState === void 0 ? void 0 : tooltipState.sourceViewBox) != null;
+  var isReceivingSynchronisation = tooltipState === null || tooltipState === void 0 ? void 0 : tooltipState.active;
   var viewBox = useViewBox();
   (0, import_react21.useEffect)(() => {
     if (isReceivingSynchronisation) {
@@ -22976,7 +22820,7 @@ var selectAllPolarAppliedNumericalValues = createSelector([selectPolarDisplayedD
   }));
 });
 var unsupportedInPolarChart = () => void 0;
-var selectDomainOfAllPolarAppliedNumericalValues = createSelector([selectPolarDisplayedData, selectBaseAxis, selectPolarItemsSettings, selectAllErrorBarSettings, pickAxisType, selectChartDataSliceIgnoringIndexes], combineDomainOfAllAppliedNumericalValuesIncludingErrorValues);
+var selectDomainOfAllPolarAppliedNumericalValues = createSelector([selectPolarDisplayedData, selectBaseAxis, selectPolarItemsSettings, selectAllErrorBarSettings, pickAxisType], combineDomainOfAllAppliedNumericalValuesIncludingErrorValues);
 var selectPolarNumericalDomain = createSelector([selectBaseAxis, selectDomainDefinition, selectDomainFromUserPreference, unsupportedInPolarChart, selectDomainOfAllPolarAppliedNumericalValues, unsupportedInPolarChart, selectChartLayout, pickAxisType], combineNumericalDomain);
 var selectPolarAxisDomain = createSelector([selectBaseAxis, selectChartLayout, selectPolarDisplayedData, selectPolarAppliedValues, selectStackOffsetType, pickAxisType, selectPolarNumericalDomain], combineAxisDomain);
 var selectPolarNiceTicks = createSelector([selectPolarAxisDomain, selectRenderableAxisSettings, selectRealScaleType], combineNiceTicks);
@@ -23137,7 +22981,9 @@ var PolarAngles = (props) => {
   if (!polarAngles || !polarAngles.length || !radialLines) {
     return null;
   }
-  var polarAnglesProps = _objectSpread29({}, svgPropertiesNoEvents(props));
+  var polarAnglesProps = _objectSpread29({
+    stroke: "#ccc"
+  }, svgPropertiesNoEvents(props));
   return React23.createElement("g", {
     className: "recharts-polar-grid-angle"
   }, polarAngles.map((entry) => {
@@ -23159,7 +23005,10 @@ var ConcentricCircle = (props) => {
     cy,
     radius
   } = props;
-  var concentricCircleProps = _objectSpread29({}, svgPropertiesNoEvents(props));
+  var concentricCircleProps = _objectSpread29({
+    stroke: "#ccc",
+    fill: "none"
+  }, svgPropertiesNoEvents(props));
   return (
     // @ts-expect-error wrong SVG element type
     React23.createElement("circle", _extends18({}, concentricCircleProps, {
@@ -23174,7 +23023,10 @@ var ConcentricPolygon = (props) => {
   var {
     radius
   } = props;
-  var concentricPolygonProps = _objectSpread29({}, svgPropertiesNoEvents(props));
+  var concentricPolygonProps = _objectSpread29({
+    stroke: "#ccc",
+    fill: "none"
+  }, svgPropertiesNoEvents(props));
   return React23.createElement("path", _extends18({}, concentricPolygonProps, {
     className: clsx("recharts-polar-grid-concentric-polygon", props.className),
     d: getPolygonPath(radius, props.cx, props.cy, props.polarAngles)
@@ -23219,10 +23071,7 @@ var defaultPolarGridProps = {
   radiusAxisId: 0,
   gridType: "polygon",
   radialLines: true,
-  zIndex: DefaultZIndexes.grid,
-  stroke: "#ccc",
-  strokeWidth: 1,
-  fill: "none"
+  zIndex: DefaultZIndexes.grid
 };
 var PolarGrid = (outsideProps) => {
   var _ref2, _polarViewBox$cx, _ref22, _polarViewBox$cy, _ref3, _polarViewBox$innerRa, _ref4, _polarViewBox$outerRa;
@@ -24986,17 +24835,11 @@ function computePieSectors(_ref4) {
   var paddingAngle = displayedData.length <= 1 ? 0 : (_pieSettings$paddingA = pieSettings.paddingAngle) !== null && _pieSettings$paddingA !== void 0 ? _pieSettings$paddingA : 0;
   var notZeroItemCount = displayedData.filter((entry) => getValueByDataKey(entry, dataKey, 0) !== 0).length;
   var totalPaddingAngle = (absDeltaAngle >= 360 ? notZeroItemCount : notZeroItemCount - 1) * paddingAngle;
+  var realTotalAngle = absDeltaAngle - notZeroItemCount * minAngle - totalPaddingAngle;
   var sum3 = displayedData.reduce((result, entry) => {
     var val = getValueByDataKey(entry, dataKey, 0);
     return result + (isNumber(val) ? val : 0);
   }, 0);
-  var needsMinAngleAdjustment = minAngle > 0 && sum3 > 0 && displayedData.some((entry) => {
-    var val = getValueByDataKey(entry, dataKey, 0);
-    var percent = (isNumber(val) ? val : 0) / sum3;
-    return val !== 0 && percent * absDeltaAngle < minAngle;
-  });
-  var effectiveMinAngle = needsMinAngleAdjustment ? minAngle : 0;
-  var realTotalAngle = absDeltaAngle - notZeroItemCount * effectiveMinAngle - totalPaddingAngle;
   var sectors;
   if (sum3 > 0) {
     var prev;
@@ -25013,7 +24856,7 @@ function computePieSectors(_ref4) {
       } else {
         tempStartAngle = startAngle;
       }
-      var tempEndAngle = tempStartAngle + mathSign(deltaAngle) * ((val !== 0 ? effectiveMinAngle : 0) + percent * realTotalAngle);
+      var tempEndAngle = tempStartAngle + mathSign(deltaAngle) * ((val !== 0 ? minAngle : 0) + percent * realTotalAngle);
       var midAngle = (tempStartAngle + tempEndAngle) / 2;
       var middleRadius = (coordinate.innerRadius + coordinate.outerRadius) / 2;
       var tooltipPayload = [{
@@ -25041,7 +24884,7 @@ function computePieSectors(_ref4) {
         startAngle: tempStartAngle,
         endAngle: tempEndAngle,
         payload: entryWithCellInfo,
-        paddingAngle: val !== 0 ? mathSign(deltaAngle) * paddingAngle : 0
+        paddingAngle: mathSign(deltaAngle) * paddingAngle
       });
       return prev;
     });
@@ -35111,15 +34954,12 @@ keyboardEventsMiddleware.startListening({
         }
         var resolvedIndex = combineActiveTooltipIndex(keyboardInteraction, selectTooltipDisplayedData(currentState), selectTooltipAxisDataKey(currentState), selectTooltipAxisDomain(currentState));
         var currentIndex = resolvedIndex == null ? -1 : Number(resolvedIndex);
-        var isOutsideDomain = !Number.isFinite(currentIndex) || currentIndex < 0;
+        if (!Number.isFinite(currentIndex) || currentIndex < 0) {
+          return;
+        }
         var tooltipTicks = selectTooltipAxisTicks(currentState);
-        var displayedData = selectTooltipDisplayedData(currentState);
-        var tooltipEventType = selectTooltipEventType(currentState, currentState.tooltip.settings.shared);
         if (key === "Enter") {
-          if (isOutsideDomain) {
-            return;
-          }
-          var _coordinate = selectCoordinateForDefaultIndex(currentState, tooltipEventType, "hover", String(keyboardInteraction.index));
+          var _coordinate = selectCoordinateForDefaultIndex(currentState, "axis", "hover", String(keyboardInteraction.index));
           listenerApi.dispatch(setKeyboardInteraction({
             active: !keyboardInteraction.active,
             activeIndex: keyboardInteraction.index,
@@ -35130,45 +34970,11 @@ keyboardEventsMiddleware.startListening({
         var direction = selectChartDirection(currentState);
         var directionMultiplier = direction === "left-to-right" ? 1 : -1;
         var movement = key === "ArrowRight" ? 1 : -1;
-        var nextIndex;
-        if (isOutsideDomain) {
-          var axisDataKey = selectTooltipAxisDataKey(currentState);
-          var domain = selectTooltipAxisDomain(currentState);
-          var effectiveMovement = movement * directionMultiplier;
-          var mkInteraction = (i2) => ({
-            active: false,
-            index: String(i2),
-            dataKey: void 0,
-            graphicalItemId: void 0,
-            coordinate: void 0
-          });
-          nextIndex = -1;
-          if (effectiveMovement > 0) {
-            for (var i = 0; i < displayedData.length; i++) {
-              if (combineActiveTooltipIndex(mkInteraction(i), displayedData, axisDataKey, domain) != null) {
-                nextIndex = i;
-                break;
-              }
-            }
-          } else {
-            for (var _i = displayedData.length - 1; _i >= 0; _i--) {
-              if (combineActiveTooltipIndex(mkInteraction(_i), displayedData, axisDataKey, domain) != null) {
-                nextIndex = _i;
-                break;
-              }
-            }
-          }
-          if (nextIndex < 0) {
-            return;
-          }
-        } else {
-          nextIndex = currentIndex + movement * directionMultiplier;
-          var dataLength = (tooltipTicks === null || tooltipTicks === void 0 ? void 0 : tooltipTicks.length) || displayedData.length;
-          if (dataLength === 0 || nextIndex >= dataLength || nextIndex < 0) {
-            return;
-          }
+        var nextIndex = currentIndex + movement * directionMultiplier;
+        if (tooltipTicks == null || nextIndex >= tooltipTicks.length || nextIndex < 0) {
+          return;
         }
-        var coordinate = selectCoordinateForDefaultIndex(currentState, tooltipEventType, "hover", String(nextIndex));
+        var coordinate = selectCoordinateForDefaultIndex(currentState, "axis", "hover", String(nextIndex));
         listenerApi.dispatch(setKeyboardInteraction({
           active: true,
           activeIndex: nextIndex.toString(),
@@ -35217,8 +35023,7 @@ keyboardEventsMiddleware.startListening({
     }
     if (keyboardInteraction.index == null) {
       var nextIndex = "0";
-      var tooltipEventType = selectTooltipEventType(state, state.tooltip.settings.shared);
-      var coordinate = selectCoordinateForDefaultIndex(state, tooltipEventType, "hover", String(nextIndex));
+      var coordinate = selectCoordinateForDefaultIndex(state, "axis", "hover", String(nextIndex));
       listenerApi.dispatch(setKeyboardInteraction({
         active: true,
         activeIndex: nextIndex,
@@ -35918,10 +35723,6 @@ var ResponsiveDiv = (0, import_react66.forwardRef)((props, ref) => {
   var innerRef = (0, import_react66.useCallback)((node) => {
     if (typeof ref === "function") {
       ref(node);
-    }
-    if (observerRef.current != null) {
-      observerRef.current.disconnect();
-      observerRef.current = null;
     }
     if (node != null && typeof ResizeObserver !== "undefined") {
       var {

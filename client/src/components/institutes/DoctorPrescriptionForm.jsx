@@ -5,7 +5,7 @@ import html2canvas from "html2canvas";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PatientSelector from "../institutes/PatientSelector";
 import { useNavigate } from "react-router-dom";
-import { fetchMasterDataMap, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData_clean";
+import { fetchMasterDataMap, fetchDiagnosticPanels, getMasterMedicineEntries, getMasterOptions } from "../../utils/masterData_clean";
 import { mergeXrayTypes } from "../../data/xrayTypes";
 import XrayReportPreview from "./XrayReportPreview";
 import DiagnosisReportPreview from "./DiagnosisReportPreview";
@@ -38,6 +38,7 @@ const DoctorPrescriptionForm = () => {
   const [visitId, setVisitId] = useState(null);
   const [testsMaster, setTestsMaster] = useState([]);
   const [testCategories, setTestCategories] = useState([]);
+  const [diagnosticPanels, setDiagnosticPanels] = useState([]);
   const [testsLoading, setTestsLoading] = useState(false);
   const [diagnosisData, setDiagnosisData] = useState({
     Tests: [{ Category: "", Test_ID: "", Test_Name: "" }]
@@ -251,9 +252,7 @@ const DoctorPrescriptionForm = () => {
         bmi,
       },
       investigations: {
-        tests: (record?.relatedTests || [])
-          .map((test) => test?.Test_Name || test?.Test_ID?.Test_Name || "")
-          .filter(Boolean),
+        tests: record?.relatedTests || [],
         xrays: (record?.relatedXrays || [])
           .map((xray) => xray?.Xray_Type || xray?.Xray_ID || "")
           .filter(Boolean),
@@ -805,6 +804,16 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     }
   };
 
+  const loadDiagnosticPanels = async () => {
+    try {
+      const panels = await fetchDiagnosticPanels({ force: true, includeInactive: false });
+      setDiagnosticPanels(Array.isArray(panels) ? panels : []);
+    } catch (err) {
+      console.error("Error fetching diagnostic panels:", err);
+      setDiagnosticPanels([]);
+    }
+  };
+
   useEffect(() => {
     const instituteId = localStorage.getItem("instituteId");
     if (!instituteId) return;
@@ -812,6 +821,7 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     setFormData((f) => ({ ...f, Institute_ID: instituteId }));
     fetchInstitute(instituteId);
     fetchTests();
+    loadDiagnosticPanels();
     // fetchEmployees();
     // fetchInventory(instituteId);
   }, []);
@@ -819,10 +829,12 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
   useEffect(() => {
     const onWindowFocus = () => {
       fetchTests();
+      loadDiagnosticPanels();
     };
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         fetchTests();
+        loadDiagnosticPanels();
       }
     };
 
@@ -957,6 +969,11 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
         // ignore
       }
       try {
+        loadDiagnosticPanels();
+      } catch (e) {
+        // ignore
+      }
+      try {
         fetchXrayTypes();
       } catch (e) {
         // ignore
@@ -967,6 +984,7 @@ const makeMedicineLookupKey = (medicineType, dosageForm, name) =>
     const onStorageUpdated = (event) => {
       if (event.key === "master-data-updated-at") {
         fetchTests();
+        loadDiagnosticPanels();
         fetchXrayTypes();
       }
     };
@@ -1064,6 +1082,15 @@ const relevantDiseases = diseases.filter((d) => {
       return;
     }
 
+    try {
+      await submitPendingDiagnosisTests();
+      await submitPendingXrays();
+    } catch (err) {
+      console.error("Failed to auto-submit pending diagnostics", err);
+      alert("Unable to submit tests or x-rays with the prescription");
+      return;
+    }
+
 
 
     const selectedMedicines = formData.Medicines
@@ -1142,7 +1169,7 @@ const relevantDiseases = diseases.filter((d) => {
 
 
     alert("✅ Prescription saved successfully");
-    setPrescriptionSuccessMessage("Doctor prescription submitted successfully.");
+    setPrescriptionSuccessMessage("Prescription submitted successfully.");
     
     // Reset all form fields
     setFormData({
@@ -1629,20 +1656,127 @@ const relevantDiseases = diseases.filter((d) => {
     );
   };
 
+  const createEmptyDiagnosisTest = () => ({
+    Category: "",
+    Test_ID: "",
+    test_id: "",
+    Test_Name: "",
+    test_name: "",
+    Panel_ID: "",
+    Panel_Name: "",
+    Result_Value: "",
+    Reference_Range: "",
+    Units: "",
+    ReportFile: null
+  });
 
+  const mapPanelTestToFormRow = (panelTest = {}, panel = {}) => ({
+    Category: String(panel?.category_name || panelTest?.category_name || panelTest?.Group || "").trim(),
+    Test_ID: String(panelTest?.test_id || panelTest?._id || "").trim(),
+    test_id: String(panelTest?.test_id || panelTest?._id || "").trim(),
+    Test_Name: String(panelTest?.test_name || panelTest?.name || "").trim(),
+    test_name: String(panelTest?.test_name || panelTest?.name || "").trim(),
+    Result_Value: "",
+    Reference_Range: String(panelTest?.reference || "").trim(),
+    Units: String(panelTest?.unit || "").trim(),
+    ReportFile: null
+  });
 
-  const handleDiagnosisSubmit = async () => {
-    if (!formData.Employee_ID) {
-      alert("Please select employee first");
-      return;
-    }
+  const getDiagnosticPanelById = (panelId = "") =>
+    (diagnosticPanels || []).find((item) => String(item?._id || item?.id || "") === String(panelId || ""));
 
-  const validTests = diagnosisData.Tests.filter(t => t.Test_ID || t.Test_Name);
+  const applyPanelToDiagnosisRow = (index, panelId) => {
+    const panel = getDiagnosticPanelById(panelId);
+    setDiagnosisData((prev) => {
+      const copy = [...(prev.Tests || [])];
+      copy[index] = {
+        ...(copy[index] || createEmptyDiagnosisTest()),
+        Panel_ID: panel ? String(panel._id || panel.id || "") : "",
+        Panel_Name: panel ? String(panel.name || "") : "",
+        Category: "",
+        Test_ID: "",
+        test_id: "",
+        Test_Name: "",
+        test_name: ""
+      };
+      return {
+        ...prev,
+        Tests: copy
+      };
+    });
+  };
 
-if (validTests.length === 0) {
-  alert("Please select at least one test");
-  return;
-}
+  const clearDiagnosisRowPanel = (index) => {
+    setDiagnosisData((prev) => {
+      const copy = [...(prev.Tests || [])];
+      copy[index] = {
+        ...(copy[index] || createEmptyDiagnosisTest()),
+        Panel_ID: "",
+        Panel_Name: ""
+      };
+      return {
+        ...prev,
+        Tests: copy
+      };
+    });
+  };
+
+  const buildNormalizedDiagnosisTests = () => {
+    const seen = new Set();
+    const normalizedTests = [];
+
+    (diagnosisData.Tests || []).forEach((test) => {
+      const panelId = String(test?.Panel_ID || "").trim();
+
+      if (panelId) {
+        const panel = getDiagnosticPanelById(panelId);
+        (panel?.tests || []).forEach((panelTest) => {
+          const row = mapPanelTestToFormRow(panelTest, panel);
+          const testId = String(row.test_id || row.Test_ID || "").trim();
+          const testName = String(row.test_name || row.Test_Name || "").trim();
+          const key = testId || testName.toLowerCase();
+          if (!testId && !testName) return;
+          if (seen.has(key)) return;
+          seen.add(key);
+          normalizedTests.push({
+            ...row,
+            test_id: testId,
+            test_name: testName
+          });
+        });
+        return;
+      }
+
+      const testId = String(test?.test_id || test?.Test_ID || "").trim();
+      const testName = String(test?.test_name || test?.Test_Name || "").trim();
+      if (!testId && !testName) return;
+
+      const key = testId || testName.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      normalizedTests.push({
+        ...test,
+        test_id: testId,
+        test_name: testName
+      });
+    });
+
+    return normalizedTests;
+  };
+
+  const buildNormalizedXrayRows = () =>
+    (xrayData.Xrays || [])
+      .filter((xray) => String(xray?.Xray_ID || "").trim() || String(xray?.Xray_Type || "").trim())
+      .map((xray) => ({
+        ...xray,
+        Xray_ID: xray?.Xray_ID || "",
+        Xray_Type: xray?.Xray_Type || ""
+      }));
+
+  const submitPendingDiagnosisTests = async () => {
+    const normalizedTests = buildNormalizedDiagnosisTests();
+    if (!normalizedTests.length) return false;
+
     await axios.post(`${BACKEND_URL}/api/medical-actions`, {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
@@ -1651,10 +1785,59 @@ if (validTests.length === 0) {
       data: {
         Institute_ID: formData.Institute_ID,
         IsFamilyMember: formData.IsFamilyMember,
-        FamilyMember_ID: formData.IsFamilyMember
-          ? formData.FamilyMember_ID
-          : null,
-        tests: diagnosisData.Tests,
+        FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
+        tests: normalizedTests,
+        notes: formData.Notes
+      }
+    });
+
+    return true;
+  };
+
+  const submitPendingXrays = async () => {
+    const xrays = buildNormalizedXrayRows();
+    if (!xrays.length) return false;
+
+    await axios.post(`${BACKEND_URL}/api/medical-actions`, {
+      employee_id: formData.Employee_ID,
+      visit_id: formData.visit_id || null,
+      action_type: "DOCTOR_XRAY",
+      source: "DOCTOR",
+      data: {
+        Institute_ID: formData.Institute_ID,
+        IsFamilyMember: formData.IsFamilyMember,
+        FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
+        xrays,
+        notes: formData.Notes
+      }
+    });
+
+    return true;
+  };
+
+
+
+  const handleDiagnosisSubmit = async () => {
+    if (!formData.Employee_ID) {
+      alert("Please select employee first");
+      return;
+    }
+    const normalizedTests = buildNormalizedDiagnosisTests();
+
+    if (!normalizedTests.length) {
+      alert("Please select at least one test");
+      return;
+    }
+    await axios.post(`${BACKEND_URL}/api/medical-actions`, {
+      employee_id: formData.Employee_ID,
+      visit_id: formData.visit_id || null,
+      action_type: "DOCTOR_DIAGNOSIS",
+      source: "DOCTOR",
+      data: {
+        Institute_ID: formData.Institute_ID,
+        IsFamilyMember: formData.IsFamilyMember,
+        FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
+        tests: normalizedTests,
         notes: formData.Notes   // 🔥 SAME NOTES USED
       }
     });
@@ -1667,21 +1850,19 @@ if (validTests.length === 0) {
   };
 
   const handleXraySubmit = async () => {
-  if (!formData.Employee_ID) {
-    alert("Please select employee first");
-    return;
-  }
+    if (!formData.Employee_ID) {
+      alert("Please select employee first");
+      return;
+    }
 
- const validXrays = xrayData.Xrays.filter(x => String(x?.Xray_ID || "").trim() || String(x?.Xray_Type || "").trim());
+    const validXrays = buildNormalizedXrayRows();
 
-if (validXrays.length === 0) {
-  alert("Please select at least one X-ray");
-  return;
-}
+    if (validXrays.length === 0) {
+      alert("Please select at least one X-ray");
+      return;
+    }
 
-  await axios.post(
-  `${BACKEND_URL}/api/medical-actions`,
-    {
+    await axios.post(`${BACKEND_URL}/api/medical-actions`, {
       employee_id: formData.Employee_ID,
       visit_id: formData.visit_id || null,
       action_type: "DOCTOR_XRAY",
@@ -1689,14 +1870,11 @@ if (validXrays.length === 0) {
       data: {
         Institute_ID: formData.Institute_ID,
         IsFamilyMember: formData.IsFamilyMember,
-        FamilyMember_ID: formData.IsFamilyMember
-          ? formData.FamilyMember_ID
-          : null,
-        xrays: xrayData.Xrays,
+        FamilyMember_ID: formData.IsFamilyMember ? formData.FamilyMember_ID : null,
+        xrays: validXrays,
         notes: formData.Notes
       }
-    }
-  );
+    });
 
   alert("✅ X-ray order saved");
 
@@ -2027,7 +2205,7 @@ if (validXrays.length === 0) {
 
                   <div className="modal-body p-0">
                     <div className="d-flex justify-content-center p-3 overflow-auto">
-                      <SARCPLPrescriptionReport reportData={buildPrescriptionPreviewData(selectedPrescriptionReport)} />
+                      <SARCPLPrescriptionReport reportData={buildPrescriptionPreviewData(selectedPrescriptionReport)} panels={diagnosticPanels} />
                     </div>
                   </div>
 
@@ -2719,87 +2897,156 @@ if (validXrays.length === 0) {
 
 
     <div className="card-body">
+      {diagnosisData.Tests.map((t, i) => {
+        const panel = t.Panel_ID ? getDiagnosticPanelById(t.Panel_ID) : null;
+        const panelSummary = panel
+          ? (panel.tests || [])
+              .map((panelTest, index) => `${index + 1}. ${String(panelTest?.test_name || panelTest?.name || "").trim()}`)
+              .filter((line) => !line.endsWith(". "))
+          : [];
 
-      {diagnosisData.Tests.map((t, i) => (
-        <div key={i} className="mb-2">
+        return (
+          <div key={i} className="border rounded p-3 mb-3 bg-light">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h6 className="mb-0">Test #{i + 1}</h6>
+              {diagnosisData.Tests.length > 1 && (
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() => {
+                    const copy = diagnosisData.Tests.filter((_, idx) => idx !== i);
+                    setDiagnosisData((prev) => ({
+                      ...prev,
+                      Tests: copy
+                    }));
+                  }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
 
-          <select
-            className="form-select mb-2"
-            value={t.Category || ""}
-            onChange={(e) => {
-              const copy = [...diagnosisData.Tests];
-              copy[i] = {
-                ...copy[i],
-                Category: e.target.value,
-                Test_ID: "",
-                Test_Name: ""
-              };
+            <div className="row g-3">
+              <div className="col-md-12">
+                <label className="form-label fw-semibold">Select Panel</label>
+                <select
+                  className="form-select"
+                  value={t.Panel_ID || ""}
+                  onChange={(e) => {
+                    const panelId = e.target.value;
+                    if (!panelId) {
+                      clearDiagnosisRowPanel(i);
+                      return;
+                    }
+                    applyPanelToDiagnosisRow(i, panelId);
+                  }}
+                >
+                  <option value="">No panel selected</option>
+                  {(diagnosticPanels || []).map((panelItem) => (
+                    <option key={panelItem._id || panelItem.id} value={panelItem._id || panelItem.id}>
+                      {panelItem.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              setDiagnosisData(prev => ({
-                ...prev,
-                Tests: copy
-              }));
-            }}
-          >
-            <option value="">Select Category</option>
-            {testCategoryOptions.map(category => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+              {panel ? (
+                <div className="col-md-12">
+                  <label className="form-label fw-semibold mb-2">Panel tests</label>
+                  <textarea
+                    className="form-control"
+                    rows={Math.min(8, Math.max(3, panelSummary.length || 3))}
+                    value={panelSummary.join("\n")}
+                    readOnly
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">Category</label>
+                    <select
+                      className="form-select"
+                      value={t.Category || ""}
+                      onChange={(e) => {
+                        const copy = [...diagnosisData.Tests];
+                        copy[i] = {
+                          ...(copy[i] || createEmptyDiagnosisTest()),
+                          Category: e.target.value,
+                          Test_ID: "",
+                          Test_Name: "",
+                          test_id: "",
+                          test_name: ""
+                        };
 
-              <select
-                className="form-select mb-2"
-                value={t.Test_ID || ""}
-                disabled={!t.Category || testsLoading}
-                onChange={(e) => {
-                  const list = t.Category && testsByCategory[t.Category] ? testsByCategory[t.Category] : [];
-                  const found = list.find(x => String(x._id || "") === String(e.target.value));
+                        setDiagnosisData((prev) => ({
+                          ...prev,
+                          Tests: copy
+                        }));
+                      }}
+                    >
+                      <option value="">Select Category</option>
+                      {testCategoryOptions.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              const copy = [...diagnosisData.Tests];
-              if (found) {
-                copy[i] = { ...copy[i], Test_ID: found._id || "", Test_Name: found.name || "" };
-              } else {
-                copy[i] = { ...copy[i], Test_ID: "", Test_Name: e.target.value || "" };
-              }
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">Test Name</label>
+                    <select
+                      className="form-select"
+                      value={t.Test_ID || t.Test_Name || ""}
+                      disabled={!t.Category || testsLoading}
+                      onChange={(e) => {
+                        const list = t.Category && testsByCategory[t.Category] ? testsByCategory[t.Category] : [];
+                        const found = list.find((x) => String(x._id || "") === String(e.target.value));
 
-              setDiagnosisData(prev => ({ ...prev, Tests: copy }));
-            }}
-              >
-            <option value="">{testsLoading ? "Loading tests..." : "Select Test"}</option>
-            {(testsByCategory[t.Category] || []).map(test => (
-              <option key={`${t.Category}-${test._id || test.name}`} value={test._id || test.name}>
-                {test.name}
-              </option>
-            ))}
-          </select>
+                        const copy = [...diagnosisData.Tests];
+                        if (found) {
+                          copy[i] = {
+                            ...(copy[i] || createEmptyDiagnosisTest()),
+                            Test_ID: found._id || "",
+                            Test_Name: found.name || "",
+                            test_id: found._id || "",
+                            test_name: found.name || ""
+                          };
+                        } else {
+                          copy[i] = {
+                            ...(copy[i] || createEmptyDiagnosisTest()),
+                            Test_ID: "",
+                            Test_Name: e.target.value || "",
+                            test_id: "",
+                            test_name: e.target.value || ""
+                          };
+                        }
 
-          {diagnosisData.Tests.length > 1 && (
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-danger w-100"
-              onClick={() => {
-                const copy = diagnosisData.Tests.filter((_, idx) => idx !== i);
-                setDiagnosisData(prev => ({
-                  ...prev,
-                  Tests: copy
-                }));
-              }}
-            >
-              Remove
-            </button>
-          )}
-        </div>
-      ))}
+                        setDiagnosisData((prev) => ({ ...prev, Tests: copy }));
+                      }}
+                    >
+                      <option value="">{testsLoading ? "Loading tests..." : "Select Test"}</option>
+                      {(testsByCategory[t.Category] || []).map((test) => (
+                        <option key={`${t.Category}-${test._id || test.name}`} value={test._id || test.name}>
+                          {test.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })}
 
       <button
         type="button"
         className="btn btn-outline-primary w-100 mt-2"
         onClick={() =>
-          setDiagnosisData(prev => ({
+          setDiagnosisData((prev) => ({
             ...prev,
-            Tests: [...prev.Tests, { Category: "", Test_ID: "", Test_Name: "" }]
+            Tests: [...prev.Tests, createEmptyDiagnosisTest()]
           }))
         }
       >
@@ -2961,7 +3208,7 @@ if (validXrays.length === 0) {
 
               <div className="modal-body p-0">
                 <div className="d-flex justify-content-center p-3 overflow-auto">
-                  <DiagnosisReportPreview reportData={selectedDiagnosisReport} resolveUrl={resolveUrl} />
+                  <DiagnosisReportPreview reportData={selectedDiagnosisReport} resolveUrl={resolveUrl} panels={diagnosticPanels} />
                 </div>
               </div>
 
@@ -3064,12 +3311,12 @@ if (validXrays.length === 0) {
         )}
         {exportDiagnosisReport && (
           <div ref={diagnosisExportRef}>
-            <DiagnosisReportPreview reportData={exportDiagnosisReport} resolveUrl={resolveUrl} />
+            <DiagnosisReportPreview reportData={exportDiagnosisReport} resolveUrl={resolveUrl} panels={diagnosticPanels} />
           </div>
         )}
         {exportPrescriptionReport && (
           <div ref={prescriptionExportRef}>
-            <SARCPLPrescriptionReport reportData={buildPrescriptionPreviewData(exportPrescriptionReport)} />
+            <SARCPLPrescriptionReport reportData={buildPrescriptionPreviewData(exportPrescriptionReport)} panels={diagnosticPanels} />
           </div>
         )}
       </div>

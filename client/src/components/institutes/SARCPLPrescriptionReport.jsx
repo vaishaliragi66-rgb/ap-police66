@@ -34,7 +34,7 @@ const calculateBMI = (heightCm, weightKg) => {
  * - diagnosis: { primary, icd, notes }
  * - prescriptions: [ { name, dosage, frequency, duration, instructions } ]
  */
-const SARCPLPrescriptionReport = ({ reportData = {} }) => {
+const SARCPLPrescriptionReport = ({ reportData = {}, panels = [] }) => {
   const hospital = reportData.hospital || {};
   const patient = reportData.patient || {};
   const encounter = reportData.encounter || {};
@@ -45,6 +45,86 @@ const SARCPLPrescriptionReport = ({ reportData = {} }) => {
   const qrUrl = reportData.qrUrl || null;
 
   const bmi = vitals.bmi || calculateBMI(vitals.height, vitals.weight);
+
+  const normalizeKey = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+
+  const getTestIdentity = (test = {}) => {
+    const id =
+      test?.Test_ID?._id || test?.Test_ID || test?.test_id || test?._id || "";
+    const name =
+      test?.Test_Name || test?.Test_ID?.Test_Name || test?.test_name || test?.name || "";
+
+    return {
+      id: String(id || "").trim(),
+      name: String(name || "").trim(),
+      key: String(id || "").trim() || normalizeKey(name),
+    };
+  };
+
+  const matchesPanelTest = (recordTest = {}, panelTest = {}) => {
+    const recordIdentity = getTestIdentity(recordTest);
+    const panelIdentity = getTestIdentity({
+      _id: panelTest?.test_id || panelTest?._id || "",
+      Test_Name: panelTest?.test_name || panelTest?.name || "",
+    });
+
+    if (recordIdentity.id && panelIdentity.id) {
+      return recordIdentity.id === panelIdentity.id;
+    }
+
+    return (
+      Boolean(recordIdentity.key && panelIdentity.key && recordIdentity.key === panelIdentity.key)
+    );
+  };
+
+  const buildReportSections = (tests = [], panelsList = []) => {
+    const sortedPanels = [...(Array.isArray(panelsList) ? panelsList : [])]
+      .map((panel) => ({
+        ...panel,
+        tests: Array.isArray(panel?.tests)
+          ? [...panel.tests].sort((a, b) => Number(a?.sequence_order || 0) - Number(b?.sequence_order || 0))
+          : [],
+      }))
+      .sort((a, b) => {
+        const countDiff = (b.tests?.length || 0) - (a.tests?.length || 0);
+        if (countDiff !== 0) return countDiff;
+        return String(a?.name || "").localeCompare(String(b?.name || ""));
+      });
+
+    const sections = [];
+    let index = 0;
+
+    while (index < tests.length) {
+      const remaining = tests.slice(index);
+      const matchedPanel = sortedPanels.find((panel) =>
+        panel.tests.length > 0 &&
+          panel.tests.length <= remaining.length &&
+          panel.tests.every((panelTest, offset) => matchesPanelTest(remaining[offset], panelTest))
+      );
+
+      if (matchedPanel) {
+        sections.push({
+          type: "panel",
+          panel: matchedPanel,
+          tests: remaining.slice(0, matchedPanel.tests.length),
+        });
+        index += matchedPanel.tests.length;
+        continue;
+      }
+
+      sections.push({
+        type: "test",
+        test: tests[index],
+      });
+      index += 1;
+    }
+
+    return sections;
+  };
 
   return (
     <div className="sarcpl-report-root">
@@ -114,7 +194,31 @@ const SARCPLPrescriptionReport = ({ reportData = {} }) => {
                 {investigations.tests && investigations.tests.length > 0 ? (
                   <div>
                     <div className="sub">Lab Tests</div>
-                    <ul className="invest-list">{investigations.tests.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                    {(() => {
+                      const testsArray = (investigations.tests || []).map((t) =>
+                        typeof t === "string" ? { Test_Name: t } : t || {}
+                      );
+                      const sections = buildReportSections(testsArray, panels || []);
+
+                      return sections.length > 0 ? (
+                        <ul className="invest-list">
+                          {sections.map((section, i) => {
+                            if (section.type === "panel") {
+                              return (
+                                <li key={`panel-${i}`} className="panel-only">
+                                  {section.panel?.name || "Panel"}
+                                </li>
+                              );
+                            }
+
+                            const name = section.test?.Test_Name || section.test?.test_name || section.test || "";
+                            return <li key={`test-${i}`}>{name}</li>;
+                          })}
+                        </ul>
+                      ) : (
+                        <ul className="invest-list">{testsArray.map((t, i) => <li key={i}>{t.Test_Name || t}</li>)}</ul>
+                      );
+                    })()}
                   </div>
                 ) : <div className="muted">No lab tests</div>}
 

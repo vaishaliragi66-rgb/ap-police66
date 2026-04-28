@@ -67,10 +67,96 @@ const getReportDate = (record = {}, test = null) =>
   record?.createdAt ||
   null;
 
-const DiagnosisReportPreview = ({ reportData = {}, resolveUrl }) => {
+const normalizeKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+
+const getTestIdentity = (test = {}) => {
+  const id =
+    test?.Test_ID?._id ||
+    test?.Test_ID ||
+    test?.test_id ||
+    test?._id ||
+    "";
+  const name =
+    test?.Test_Name ||
+    test?.Test_ID?.Test_Name ||
+    test?.name ||
+    "";
+
+  return {
+    id: String(id || "").trim(),
+    name: String(name || "").trim(),
+    key: String(id || "").trim() || normalizeKey(name)
+  };
+};
+
+const matchesPanelTest = (recordTest = {}, panelTest = {}) => {
+  const recordIdentity = getTestIdentity(recordTest);
+  const panelIdentity = getTestIdentity({
+    _id: panelTest?.test_id || panelTest?._id || "",
+    Test_Name: panelTest?.test_name || panelTest?.name || ""
+  });
+
+  if (recordIdentity.id && panelIdentity.id) {
+    return recordIdentity.id === panelIdentity.id;
+  }
+
+  return Boolean(recordIdentity.key && panelIdentity.key && recordIdentity.key === panelIdentity.key);
+};
+
+const buildReportSections = (tests = [], panels = []) => {
+  const sortedPanels = [...(Array.isArray(panels) ? panels : [])]
+    .map((panel) => ({
+      ...panel,
+      tests: Array.isArray(panel?.tests)
+        ? [...panel.tests].sort((a, b) => Number(a?.sequence_order || 0) - Number(b?.sequence_order || 0))
+        : []
+    }))
+    .sort((a, b) => {
+      const countDiff = (b.tests?.length || 0) - (a.tests?.length || 0);
+      if (countDiff !== 0) return countDiff;
+      return String(a?.name || "").localeCompare(String(b?.name || ""));
+    });
+
+  const sections = [];
+  let index = 0;
+
+  while (index < tests.length) {
+    const remaining = tests.slice(index);
+    const matchedPanel = sortedPanels.find((panel) =>
+      panel.tests.length > 0 &&
+      panel.tests.length <= remaining.length &&
+      panel.tests.every((panelTest, offset) => matchesPanelTest(remaining[offset], panelTest))
+    );
+
+    if (matchedPanel) {
+      sections.push({
+        type: "panel",
+        panel: matchedPanel,
+        tests: remaining.slice(0, matchedPanel.tests.length)
+      });
+      index += matchedPanel.tests.length;
+      continue;
+    }
+
+    sections.push({
+      type: "test",
+      test: tests[index]
+    });
+    index += 1;
+  }
+
+  return sections;
+};
+
+const DiagnosisReportPreview = ({ reportData = {}, resolveUrl, panels = [] }) => {
   const record = reportData?.record || (reportData?.Tests ? reportData : {});
   const selectedTest = reportData?.test || null;
   const tests = selectedTest ? [selectedTest] : toArray(record?.Tests);
+  const sections = selectedTest ? [{ type: "test", test: selectedTest }] : buildReportSections(tests, panels);
   const instituteName =
     record?.Institute?.Institute_Name ||
     reportData?.instituteName ||
@@ -154,119 +240,58 @@ const DiagnosisReportPreview = ({ reportData = {}, resolveUrl }) => {
             </div>
 
             <div style={{ padding: "16px" }}>
-              {tests.length > 0 ? (
-                tests.map((test, index) => {
-                  const files = toArray(test?.Reports);
-                  const status = getStatus(test);
-
-                  return (
-                    <div
-                      key={`${test?._id || test?.Test_ID?._id || test?.Test_ID || index}`}
-                      style={{
-                        border: "1px solid rgba(214,224,240,0.95)",
-                        borderRadius: "16px",
-                        padding: "16px",
-                        marginBottom: index === tests.length - 1 ? 0 : "14px",
-                        background: "rgba(255,255,255,0.96)",
-                      }}
-                    >
+              {sections.length > 0 ? (
+                sections.map((section, sectionIndex) => {
+                  if (section.type === "panel") {
+                    return (
                       <div
+                        key={`${section.panel?.id || section.panel?._id || sectionIndex}`}
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: "12px",
+                          border: "1px solid rgba(214,224,240,0.95)",
+                          borderRadius: "16px",
+                          overflow: "hidden",
                           marginBottom: "14px",
+                          background: "rgba(255,255,255,0.96)",
                         }}
                       >
-                        <div style={{ fontSize: "16px", fontWeight: 700, color: "#1F2933" }}>
-                          {test?.Test_Name || test?.Test_ID?.Test_Name || `Test ${index + 1}`}
-                        </div>
-                        <span
+                        <div
                           style={{
-                            borderRadius: "999px",
-                            padding: "4px 10px",
-                            fontSize: "12px",
+                            background: "#EFF6FF",
+                            color: "#1E3A8A",
                             fontWeight: 700,
-                            background: status === "result out" ? "#DCFCE7" : "#FEF3C7",
-                            color: status === "result out" ? "#166534" : "#92400E",
+                            padding: "12px 16px",
+                            borderBottom: "1px solid rgba(191,219,254,0.7)"
                           }}
                         >
-                          {status}
-                        </span>
-                      </div>
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                          gap: "10px 16px",
-                        }}
-                      >
-                        <DetailRow label="Category" value={getCategory(test)} />
-                        <DetailRow label="Result" value={getResultLabel(test)} />
-                        <DetailRow label="Reference Range" value={getReferenceRange(test)} />
-                        <DetailRow label="Sample Type" value={test?.Sample_Type || "-"} />
-                      </div>
-
-                      {files.length > 0 && (
-                        <div style={{ marginTop: "14px" }}>
-                          <div style={{ fontSize: "13px", fontWeight: 700, marginBottom: "8px", color: "#1E3A8A" }}>
-                            Report Files
-                          </div>
-                          <div style={{ display: "grid", gap: "8px" }}>
-                            {files.map((file, fileIndex) => (
-                              (() => {
-                                const fileUrl = getFileUrl(file, resolveUrl);
-                                const label = file?.originalname || file?.filename || "Report file";
-
-                                return (
-                                  <div
-                                    key={`${file?.url || fileIndex}`}
-                                    style={{
-                                      border: "1px solid rgba(214,224,240,0.95)",
-                                      borderRadius: "12px",
-                                      padding: "10px 12px",
-                                      background: "#F8FBFF",
-                                    }}
-                                  >
-                                    <div style={{ fontWeight: 600, fontSize: "13px" }}>
-                                      {label}
-                                    </div>
-                                    <div style={{ fontSize: "12px", color: "#6B7280", marginTop: "2px" }}>
-                                      {test?.Test_Name || "Diagnosis Test"}
-                                    </div>
-                                    {fileUrl && isImageFile(file) && (
-                                      <div
-                                        style={{
-                                          marginTop: "10px",
-                                          borderRadius: "10px",
-                                          overflow: "hidden",
-                                          border: "1px solid rgba(191,219,254,0.65)",
-                                          background: "#fff",
-                                        }}
-                                      >
-                                        <img
-                                          src={fileUrl}
-                                          alt={label}
-                                          style={{
-                                            width: "100%",
-                                            maxHeight: "260px",
-                                            objectFit: "contain",
-                                            display: "block",
-                                            background: "#fff",
-                                          }}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })()
-                            ))}
-                          </div>
+                          {section.panel?.name || "Panel"}
                         </div>
-                      )}
-                    </div>
+                        <div style={{ padding: "14px" }}>
+                          {section.tests.map((test, index) => (
+                            <TestBlock
+                              key={`${test?._id || test?.Test_ID?._id || test?.Test_ID || index}`}
+                              test={test}
+                              status={getStatus(test)}
+                              files={toArray(test?.Reports)}
+                              index={index}
+                              total={section.tests.length}
+                              resolveUrl={resolveUrl}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <TestBlock
+                      key={`${section.test?._id || section.test?.Test_ID?._id || section.test?.Test_ID || sectionIndex}`}
+                      test={section.test}
+                      status={getStatus(section.test)}
+                      files={toArray(section.test?.Reports)}
+                      index={0}
+                      total={1}
+                      resolveUrl={resolveUrl}
+                    />
                   );
                 })
               ) : (
@@ -320,6 +345,115 @@ const DetailRow = ({ label, value }) => (
   >
     <div style={{ color: "#6B7280", fontWeight: 600 }}>{label}</div>
     <div style={{ fontWeight: 500, whiteSpace: "pre-wrap" }}>{value || "-"}</div>
+  </div>
+);
+
+const TestBlock = ({ test, status, files, index, total, resolveUrl }) => (
+  <div
+    style={{
+      border: "1px solid rgba(214,224,240,0.95)",
+      borderRadius: "16px",
+      padding: "16px",
+      marginBottom: index === total - 1 ? 0 : "14px",
+      background: "rgba(255,255,255,0.96)",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: "12px",
+        marginBottom: "14px",
+      }}
+    >
+      <div style={{ fontSize: "16px", fontWeight: 700, color: "#1F2933" }}>
+        {test?.Test_Name || test?.Test_ID?.Test_Name || `Test ${index + 1}`}
+      </div>
+      <span
+        style={{
+          borderRadius: "999px",
+          padding: "4px 10px",
+          fontSize: "12px",
+          fontWeight: 700,
+          background: status === "result out" ? "#DCFCE7" : "#FEF3C7",
+          color: status === "result out" ? "#166534" : "#92400E",
+        }}
+      >
+        {status}
+      </span>
+    </div>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gap: "10px 16px",
+      }}
+    >
+      <DetailRow label="Category" value={getCategory(test)} />
+      <DetailRow label="Result" value={getResultLabel(test)} />
+      <DetailRow label="Reference Range" value={getReferenceRange(test)} />
+      <DetailRow label="Sample Type" value={test?.Sample_Type || "-"} />
+    </div>
+
+    {files.length > 0 && (
+      <div style={{ marginTop: "14px" }}>
+        <div style={{ fontSize: "13px", fontWeight: 700, marginBottom: "8px", color: "#1E3A8A" }}>
+          Report Files
+        </div>
+        <div style={{ display: "grid", gap: "8px" }}>
+          {files.map((file, fileIndex) => (
+            (() => {
+              const fileUrl = getFileUrl(file, resolveUrl);
+              const label = file?.originalname || file?.filename || "Report file";
+
+              return (
+                <div
+                  key={`${file?.url || fileIndex}`}
+                  style={{
+                    border: "1px solid rgba(214,224,240,0.95)",
+                    borderRadius: "12px",
+                    padding: "10px 12px",
+                    background: "#F8FBFF",
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: "13px" }}>
+                    {label}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#6B7280", marginTop: "2px" }}>
+                    {test?.Test_Name || "Diagnosis Test"}
+                  </div>
+                  {fileUrl && isImageFile(file) && (
+                    <div
+                      style={{
+                        marginTop: "10px",
+                        borderRadius: "10px",
+                        overflow: "hidden",
+                        border: "1px solid rgba(191,219,254,0.65)",
+                        background: "#fff",
+                      }}
+                    >
+                      <img
+                        src={fileUrl}
+                        alt={label}
+                        style={{
+                          width: "100%",
+                          maxHeight: "260px",
+                          objectFit: "contain",
+                          display: "block",
+                          background: "#fff",
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          ))}
+        </div>
+      </div>
+    )}
   </div>
 );
 

@@ -408,10 +408,10 @@ var require_shared_store = __commonJS({
     var SHARED = "__core-js_shared__";
     var store = module.exports = globalThis3[SHARED] || defineGlobalProperty(SHARED, {});
     (store.versions || (store.versions = [])).push({
-      version: "3.49.0",
+      version: "3.47.0",
       mode: IS_PURE3 ? "pure" : "global",
-      copyright: "© 2013–2025 Denis Pushkarev (zloirock.ru), 2025–2026 CoreJS Company (core-js.io). All rights reserved.",
-      license: "https://github.com/zloirock/core-js/blob/v3.49.0/LICENSE",
+      copyright: "© 2014-2025 Denis Pushkarev (zloirock.ru), 2025 CoreJS Company (core-js.io)",
+      license: "https://github.com/zloirock/core-js/blob/v3.47.0/LICENSE",
       source: "https://github.com/zloirock/core-js"
     });
   }
@@ -1550,7 +1550,7 @@ var require_environment_is_ios = __commonJS({
   "node_modules/core-js/internals/environment-is-ios.js"(exports, module) {
     "use strict";
     var userAgent = require_environment_user_agent();
-    module.exports = /ipad|iphone|ipod/i.test(userAgent) && /applewebkit/i.test(userAgent);
+    module.exports = /(?:ipad|iphone|ipod).*applewebkit/i.test(userAgent);
   }
 });
 
@@ -2271,17 +2271,15 @@ var require_iterate = __commonJS({
       var fn = bind(unboundFunction, that);
       var iterator, iterFn, index2, length, result, next, step;
       var stop = function(condition) {
-        var $iterator = iterator;
-        iterator = void 0;
-        if ($iterator) iteratorClose($iterator, "normal");
+        if (iterator) iteratorClose(iterator, "normal");
         return new Result(true, condition);
       };
-      var callFn = function(value2) {
+      var callFn = function(value) {
         if (AS_ENTRIES) {
-          anObject5(value2);
-          return INTERRUPTED ? fn(value2[0], value2[1], stop) : fn(value2[0], value2[1]);
+          anObject5(value);
+          return INTERRUPTED ? fn(value[0], value[1], stop) : fn(value[0], value[1]);
         }
-        return INTERRUPTED ? fn(value2, stop) : fn(value2);
+        return INTERRUPTED ? fn(value, stop) : fn(value);
       };
       if (IS_RECORD) {
         iterator = iterable.iterator;
@@ -2301,12 +2299,10 @@ var require_iterate = __commonJS({
       }
       next = IS_RECORD ? iterable.next : iterator.next;
       while (!(step = call4(next, iterator)).done) {
-        var value = step.value;
         try {
-          result = callFn(value);
+          result = callFn(step.value);
         } catch (error) {
-          if (iterator) iteratorClose(iterator, "throw", error);
-          else throw error;
+          iteratorClose(iterator, "throw", error);
         }
         if (typeof result == "object" && result && isPrototypeOf(ResultPrototype, result)) return result;
       }
@@ -2756,25 +2752,17 @@ var require_regexp_exec = __commonJS({
     var UNSUPPORTED_Y2 = stickyHelpers2.BROKEN_CARET;
     var NPCG_INCLUDED = /()??/.exec("")[1] !== void 0;
     var PATCH = UPDATES_LAST_INDEX_WRONG || NPCG_INCLUDED || UNSUPPORTED_Y2 || UNSUPPORTED_DOT_ALL || UNSUPPORTED_NCG;
-    var setGroups = function(re, groups) {
-      var object = re.groups = create(null);
-      for (var i2 = 0; i2 < groups.length; i2++) {
-        var group = groups[i2];
-        object[group[0]] = re[group[1]];
-      }
-    };
     if (PATCH) {
       patchedExec = function exec(string) {
         var re = this;
         var state = getInternalState(re);
         var str = toString7(string);
         var raw = state.raw;
-        var result, reCopy, lastIndex;
+        var result, reCopy, lastIndex, match, i2, object, group;
         if (raw) {
           raw.lastIndex = re.lastIndex;
           result = call4(patchedExec, raw, str);
           re.lastIndex = raw.lastIndex;
-          if (result && state.groups) setGroups(result, state.groups);
           return result;
         }
         var groups = state.groups;
@@ -2789,9 +2777,8 @@ var require_regexp_exec = __commonJS({
             flags += "g";
           }
           strCopy = stringSlice4(str, re.lastIndex);
-          var prevChar = re.lastIndex > 0 && charAt(str, re.lastIndex - 1);
-          if (re.lastIndex > 0 && (!re.multiline || re.multiline && prevChar !== "\n" && prevChar !== "\r" && prevChar !== "\u2028" && prevChar !== "\u2029")) {
-            source = "(?: (?:" + source + "))";
+          if (re.lastIndex > 0 && (!re.multiline || re.multiline && charAt(str, re.lastIndex - 1) !== "\n")) {
+            source = "(?: " + source + ")";
             strCopy = " " + strCopy;
             charsAdded++;
           }
@@ -2801,10 +2788,10 @@ var require_regexp_exec = __commonJS({
           reCopy = new RegExp("^" + source + "$(?!\\s)", flags);
         }
         if (UPDATES_LAST_INDEX_WRONG) lastIndex = re.lastIndex;
-        var match = call4(nativeExec, sticky ? reCopy : re, strCopy);
+        match = call4(nativeExec, sticky ? reCopy : re, strCopy);
         if (sticky) {
           if (match) {
-            match.input = str;
+            match.input = stringSlice4(match.input, charsAdded);
             match[0] = stringSlice4(match[0], charsAdded);
             match.index = re.lastIndex;
             re.lastIndex += match[0].length;
@@ -2814,12 +2801,18 @@ var require_regexp_exec = __commonJS({
         }
         if (NPCG_INCLUDED && match && match.length > 1) {
           call4(nativeReplace, match[0], reCopy, function() {
-            for (var i2 = 1; i2 < arguments.length - 2; i2++) {
+            for (i2 = 1; i2 < arguments.length - 2; i2++) {
               if (arguments[i2] === void 0) match[i2] = void 0;
             }
           });
         }
-        if (match && groups) setGroups(match, groups);
+        if (match && groups) {
+          match.groups = object = create(null);
+          for (i2 = 0; i2 < groups.length; i2++) {
+            group = groups[i2];
+            object[group[0]] = match[group[1]];
+          }
+        }
         return match;
       };
     }
@@ -2938,7 +2931,7 @@ var require_advance_string_index = __commonJS({
     "use strict";
     var charAt = require_string_multibyte().charAt;
     module.exports = function(S, index2, unicode) {
-      return index2 + (unicode ? charAt(S, index2).length || 1 : 1);
+      return index2 + (unicode ? charAt(S, index2).length : 1);
     };
   }
 });
@@ -4046,8 +4039,8 @@ fixRegExpWellKnownSymbolLogic("match", function(MATCH, nativeMatch, maybeCallNat
       var res = maybeCallNative(nativeMatch, rx, S);
       if (res.done) return res.value;
       var flags = toString(getRegExpFlags(rx));
-      if (!~stringIndexOf(flags, "g")) return regExpExec(rx, S);
-      var fullUnicode = !!~stringIndexOf(flags, "u") || !!~stringIndexOf(flags, "v");
+      if (stringIndexOf(flags, "g") === -1) return regExpExec(rx, S);
+      var fullUnicode = stringIndexOf(flags, "u") !== -1;
       rx.lastIndex = 0;
       var A = [];
       var n2 = 0;
@@ -4125,17 +4118,17 @@ fixRegExpWellKnownSymbolLogic2("replace", function(_2, nativeReplace, maybeCallN
     function(string, replaceValue) {
       var rx = anObject2(this);
       var S = toString2(string);
-      var functionalReplace = isCallable(replaceValue);
-      if (!functionalReplace) replaceValue = toString2(replaceValue);
-      var flags = toString2(getRegExpFlags2(rx));
-      if (typeof replaceValue == "string" && !~stringIndexOf2(replaceValue, UNSAFE_SUBSTITUTE) && !~stringIndexOf2(replaceValue, "$<") && !~stringIndexOf2(flags, "y")) {
+      if (typeof replaceValue == "string" && stringIndexOf2(replaceValue, UNSAFE_SUBSTITUTE) === -1 && stringIndexOf2(replaceValue, "$<") === -1) {
         var res = maybeCallNative(nativeReplace, rx, S, replaceValue);
         if (res.done) return res.value;
       }
-      var global2 = !!~stringIndexOf2(flags, "g");
+      var functionalReplace = isCallable(replaceValue);
+      if (!functionalReplace) replaceValue = toString2(replaceValue);
+      var flags = toString2(getRegExpFlags2(rx));
+      var global2 = stringIndexOf2(flags, "g") !== -1;
       var fullUnicode;
       if (global2) {
-        fullUnicode = !!~stringIndexOf2(flags, "u") || !!~stringIndexOf2(flags, "v");
+        fullUnicode = stringIndexOf2(flags, "u") !== -1;
         rx.lastIndex = 0;
       }
       var results = [];
@@ -4196,8 +4189,8 @@ $({ target: "String", proto: true, forced: !MDN_POLYFILL_BUG && !CORRECT_IS_REGE
   startsWith: function startsWith(searchString) {
     var that = toString3(requireObjectCoercible3(this));
     notARegExp(searchString);
-    var search = toString3(searchString);
     var index2 = toLength3(min2(arguments.length > 1 ? arguments[1] : void 0, that.length));
+    var search = toString3(searchString);
     return stringSlice2(that, index2, index2 + search.length) === search;
   }
 });
@@ -4302,10 +4295,10 @@ $3({ target: "String", proto: true, forced: !MDN_POLYFILL_BUG2 && !CORRECT_IS_RE
   endsWith: function endsWith(searchString) {
     var that = toString4(requireObjectCoercible4(this));
     notARegExp2(searchString);
-    var search = toString4(searchString);
     var endPosition = arguments.length > 1 ? arguments[1] : void 0;
     var len = that.length;
     var end = endPosition === void 0 ? len : min3(toLength4(endPosition), len);
+    var search = toString4(searchString);
     return slice(that, end - search.length, end) === search;
   }
 });
@@ -4322,7 +4315,6 @@ var advanceStringIndex3 = require_advance_string_index();
 var toLength5 = require_to_length();
 var toString5 = require_to_string();
 var getMethod3 = require_get_method();
-var getRegExpFlags3 = require_regexp_get_flags();
 var regExpExec3 = require_regexp_exec_abstract();
 var stickyHelpers = require_regexp_sticky_helpers();
 var fails2 = require_fails();
@@ -4331,7 +4323,6 @@ var MAX_UINT32 = 4294967295;
 var min4 = Math.min;
 var push2 = uncurryThis5([].push);
 var stringSlice3 = uncurryThis5("".slice);
-var stringIndexOf3 = uncurryThis5("".indexOf);
 var SPLIT_WORKS_WITH_OVERWRITTEN_EXEC = !fails2(function() {
   var re = /(?:)/;
   var originalExec = re.exec;
@@ -4369,11 +4360,8 @@ fixRegExpWellKnownSymbolLogic3("split", function(SPLIT, nativeSplit, maybeCallNa
         if (res.done) return res.value;
       }
       var C = speciesConstructor(rx, RegExp);
-      var flags = toString5(getRegExpFlags3(rx));
-      var unicodeMatching = !!~stringIndexOf3(flags, "u") || !!~stringIndexOf3(flags, "v");
-      if (UNSUPPORTED_Y) {
-        if (!~stringIndexOf3(flags, "g")) flags += "g";
-      } else if (!~stringIndexOf3(flags, "y")) flags += "y";
+      var unicodeMatching = rx.unicode;
+      var flags = (rx.ignoreCase ? "i" : "") + (rx.multiline ? "m" : "") + (rx.unicode ? "u" : "") + (UNSUPPORTED_Y ? "g" : "y");
       var splitter = new C(UNSUPPORTED_Y ? "^(?:" + rx.source + ")" : rx, flags);
       var lim = limit === void 0 ? MAX_UINT32 : limit >>> 0;
       if (lim === 0) return [];
@@ -4441,10 +4429,10 @@ var notARegExp3 = require_not_a_regexp();
 var requireObjectCoercible6 = require_require_object_coercible();
 var toString6 = require_to_string();
 var correctIsRegExpLogic3 = require_correct_is_regexp_logic();
-var stringIndexOf4 = uncurryThis7("".indexOf);
+var stringIndexOf3 = uncurryThis7("".indexOf);
 $6({ target: "String", proto: true, forced: !correctIsRegExpLogic3("includes") }, {
   includes: function includes(searchString) {
-    return !!~stringIndexOf4(
+    return !!~stringIndexOf3(
       toString6(requireObjectCoercible6(this)),
       toString6(notARegExp3(searchString)),
       arguments.length > 1 ? arguments[1] : void 0
@@ -4851,7 +4839,7 @@ var defineBuiltIn = require_define_built_in();
 var anObject4 = require_an_object();
 var $toString = require_to_string();
 var fails3 = require_fails();
-var getRegExpFlags4 = require_regexp_get_flags();
+var getRegExpFlags3 = require_regexp_get_flags();
 var TO_STRING = "toString";
 var RegExpPrototype = RegExp.prototype;
 var nativeToString = RegExpPrototype[TO_STRING];
@@ -4863,7 +4851,7 @@ if (NOT_GENERIC || INCORRECT_NAME) {
   defineBuiltIn(RegExpPrototype, TO_STRING, function toString7() {
     var R = anObject4(this);
     var pattern = $toString(R.source);
-    var flags = $toString(getRegExpFlags4(R));
+    var flags = $toString(getRegExpFlags3(R));
     return "/" + pattern + "/" + flags;
   }, { unsafe: true });
 }
@@ -10429,4 +10417,4 @@ svg-pathdata/lib/SVGPathData.module.js:
   PERFORMANCE OF THIS SOFTWARE.
   ***************************************************************************** *)
 */
-//# sourceMappingURL=index.es-AAB7XZU7.js.map
+//# sourceMappingURL=index.es-BYGUFUB5.js.map

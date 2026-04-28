@@ -5,6 +5,8 @@ const MasterCategory = require("../models/master_category");
 const MasterValue = require("../models/master_value");
 const Medicine = require("../models/master_medicine");
 const MainStoreMedicine = require("../models/main_store");
+const DiagnosticPanel = require("../models/diagnostic_panel");
+const DiagnosticPanelTestMapping = require("../models/diagnostic_panel_test_mapping");
 const {
   canonicalizeDosageForm,
   canonicalizeMedicineType,
@@ -19,6 +21,12 @@ const {
   listMasterDiseases,
   GLOBAL_MASTER_INSTITUTE_ID
 } = require("../utils/instituteMasterData");
+const {
+  ensureDefaultDiagnosticPanels,
+  upsertPanelWithMappings,
+  deletePanelMappingsByPanelIds,
+  deletePanelMappingsByTestIds
+} = require("../utils/diagnosticPanels");
 const { testsByCategory: diagnosticReferenceTestsByCategory } = require("../data/diagnosticReferencePanel");
 
 const router = express.Router();
@@ -27,7 +35,8 @@ const MASTER_DATA_CACHE_TTL_MS = 5 * 60 * 1000;
 const masterDataCache = {
   categories: new Map(),
   tests: new Map(),
-  testsStructure: new Map()
+  testsStructure: new Map(),
+  panels: new Map()
 };
 
 const makeCacheKey = (...parts) => parts.map((part) => String(part || "").trim()).join("::");
@@ -52,7 +61,12 @@ const setCachedValue = (bucket, key, value) => {
 
 const invalidateMasterDataCache = (instituteId = "") => {
   const target = String(instituteId || "").trim();
-  const buckets = [masterDataCache.categories, masterDataCache.tests, masterDataCache.testsStructure];
+  const buckets = [
+    masterDataCache.categories,
+    masterDataCache.tests,
+    masterDataCache.testsStructure,
+    masterDataCache.panels
+  ];
 
   buckets.forEach((bucket) => {
     if (!target) {
@@ -526,6 +540,118 @@ const getTestCategoryDocs = async (instituteId) => {
   return docs;
 };
 
+const getPanelCacheKey = (instituteId, includeInactive, panelId = "") =>
+  makeCacheKey(
+    instituteId,
+    includeInactive ? "all" : "active",
+    panelId || "all",
+    "panels"
+  );
+
+const serializePanels = async (instituteId, { includeInactive = false, panelId = "" } = {}) => {
+  await ensureDefaultDiagnosticPanels(instituteId);
+
+  const query = { Institute_ID: instituteId };
+  if (!includeInactive) {
+    query.status = "Active";
+  }
+  if (panelId) {
+    query._id = panelId;
+  }
+
+  const panels = await DiagnosticPanel.find(query).sort({ name: 1 }).lean();
+  if (!panels.length) return [];
+
+  const panelIds = panels.map((panel) => panel._id);
+  const mappings = await DiagnosticPanelTestMapping.find({
+    panel_id: { $in: panelIds }
+  })
+    .sort({ panel_id: 1, sequence_order: 1 })
+    .lean();
+
+  const categoryIds = Array.from(
+    new Set(
+      panels
+        .map((panel) => String(panel?.category_id || "").trim())
+        .filter(Boolean)
+    )
+  );
+  const testIds = Array.from(
+    new Set(
+      mappings
+        .map((mapping) => String(mapping?.test_id || "").trim())
+        .filter(Boolean)
+    )
+  );
+
+  const [categoryRows, testRows] = await Promise.all([
+    categoryIds.length
+      ? MasterValue.find({
+          Institute_ID: instituteId,
+          _id: { $in: categoryIds }
+        })
+          .select("_id value_name status meta normalized_value")
+          .lean()
+      : Promise.resolve([]),
+    testIds.length
+      ? MasterValue.find({
+          Institute_ID: instituteId,
+          _id: { $in: testIds }
+        })
+          .select("_id value_name status meta normalized_value")
+          .lean()
+      : Promise.resolve([])
+  ]);
+
+  const categoryById = new Map(categoryRows.map((row) => [String(row._id), row]));
+  const testById = new Map(testRows.map((row) => [String(row._id), row]));
+  const mappingsByPanel = new Map();
+
+  mappings.forEach((mapping) => {
+    const key = String(mapping.panel_id || "");
+    if (!key) return;
+    if (!mappingsByPanel.has(key)) mappingsByPanel.set(key, []);
+    mappingsByPanel.get(key).push(mapping);
+  });
+
+  return panels.map((panel) => {
+    const panelMappings = (mappingsByPanel.get(String(panel._id)) || [])
+      .slice()
+      .sort((a, b) => Number(a.sequence_order || 0) - Number(b.sequence_order || 0));
+
+    const tests = panelMappings
+      .map((mapping) => {
+        const test = testById.get(String(mapping.test_id || ""));
+        if (!test) return null;
+        return {
+          _id: test._id,
+          test_id: test._id,
+          test_name: trimString(test.value_name),
+          name: trimString(test.value_name),
+          category_id: test?.meta?.category_id || null,
+          category_name: trimString(test?.meta?.category || ""),
+          reference: trimString(test?.meta?.reference),
+          unit: trimString(test?.meta?.unit),
+          status: test.status || "Active",
+          sequence_order: Number(mapping.sequence_order || 0)
+        };
+      })
+      .filter(Boolean);
+
+    const category = categoryById.get(String(panel.category_id || ""));
+    return {
+      id: panel._id,
+      _id: panel._id,
+      name: panel.name,
+      category_id: panel.category_id,
+      category_name: trimString(category?.value_name || ""),
+      status: panel.status || "Active",
+      tests,
+      test_count: tests.length
+    };
+  });
+};
+
 router.get("/public-map", async (req, res) => {
   try {
     const instituteId = String(req.query.instituteId || "").trim();
@@ -815,8 +941,20 @@ router.put("/values/:id", verifyToken, requireInstituteAdmin, async (req, res) =
       if (duplicate) {
         return res.status(409).json({ message: "Value already exists in this category" });
       }
+      const previousName = String(valueDoc.value_name || "").trim();
+      const previousAliases = Array.isArray(valueDoc.meta?.aliases) ? valueDoc.meta.aliases : [];
+      const aliasSet = new Set(
+        [previousName, ...previousAliases]
+          .map((item) => String(item || "").trim())
+          .filter(Boolean)
+      );
+      aliasSet.delete(valueName);
       valueDoc.value_name = valueName;
       valueDoc.normalized_value = normalizedValue;
+      valueDoc.meta = {
+        ...(valueDoc.meta || {}),
+        aliases: Array.from(aliasSet)
+      };
     }
 
     if (status === "Active" || status === "Inactive") {
@@ -824,7 +962,19 @@ router.put("/values/:id", verifyToken, requireInstituteAdmin, async (req, res) =
     }
 
     if (req.body.meta && typeof req.body.meta === "object") {
-      valueDoc.meta = req.body.meta;
+      valueDoc.meta = {
+        ...(valueDoc.meta || {}),
+        ...req.body.meta,
+        aliases: Array.isArray(req.body.meta.aliases)
+          ? Array.from(
+              new Set(
+                [...(valueDoc.meta?.aliases || []), ...req.body.meta.aliases]
+                  .map((item) => String(item || "").trim())
+                  .filter(Boolean)
+              )
+            )
+          : valueDoc.meta?.aliases || []
+      };
     }
 
     await valueDoc.save();
@@ -848,6 +998,9 @@ router.delete("/values/:id", verifyToken, requireInstituteAdmin, async (req, res
     }
 
     await valueDoc.deleteOne();
+    if (String(valueDoc?.meta?.kind || "") === "test") {
+      await deletePanelMappingsByTestIds(instituteId, [valueDoc._id]);
+    }
     invalidateMasterDataCache(instituteId);
     res.json({ message: "Value deleted" });
   } catch (err) {
@@ -1122,6 +1275,161 @@ router.get("/tests", async (req, res) => {
   }
 });
 
+router.get("/panels", async (req, res) => {
+  try {
+    const instituteId = String(req.query?.instituteId || req.user?.instituteId || req.headers["x-institute-id"] || "").trim();
+    const includeInactive = String(req.query?.includeInactive || "").toLowerCase() === "true";
+    const bypassCache = Boolean(req.query?._t) || String(req.query?.fresh || "").toLowerCase() === "true";
+    const panelId = String(req.query?.panelId || "").trim();
+
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({
+        message: "Valid instituteId is required (provide via token, ?instituteId= or x-institute-id header)"
+      });
+    }
+
+    const cacheKey = getPanelCacheKey(instituteId, includeInactive, panelId);
+    const cached = bypassCache ? null : getCachedValue(masterDataCache.panels, cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const panels = await serializePanels(instituteId, { includeInactive, panelId });
+    return res.json(setCachedValue(masterDataCache.panels, cacheKey, panels));
+  } catch (err) {
+    console.error("GET /master-data-api/panels error", err);
+    res.status(500).json({ message: "Failed to load panels", error: err.message });
+  }
+});
+
+router.get("/panels/:id/tests", async (req, res) => {
+  try {
+    const instituteId = String(req.query?.instituteId || req.user?.instituteId || req.headers["x-institute-id"] || "").trim();
+    const includeInactive = String(req.query?.includeInactive || "").toLowerCase() === "true";
+    const panelId = String(req.params?.id || "").trim();
+
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({
+        message: "Valid instituteId is required (provide via token, ?instituteId= or x-institute-id header)"
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(panelId)) {
+      return res.status(400).json({ message: "Valid panel id is required" });
+    }
+
+    const cacheKey = getPanelCacheKey(instituteId, includeInactive, panelId);
+    const cached = getCachedValue(masterDataCache.panels, cacheKey);
+    if (cached) {
+      return res.json(cached[0] || null);
+    }
+
+    const panels = await serializePanels(instituteId, { includeInactive, panelId });
+    const payload = panels[0] || null;
+    setCachedValue(masterDataCache.panels, cacheKey, panels);
+    return res.json(payload);
+  } catch (err) {
+    console.error("GET /master-data-api/panels/:id/tests error", err);
+    res.status(500).json({ message: "Failed to load panel tests", error: err.message });
+  }
+});
+
+router.post("/panels", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const name = String(req.body?.name || req.body?.panel_name || "").trim();
+    const categoryId = String(req.body?.category_id || req.body?.categoryId || "").trim();
+    const status = String(req.body?.status || "Active").trim();
+    const testIds = Array.isArray(req.body?.testIds)
+      ? req.body.testIds
+      : Array.isArray(req.body?.tests)
+      ? req.body.tests.map((item) => item?.test_id || item?.testId || item?._id || item).filter(Boolean)
+      : [];
+    const testNames = Array.isArray(req.body?.testNames)
+      ? req.body.testNames
+      : Array.isArray(req.body?.tests)
+      ? req.body.tests.map((item) => item?.test_name || item?.testName || item?.name || "").filter(Boolean)
+      : [];
+
+    const panel = await upsertPanelWithMappings({
+      instituteId,
+      name,
+      categoryId,
+      status,
+      testIds,
+      testNames
+    });
+
+    invalidateMasterDataCache(instituteId);
+    const payload = (await serializePanels(instituteId, { includeInactive: true, panelId: String(panel._id) }))[0] || null;
+    res.status(201).json(payload || panel);
+  } catch (err) {
+    console.error("POST /master-data-api/panels error", err);
+    res.status(500).json({ message: err.message || "Failed to create panel" });
+  }
+});
+
+router.put("/panels/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const panelId = String(req.params?.id || "").trim();
+    const name = String(req.body?.name || req.body?.panel_name || "").trim();
+    const categoryId = String(req.body?.category_id || req.body?.categoryId || "").trim();
+    const status = String(req.body?.status || "Active").trim();
+    const testIds = Array.isArray(req.body?.testIds)
+      ? req.body.testIds
+      : Array.isArray(req.body?.tests)
+      ? req.body.tests.map((item) => item?.test_id || item?.testId || item?._id || item).filter(Boolean)
+      : [];
+    const testNames = Array.isArray(req.body?.testNames)
+      ? req.body.testNames
+      : Array.isArray(req.body?.tests)
+      ? req.body.tests.map((item) => item?.test_name || item?.testName || item?.name || "").filter(Boolean)
+      : [];
+
+    const panel = await upsertPanelWithMappings({
+      instituteId,
+      panelId,
+      name,
+      categoryId,
+      status,
+      testIds,
+      testNames
+    });
+
+    invalidateMasterDataCache(instituteId);
+    const payload = (await serializePanels(instituteId, { includeInactive: true, panelId: String(panel._id) }))[0] || null;
+    res.json(payload || panel);
+  } catch (err) {
+    console.error("PUT /master-data-api/panels/:id error", err);
+    res.status(500).json({ message: err.message || "Failed to update panel" });
+  }
+});
+
+router.delete("/panels/:id", verifyToken, requireInstituteAdmin, async (req, res) => {
+  try {
+    const instituteId = req.user.instituteId;
+    const panelId = String(req.params?.id || "").trim();
+    if (!mongoose.Types.ObjectId.isValid(panelId)) {
+      return res.status(400).json({ message: "Valid panel id is required" });
+    }
+
+    const panel = await DiagnosticPanel.findOne({ _id: panelId, Institute_ID: instituteId });
+    if (!panel) {
+      return res.status(404).json({ message: "Panel not found" });
+    }
+
+    await deletePanelMappingsByPanelIds(instituteId, [panel._id]);
+    await panel.deleteOne();
+
+    invalidateMasterDataCache(instituteId);
+    res.json({ message: "Panel deleted" });
+  } catch (err) {
+    console.error("DELETE /master-data-api/panels/:id error", err);
+    res.status(500).json({ message: "Failed to delete panel", error: err.message });
+  }
+});
+
 router.post("/tests/category", verifyToken, requireInstituteAdmin, async (req, res) => {
   try {
     const instituteId = req.user.instituteId;
@@ -1208,6 +1516,16 @@ router.delete("/tests/category/:id", verifyToken, requireInstituteAdmin, async (
     // Delete the category itself
     await MasterValue.deleteOne({
       _id: categoryValue._id
+    });
+
+    const panelsToDelete = await DiagnosticPanel.find({
+      Institute_ID: instituteId,
+      category_id: categoryValue._id
+    }).select("_id").lean();
+    await deletePanelMappingsByPanelIds(instituteId, panelsToDelete.map((panel) => panel._id));
+    await DiagnosticPanel.deleteMany({
+      Institute_ID: instituteId,
+      category_id: categoryValue._id
     });
 
     // Delete all tests in this category

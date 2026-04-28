@@ -7,6 +7,7 @@ import { usePersonFilter } from "../../context/PersonFilterContext";
 import DateRangeFilter from "../common/DateRangeFilter";
 import PDFDownloadButton from "../common/PDFDownloadButton";
 import SARCPLPrescriptionReport from "../institutes/SARCPLPrescriptionReport";
+import { fetchDiagnosticPanels } from "../../utils/masterData_clean";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const getFamilyMemberId = (row) => {
@@ -292,6 +293,7 @@ const PrescriptionReport = () => {
   const [exportPrescription, setExportPrescription] = useState(null);
   const [downloadingId, setDownloadingId] = useState("");
   const exportRef = useRef(null);
+  const [diagnosticPanels, setDiagnosticPanels] = useState([]);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6100";
   const employeeObjectId = localStorage.getItem("employeeObjectId");
   const employeeId = localStorage.getItem("employeeId") || employeeObjectId;
@@ -309,6 +311,19 @@ const PrescriptionReport = () => {
     if (!employeeObjectId) return;
     fetchPrescriptions();
   }, [employeeObjectId, selectedPersonId, fromDate, toDate]);
+
+  useEffect(() => {
+    const loadPanels = async () => {
+      try {
+        const panels = await fetchDiagnosticPanels({ force: true, includeInactive: false });
+        setDiagnosticPanels(Array.isArray(panels) ? panels : []);
+      } catch (err) {
+        setDiagnosticPanels([]);
+      }
+    };
+
+    loadPanels();
+  }, []);
 
   useEffect(() => {
     if (!employeeObjectId) return;
@@ -384,7 +399,7 @@ const PrescriptionReport = () => {
         bmi: patientProfile?.BMI || employeeProfile?.BMI || patientMetrics.BMI || "",
       },
       investigations: {
-        tests: (prescription?.relatedTests || []).map((test) => test?.Test_Name || test?.Test_ID?.Test_Name || "").filter(Boolean),
+        tests: prescription?.relatedTests || [],
         xrays: (prescription?.relatedXrays || []).map((xray) => xray?.Xray_Type || xray?.Xray_ID || "").filter(Boolean),
         notes: "",
       },
@@ -842,7 +857,7 @@ const PrescriptionReport = () => {
               </div>
 
               <div className="modal-body p-0">
-                <SARCPLPrescriptionReport reportData={selectedReportData} />
+                <SARCPLPrescriptionReport reportData={selectedReportData} panels={diagnosticPanels} />
               </div>
 
               <div className="modal-footer">
@@ -882,7 +897,7 @@ const PrescriptionReport = () => {
       >
         {exportReportData && (
           <div ref={exportRef}>
-            <SARCPLPrescriptionReport reportData={exportReportData} />
+            <SARCPLPrescriptionReport reportData={exportReportData} panels={diagnosticPanels} />
           </div>
         )}
       </div>
