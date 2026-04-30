@@ -4,7 +4,7 @@ const DailyVisit = require("../models/daily_visit");
 const MedicalAction = require("../models/medical_action");
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Employee = require("../models/employee");
-const FamilyMember = require("../models/family_member");
+const FamilyMemberModel = require("../models/family_member");
 const {
   normalizePatientMetrics,
   validateRequiredPatientMetrics
@@ -21,7 +21,7 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
       employee_id,
       abs_no,
       IsFamilyMember,
-      FamilyMember,
+      FamilyMember: familyMemberId,
       name,
       symptoms,
       Vitals
@@ -29,6 +29,10 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
 
     if (!Institute_ID || !employee_id || !abs_no || !name) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (IsFamilyMember && !familyMemberId) {
+      return res.status(400).json({ error: "Family member is required" });
     }
 
     const metricError = validateRequiredPatientMetrics(Vitals);
@@ -67,7 +71,7 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
     }
 
     if (IsFamilyMember) {
-      await FamilyMember.findByIdAndUpdate(FamilyMember, patientMetrics);
+      await FamilyMemberModel.findByIdAndUpdate(familyMemberId, patientMetrics);
     } else {
       await Employee.findByIdAndUpdate(employee_id, patientMetrics);
     }
@@ -77,7 +81,7 @@ router.post("/register",verifyToken,allowInstituteRoles("front_desk"), async (re
       Institute_ID:instituteObjectId,
       employee_id,
       IsFamilyMember: IsFamilyMember || false,
-      FamilyMember: IsFamilyMember ? FamilyMember : null,
+      FamilyMember: IsFamilyMember ? familyMemberId : null,
       abs_no,
       name,
       OP_No,

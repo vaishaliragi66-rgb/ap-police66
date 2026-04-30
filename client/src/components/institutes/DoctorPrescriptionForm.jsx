@@ -49,6 +49,7 @@ const DoctorPrescriptionForm = () => {
   const [selectedXrayReport, setSelectedXrayReport] = useState(null); // { record, xray }
   const [selectedPrescriptionReport, setSelectedPrescriptionReport] = useState(null);
   const [prescriptionSuccessMessage, setPrescriptionSuccessMessage] = useState("");
+  const [isSubmittingPrescription, setIsSubmittingPrescription] = useState(false);
   const [inventoryMedicines, setInventoryMedicines] = useState([]);
   const [medicineStrengths, setMedicineStrengths] = useState({});
   const notesTextareaRef = useRef(null);
@@ -1070,6 +1071,7 @@ const relevantDiseases = diseases.filter((d) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmittingPrescription) return;
     setPrescriptionSuccessMessage("");
 
     if (!formData.Employee_ID) {
@@ -1082,139 +1084,147 @@ const relevantDiseases = diseases.filter((d) => {
       return;
     }
 
+    setIsSubmittingPrescription(true);
+
     try {
-      await submitPendingDiagnosisTests();
-      await submitPendingXrays();
-    } catch (err) {
-      console.error("Failed to auto-submit pending diagnostics", err);
-      alert("Unable to submit tests or x-rays with the prescription");
-      return;
-    }
+      try {
+        await submitPendingDiagnosisTests();
+        await submitPendingXrays();
+      } catch (err) {
+        console.error("Failed to auto-submit pending diagnostics", err);
+        alert("Unable to submit tests or x-rays with the prescription");
+        return;
+      }
 
+      const selectedMedicines = formData.Medicines
+        .filter((med) => med.Medicine_Name?.trim())
+        .map((med) => ({
+          Medicine_Name: med.Medicine_Name,
+          Type: med.Medicine_Type || med.Type,
+          Dosage_Form: med.Dosage_Form || "",
+          FoodTiming: med.FoodTiming,
+          Strength: med.Strength,
+          Morning: med.Morning,
+          Afternoon: med.Afternoon,
+          Night: med.Night,
+          Duration: med.Duration,
+          Remarks: med.Remarks,
+          Quantity: med.Quantity,
+          ToBePrescribed: med.ToBePrescribed || med.toBePrescribed || med.IsToBePrescribed || false
+        }));
 
+      // Removed validation - allow custom medicine names
+      // for (let med of selectedMedicines) {
+      //   if (!uniqueMedicines.includes(med.Medicine_Name)) {
+      //     alert("Invalid medicine selected. Please choose from list.");
+      //     return;
+      //   }
+      // }
 
-    const selectedMedicines = formData.Medicines
-      .filter((med) => med.Medicine_Name?.trim())
-      .map((med) => ({
-        Medicine_Name: med.Medicine_Name,
-        Type: med.Medicine_Type || med.Type,
-        Dosage_Form: med.Dosage_Form || "",
-        FoodTiming: med.FoodTiming,
-        Strength: med.Strength,
-        Morning: med.Morning,
-        Afternoon: med.Afternoon,
-        Night: med.Night,
-        Duration: med.Duration,
-        Remarks: med.Remarks,
-        Quantity: med.Quantity,
-        ToBePrescribed: med.ToBePrescribed || med.toBePrescribed || med.IsToBePrescribed || false
-      }));
+      // Medicines are now optional - removed validation
+      
+      const token = localStorage.getItem("instituteToken") || localStorage.getItem("token");
+      await axios.post(`${BACKEND_URL}/doctor-prescription-api/add`, {
+        Institute_ID: formData.Institute_ID,
+        Employee_ID: formData.Employee_ID,
+        IsFamilyMember: formData.IsFamilyMember,
+        FamilyMember_ID: formData.IsFamilyMember
+          ? formData.FamilyMember_ID
+          : null,
+        visit_id: formData.visit_id || null,
+        Medicines: selectedMedicines,
+        Notes: formData.Notes
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-    // Removed validation - allow custom medicine names
-    // for (let med of selectedMedicines) {
-    //   if (!uniqueMedicines.includes(med.Medicine_Name)) {
-    //     alert("Invalid medicine selected. Please choose from list.");
-    //     return;
-    //   }
-    // }
+      await fetchTopTwoPrescriptions(
+        formData.Employee_ID,
+        formData.IsFamilyMember ? formData.FamilyMember_ID : null
+      );
 
-    // Medicines are now optional - removed validation
-    
-    const token = localStorage.getItem("instituteToken") || localStorage.getItem("token");
-    await axios.post(`${BACKEND_URL}/doctor-prescription-api/add`, {
-      Institute_ID: formData.Institute_ID,
-      Employee_ID: formData.Employee_ID,
-      IsFamilyMember: formData.IsFamilyMember,
-      FamilyMember_ID: formData.IsFamilyMember
-        ? formData.FamilyMember_ID
-        : null,
-      visit_id: formData.visit_id || null,
-      Medicines: selectedMedicines,
-      Notes: formData.Notes
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+      if (showReports) {
+        await loadEmployeeReports();
+      }
 
-    await fetchTopTwoPrescriptions(
-      formData.Employee_ID,
-      formData.IsFamilyMember ? formData.FamilyMember_ID : null
-    );
-
-    if (showReports) {
-      await loadEmployeeReports();
-    }
-
-    // ✅ Save Disease (if selected)
-    if (diseaseData.Disease_Name?.trim()) {
+      // ✅ Save Disease (if selected)
+      if (diseaseData.Disease_Name?.trim()) {
         await axios.post(
-      `${BACKEND_URL}/disease-api/diseases`,
-  {
-    Institute_ID: formData.Institute_ID,
-    Employee_ID: formData.Employee_ID,
-    IsFamilyMember: formData.IsFamilyMember,
-    FamilyMember_ID: formData.IsFamilyMember
-      ? formData.FamilyMember_ID
-      : null,
-    Disease_Name: diseaseData.Disease_Name,
-    Category: diseaseData.Category,
-    Description: "",
-    Symptoms: [],
-    Common_Medicines: [],
-    Severity_Level: diseaseData.Severity_Level,
-    Notes: formData.Notes
-  }
-);
+          `${BACKEND_URL}/disease-api/diseases`,
+          {
+            Institute_ID: formData.Institute_ID,
+            Employee_ID: formData.Employee_ID,
+            IsFamilyMember: formData.IsFamilyMember,
+            FamilyMember_ID: formData.IsFamilyMember
+              ? formData.FamilyMember_ID
+              : null,
+            Disease_Name: diseaseData.Disease_Name,
+            Category: diseaseData.Category,
+            Description: "",
+            Symptoms: [],
+            Common_Medicines: [],
+            Severity_Level: diseaseData.Severity_Level,
+            Notes: formData.Notes
+          }
+        );
 
-    }
+      }
 
 
-    alert("✅ Prescription saved successfully");
-    setPrescriptionSuccessMessage("Prescription submitted successfully.");
-    
-    // Reset all form fields
-    setFormData({
-      Institute_ID: formData.Institute_ID,
-      Employee_ID: "",
-      IsFamilyMember: false,
-      FamilyMember_ID: "",
-      Medicines: [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false, toBePrescribed: false, IsToBePrescribed: false }],
-      Notes: "",
-      Disease_Name: ""
-    });
-    
-    setDiseaseData({
-      Category: "Communicable",
-      Disease_Name: "",
-      Severity_Level: "Mild"
-    });
-    
-    setDiagnosisData({
-      Tests: [{ Category: "", Test_ID: "", Test_Name: "" }]
-    });
-    
+      alert("✅ Prescription saved successfully");
+      setPrescriptionSuccessMessage("Prescription submitted successfully.");
+      
+      // Reset all form fields
+      setFormData({
+        Institute_ID: formData.Institute_ID,
+        Employee_ID: "",
+        IsFamilyMember: false,
+        FamilyMember_ID: "",
+        Medicines: [{ Medicine_Name: "", Medicine_Type: "", Dosage_Form: "", Type: "", FoodTiming: "", Strength: "", Morning: false, Afternoon: false, Night: false, Duration: "", Remarks: "", Quantity: 0, ToBePrescribed: false, toBePrescribed: false, IsToBePrescribed: false }],
+        Notes: "",
+        Disease_Name: ""
+      });
+      
+      setDiseaseData({
+        Category: "Communicable",
+        Disease_Name: "",
+        Severity_Level: "Mild"
+      });
+      
+      setDiagnosisData({
+        Tests: [{ Category: "", Test_ID: "", Test_Name: "" }]
+      });
+      
       setXrayData({
-      Xrays: [{ Body_Part: "", Xray_ID: "", Xray_Type: "" }]
-    });
-    
-    setSelectedEmployee(null);
-    setLastTwoVisits([]);
-    setSelectedVisit(null);
-    setEmployeeProfile(null);
-    setDiseases([]);
-    setVisitId(null);
-    setSelectedDiagnosisReport(null);
-    setSelectedXrayReport(null);
-    setSelectedPrescriptionReport(null);
-    setDiseaseSearch("");
-    setFilteredDiseases([]);
-    setSelectedType("");
-    setSelectedSubgroup("");
-    
-    // Reset PatientSelector component by changing key
-    setPatientSelectorKey(prev => prev + 1);
-    
-    if (notesTextareaRef.current) {
-      notesTextareaRef.current.value = "";
+        Xrays: [{ Body_Part: "", Xray_ID: "", Xray_Type: "" }]
+      });
+      
+      setSelectedEmployee(null);
+      setLastTwoVisits([]);
+      setSelectedVisit(null);
+      setEmployeeProfile(null);
+      setDiseases([]);
+      setVisitId(null);
+      setSelectedDiagnosisReport(null);
+      setSelectedXrayReport(null);
+      setSelectedPrescriptionReport(null);
+      setDiseaseSearch("");
+      setFilteredDiseases([]);
+      setSelectedType("");
+      setSelectedSubgroup("");
+      
+      // Reset PatientSelector component by changing key
+      setPatientSelectorKey(prev => prev + 1);
+      
+      if (notesTextareaRef.current) {
+        notesTextareaRef.current.value = "";
+      }
+    } catch (err) {
+      console.error("Failed to submit prescription", err);
+      const backendError = err?.response?.data?.error || err?.response?.data?.message;
+      alert(`❌ ${backendError || "Failed to submit prescription"}`);
+    } finally {
+      setIsSubmittingPrescription(false);
     }
   };
 
@@ -2817,11 +2827,9 @@ const relevantDiseases = diseases.filter((d) => {
                 <button
                   type="submit"
                   className="btn btn-dark w-100 mt-4"
-                //   disabled={Object.values(medicineErrors).some(
-                //     (msg) => msg.startsWith("❌")
-                //   )}
+                  disabled={isSubmittingPrescription}
                 >
-                  Submit Prescription
+                  {isSubmittingPrescription ? "Submitting..." : "Submit Prescription"}
                 </button>
               </form>
             </div>

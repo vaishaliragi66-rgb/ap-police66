@@ -214,7 +214,8 @@ const VisitRegister = () => {
       });
   
     } catch (err) {
-      alert("❌ Failed to register visit");
+      const backendError = err?.response?.data?.error;
+      alert(`❌ ${backendError || "Failed to register visit"}`);
     } finally {
       setLoading(false);
     }
