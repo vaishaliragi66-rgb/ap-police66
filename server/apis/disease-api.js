@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const diseaseApp = express.Router();
 const { verifyToken, allowInstituteRoles } = require("./instituteAuth");
 const Disease = require("../models/disease");
+const Employee = require("../models/employee");
 
 const formatDiseaseDate = (value) => {
   if (!value) return "-";
