@@ -30,8 +30,22 @@ const cloudinaryConfig = {
   folder: process.env.CLOUDINARY_EMPLOYEE_FOLDER || "employee-profiles"
 };
 
-const SKIP_CLOUD = process.env.SKIP_CLOUD === "1" || process.env.SKIP_CLOUD === "true";
-const SKIP_DB = process.env.SKIP_DB === "1" || process.env.SKIP_DB === "true";
+// Safety: allow skip flags only for non-production local testing and require an explicit secret
+const SKIP_TEST_SECRET = process.env.SKIP_TEST_SECRET || "";
+const SKIP_CLOUD =
+  process.env.NODE_ENV !== "production" &&
+  (process.env.SKIP_CLOUD === "1" || process.env.SKIP_CLOUD === "true") &&
+  SKIP_TEST_SECRET === "allow-local-skip";
+const SKIP_DB =
+  process.env.NODE_ENV !== "production" &&
+  (process.env.SKIP_DB === "1" || process.env.SKIP_DB === "true") &&
+  SKIP_TEST_SECRET === "allow-local-skip";
+
+if (SKIP_CLOUD || SKIP_DB) {
+  console.warn(
+    `SECURE-TEST-MODE enabled — SKIP_CLOUD=${SKIP_CLOUD} SKIP_DB=${SKIP_DB}. Ensure this is never set in production.`
+  );
+}
 
 const allowedImageExtensions = /\.(jpe?g|png|gif|webp)$/i;
 
