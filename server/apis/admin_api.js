@@ -3,6 +3,10 @@ const expressAsyncHandler = require("express-async-handler");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
+const axios = require("axios");
+const crypto = require("crypto");
+const path = require("path");
+const fs = require("fs");
 let ExcelJS;
 try {
   ExcelJS = require("exceljs");
@@ -14,12 +18,26 @@ const Admin = require("../models/admin");
 const Employee = require("../models/employee");
 const FamilyMember = require("../models/family_member");
 const Institute = require("../models/master_institute");
-const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 const adminApp = express.Router();
 
+const uploadTempDir = path.join(__dirname, '..', 'uploads', 'temp');
+if (!fs.existsSync(uploadTempDir)) fs.mkdirSync(uploadTempDir, { recursive: true });
+
+const cloudinaryConfig = {
+  cloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
+  apiKey: process.env.CLOUDINARY_API_KEY || "",
+  apiSecret: process.env.CLOUDINARY_API_SECRET || "",
+  folder: process.env.CLOUDINARY_EMPLOYEE_FOLDER || "employee-profiles"
+};
+
+const allowedImageExtensions = /\.(jpe?g|png|gif|webp)$/i;
+
 const bulkUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadTempDir),
+    filename: (req, file, cb) => cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname}`)
+  }),
+  limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === "excelFile") {
       if (!/\.xlsx$/i.test(file.originalname)) {
@@ -27,7 +45,12 @@ const bulkUpload = multer({
       }
       return cb(null, true);
     }
-    cb(new Error(`Invalid field name: ${file.fieldname}`));
+
+    if (file.mimetype && file.mimetype.startsWith("image/") && allowedImageExtensions.test(file.originalname)) {
+      return cb(null, true);
+    }
+
+    return cb(new Error(`Employee photos must be JPG, PNG, GIF, or WEBP files`));
   }
 });
 
@@ -52,16 +75,105 @@ const normalizeRow = (row) => {
     street: normalized.street || "",
     district: normalized.district || "",
     state: normalized.state || "",
-    pincode: normalized.pincode || normalized.pin || ""
+    pincode: normalized.pincode || normalized.pin || "",
+    photo_file:
+      normalized.photofile ||
+      normalized.photofilename ||
+      normalized.photoname ||
+      normalized.imagefile ||
+      normalized.imagename ||
+      normalized.photo ||
+      ""
   };
 };
 
-const writePhoto = async (data, filename) => {
-  const uploaded = await uploadBufferToCloudinary(data, {
-    folder: "profile-pics",
-    public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}`
+const cleanupTempFiles = async (files = []) => {
+  await Promise.all(
+    files.map(async (file) => {
+      if (!file?.path) {
+        return;
+      }
+
+      try {
+        await fs.promises.unlink(file.path);
+      } catch (err) {
+        if (err.code !== "ENOENT") {
+          console.warn(`Failed to remove temp file ${file.path}:`, err.message);
+        }
+      }
+    })
+  );
+};
+
+const uploadPhotoToCloudinary = async (filePath, mimeType) => {
+  if (!cloudinaryConfig.cloudName || !cloudinaryConfig.apiKey || !cloudinaryConfig.apiSecret) {
+    throw new Error("Cloudinary credentials are not configured");
+  }
+
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = crypto
+    .createHash("sha1")
+    .update(`folder=${cloudinaryConfig.folder}&timestamp=${timestamp}${cloudinaryConfig.apiSecret}`)
+    .digest("hex");
+
+  const fileBuffer = await fs.promises.readFile(filePath);
+  const payload = new URLSearchParams({
+    file: `data:${mimeType || "image/jpeg"};base64,${fileBuffer.toString("base64")}`,
+    api_key: cloudinaryConfig.apiKey,
+    timestamp,
+    signature,
+    folder: cloudinaryConfig.folder
   });
-  return uploaded.secure_url;
+
+  const response = await axios.post(
+    `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`,
+    payload,
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    }
+  );
+
+  return response.data?.secure_url || response.data?.url || "";
+};
+
+const buildPhotoLookup = async (photoFiles = []) => {
+  const lookup = new Map();
+
+  for (const file of photoFiles) {
+    const uploadedUrl = await uploadPhotoToCloudinary(file.path, file.mimetype);
+    const originalName = String(file.originalname || "").trim().toLowerCase();
+    const baseName = path.basename(originalName, path.extname(originalName));
+
+    if (originalName && !lookup.has(originalName)) {
+      lookup.set(originalName, uploadedUrl);
+    }
+
+    if (baseName && !lookup.has(baseName)) {
+      lookup.set(baseName, uploadedUrl);
+    }
+  }
+
+  return lookup;
+};
+
+const getPhotoUrlForRow = (row, uploadedPhotoMap) => {
+  const references = [row.photo_file, row.abs_no]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toLowerCase());
+
+  for (const reference of references) {
+    const referenceBase = path.basename(reference, path.extname(reference));
+    if (uploadedPhotoMap.has(reference)) {
+      return uploadedPhotoMap.get(reference);
+    }
+    if (uploadedPhotoMap.has(referenceBase)) {
+      return uploadedPhotoMap.get(referenceBase);
+    }
+  }
+
+  return "";
 };
 
 const getExcelCellValue = (value) => {
@@ -88,9 +200,9 @@ const getExcelCellValue = (value) => {
   return value;
 };
 
-const readExcelUpload = async (excelBuffer) => {
+const readExcelUpload = async (excelPath) => {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(excelBuffer);
+  await workbook.xlsx.readFile(excelPath);
   const worksheet = workbook.worksheets[0];
   const photoMap = new Map();
   const rawRows = [];
@@ -295,30 +407,26 @@ adminApp.post(
         return res.status(400).json({ success: false, message: `File error: ${err.message}` });
       }
 
-      const invalidFiles = (req.files || []).filter(
-        (file) => file.fieldname !== "excelFile"
-      );
-      if (invalidFiles.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: `File error: Invalid field name(s): ${invalidFiles.map((file) => file.fieldname).join(", ")}`
-        });
-      }
       next();
     });
   },
   expressAsyncHandler(async (req, res) => {
     const uploadedFiles = req.files || [];
     const excelFile = uploadedFiles.find((file) => file.fieldname === "excelFile");
+    const photoFiles = uploadedFiles.filter((file) => file.fieldname !== "excelFile");
 
     if (!excelFile) {
       return res.status(400).json({ success: false, message: "Excel file is required." });
     }
 
     try {
-      const { rawRows, photoMap } = await readExcelUpload(excelFile.buffer);
+      const [{ rawRows }, uploadedPhotoMap] = await Promise.all([
+        readExcelUpload(excelFile.path),
+        buildPhotoLookup(photoFiles)
+      ]);
 
       if (!Array.isArray(rawRows) || rawRows.length === 0) {
+        await cleanupTempFiles(uploadedFiles);
         return res.status(400).json({ success: false, message: "Excel file is empty or invalid." });
       }
 
@@ -377,6 +485,14 @@ adminApp.post(
           rowErrors.push("Pincode must be 6 digits");
         }
 
+        if (row.photo_file) {
+          const photoKey = path.basename(String(row.photo_file).trim().toLowerCase());
+          const photoBase = path.basename(photoKey, path.extname(photoKey));
+          if (!uploadedPhotoMap.has(photoKey) && !uploadedPhotoMap.has(photoBase)) {
+            rowErrors.push(`Photo file not found for ${row.photo_file}`);
+          }
+        }
+
         if (row.abs_no && csvAbsSet.has(row.abs_no)) {
           rowErrors.push("Duplicate ABS_NO in CSV upload");
         }
@@ -396,21 +512,7 @@ adminApp.post(
         if (row.abs_no) csvAbsSet.add(row.abs_no);
         if (row.email) csvEmailSet.add(row.email.toLowerCase());
 
-        let photoPath = "";
-        const embeddedPhoto =
-          photoMap.get(rowNumber) ||
-          photoMap.get(rowNumber - 1) ||
-          photoMap.get(rowNumber + 1);
-        if (embeddedPhoto) {
-          try {
-            photoPath = await writePhoto(
-              embeddedPhoto.buffer,
-              `embedded-row-${rowNumber}${embeddedPhoto.extension}`
-            );
-          } catch (err) {
-            console.warn(`Warning: Failed to save embedded photo for row ${rowNumber}`);
-          }
-        }
+        const photoPath = getPhotoUrlForRow(row, uploadedPhotoMap);
 
         if (rowErrors.length > 0) {
           errors.push({ row: rowNumber, errors: rowErrors });
@@ -453,8 +555,11 @@ adminApp.post(
       }
 
       if (created.length === 0) {
+        await cleanupTempFiles(uploadedFiles);
         return res.status(400).json({ success: false, message: "No employees were created.", errors });
       }
+
+      await cleanupTempFiles(uploadedFiles);
 
       res.status(200).json({
         success: true,
@@ -465,6 +570,7 @@ adminApp.post(
       });
     } catch (err) {
       console.error("Bulk upload error:", err);
+      await cleanupTempFiles(uploadedFiles);
       return res.status(500).json({ success: false, message: "Bulk upload failed.", error: err.message });
     }
   })
