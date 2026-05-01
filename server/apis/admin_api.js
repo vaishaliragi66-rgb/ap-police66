@@ -30,6 +30,9 @@ const cloudinaryConfig = {
   folder: process.env.CLOUDINARY_EMPLOYEE_FOLDER || "employee-profiles"
 };
 
+const SKIP_CLOUD = process.env.SKIP_CLOUD === "1" || process.env.SKIP_CLOUD === "true";
+const SKIP_DB = process.env.SKIP_DB === "1" || process.env.SKIP_DB === "true";
+
 const allowedImageExtensions = /\.(jpe?g|png|gif|webp)$/i;
 
 const bulkUpload = multer({
@@ -105,7 +108,7 @@ const cleanupTempFiles = async (files = []) => {
   );
 };
 
-const uploadPhotoToCloudinary = async (filePath, mimeType) => {
+let uploadPhotoToCloudinary = async (filePath, mimeType) => {
   if (!cloudinaryConfig.cloudName || !cloudinaryConfig.apiKey || !cloudinaryConfig.apiSecret) {
     throw new Error("Cloudinary credentials are not configured");
   }
@@ -137,6 +140,14 @@ const uploadPhotoToCloudinary = async (filePath, mimeType) => {
 
   return response.data?.secure_url || response.data?.url || "";
 };
+
+// If SKIP_CLOUD is enabled, override Cloudinary upload to return a local uploads path
+if (SKIP_CLOUD) {
+  uploadPhotoToCloudinary = async (filePath, mimeType) => {
+    const filename = path.basename(filePath);
+    return `/uploads/profile-pics/${filename}`;
+  };
+}
 
 const buildPhotoLookup = async (photoFiles = []) => {
   const lookup = new Map();
@@ -544,10 +555,17 @@ adminApp.post(
         }
 
         try {
-          const saved = await new Employee(employeeData).save();
-          const employeeResponse = saved.toObject();
-          delete employeeResponse.Password;
-          created.push(employeeResponse);
+          if (SKIP_DB) {
+            const fakeId = `test-${Date.now()}-${Math.floor(Math.random()*1e9)}`;
+            const employeeResponse = { ...employeeData, _id: fakeId };
+            delete employeeResponse.Password;
+            created.push(employeeResponse);
+          } else {
+            const saved = await new Employee(employeeData).save();
+            const employeeResponse = saved.toObject();
+            delete employeeResponse.Password;
+            created.push(employeeResponse);
+          }
         } catch (err) {
           const errorMessage = err.code === 11000 ? "Duplicate record prevented by database" : err.message;
           errors.push({ row: rowNumber, errors: [errorMessage] });
