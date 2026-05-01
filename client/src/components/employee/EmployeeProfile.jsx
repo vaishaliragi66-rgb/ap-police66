@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { fetchMasterDataMap, getMasterOptions } from "../../utils/masterData_clean";
+import { resolveImageSrc } from "../../utils/resolveImageSrc";
 
 const EmployeeProfile = () => {
   const navigate = useNavigate();
@@ -305,13 +306,7 @@ const EmployeeProfile = () => {
               }}
             >
               <img
-                src={
-                  employee.Profile_Pic
-                    ? `${BACKEND_URL}${employee.Profile_Pic}`
-                    : employee.Photo
-                    ? `${BACKEND_URL}${employee.Photo}`
-                    : "/default-avatar.png"
-                }
+                src={resolveImageSrc(employee.Profile_Pic || employee.Photo, BACKEND_URL) || "/default-avatar.png"}
                 
                 className="rounded-circle"
                 style={{

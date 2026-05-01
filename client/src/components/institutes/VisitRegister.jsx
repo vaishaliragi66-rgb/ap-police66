@@ -2,6 +2,7 @@
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+  import { resolveImageSrc } from "../../utils/resolveImageSrc";
 
 const VisitRegister = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -491,7 +492,7 @@ const VisitRegister = () => {
       {
       <div className="d-flex justify-content-center mb-3">
       <img
-        src={`${BACKEND_URL}${selectedEmployee.Photo}`}
+        src={resolveImageSrc(selectedEmployee.Photo, BACKEND_URL)}
         alt="Employee"
         style={{
           width: "120px",
@@ -539,13 +540,7 @@ const VisitRegister = () => {
       {/* ===== PHOTO (enable later) ===== */}
       {/*
       <div className="text-center mb-3">
-        <img
-          src={`${BACKEND_URL}${selectedFamily.Photo}`}
-          alt="Family Member"
-          className="rounded-circle"
-          width="120"
-          height="120"
-        />
+        <img src={resolveImageSrc(selectedFamily.Photo, BACKEND_URL)} alt="Family Member" className="rounded-circle" width="120" height="120" />
       </div>
       */}
 

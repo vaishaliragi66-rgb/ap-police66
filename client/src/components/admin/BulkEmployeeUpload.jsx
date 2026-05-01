@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 const BulkEmployeeUpload = () => {
   const navigate = useNavigate();
   const [excelFile, setExcelFile] = useState(null);
+  const [photoFiles, setPhotoFiles] = useState([]);
   const [previewRows, setPreviewRows] = useState([]);
   const [previewHeaders, setPreviewHeaders] = useState([]);
   const [message, setMessage] = useState("");
@@ -14,6 +15,7 @@ const BulkEmployeeUpload = () => {
   const [uploadWarnings, setUploadWarnings] = useState([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const photoInputRef = useRef(null);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -32,7 +34,8 @@ const BulkEmployeeUpload = () => {
     "Street",
     "District",
     "State",
-    "Pincode"
+    "Pincode",
+    "Photo_File"
   ];
 
   const handleExcelChange = async (event) => {
@@ -72,6 +75,14 @@ const BulkEmployeeUpload = () => {
     }
   };
 
+  const handlePhotoFilesChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    setMessage("");
+    setError("");
+    setUploadWarnings([]);
+    setPhotoFiles(files);
+  };
+
   const handleUpload = async () => {
     setMessage("");
     setError("");
@@ -86,6 +97,7 @@ const BulkEmployeeUpload = () => {
     try {
       const formData = new FormData();
       formData.append("excelFile", excelFile);
+      photoFiles.forEach((file) => formData.append("photoFiles", file));
 
       const response = await axios.post(
         `${BACKEND_URL}/admin-api/employee-bulk-upload`,
@@ -104,9 +116,11 @@ const BulkEmployeeUpload = () => {
       setUploadWarnings(responseErrors);
       setError("");
       setExcelFile(null);
+      setPhotoFiles([]);
       setPreviewRows([]);
       setPreviewHeaders([]);
       if (fileInputRef.current) fileInputRef.current.value = null;
+      if (photoInputRef.current) photoInputRef.current.value = null;
     } catch (err) {
       console.error(err);
       const apiError = err.response?.data?.message || err.message || "Upload failed.";
@@ -140,6 +154,7 @@ const BulkEmployeeUpload = () => {
         "Hyderabad",
         "Telangana",
         "500001",
+        "POLICE123.jpg",
       ]
     ];
 
@@ -222,7 +237,7 @@ const BulkEmployeeUpload = () => {
           </div>
           <h2 style={{ fontWeight: 600, letterSpacing: "-0.03em", color: "#0F172A" }}>Bulk Employee Upload</h2>
           <p className="text-muted mb-0" style={{ maxWidth: 680, lineHeight: 1.7 }}>
-            Upload employee records through Excel and place each employee photo directly on the same row inside the sheet.
+            Upload employee records through Excel and match each row to a photo file by filename or ABS_NO.
           </p>
         </div>
         <button
@@ -257,6 +272,21 @@ const BulkEmployeeUpload = () => {
             onChange={handleExcelChange}
             ref={fileInputRef}
           />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label fw-semibold" style={{ color: "#0F172A" }}>Employee photos (multiple image files)</label>
+          <input
+            type="file"
+            accept="image/*"
+            className="form-control"
+            multiple
+            onChange={handlePhotoFilesChange}
+            ref={photoInputRef}
+          />
+          <small className="text-muted d-block mt-2">
+            Name each photo to match the row&apos;s <code>Photo_File</code> value or the employee&apos;s <code>ABS_NO</code>. Example: <code>POLICE123.jpg</code>.
+          </small>
         </div>
 
         <div className="d-flex flex-wrap gap-2 mb-4">
@@ -309,9 +339,29 @@ const BulkEmployeeUpload = () => {
         >
           <small>
             Excel file must include headers like <code>ABS_NO</code>, <code>Name</code>, <code>Email</code>, <code>Password</code>, <code>Gender</code>, and address columns.
-            Insert each photo into the worksheet on the same row as that employee. The upload will use the first image anchored to each row.
+            Add a <code>Photo_File</code> column if you want to override the default <code>ABS_NO</code>-based match.
           </small>
         </div>
+
+        {photoFiles.length > 0 && (
+          <div
+            className="mb-3"
+            style={{
+              background: "rgba(236,253,245,0.72)",
+              border: "1px solid rgba(134,239,172,0.5)",
+              borderRadius: "16px",
+              padding: "12px 14px",
+            }}
+          >
+            <div className="fw-semibold" style={{ color: "#065F46" }}>
+              {photoFiles.length} photo file{photoFiles.length === 1 ? "" : "s"} selected
+            </div>
+            <small className="text-muted">
+              First few files: {photoFiles.slice(0, 4).map((file) => file.name).join(", ")}
+              {photoFiles.length > 4 ? ", ..." : ""}
+            </small>
+          </div>
+        )}
 
         {message && <div className="alert alert-success">{message}</div>}
         {error && <div className="alert alert-danger">{error}</div>}
